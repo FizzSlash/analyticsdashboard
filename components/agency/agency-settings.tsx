@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { Agency } from '@/lib/supabase'
-import { createSupabaseClient } from '@/lib/supabase'
+import { createClient } from '@supabase/supabase-js'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { 
   Save,
@@ -33,7 +33,10 @@ export function AgencySettings({ agency: initialAgency }: AgencySettingsProps) {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   
-  const supabase = createSupabaseClient()
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  )
 
   const [formData, setFormData] = useState<SettingsFormData>({
     agency_name: agency.agency_name,

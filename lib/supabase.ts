@@ -24,11 +24,11 @@ export interface Agency {
   agency_name: string
   agency_slug: string
   owner_id: string
-  logo_url?: string
+  logo_url: string | null
   primary_color: string
   secondary_color: string
-  background_image_url?: string
-  custom_domain?: string
+  background_image_url: string | null
+  custom_domain: string | null
   created_at: string
   is_active: boolean
 }
@@ -50,12 +50,12 @@ export interface Client {
   brand_name: string
   brand_slug: string
   klaviyo_api_key: string
-  logo_url?: string
+  logo_url: string | null
   primary_color: string
   secondary_color: string
-  background_image_url?: string
+  background_image_url: string | null
   created_at: string
-  last_sync?: string
+  last_sync: string | null
   is_active: boolean
 }
 

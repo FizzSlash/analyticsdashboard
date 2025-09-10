@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { Agency, Client, UserProfile } from '@/lib/supabase'
-import { createSupabaseClient } from '@/lib/supabase'
+import { createClient } from '@supabase/supabase-js'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { 
   UserPlus, 
@@ -34,7 +34,10 @@ export function UserManagement({ agency, clients, clientUsers: initialUsers }: U
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   
-  const supabase = createSupabaseClient()
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  )
 
   const [formData, setFormData] = useState<InviteFormData>({
     email: '',
