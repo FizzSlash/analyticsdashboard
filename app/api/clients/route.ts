@@ -34,10 +34,10 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     
     // Validate required fields
-    const { brand_name, brand_slug, klaviyo_api_key } = body
-    if (!brand_name || !brand_slug || !klaviyo_api_key) {
+    const { brand_name, brand_slug, klaviyo_api_key, agency_id } = body
+    if (!brand_name || !brand_slug || !klaviyo_api_key || !agency_id) {
       return NextResponse.json(
-        { error: 'Missing required fields: brand_name, brand_slug, klaviyo_api_key' },
+        { error: 'Missing required fields: brand_name, brand_slug, klaviyo_api_key, agency_id' },
         { status: 400 }
       )
     }
@@ -46,12 +46,14 @@ export async function POST(request: NextRequest) {
     const encryptedApiKey = encryptApiKey(klaviyo_api_key)
 
     const clientData = {
+      agency_id: body.agency_id, // Required field
       brand_name,
       brand_slug: brand_slug.toLowerCase().replace(/[^a-z0-9-]/g, ''),
       klaviyo_api_key: encryptedApiKey,
       logo_url: body.logo_url || null,
       primary_color: body.primary_color || '#3B82F6',
       secondary_color: body.secondary_color || '#EF4444',
+      background_image_url: body.background_image_url || null,
       is_active: true
     }
 
