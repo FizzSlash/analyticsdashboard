@@ -1,9 +1,9 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { createClient } from '@supabase/supabase-js'
 import { ClientDashboard } from '@/components/dashboard/client-dashboard'
 import { useRouter } from 'next/navigation'
+import { useAuth } from '@/components/auth/auth-provider'
 
 interface PageProps {
   params: {
@@ -15,14 +15,15 @@ export default function ClientDashboardPage({ params }: PageProps) {
   const [client, setClient] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const router = useRouter()
+  const { supabase } = useAuth() // Use centralized Supabase client
 
   useEffect(() => {
     async function loadClient() {
       try {
-        const supabase = createClient(
-          process.env.NEXT_PUBLIC_SUPABASE_URL!,
-          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-        )
+        if (!supabase) {
+          console.log('Supabase client not ready yet')
+          return
+        }
 
         // Get client data
         const { data: clientData, error: clientError } = await supabase
@@ -46,7 +47,7 @@ export default function ClientDashboardPage({ params }: PageProps) {
     }
 
     loadClient()
-  }, [params.slug, router])
+  }, [params.slug, router, supabase])
 
   if (loading) {
     return (

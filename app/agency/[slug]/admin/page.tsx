@@ -1,9 +1,9 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { createClient } from '@supabase/supabase-js'
 import { AgencyAdminDashboard } from '@/components/agency/agency-admin-dashboard'
 import { useRouter } from 'next/navigation'
+import { useAuth } from '@/components/auth/auth-provider'
 
 interface PageProps {
   params: {
@@ -17,17 +17,17 @@ export default function AgencyAdminPage({ params }: PageProps) {
   const [clientUsers, setClientUsers] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const router = useRouter()
+  const { supabase } = useAuth() // Use centralized Supabase client
 
   useEffect(() => {
     async function loadData() {
       try {
         console.log('DASHBOARD LOAD: Step 1 - Starting dashboard data load for slug:', params.slug)
         
-        // Create supabase client inside useEffect to avoid re-renders
-        const supabase = createClient(
-          process.env.NEXT_PUBLIC_SUPABASE_URL!,
-          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-        )
+        if (!supabase) {
+          console.log('Supabase client not ready yet')
+          return
+        }
         console.log('DASHBOARD LOAD: Step 2 - Supabase client created')
 
         // Get current user
@@ -84,7 +84,7 @@ export default function AgencyAdminPage({ params }: PageProps) {
     }
 
     loadData()
-  }, [params.slug])
+  }, [params.slug, supabase])
 
   if (loading) {
     return (
