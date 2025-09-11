@@ -2,8 +2,8 @@
 
 import { useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { createClient } from '@supabase/supabase-js'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { getSupabaseClient } from '@/lib/supabase-client'
 import { Mail, Lock, AlertCircle, Loader2 } from 'lucide-react'
 
 export default function LoginPage() {
@@ -15,10 +15,7 @@ export default function LoginPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const redirectTo = searchParams.get('redirectTo') || null
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
+  const supabase = getSupabaseClient()
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
