@@ -187,19 +187,37 @@ export class SyncService {
           const campaignData = {
             ...transformCampaignData(campaign, messages),
             client_id: this.client.id,
-            // Basic analytics data (only existing database fields)
+            // MAXIMUM analytics data from Reporting API (ALL FIELDS NOW EXIST)
+            sends: analytics.sends || 0,
             recipients_count: analytics.recipients || 0,
-            delivered_count: analytics.total_opens || 0, // Use total_opens as proxy for delivered
-            opened_count: analytics.total_opens || 0,
-            clicked_count: analytics.total_clicks || 0,
-            bounced_count: 0,
-            unsubscribed_count: 0,
-            revenue: 0,
-            orders_count: 0,
-            // Basic rates
-            open_rate: analytics.unique_opens && analytics.recipients ? (analytics.unique_opens / analytics.recipients) * 100 : 0,
-            click_rate: analytics.unique_clicks && analytics.recipients ? (analytics.unique_clicks / analytics.recipients) * 100 : 0,
-            bounce_rate: 0,
+            delivered_count: analytics.deliveries || 0,
+            deliveries_unique: analytics.deliveries_unique || 0,
+            opened_count: analytics.opens || 0,
+            opens_unique: analytics.opens_unique || 0,
+            clicked_count: analytics.clicks || 0,
+            clicks_unique: analytics.clicks_unique || 0,
+            bounced_count: analytics.bounces || 0,
+            bounces_unique: analytics.bounces_unique || 0,
+            unsubscribed_count: analytics.unsubscribes || 0,
+            spam_complaints: analytics.spam_complaints || 0,
+            forwards: analytics.forwards || 0,
+            forwards_unique: analytics.forwards_unique || 0,
+            revenue: analytics.revenue || 0,
+            orders_count: analytics.orders || 0,
+            // Calculated rates
+            open_rate: analytics.open_rate || 0,
+            click_rate: analytics.click_rate || 0,
+            click_to_open_rate: analytics.click_to_open_rate || 0,
+            bounce_rate: analytics.bounce_rate || 0,
+            unsubscribe_rate: analytics.unsubscribe_rate || 0,
+            spam_complaint_rate: analytics.spam_complaint_rate || 0,
+            conversion_rate: analytics.conversion_rate || 0,
+            deliverability_rate: analytics.deliverability_rate || 0,
+            reply_rate: analytics.reply_rate || 0,
+            revenue_per_recipient: analytics.revenue_per_recipient || 0,
+            revenue_per_send: analytics.revenue_per_send || 0,
+            average_order_value: analytics.average_order_value || 0,
+            list_additions: analytics.list_additions || 0,
             // Image data
             image_url: imageUrl
           }
