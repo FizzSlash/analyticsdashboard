@@ -4,6 +4,17 @@ import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { TimeframeSelector } from '@/components/ui/timeframe-selector'
 import { 
+  LineChart, 
+  Line, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  ResponsiveContainer,
+  ScatterChart,
+  Scatter
+} from 'recharts'
+import { 
   BarChart3, 
   Mail, 
   Users, 
@@ -35,6 +46,36 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
   const [loading, setLoading] = useState(false)
   const [sortField, setSortField] = useState('send_date')
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc')
+
+  // Chart data processing functions
+  const getRevenueChartData = (campaigns: any[]) => {
+    const revenueByDate: { [key: string]: number } = {}
+    
+    campaigns.forEach(campaign => {
+      if (campaign.send_date && campaign.revenue) {
+        const date = new Date(campaign.send_date).toLocaleDateString('en-US', { 
+          month: 'short', 
+          day: 'numeric' 
+        })
+        revenueByDate[date] = (revenueByDate[date] || 0) + parseFloat(campaign.revenue)
+      }
+    })
+    
+    return Object.entries(revenueByDate)
+      .map(([date, revenue]) => ({ date, revenue }))
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+      .slice(-30) // Last 30 data points
+  }
+
+  const getScatterPlotData = (campaigns: any[]) => {
+    return campaigns
+      .filter(campaign => campaign.open_rate > 0 && campaign.click_rate > 0)
+      .map(campaign => ({
+        openRate: parseFloat(campaign.open_rate) * 100,
+        clickRate: parseFloat(campaign.click_rate) * 100,
+        name: campaign.campaign_name?.substring(0, 20) + '...' || 'Campaign'
+      }))
+  }
 
   const tabs = [
     { id: 'dashboard', label: 'Overview', icon: BarChart3 },
@@ -365,12 +406,39 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="h-64 flex items-center justify-center">
-                <div className="text-center">
-                  <Activity className="w-12 h-12 text-white/40 mx-auto mb-2" />
-                  <p className="text-white/60 text-sm">Revenue chart will be implemented here</p>
-                  <p className="text-white/40 text-xs mt-1">Using campaign revenue and send_date data</p>
-                </div>
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={getRevenueChartData(campaigns)}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+                    <XAxis 
+                      dataKey="date" 
+                      tick={{ fill: 'rgba(255,255,255,0.7)', fontSize: 12 }}
+                      axisLine={{ stroke: 'rgba(255,255,255,0.2)' }}
+                    />
+                    <YAxis 
+                      tick={{ fill: 'rgba(255,255,255,0.7)', fontSize: 12 }}
+                      axisLine={{ stroke: 'rgba(255,255,255,0.2)' }}
+                      tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
+                    />
+                    <Tooltip 
+                      contentStyle={{
+                        backgroundColor: 'rgba(0,0,0,0.8)',
+                        border: '1px solid rgba(255,255,255,0.2)',
+                        borderRadius: '8px',
+                        color: 'white'
+                      }}
+                      formatter={(value: number) => [`$${value.toLocaleString()}`, 'Revenue']}
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="revenue" 
+                      stroke="#60A5FA"
+                      strokeWidth={3}
+                      dot={{ fill: '#60A5FA', strokeWidth: 2, r: 4 }}
+                      activeDot={{ r: 6, stroke: '#60A5FA', strokeWidth: 2 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
               </div>
             </CardContent>
           </Card>
@@ -384,24 +452,49 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="h-64 relative">
-                {/* Simple scatter plot representation */}
-                <div className="absolute inset-0 border border-white/20 rounded">
-                  <div className="flex items-center justify-center h-full">
-                    <div className="text-center">
-                      <MousePointer className="w-12 h-12 text-white/40 mx-auto mb-2" />
-                      <p className="text-white/60 text-sm">Scatter plot will be implemented here</p>
-                      <p className="text-white/40 text-xs mt-1">Each dot = campaign performance</p>
-                    </div>
-                  </div>
-                </div>
-                {/* Axis labels */}
-                <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 text-white/60 text-xs">
-                  Open Rate →
-                </div>
-                <div className="absolute left-2 top-1/2 transform -translate-y-1/2 -rotate-90 text-white/60 text-xs">
-                  Click Rate →
-                </div>
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <ScatterChart data={getScatterPlotData(campaigns)}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+                    <XAxis 
+                      type="number"
+                      dataKey="openRate"
+                      name="Open Rate"
+                      unit="%"
+                      tick={{ fill: 'rgba(255,255,255,0.7)', fontSize: 12 }}
+                      axisLine={{ stroke: 'rgba(255,255,255,0.2)' }}
+                      domain={[0, 'dataMax + 5']}
+                    />
+                    <YAxis 
+                      type="number"
+                      dataKey="clickRate"
+                      name="Click Rate"
+                      unit="%"
+                      tick={{ fill: 'rgba(255,255,255,0.7)', fontSize: 12 }}
+                      axisLine={{ stroke: 'rgba(255,255,255,0.2)' }}
+                      domain={[0, 'dataMax + 2']}
+                    />
+                    <Tooltip 
+                      contentStyle={{
+                        backgroundColor: 'rgba(0,0,0,0.8)',
+                        border: '1px solid rgba(255,255,255,0.2)',
+                        borderRadius: '8px',
+                        color: 'white'
+                      }}
+                      formatter={(value: number, name: string) => [
+                        `${value.toFixed(1)}%`, 
+                        name === 'openRate' ? 'Open Rate' : 'Click Rate'
+                      ]}
+                    />
+                    <Scatter 
+                      dataKey="clickRate" 
+                      fill="#A78BFA"
+                      fillOpacity={0.8}
+                      stroke="#A78BFA"
+                      strokeWidth={2}
+                    />
+                  </ScatterChart>
+                </ResponsiveContainer>
               </div>
             </CardContent>
           </Card>
