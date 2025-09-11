@@ -9,6 +9,7 @@ export interface Agency {
   logo_url?: string
   background_image_url?: string
   custom_domain?: string
+  is_active: boolean
   created_at: string
 }
 

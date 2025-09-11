@@ -5,7 +5,7 @@ import { format, subDays } from 'date-fns'
 export class DatabaseService {
   // Agency Management
   static async getAgencyBySlug(slug: string): Promise<Agency | null> {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('agencies')
       .select('*')
       .eq('agency_slug', slug)
@@ -21,7 +21,7 @@ export class DatabaseService {
   }
 
   static async createAgency(agency: Omit<Agency, 'id' | 'created_at'>): Promise<Agency | null> {
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await supabaseAdminAdmin
       .from('agencies')
       .insert(agency)
       .select()
@@ -36,7 +36,7 @@ export class DatabaseService {
   }
 
   static async getAgencyClients(agencyId: string): Promise<Client[]> {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('clients')
       .select('*')
       .eq('agency_id', agencyId)
@@ -52,7 +52,7 @@ export class DatabaseService {
 
   // User Profile Management
   static async getUserProfile(userId: string): Promise<UserProfile | null> {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('user_profiles')
       .select('*')
       .eq('id', userId)
@@ -67,7 +67,7 @@ export class DatabaseService {
   }
 
   static async createUserProfile(profile: Omit<UserProfile, 'created_at' | 'updated_at'>): Promise<UserProfile | null> {
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await supabaseAdminAdmin
       .from('user_profiles')
       .insert(profile)
       .select()
@@ -83,7 +83,7 @@ export class DatabaseService {
 
   // Client Management
   static async getClientBySlug(slug: string): Promise<Client | null> {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('clients')
       .select('*')
       .eq('brand_slug', slug)
@@ -99,7 +99,7 @@ export class DatabaseService {
   }
 
   static async getAllClients(): Promise<Client[]> {
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await supabaseAdminAdmin
       .from('clients')
       .select('*')
       .eq('is_active', true)
@@ -114,7 +114,7 @@ export class DatabaseService {
   }
 
   static async createClient(client: Omit<Client, 'id' | 'created_at'>): Promise<Client | null> {
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await supabaseAdminAdmin
       .from('clients')
       .insert(client)
       .select()
@@ -137,7 +137,7 @@ export class DatabaseService {
 
   // Campaign Metrics
   static async getCampaignMetrics(clientId: string, limit: number = 50): Promise<CampaignMetric[]> {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('campaign_metrics')
       .select('*')
       .eq('client_id', clientId)
@@ -156,7 +156,7 @@ export class DatabaseService {
     const startDate = new Date()
     startDate.setDate(startDate.getDate() - days)
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('campaign_metrics')
       .select('*')
       .eq('client_id', clientId)
@@ -175,7 +175,7 @@ export class DatabaseService {
     console.log(`💾 DATABASE: Attempting to save campaign metric for campaign: ${metric.campaign_id}`)
     console.log(`💾 DATABASE: Campaign data:`, JSON.stringify(metric, null, 2))
     
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await supabaseAdminAdmin
       .from('campaign_metrics')
       .upsert(metric, {
         onConflict: 'client_id,campaign_id',
@@ -193,7 +193,7 @@ export class DatabaseService {
 
   // Flow Metrics
   static async getFlowMetrics(clientId: string, limit: number = 50): Promise<FlowMetric[]> {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('flow_metrics')
       .select('*')
       .eq('client_id', clientId)
@@ -212,7 +212,7 @@ export class DatabaseService {
     const startDate = new Date()
     startDate.setDate(startDate.getDate() - days)
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('flow_metrics')
       .select('*')
       .eq('client_id', clientId)
@@ -245,7 +245,7 @@ export class DatabaseService {
     const startDate = new Date()
     startDate.setDate(startDate.getDate() - days)
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('audience_metrics')
       .select('*')
       .eq('client_id', clientId)
@@ -261,7 +261,7 @@ export class DatabaseService {
   }
 
   static async getLatestAudienceMetric(clientId: string): Promise<AudienceMetric | null> {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('audience_metrics')
       .select('*')
       .eq('client_id', clientId)
@@ -295,7 +295,7 @@ export class DatabaseService {
     const startDate = new Date()
     startDate.setDate(startDate.getDate() - days)
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('revenue_attribution')
       .select('*')
       .eq('client_id', clientId)
@@ -385,7 +385,7 @@ export class DatabaseService {
 
   // Top Performers
   static async getTopCampaigns(clientId: string, metric: 'open_rate' | 'click_rate' | 'revenue' = 'open_rate', limit: number = 5): Promise<CampaignMetric[]> {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('campaign_metrics')
       .select('*')
       .eq('client_id', clientId)
@@ -401,7 +401,7 @@ export class DatabaseService {
   }
 
   static async getTopFlows(clientId: string, metric: 'completion_rate' | 'revenue_per_trigger' | 'revenue' = 'revenue', limit: number = 5): Promise<FlowMetric[]> {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('flow_metrics')
       .select('*')
       .eq('client_id', clientId)
@@ -435,7 +435,7 @@ export class DatabaseService {
   static async getSegmentMetrics(clientId: string, days: number = 30): Promise<any[]> {
     const startDate = format(subDays(new Date(), days), 'yyyy-MM-dd')
     
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('segment_metrics')
       .select('*')
       .eq('client_id', clientId)
@@ -467,7 +467,7 @@ export class DatabaseService {
   static async getDeliverabilityMetrics(clientId: string, days: number = 30): Promise<any[]> {
     const startDate = format(subDays(new Date(), days), 'yyyy-MM-dd')
     
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('deliverability_metrics')
       .select('*')
       .eq('client_id', clientId)
