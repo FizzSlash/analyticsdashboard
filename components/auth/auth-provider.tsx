@@ -15,23 +15,37 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
-// Use the centralized Supabase client
-const supabase = getSupabaseClient()
-
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(true)
+  const [supabase, setSupabase] = useState<any>(null)
 
   useEffect(() => {
+    // Initialize Supabase client on the client side
+    const initSupabase = () => {
+      try {
+        const client = getSupabaseClient()
+        setSupabase(client)
+        return client
+      } catch (error) {
+        console.error('Failed to initialize Supabase:', error)
+        setLoading(false)
+        return null
+      }
+    }
+
+    const client = initSupabase()
+    if (!client) return
+
     // Get initial session
     const getInitialSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
+      const { data: { session } } = await client.auth.getSession()
       setUser(session?.user ?? null)
       
       if (session?.user) {
         // Fetch user profile
-        const { data: profileData } = await supabase
+        const { data: profileData } = await client
           .from('user_profiles')
           .select('*')
           .eq('id', session.user.id)
@@ -46,13 +60,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     getInitialSession()
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+    const { data: { subscription } } = client.auth.onAuthStateChange(
       async (event: any, session: any) => {
         setUser(session?.user ?? null)
         
         if (session?.user) {
           // Fetch user profile
-          const { data: profileData } = await supabase
+          const { data: profileData } = await client
             .from('user_profiles')
             .select('*')
             .eq('id', session.user.id)
@@ -68,10 +82,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     )
 
     return () => subscription.unsubscribe()
-  }, [supabase])
+  }, [])
 
   const signOut = async () => {
-    await supabase.auth.signOut()
+    if (supabase) {
+      await supabase.auth.signOut()
+    }
     setUser(null)
     setProfile(null)
   }

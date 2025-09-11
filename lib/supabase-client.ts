@@ -8,6 +8,12 @@ export function getSupabaseClient() {
     return supabaseClient
   }
 
+  // Only create client in browser environment
+  if (typeof window === 'undefined') {
+    console.log('🔍 Server-side rendering - skipping Supabase client creation')
+    return null
+  }
+
   // Get environment variables with fallbacks and debugging
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
@@ -43,5 +49,5 @@ export function getSupabaseClient() {
   }
 }
 
-// Export a default instance
-export const supabase = getSupabaseClient()
+// Export a lazy-initialized instance
+export const supabase = typeof window !== 'undefined' ? getSupabaseClient() : null
