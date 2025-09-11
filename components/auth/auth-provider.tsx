@@ -1,9 +1,9 @@
 'use client'
 
 import { createContext, useContext, useEffect, useState } from 'react'
-import { createClient } from '@supabase/supabase-js'
 import type { User } from '@supabase/supabase-js'
 import type { UserProfile } from '@/lib/supabase'
+import { getSupabaseClient } from '@/lib/supabase-client'
 
 interface AuthContextType {
   user: User | null
@@ -15,27 +15,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
-// Create a single supabase instance to avoid multiple clients
-let supabaseInstance: any = null
-
-const getSupabaseClient = () => {
-  if (!supabaseInstance) {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-    
-    if (!supabaseUrl || !supabaseKey) {
-      console.error('Missing Supabase environment variables:', {
-        url: !!supabaseUrl,
-        key: !!supabaseKey
-      })
-      throw new Error('Supabase environment variables not configured')
-    }
-    
-    supabaseInstance = createClient(supabaseUrl, supabaseKey)
-  }
-  return supabaseInstance
-}
-
+// Use the centralized Supabase client
 const supabase = getSupabaseClient()
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
