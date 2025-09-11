@@ -32,7 +32,7 @@ export class KlaviyoAPI {
       if (response.status === 429) {
         // Rate limited - retry with exponential backoff
         if (retryCount < maxRetries) {
-          const delayMs = Math.min(1000 * Math.pow(2, retryCount), 30000) // Max 30s
+          const delayMs = Math.min(2000 * Math.pow(2, retryCount), 60000) // Start at 2s, max 60s
           console.log(`⏱️ KLAVIYO API: Rate limited, waiting ${delayMs}ms before retry ${retryCount + 1}/${maxRetries}`)
           await new Promise(resolve => setTimeout(resolve, delayMs))
           return this.makeRequest(endpoint, options, retryCount + 1)
@@ -334,6 +334,11 @@ export class KlaviyoAPI {
       console.log(`📊 CAMPAIGNS: Getting analytics for campaign ${campaignId}`)
       
       try {
+        // Add small delay between calls to avoid rate limiting
+        if (campaignIds.indexOf(campaignId) > 0) {
+          await new Promise(resolve => setTimeout(resolve, 500)) // 500ms delay between calls
+        }
+        
         const result = await this.makeRequest('/campaign-values-reports', {
           method: 'POST',
           body: JSON.stringify({
@@ -401,6 +406,11 @@ export class KlaviyoAPI {
       console.log(`📊 FLOWS: Getting analytics for flow ${flowId}`)
       
       try {
+        // Add small delay between calls to avoid rate limiting
+        if (flowIds.indexOf(flowId) > 0) {
+          await new Promise(resolve => setTimeout(resolve, 500)) // 500ms delay between calls
+        }
+        
         const result = await this.makeRequest('/flow-values-reports', {
           method: 'POST',
           body: JSON.stringify({
