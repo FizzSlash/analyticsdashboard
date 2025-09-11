@@ -5,12 +5,13 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const clientSlug = searchParams.get('clientSlug')
+    const timeframe = parseInt(searchParams.get('timeframe') || '365') // Default to 365 days
     
     if (!clientSlug) {
       return NextResponse.json({ error: 'Client slug is required' }, { status: 400 })
     }
 
-    console.log(`DASHBOARD API: Fetching data for client: ${clientSlug}`)
+    console.log(`DASHBOARD API: Fetching data for client: ${clientSlug}, timeframe: ${timeframe} days`)
 
     // Get client data
     const client = await DatabaseService.getClientBySlug(clientSlug)
@@ -18,7 +19,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Client not found' }, { status: 404 })
     }
 
-    // Fetch all dashboard data in parallel
+    // Fetch all dashboard data in parallel with dynamic timeframe
     const [
       summary,
       campaigns,
@@ -28,18 +29,21 @@ export async function GET(request: NextRequest) {
       topCampaigns,
       topFlows
     ] = await Promise.all([
-      DatabaseService.getDashboardSummary(client.id),
-      DatabaseService.getRecentCampaignMetrics(client.id, 30),
-      DatabaseService.getRecentFlowMetrics(client.id, 30),
-      DatabaseService.getAudienceMetrics(client.id, 30),
-      DatabaseService.getRevenueAttribution(client.id, 30),
+      DatabaseService.getDashboardSummary(client.id, timeframe),
+      DatabaseService.getRecentCampaignMetrics(client.id, timeframe),
+      DatabaseService.getRecentFlowMetrics(client.id, timeframe),
+      DatabaseService.getAudienceMetrics(client.id, timeframe),
+      DatabaseService.getRevenueAttribution(client.id, timeframe),
       DatabaseService.getTopCampaigns(client.id, 'open_rate', 5),
       DatabaseService.getTopFlows(client.id, 'revenue', 5)
     ])
 
+    console.log(`DASHBOARD API: Fetched ${campaigns.length} campaigns for ${timeframe} days`)
+
     return NextResponse.json({
       success: true,
       client,
+      timeframe,
       data: {
         summary,
         campaigns,
