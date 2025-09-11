@@ -21,7 +21,7 @@ export class DatabaseService {
   }
 
   static async createAgency(agency: Omit<Agency, 'id' | 'created_at'>): Promise<Agency | null> {
-    const { data, error } = await supabaseAdminAdmin
+    const { data, error } = await supabaseAdmin
       .from('agencies')
       .insert(agency)
       .select()
@@ -67,7 +67,7 @@ export class DatabaseService {
   }
 
   static async createUserProfile(profile: Omit<UserProfile, 'created_at' | 'updated_at'>): Promise<UserProfile | null> {
-    const { data, error } = await supabaseAdminAdmin
+    const { data, error } = await supabaseAdmin
       .from('user_profiles')
       .insert(profile)
       .select()
@@ -99,7 +99,7 @@ export class DatabaseService {
   }
 
   static async getAllClients(): Promise<Client[]> {
-    const { data, error } = await supabaseAdminAdmin
+    const { data, error } = await supabaseAdmin
       .from('clients')
       .select('*')
       .eq('is_active', true)
@@ -114,7 +114,7 @@ export class DatabaseService {
   }
 
   static async createClient(client: Omit<Client, 'id' | 'created_at'>): Promise<Client | null> {
-    const { data, error } = await supabaseAdminAdmin
+    const { data, error } = await supabaseAdmin
       .from('clients')
       .insert(client)
       .select()
@@ -175,7 +175,7 @@ export class DatabaseService {
     console.log(`💾 DATABASE: Attempting to save campaign metric for campaign: ${metric.campaign_id}`)
     console.log(`💾 DATABASE: Campaign data:`, JSON.stringify(metric, null, 2))
     
-    const { data, error } = await supabaseAdminAdmin
+    const { data, error } = await supabaseAdmin
       .from('campaign_metrics')
       .upsert(metric, {
         onConflict: 'client_id,campaign_id',
