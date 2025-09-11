@@ -20,8 +20,20 @@ export async function POST(request: NextRequest) {
     const decryptedKey = decryptApiKey(client.klaviyo_api_key)
     const klaviyo = new KlaviyoAPI(decryptedKey)
 
-    // Call Klaviyo flow analytics API (same pattern as campaigns)
-    const analytics = await klaviyo.getFlowAnalytics([], conversionMetricId)
+    // First get all flows to extract flow IDs
+    const flowsResponse = await klaviyo.getFlows()
+    const allFlows = flowsResponse.data || []
+    
+    // Extract active flow IDs
+    const activeFlows = allFlows.filter((flow: any) => 
+      flow.attributes?.status === 'active'
+    )
+    const flowIds = activeFlows.map((flow: any) => flow.id)
+    
+    console.log(`🎯 FLOW ANALYTICS: Found ${flowIds.length} active flows for analytics`)
+    
+    // Call Klaviyo flow analytics API with actual flow IDs
+    const analytics = await klaviyo.getFlowAnalytics(flowIds, conversionMetricId)
     
     // Return raw Klaviyo response to frontend
     return NextResponse.json({

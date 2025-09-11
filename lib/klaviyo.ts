@@ -536,14 +536,13 @@ export class KlaviyoAPI {
           type: 'flow-series-report',
           attributes: {
             statistics: [
-              // All statistics for comprehensive daily data
+              // Valid statistics for Flow Series API
               'opens', 'opens_unique', 'open_rate',
               'clicks', 'clicks_unique', 'click_rate', 'click_to_open_rate',
               'delivered', 'delivery_rate',
               'bounced', 'bounce_rate',
               'conversions', 'conversion_rate', 'conversion_value',
               'recipients', 'revenue_per_recipient',
-              'sends', 'deliveries_unique', 'bounces_unique',
               'bounced_or_failed', 'bounced_or_failed_rate',
               'failed', 'failed_rate',
               'unsubscribes', 'unsubscribe_rate', 'unsubscribe_uniques',
@@ -551,7 +550,7 @@ export class KlaviyoAPI {
               'average_order_value'
             ],
             timeframe: { key: 'last_365_days' },
-            interval: 'day', // Daily breakdown
+            interval: 'daily', // Use 'daily' instead of 'day'
             filter: `contains-any(flow_id,["${flowIds.join('","')}"])` // BATCH ALL FLOWS
           }
         }
