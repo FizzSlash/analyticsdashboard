@@ -16,16 +16,24 @@ export default function AgencyAdminPage({ params }: PageProps) {
   const [clients, setClients] = useState<any[]>([])
   const [clientUsers, setClientUsers] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const router = useRouter()
-  const { supabase } = useAuth() // Use centralized Supabase client
+  const { supabase, loading: authLoading } = useAuth() // Use centralized Supabase client
 
   useEffect(() => {
     async function loadData() {
       try {
         console.log('DASHBOARD LOAD: Step 1 - Starting dashboard data load for slug:', params.slug)
         
+        // Wait for auth to finish loading
+        if (authLoading) {
+          return
+        }
+
         if (!supabase) {
-          console.log('Supabase client not ready yet')
+          console.error('Supabase client not available - check environment variables')
+          setError('Database connection failed. Please check configuration.')
+          setLoading(false)
           return
         }
         console.log('DASHBOARD LOAD: Step 2 - Supabase client created')
@@ -61,37 +69,68 @@ export default function AgencyAdminPage({ params }: PageProps) {
           .order('created_at', { ascending: false })
 
         console.log('DASHBOARD LOAD: Step 8 - Clients query result:', { clientsData, clientsError })
-        setClients(clientsData || [])
+
+        if (clientsError) {
+          console.error('DASHBOARD LOAD: Step 8.1 - Error loading clients:', clientsError)
+          setError('Failed to load clients')
+        } else {
+          setClients(clientsData || [])
+          console.log('DASHBOARD LOAD: Step 9 - Clients set, count:', clientsData?.length || 0)
+        }
 
         // Get client users for this agency
-        console.log('DASHBOARD LOAD: Step 9 - Getting client users for agency:', agencyData.id)
+        console.log('DASHBOARD LOAD: Step 10 - Getting client users for agency:', agencyData.id)
         const { data: usersData, error: usersError } = await supabase
           .from('user_profiles')
           .select('*')
           .eq('agency_id', agencyData.id)
           .eq('role', 'client_user')
 
-        console.log('DASHBOARD LOAD: Step 10 - Users query result:', { usersData, usersError })
-        setClientUsers(usersData || [])
+        console.log('DASHBOARD LOAD: Step 11 - Users query result:', { usersData, usersError })
+        
+        if (usersError) {
+          console.error('DASHBOARD LOAD: Step 11.1 - Error loading users:', usersError)
+        } else {
+          setClientUsers(usersData || [])
+          console.log('DASHBOARD LOAD: Step 12 - Users set, count:', usersData?.length || 0)
+        }
 
-        console.log('DASHBOARD LOAD: Step 11 - All data loaded successfully!')
+        console.log('DASHBOARD LOAD: Step 13 - All data loaded successfully!')
 
       } catch (error) {
-        console.error('Error loading data:', error)
+        console.error('DASHBOARD LOAD: Error loading data:', error)
+        setError('Failed to load dashboard data')
       } finally {
         setLoading(false)
+        console.log('DASHBOARD LOAD: Step 14 - Loading complete')
       }
     }
 
     loadData()
-  }, [params.slug, supabase])
+  }, [params.slug, router, supabase, authLoading])
 
-  if (loading) {
+  if (loading || authLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading dashboard...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">{error}</p>
+          <button 
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            Retry
+          </button>
         </div>
       </div>
     )
