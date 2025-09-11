@@ -341,14 +341,21 @@ export class KlaviyoAPI {
               type: 'campaign-values-report',
               attributes: {
                 statistics: [
+                  // Email engagement stats
                   'opens', 'opens_unique', 'open_rate',
                   'clicks', 'clicks_unique', 'click_rate', 'click_to_open_rate',
-                  'delivered', 'delivery_rate',
-                  'bounced', 'bounce_rate', 'bounced_or_failed', 'bounced_or_failed_rate',
+                  // Delivery stats
+                  'sends', 'deliveries', 'deliveries_unique', 'delivery_rate',
+                  'bounces', 'bounces_unique', 'bounce_rate',
+                  'bounced_or_failed', 'bounced_or_failed_rate',
                   'failed', 'failed_rate',
+                  // Conversion stats
                   'conversions', 'conversion_rate', 'conversion_uniques', 'conversion_value',
+                  // Unsubscribe stats
                   'unsubscribes', 'unsubscribe_rate', 'unsubscribe_uniques',
+                  // Spam stats
                   'spam_complaints', 'spam_complaint_rate',
+                  // Recipient stats
                   'recipients', 'revenue_per_recipient', 'average_order_value'
                 ],
                 timeframe: { start: startDate, end: endDate },
@@ -401,14 +408,21 @@ export class KlaviyoAPI {
               type: 'flow-values-report',
               attributes: {
                 statistics: [
+                  // Email engagement stats
                   'opens', 'opens_unique', 'open_rate',
                   'clicks', 'clicks_unique', 'click_rate', 'click_to_open_rate',
-                  'delivered', 'delivery_rate',
-                  'bounced', 'bounce_rate', 'bounced_or_failed', 'bounced_or_failed_rate',
+                  // Delivery stats  
+                  'sends', 'deliveries', 'deliveries_unique', 'delivery_rate',
+                  'bounces', 'bounces_unique', 'bounce_rate', 
+                  'bounced_or_failed', 'bounced_or_failed_rate',
                   'failed', 'failed_rate',
+                  // Conversion stats
                   'conversions', 'conversion_rate', 'conversion_uniques', 'conversion_value',
+                  // Unsubscribe stats
                   'unsubscribes', 'unsubscribe_rate', 'unsubscribe_uniques',
+                  // Spam stats
                   'spam_complaints', 'spam_complaint_rate',
+                  // Recipient stats
                   'recipients', 'revenue_per_recipient', 'average_order_value'
                 ],
                 timeframe: { start: startDate, end: endDate },

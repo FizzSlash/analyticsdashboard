@@ -583,19 +583,44 @@ export class SyncService {
   
   private getDefaultFlowMetrics() {
     return {
+      // Email engagement stats
       opens_unique: 0,
       clicks_unique: 0,
       opens: 0,
       clicks: 0,
-      spam_complaints: 0,
+      // Delivery stats
+      sends: 0,
+      deliveries: 0,
+      deliveries_unique: 0,
+      bounces: 0,
+      bounces_unique: 0,
+      bounced_or_failed: 0,
+      bounced_or_failed_rate: 0,
+      failed: 0,
+      failed_rate: 0,
+      delivery_rate: 0,
+      // Rate stats
       open_rate: 0,
       click_rate: 0,
+      click_to_open_rate: 0,
       bounce_rate: 0,
-      unsubscribe_rate: 0,
-      spam_complaint_rate: 0,
+      // Conversion stats
       conversion_rate: 0,
+      conversions: 0,
+      conversion_uniques: 0,
+      conversion_value: 0,
+      // Unsubscribe stats
+      unsubscribes: 0,
+      unsubscribe_rate: 0,
+      unsubscribe_uniques: 0,
+      // Spam stats
+      spam_complaints: 0,
+      spam_complaint_rate: 0,
+      // Recipient stats
+      recipients: 0,
       revenue_per_recipient: 0,
       average_order_value: 0,
+      // Legacy fields
       triggered_count: 0,
       completed_count: 0,
       completion_rate: 0,
