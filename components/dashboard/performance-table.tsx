@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatCurrency, formatNumber, formatPercentage } from "@/lib/utils"
-import { CampaignMetric, FlowMetric } from "@/lib/supabase"
+import { CampaignMetric, FlowMetric } from "@/lib/types"
 
 interface PerformanceTableProps {
   title: string

@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Client } from '@/lib/supabase'
+import { Client } from '@/lib/types'
 import { DatabaseService } from '@/lib/database'
 import { MetricCard } from './metric-card'
 import { CustomLineChart, CustomBarChart, CustomAreaChart } from './charts'
