@@ -26,6 +26,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const initSupabase = () => {
       try {
         const client = getSupabaseClient()
+        if (!client) {
+          console.warn('Supabase client could not be initialized - missing environment variables')
+          setLoading(false)
+          return null
+        }
         setSupabase(client)
         return client
       } catch (error) {
@@ -40,28 +45,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // Get initial session
     const getInitialSession = async () => {
-      const { data: { session } } = await client.auth.getSession()
-      setUser(session?.user ?? null)
-      
-      if (session?.user) {
-        // Fetch user profile
-        const { data: profileData } = await client
-          .from('user_profiles')
-          .select('*')
-          .eq('id', session.user.id)
-          .single()
-        
-        setProfile(profileData)
-      }
-      
-      setLoading(false)
-    }
-
-    getInitialSession()
-
-    // Listen for auth changes
-    const { data: { subscription } } = client.auth.onAuthStateChange(
-      async (event: any, session: any) => {
+      try {
+        const { data: { session } } = await client.auth.getSession()
         setUser(session?.user ?? null)
         
         if (session?.user) {
@@ -73,11 +58,41 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             .single()
           
           setProfile(profileData)
-        } else {
-          setProfile(null)
         }
         
         setLoading(false)
+      } catch (error) {
+        console.error('Error getting initial session:', error)
+        setLoading(false)
+      }
+    }
+
+    getInitialSession()
+
+    // Listen for auth changes
+    const { data: { subscription } } = client.auth.onAuthStateChange(
+      async (event: any, session: any) => {
+        try {
+          setUser(session?.user ?? null)
+          
+          if (session?.user) {
+            // Fetch user profile
+            const { data: profileData } = await client
+              .from('user_profiles')
+              .select('*')
+              .eq('id', session.user.id)
+              .single()
+            
+            setProfile(profileData)
+          } else {
+            setProfile(null)
+          }
+          
+          setLoading(false)
+        } catch (error) {
+          console.error('Error handling auth state change:', error)
+          setLoading(false)
+        }
       }
     )
 

@@ -15,7 +15,6 @@ export default function LoginPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const redirectTo = searchParams.get('redirectTo') || null
-  const supabase = getSupabaseClient()
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -23,6 +22,12 @@ export default function LoginPage() {
     setError('')
 
     try {
+      const supabase = getSupabaseClient()
+      if (!supabase) {
+        setError('Unable to connect to authentication service')
+        return
+      }
+
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,

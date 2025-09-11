@@ -13,32 +13,53 @@ const getEnvVars = () => {
 let supabaseInstance: any = null
 let supabaseAdminInstance: any = null
 
+// Extend window type for singleton storage
+declare global {
+  interface Window {
+    __SUPABASE_CLIENT__?: any
+  }
+}
+
 // Client for browser usage - lazy initialization
 export const getSupabaseClient = () => {
-  if (!supabaseInstance && typeof window !== 'undefined') {
+  if (typeof window === 'undefined') return null
+  if (window.__SUPABASE_CLIENT__) return window.__SUPABASE_CLIENT__
+
+  try {
     const { supabaseUrl, supabaseAnonKey } = getEnvVars()
+
+    if (!supabaseUrl || !supabaseAnonKey) {
+      console.error('Supabase env vars (NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY) are missing')
+      return null
+    }
+
     supabaseInstance = createClient(supabaseUrl, supabaseAnonKey)
+    window.__SUPABASE_CLIENT__ = supabaseInstance
+    return supabaseInstance
+  } catch (error) {
+    console.error('Failed to create Supabase client:', error)
+    return null
   }
-  return supabaseInstance
 }
 
 // Admin client for server-side operations - lazy initialization  
 export const getSupabaseAdmin = () => {
-  if (!supabaseAdminInstance) {
-    const { supabaseUrl, supabaseServiceKey } = getEnvVars()
-    supabaseAdminInstance = createClient(supabaseUrl, supabaseServiceKey, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false
-      }
-    })
-  }
+  if (supabaseAdminInstance) return supabaseAdminInstance
+
+  const { supabaseUrl, supabaseServiceKey } = getEnvVars()
+  supabaseAdminInstance = createClient(supabaseUrl, supabaseServiceKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  })
   return supabaseAdminInstance
 }
 
 // Export lazy clients (no immediate creation)
-export const supabase = typeof window !== 'undefined' ? getSupabaseClient() : null
-export const supabaseAdmin = getSupabaseAdmin()
+// Avoid creating clients at module load; only expose helpers.
+export const supabase = null
+export const supabaseAdmin = typeof window === 'undefined' ? getSupabaseAdmin() : null
 
 // Client-side supabase client function
 export const createSupabaseClient = () => {
