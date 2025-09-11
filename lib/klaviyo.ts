@@ -310,43 +310,62 @@ export class KlaviyoAPI {
       const campaignId = campaignIds[i]
       console.log(`📊 CAMPAIGNS: Getting analytics for campaign ${campaignId} (${i + 1}/${campaignIds.length})`)
       
-      // Add delay to avoid rate limiting (except for first request)
-      if (i > 0) {
-        console.log(`⏳ CAMPAIGNS: Waiting 20 seconds to avoid rate limits...`)
-        await new Promise(resolve => setTimeout(resolve, 20000))
+      // Smart rate limiting - retry with delays only when needed
+      let result = null
+      let retryCount = 0
+      const maxRetries = 3
+      
+      while (retryCount <= maxRetries) {
+        try {
+          result = await this.makeRequest('/campaign-values-reports', {
+            method: 'POST',
+            body: JSON.stringify({
+              data: {
+                type: 'campaign-values-report',
+                attributes: {
+                  statistics: [
+                    // ALL AVAILABLE CAMPAIGN STATISTICS (from user screenshots)
+                    'opens', 'opens_unique', 'open_rate',
+                    'clicks', 'clicks_unique', 'click_rate', 'click_to_open_rate',
+                    'delivered', 'delivery_rate',
+                    'bounced', 'bounce_rate', 'bounced_or_failed', 'bounced_or_failed_rate',
+                    'failed', 'failed_rate',
+                    'conversions', 'conversion_rate', 'conversion_uniques', 'conversion_value',
+                    'unsubscribes', 'unsubscribe_rate', 'unsubscribe_uniques',
+                    'spam_complaints', 'spam_complaint_rate',
+                    'recipients',
+                    'revenue_per_recipient',
+                    'average_order_value'
+                  ],
+                  timeframe: {
+                    start: startDate,
+                    end: endDate
+                  },
+                  filter: `equals(campaign_id,"${campaignId}")`, // CORRECTED: Use equals filter
+                  conversion_metric_id: 'QSwNRK' // CORRECTED: Use Placed Order metric ID
+                }
+              }
+            })
+          })
+          
+          // Success - break out of retry loop
+          break
+          
+        } catch (error: any) {
+          if (error.message.includes('429') && retryCount < maxRetries) {
+            retryCount++
+            const waitTime = retryCount * 20 // 20, 40, 60 seconds
+            console.log(`⏳ CAMPAIGNS: Rate limited - waiting ${waitTime} seconds before retry ${retryCount}/${maxRetries}`)
+            await new Promise(resolve => setTimeout(resolve, waitTime * 1000))
+          } else {
+            throw error // Re-throw if not rate limit or max retries reached
+          }
+        }
       }
       
-      try {
-        const result = await this.makeRequest('/campaign-values-reports', {
-          method: 'POST',
-          body: JSON.stringify({
-            data: {
-              type: 'campaign-values-report',
-              attributes: {
-                statistics: [
-                  // ALL AVAILABLE CAMPAIGN STATISTICS (from user screenshots)
-                  'opens', 'opens_unique', 'open_rate',
-                  'clicks', 'clicks_unique', 'click_rate', 'click_to_open_rate',
-                  'delivered', 'delivery_rate',
-                  'bounced', 'bounce_rate', 'bounced_or_failed', 'bounced_or_failed_rate',
-                  'failed', 'failed_rate',
-                  'conversions', 'conversion_rate', 'conversion_uniques', 'conversion_value',
-                  'unsubscribes', 'unsubscribe_rate', 'unsubscribe_uniques',
-                  'spam_complaints', 'spam_complaint_rate',
-                  'recipients',
-                  'revenue_per_recipient',
-                  'average_order_value'
-                ],
-                timeframe: {
-                  start: startDate,
-                  end: endDate
-                },
-                filter: `equals(campaign_id,"${campaignId}")`, // CORRECTED: Use equals filter
-                conversion_metric_id: 'QSwNRK' // CORRECTED: Use Placed Order metric ID
-              }
-            }
-          })
-        })
+      if (!result) {
+        throw new Error(`Failed to get analytics after ${maxRetries} retries`)
+      }
         
         // Parse Campaign Values Report response structure
         if (result.data?.attributes?.results && Array.isArray(result.data.attributes.results)) {
@@ -391,14 +410,14 @@ export class KlaviyoAPI {
       const flowId = flowIds[i]
       console.log(`📊 FLOWS: Getting analytics for flow ${flowId} (${i + 1}/${flowIds.length})`)
       
-      // Add delay to avoid rate limiting (except for first request)
-      if (i > 0) {
-        console.log(`⏳ FLOWS: Waiting 20 seconds to avoid rate limits...`)
-        await new Promise(resolve => setTimeout(resolve, 20000))
-      }
+      // Smart rate limiting - retry with delays only when needed
+      let result = null
+      let retryCount = 0
+      const maxRetries = 3
       
-      try {
-        const result = await this.makeRequest('/flow-values-reports', {
+      while (retryCount <= maxRetries) {
+        try {
+          result = await this.makeRequest('/flow-values-reports', {
           method: 'POST',
           body: JSON.stringify({
             data: {
@@ -428,6 +447,25 @@ export class KlaviyoAPI {
             }
           })
         })
+          
+          // Success - break out of retry loop
+          break
+          
+        } catch (error: any) {
+          if (error.message.includes('429') && retryCount < maxRetries) {
+            retryCount++
+            const waitTime = retryCount * 20 // 20, 40, 60 seconds
+            console.log(`⏳ FLOWS: Rate limited - waiting ${waitTime} seconds before retry ${retryCount}/${maxRetries}`)
+            await new Promise(resolve => setTimeout(resolve, waitTime * 1000))
+          } else {
+            throw error // Re-throw if not rate limit or max retries reached
+          }
+        }
+      }
+      
+      if (!result) {
+        throw new Error(`Failed to get flow analytics after ${maxRetries} retries`)
+      }
         
         // Parse Flow Values Report response structure (same as campaigns)
         if (result.data?.attributes?.results && Array.isArray(result.data.attributes.results)) {
@@ -447,7 +485,7 @@ export class KlaviyoAPI {
         }
         
       } catch (error: any) {
-        console.log(`⚠️ FLOWS: Failed to get analytics for ${flowId}: ${error.message}`)
+        console.log(`⚠️ FLOWS: Failed to get analytics for ${flowId} after retries: ${error.message}`)
         // Continue with other flows
       }
     }

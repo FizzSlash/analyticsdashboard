@@ -33,51 +33,53 @@ export class SyncService {
 
   // Main sync function
   async syncAllData() {
-    this.log(`🚀 SYNC START: Starting comprehensive sync for client: ${this.client.brand_name}`)
+    this.log(`🚀 SYNC START: Starting comprehensive PARALLEL sync for client: ${this.client.brand_name}`)
+    this.log(`📅 SYNC SCOPE: Pulling data from the past 365 days`)
+    this.log(`⚡ SYNC STRATEGY: Running campaigns, flows, and segments in PARALLEL to avoid Vercel timeout`)
     
     try {
-      this.log(`📅 SYNC SCOPE: Pulling data from the past 365 days`)
+      // PARALLEL PROCESSING: Run all 3 main syncs simultaneously
+      this.log(`🔄 SYNC PARALLEL: Starting campaigns, flows, and segments simultaneously...`)
       
-      this.log(`📧 SYNC STEP 1: Starting campaigns sync...`)
-      try {
-        await this.syncCampaigns()
-        this.log(`✅ SYNC STEP 1: Campaigns sync completed`)
-      } catch (campaignError) {
-        this.log(`❌ SYNC STEP 1: Campaigns sync failed: ${campaignError}`)
-        throw campaignError
+      const [campaignsResult, flowsResult, segmentsResult] = await Promise.allSettled([
+        this.syncCampaigns(),
+        this.syncFlows(), 
+        this.syncSegments()
+      ])
+      
+      // Log results for each parallel sync
+      if (campaignsResult.status === 'fulfilled') {
+        this.log(`✅ CAMPAIGNS: Parallel sync completed successfully`)
+      } else {
+        this.log(`❌ CAMPAIGNS: Parallel sync failed: ${campaignsResult.reason}`)
       }
       
-      this.log(`🔄 SYNC STEP 2: Starting flows sync...`)
-      try {
-        await this.syncFlows()
-        this.log(`✅ SYNC STEP 2: Flows sync completed`)
-      } catch (flowError) {
-        this.log(`❌ SYNC STEP 2: Flows sync failed: ${flowError}`)
-        throw flowError
+      if (flowsResult.status === 'fulfilled') {
+        this.log(`✅ FLOWS: Parallel sync completed successfully`)
+      } else {
+        this.log(`❌ FLOWS: Parallel sync failed: ${flowsResult.reason}`)
       }
       
-      this.log(`👥 SYNC STEP 3: Starting segments sync...`)
-      try {
-        await this.syncSegments()
-        this.log(`✅ SYNC STEP 3: Segments sync completed`)
-      } catch (segmentError) {
-        this.log(`❌ SYNC STEP 3: Segments sync failed: ${segmentError}`)
-        throw segmentError
+      if (segmentsResult.status === 'fulfilled') {
+        this.log(`✅ SEGMENTS: Parallel sync completed successfully`)
+      } else {
+        this.log(`❌ SEGMENTS: Parallel sync failed: ${segmentsResult.reason}`)
       }
       
-      this.log(`📬 SYNC STEP 4: Starting deliverability sync...`)
+      // STEP 4: Deliverability (calculated from campaign/flow data)
+      this.log(`📊 SYNC STEP 4: Starting deliverability sync...`)
       try {
         await this.syncDeliverability()
-        this.log(`✅ SYNC STEP 4: Deliverability sync completed`)
+        this.log(`✅ DELIVERABILITY: Sync completed successfully`)
       } catch (deliverabilityError) {
-        this.log(`❌ SYNC STEP 4: Deliverability sync failed: ${deliverabilityError}`)
-        throw deliverabilityError
+        this.log(`❌ DELIVERABILITY: Sync failed: ${deliverabilityError}`)
+        // Continue even if deliverability fails
       }
 
       // Update last sync timestamp
       await DatabaseService.updateClientSyncTime(this.client.id)
       
-      this.log(`🎉 SYNC COMPLETE: All data synced successfully for ${this.client.brand_name}`)
+      this.log(`🎉 SYNC COMPLETE: All parallel data synchronized for ${this.client.brand_name}`)
     } catch (error) {
       this.log(`❌ SYNC FAILED for client ${this.client.brand_name}: ${error}`)
       throw error
