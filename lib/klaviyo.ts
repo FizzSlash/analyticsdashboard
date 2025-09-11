@@ -71,9 +71,9 @@ export class KlaviyoAPI {
     let endpoint = `/campaigns/${campaignId}/campaign-messages`
     const params = new URLSearchParams()
     
-    // Request ALL available fields for maximum data extraction
+    // Request only VALID fields (remove invalid template.subject)
     params.set('fields[campaign-message]', 'definition,send_times,id,created_at,updated_at')
-    params.set('fields[template]', 'name,html,subject')
+    params.set('fields[template]', 'name,html')
     params.set('fields[image]', 'image_url,name')
     params.set('include', 'template,image')
     
@@ -310,42 +310,11 @@ export class KlaviyoAPI {
           type: 'campaign-values-report',
           attributes: {
             statistics: [
-              // DELIVERY METRICS
-              'bounces',
-              'bounces_unique', 
-              'deliveries',
-              'deliveries_unique',
-              'recipients',
-              'sends',
-              
-              // ENGAGEMENT METRICS  
-              'opens',
-              'opens_unique',
-              'clicks', 
-              'clicks_unique',
-              'click_to_open_rate',
-              'open_rate',
-              'click_rate',
-              
-              // NEGATIVE METRICS
-              'spam_complaints',
-              'unsubscribes',
-              'bounce_rate',
-              'unsubscribe_rate',
-              'spam_complaint_rate',
-              
-              // REVENUE METRICS
-              'revenue',
-              'revenue_per_recipient',
-              'average_order_value',
-              'orders',
-              'conversion_rate',
-              
-              // ADVANCED METRICS
-              'forwards',
-              'forwards_unique', 
-              'reply_rate',
-              'deliverability_rate'
+              // Use only BASIC valid statistics to start
+              'unique_opens',
+              'unique_clicks', 
+              'total_opens',
+              'total_clicks'
             ],
             timeframe: {
               key: 'custom',
