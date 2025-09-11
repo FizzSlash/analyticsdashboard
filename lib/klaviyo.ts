@@ -360,46 +360,51 @@ export class KlaviyoAPI {
     
     console.log(`📅 FLOWS: Dynamic timeframe - ${startDate} to ${endDate} (365 days)`)
     
-    return this.makeRequest('/flow-values-reports', {
-      method: 'POST',
-      body: JSON.stringify({
-        data: {
-          type: 'flow-values-report',
-          attributes: {
-            statistics: [
-              // FLOW PERFORMANCE
-              'opens',
-              'opens_unique',
-              'clicks', 
-              'clicks_unique',
-              'deliveries',
-              'bounces',
-              'open_rate',
-              'click_rate',
-              'bounce_rate',
-              
-              // FLOW SPECIFIC
-              'flow_completions',
-              'flow_completion_rate', 
-              'flow_exits',
-              'flow_exit_rate',
-              
-              // REVENUE
-              'revenue',
-              'orders',
-              'conversion_rate',
-              'average_order_value',
-              'revenue_per_recipient'
-            ],
-            timeframe: {
-              start: startDate,
-              end: endDate
-            },
-            filter: `any(flow_id,["${flowIds.join('","')}"])`
-          }
+    // SOLUTION: Call API for each flow individually (same pattern as campaigns)
+    const results = []
+    
+    for (const flowId of flowIds) {
+      console.log(`📊 FLOWS: Getting analytics for flow ${flowId}`)
+      
+      try {
+        const result = await this.makeRequest('/flow-values-reports', {
+          method: 'POST',
+          body: JSON.stringify({
+            data: {
+              type: 'flow-values-report',
+              attributes: {
+                statistics: [
+                  // CORRECTED: Only valid Flow statistics (verified working)
+                  'opens_unique',
+                  'clicks_unique',
+                  'opens',
+                  'clicks',
+                  'spam_complaints'
+                ],
+                timeframe: {
+                  start: startDate,
+                  end: endDate
+                },
+                filter: `equals(flow_id,"${flowId}")`, // CORRECTED: Use equals filter
+                conversion_metric_id: 'QSwNRK' // REQUIRED: Placed Order metric
+              }
+            }
+          })
+        })
+        
+        if (result.data) {
+          results.push(...result.data)
         }
-      })
-    })
+        
+        console.log(`✅ FLOWS: Got analytics for ${flowId} - ${result.data?.length || 0} rows`)
+        
+      } catch (error: any) {
+        console.log(`⚠️ FLOWS: Failed to get analytics for ${flowId}: ${error.message}`)
+        // Continue with other flows
+      }
+    }
+    
+    return { data: results }
   }
 
   // Flow Series Report - TIME TRENDS (365 DAYS)
