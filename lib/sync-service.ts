@@ -224,7 +224,7 @@ export class SyncService {
 
       // Get detailed list data and growth metrics
       console.log('📋 AUDIENCE: Fetching all lists for comprehensive analysis...')
-      const listsResponse = await this.klaviyo.getLists(50)
+      const listsResponse = await this.klaviyo.getLists()
       console.log(`📋 AUDIENCE: Found ${listsResponse.data?.length || 0} lists`)
       
       let totalSubscribed = 0
@@ -240,7 +240,7 @@ export class SyncService {
           let hasMore = true
           
           while (hasMore) {
-            const listProfilesResponse = await this.klaviyo.getListProfiles(list.id, 50, cursor)
+            const listProfilesResponse = await this.klaviyo.getListProfiles(list.id, cursor)
             const profiles = listProfilesResponse.data || []
             listProfileCount += profiles.length
             
