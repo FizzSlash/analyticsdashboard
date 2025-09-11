@@ -39,24 +39,23 @@ export class KlaviyoAPI {
   }
 
   // Get Campaigns
-  async getCampaigns(pageSize: number = 20, cursor?: string) {
-    // Use smaller page size and proper URL encoding
+  async getCampaigns(cursor?: string) {
+    // Klaviyo uses cursor-based pagination ONLY - no page size parameter!
     let endpoint = `/campaigns`
-    const params: string[] = []
+    const params = new URLSearchParams()
     
-    // Add pagination parameters with proper encoding
-    if (pageSize) {
-      params.push(`page%5Bsize%5D=${pageSize}`) // URL encoded page[size]
-    }
+    // Only add cursor for pagination - Klaviyo doesn't support page[size]
     if (cursor) {
-      params.push(`page%5Bcursor%5D=${encodeURIComponent(cursor)}`) // URL encoded page[cursor]
+      params.set('page[cursor]', cursor)
     }
     
-    if (params.length > 0) {
-      endpoint += `?${params.join('&')}`
+    const queryString = params.toString()
+    if (queryString) {
+      endpoint += `?${queryString}`
     }
     
     console.log(`📧 CAMPAIGNS API: Full endpoint: ${endpoint}`)
+    console.log(`📧 CAMPAIGNS API: Query params:`, queryString)
     return this.makeRequest(endpoint)
   }
 
@@ -71,20 +70,18 @@ export class KlaviyoAPI {
   }
 
   // Get Flows
-  async getFlows(pageSize: number = 20, cursor?: string) {
+  async getFlows(cursor?: string) {
+    // Klaviyo uses cursor-based pagination ONLY
     let endpoint = `/flows`
-    const params: string[] = []
+    const params = new URLSearchParams()
     
-    // Add pagination parameters with proper encoding
-    if (pageSize) {
-      params.push(`page%5Bsize%5D=${pageSize}`) // URL encoded page[size]
-    }
     if (cursor) {
-      params.push(`page%5Bcursor%5D=${encodeURIComponent(cursor)}`) // URL encoded page[cursor]
+      params.set('page[cursor]', cursor)
     }
     
-    if (params.length > 0) {
-      endpoint += `?${params.join('&')}`
+    const queryString = params.toString()
+    if (queryString) {
+      endpoint += `?${queryString}`
     }
     
     console.log(`🔄 FLOWS API: Full endpoint: ${endpoint}`)
@@ -139,23 +136,20 @@ export class KlaviyoAPI {
   }
 
   // Get Profiles
-  async getProfiles(pageSize: number = 20, cursor?: string, filter?: string) {
+  async getProfiles(cursor?: string, filter?: string) {
     let endpoint = `/profiles`
-    const params: string[] = []
+    const params = new URLSearchParams()
     
-    // Add pagination parameters with proper encoding
-    if (pageSize) {
-      params.push(`page%5Bsize%5D=${pageSize}`)
-    }
     if (cursor) {
-      params.push(`page%5Bcursor%5D=${encodeURIComponent(cursor)}`)
+      params.set('page[cursor]', cursor)
     }
     if (filter) {
-      params.push(`filter=${encodeURIComponent(filter)}`)
+      params.set('filter', filter)
     }
     
-    if (params.length > 0) {
-      endpoint += `?${params.join('&')}`
+    const queryString = params.toString()
+    if (queryString) {
+      endpoint += `?${queryString}`
     }
     
     console.log(`👥 PROFILES API: Full endpoint: ${endpoint}`)
@@ -163,19 +157,17 @@ export class KlaviyoAPI {
   }
 
   // Get Lists
-  async getLists(pageSize: number = 20, cursor?: string) {
+  async getLists(cursor?: string) {
     let endpoint = `/lists`
-    const params: string[] = []
+    const params = new URLSearchParams()
     
-    if (pageSize) {
-      params.push(`page%5Bsize%5D=${pageSize}`)
-    }
     if (cursor) {
-      params.push(`page%5Bcursor%5D=${encodeURIComponent(cursor)}`)
+      params.set('page[cursor]', cursor)
     }
     
-    if (params.length > 0) {
-      endpoint += `?${params.join('&')}`
+    const queryString = params.toString()
+    if (queryString) {
+      endpoint += `?${queryString}`
     }
     
     console.log(`📋 LISTS API: Full endpoint: ${endpoint}`)
@@ -183,19 +175,17 @@ export class KlaviyoAPI {
   }
 
   // Get List Profiles
-  async getListProfiles(listId: string, pageSize: number = 20, cursor?: string) {
+  async getListProfiles(listId: string, cursor?: string) {
     let endpoint = `/lists/${listId}/profiles`
-    const params: string[] = []
+    const params = new URLSearchParams()
     
-    if (pageSize) {
-      params.push(`page%5Bsize%5D=${pageSize}`)
-    }
     if (cursor) {
-      params.push(`page%5Bcursor%5D=${encodeURIComponent(cursor)}`)
+      params.set('page[cursor]', cursor)
     }
     
-    if (params.length > 0) {
-      endpoint += `?${params.join('&')}`
+    const queryString = params.toString()
+    if (queryString) {
+      endpoint += `?${queryString}`
     }
     
     console.log(`📋 LIST PROFILES API: Full endpoint: ${endpoint}`)

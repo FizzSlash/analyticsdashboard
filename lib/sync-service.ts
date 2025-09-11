@@ -80,7 +80,7 @@ export class SyncService {
         pageCount++
         console.log(`📄 CAMPAIGNS: Fetching page ${pageCount}...`)
         
-        const response = await this.klaviyo.getCampaigns(20, cursor)
+        const response = await this.klaviyo.getCampaigns(cursor)
         const campaigns = response.data || []
         
         // Filter campaigns to past year only
@@ -163,7 +163,7 @@ export class SyncService {
         pageCount++
         console.log(`📄 FLOWS: Fetching page ${pageCount}...`)
         
-        const response = await this.klaviyo.getFlows(50, cursor)
+        const response = await this.klaviyo.getFlows(cursor)
         const flows = response.data || []
         
         // Filter to only active/live flows
@@ -218,7 +218,7 @@ export class SyncService {
     try {
       // Get comprehensive profile data
       console.log('👥 AUDIENCE: Fetching total profile count...')
-      const profilesResponse = await this.klaviyo.getProfiles(1)
+      const profilesResponse = await this.klaviyo.getProfiles()
       const totalProfiles = profilesResponse.data?.length || 0
       console.log(`👥 AUDIENCE: Total profiles: ${totalProfiles}`)
 
