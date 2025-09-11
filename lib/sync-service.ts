@@ -165,8 +165,8 @@ export class SyncService {
       
       this.log(`📈 CAMPAIGNS: Total campaigns to process: ${allCampaigns.length}`)
 
-      // Get comprehensive analytics for all campaigns using BATCHED Reporting API
-      this.log(`📊 CAMPAIGNS: Fetching analytics for ${allCampaigns.length} campaigns using BATCHED Campaign Values Report API`)
+      // Get comprehensive analytics for all campaigns using BLUEPRINT Reporting API
+      this.log(`📊 CAMPAIGNS: Using Blueprint approach - single call for ALL campaigns`)
       const campaignIds = allCampaigns.map(c => c.id)
       
       let campaignAnalytics: any = {}
@@ -194,20 +194,23 @@ export class SyncService {
         campaignAnalytics = {}
       }
 
-      // Process each campaign with messages (using correct fields)
+      // Process each campaign - get details and combine with analytics (BLUEPRINT APPROACH)
       for (let i = 0; i < allCampaigns.length; i++) {
         const campaign = allCampaigns[i]
         this.log(`🔄 CAMPAIGNS: Processing campaign ${i + 1}/${allCampaigns.length} - ${campaign.attributes?.name || 'Unnamed'}`)
         
         try {
-          // Get campaign messages with correct fields and maximum data extraction
+          // Get campaign details with messages (BLUEPRINT APPROACH)
+          let campaignDetails: any = null
           let messages: any[] = []
           let imageUrl: string | null = null
-          let messagesResponse: any = null
           
           try {
+            this.log(`📧 CAMPAIGNS: Getting campaign details for ${campaign.id}`)
+            campaignDetails = await this.klaviyo.getCampaign(campaign.id)
+            
             this.log(`📩 CAMPAIGNS: Fetching messages for campaign ${campaign.id}`)
-            messagesResponse = await this.klaviyo.getCampaignMessages(campaign.id)
+            const messagesResponse = await this.klaviyo.getCampaignMessages(campaign.id)
             messages = messagesResponse.data || []
             this.log(`📩 CAMPAIGNS: Found ${messages.length} messages`)
             
@@ -220,39 +223,36 @@ export class SyncService {
               }
             }
           } catch (error) {
-            this.log(`⚠️ CAMPAIGNS: Could not fetch messages for campaign ${campaign.id}: ${error}`)
+            this.log(`⚠️ CAMPAIGNS: Could not fetch details for campaign ${campaign.id}: ${error}`)
           }
 
-          // Use analytics from Campaign Values Report API (MAXIMUM DATA)
+          // Use analytics from Blueprint API call (ALL fields from your valid list)
           const analytics = campaignAnalytics[campaign.id] || {}
-          this.log(`📊 CAMPAIGNS: Using MAXIMUM analytics data - Opens: ${analytics.opens_unique || 0}, Clicks: ${analytics.clicks_unique || 0}, Revenue: ${analytics.revenue || 0}`)
+          this.log(`📊 CAMPAIGNS: Using Blueprint analytics - Opens: ${analytics.opens || 0}, Clicks: ${analytics.clicks || 0}, Revenue: ${analytics.conversion_value || 0}`)
           
           const campaignData = {
             ...transformCampaignData(campaign, messages),
             client_id: this.client.id,
-            // ALL AVAILABLE CAMPAIGN STATISTICS (using valid API fields)
-            // Basic counts
+            // Map ALL analytics fields from Blueprint API response
             recipients_count: analytics.recipients || 0,
-            delivered_count: analytics.delivered || 0, // API returns 'delivered'
+            delivered_count: analytics.delivered || 0,
             opened_count: analytics.opens || 0,
             opens_unique: analytics.opens_unique || 0,
             clicked_count: analytics.clicks || 0,
             clicks_unique: analytics.clicks_unique || 0,
-            bounced_count: analytics.bounced || 0, // API returns 'bounced'
+            bounced_count: analytics.bounced || 0,
             bounced_or_failed: analytics.bounced_or_failed || 0,
             failed_count: analytics.failed || 0,
             unsubscribed_count: analytics.unsubscribes || 0,
             unsubscribe_uniques: analytics.unsubscribe_uniques || 0,
             spam_complaints: analytics.spam_complaints || 0,
-            // Conversions and revenue
             conversions: analytics.conversions || 0,
             conversion_uniques: analytics.conversion_uniques || 0,
             conversion_value: analytics.conversion_value || 0,
-            revenue: analytics.conversion_value || 0, // Map conversion_value to revenue
-            orders_count: analytics.conversions || 0, // Map conversions to orders
+            revenue: analytics.conversion_value || 0,
+            orders_count: analytics.conversions || 0,
             revenue_per_recipient: analytics.revenue_per_recipient || 0,
             average_order_value: analytics.average_order_value || 0,
-            // Rates
             open_rate: analytics.open_rate || 0,
             click_rate: analytics.click_rate || 0,
             click_to_open_rate: analytics.click_to_open_rate || 0,
@@ -263,7 +263,6 @@ export class SyncService {
             unsubscribe_rate: analytics.unsubscribe_rate || 0,
             spam_complaint_rate: analytics.spam_complaint_rate || 0,
             conversion_rate: analytics.conversion_rate || 0,
-            // Image data
             image_url: imageUrl
           }
 
@@ -272,7 +271,6 @@ export class SyncService {
           this.log(`✅ CAMPAIGNS: Campaign ${i + 1} saved successfully`)
         } catch (error) {
           this.log(`❌ CAMPAIGNS: Error processing campaign ${campaign.id}: ${error}`)
-          // Continue processing other campaigns instead of stopping
         }
       }
 
