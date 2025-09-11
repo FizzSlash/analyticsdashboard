@@ -102,6 +102,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setProfile(null)
           }
           
+          // CRITICAL FIX: Always set loading to false after auth state change
+          console.log('AUTH PROVIDER: Setting loading to false after auth state change')
           setLoading(false)
         } catch (error) {
           console.error('AUTH PROVIDER: Error handling auth state change:', error)
