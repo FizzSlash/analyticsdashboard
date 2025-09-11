@@ -303,32 +303,51 @@ export class KlaviyoAPI {
     
     console.log(`📅 CAMPAIGNS: Dynamic timeframe - ${startDate} to ${endDate} (365 days)`)
     
-    return this.makeRequest('/campaign-values-reports', {
-      method: 'POST',
-      body: JSON.stringify({
-        data: {
-          type: 'campaign-values-report',
-          attributes: {
-            statistics: [
-              // CORRECTED: Use valid Klaviyo statistics names
-              'opens_unique',
-              'clicks_unique', 
-              'opens',
-              'clicks',
-              'sends',
-              'deliveries_unique',
-              'bounces_unique',
-              'spam_complaints'
-            ],
-            timeframe: {
-              start: startDate,
-              end: endDate
-            },
-            filter: `any(campaign_id,["${campaignIds.join('","')}"])`
-          }
+    // SOLUTION: Call API for each campaign individually (equals filter only supports single values)
+    const results = []
+    
+    for (const campaignId of campaignIds) {
+      console.log(`📊 CAMPAIGNS: Getting analytics for campaign ${campaignId}`)
+      
+      try {
+        const result = await this.makeRequest('/campaign-values-reports', {
+          method: 'POST',
+          body: JSON.stringify({
+            data: {
+              type: 'campaign-values-report',
+              attributes: {
+                statistics: [
+                  // VERIFIED: Valid Klaviyo statistics names
+                  'opens_unique',
+                  'clicks_unique', 
+                  'opens',
+                  'clicks',
+                  'spam_complaints'
+                ],
+                timeframe: {
+                  start: startDate,
+                  end: endDate
+                },
+                filter: `equals(campaign_id,"${campaignId}")`, // CORRECTED: Use equals filter
+                conversion_metric_id: 'QSwNRK' // CORRECTED: Use Placed Order metric ID
+              }
+            }
+          })
+        })
+        
+        if (result.data) {
+          results.push(...result.data)
         }
-      })
-    })
+        
+        console.log(`✅ CAMPAIGNS: Got analytics for ${campaignId} - ${result.data?.length || 0} rows`)
+        
+      } catch (error: any) {
+        console.log(`⚠️ CAMPAIGNS: Failed to get analytics for ${campaignId}: ${error.message}`)
+        // Continue with other campaigns
+      }
+    }
+    
+    return { data: results }
   }
 
   // Flow Analytics Report - MAXIMUM DATA EXTRACTION (365 DAYS)
