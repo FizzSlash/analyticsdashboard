@@ -76,15 +76,6 @@ CREATE TABLE IF NOT EXISTS deliverability_metrics (
     UNIQUE(client_id, date_recorded)
 );
 
--- Update existing records to use date_recorded instead of date (if needed)
-UPDATE audience_metrics 
-SET date_recorded = date::date 
-WHERE date_recorded IS NULL AND date IS NOT NULL;
-
-UPDATE revenue_attribution 
-SET date_recorded = date::date 
-WHERE date_recorded IS NULL AND date IS NOT NULL;
-
 -- Create missing indexes
 CREATE INDEX IF NOT EXISTS idx_campaign_metrics_client_date ON campaign_metrics(client_id, send_date DESC);
 CREATE INDEX IF NOT EXISTS idx_flow_metrics_client_date ON flow_metrics(client_id, date_start DESC);
