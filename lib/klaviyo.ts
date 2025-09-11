@@ -317,16 +317,16 @@ export class KlaviyoAPI {
 
   // REPORTING API METHODS
   
-  // Campaign Analytics Report - BATCHED APPROACH (365 DAYS)
+  // Campaign Analytics Report - BLUEPRINT APPROACH (ALL campaigns in one call)
   async getCampaignAnalytics(campaignIds: string[], conversionMetricId: string | null = null) {
-    console.log(`📊 CAMPAIGNS: Calling Campaign Values Report API for ${campaignIds.length} campaigns - BATCHED APPROACH`)
+    console.log(`📊 CAMPAIGNS: Using Blueprint approach - ALL campaigns in single call`)
     
-    // Calculate dynamic 365-day timeframe
+    // Calculate dynamic 365-day timeframe for logging
     const endDate = new Date().toISOString().split('T')[0]
     const startDate = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
     
     console.log(`📅 CAMPAIGNS: Dynamic timeframe - ${startDate} to ${endDate} (365 days)`)
-    console.log(`🔄 CAMPAIGNS: BATCHED CALL - Getting analytics for ALL ${campaignIds.length} campaigns in single API call`)
+    console.log(`🔄 CAMPAIGNS: Single call for ALL campaigns (no individual filtering)`)
     console.log(`🎯 CAMPAIGNS: Using conversion metric ID: ${conversionMetricId || 'none'}`)
     
     try {
@@ -335,16 +335,38 @@ export class KlaviyoAPI {
           type: 'campaign-values-report',
           attributes: {
             statistics: [
-              // Core engagement stats only (to minimize rate limit impact)
-              'opens', 'opens_unique', 'open_rate',
-              'clicks', 'clicks_unique', 'click_rate', 'click_to_open_rate',
-              'delivered', 'delivery_rate',
-              'bounced', 'bounce_rate',
-              'conversions', 'conversion_rate', 'conversion_value',
-              'recipients', 'revenue_per_recipient'
+              // ALL valid statistics from your list:
+              'average_order_value',
+              'bounce_rate', 
+              'bounced',
+              'bounced_or_failed',
+              'bounced_or_failed_rate',
+              'click_rate',
+              'click_to_open_rate', 
+              'clicks',
+              'clicks_unique',
+              'conversion_rate',
+              'conversion_uniques',
+              'conversion_value',
+              'conversions',
+              'delivered',
+              'delivery_rate',
+              'failed',
+              'failed_rate',
+              'open_rate',
+              'opens',
+              'opens_unique',
+              'recipients',
+              'revenue_per_recipient',
+              'spam_complaint_rate',
+              'spam_complaints',
+              'unsubscribe_rate',
+              'unsubscribe_uniques',
+              'unsubscribes'
             ],
-            timeframe: { start: startDate, end: endDate },
-            filter: `any(campaign_id,["${campaignIds.join('","')}"])` // BATCH ALL CAMPAIGNS
+            timeframe: {
+              key: 'last_365_days'  // Use predefined timeframe key
+            }
           }
         }
       }
@@ -359,10 +381,10 @@ export class KlaviyoAPI {
         body: JSON.stringify(requestBody)
       })
       
-      console.log(`✅ CAMPAIGNS: BATCHED API call successful - got data for ${campaignIds.length} campaigns`)
+      console.log(`✅ CAMPAIGNS: Blueprint approach successful - got data for ALL campaigns`)
       console.log(`📊 CAMPAIGNS: Response structure:`, JSON.stringify(result, null, 2))
       
-      // Parse the batched response
+      // Parse the response (should contain data for all campaigns)
       const results = []
       if (result.data?.attributes?.results && Array.isArray(result.data.attributes.results)) {
         for (const item of result.data.attributes.results) {
@@ -371,18 +393,17 @@ export class KlaviyoAPI {
             attributes: item.statistics || {}
           })
         }
-        console.log(`📈 CAMPAIGNS: Processed ${results.length} campaign analytics from batched response`)
+        console.log(`📈 CAMPAIGNS: Processed ${results.length} campaigns from blueprint response`)
       } else {
-        console.log(`⚠️ CAMPAIGNS: Unexpected response structure from batched call`)
+        console.log(`⚠️ CAMPAIGNS: Unexpected response structure`)
       }
       
       return { data: results }
       
     } catch (error: any) {
-      console.log(`❌ CAMPAIGNS: Batched API call failed: ${error.message}`)
-      console.log(`🔄 CAMPAIGNS: Falling back to individual calls...`)
+      console.log(`❌ CAMPAIGNS: Blueprint approach failed: ${error.message}`)
       
-      // Fallback to individual calls with much longer delays
+      // Fallback to individual calls if needed
       return this.getCampaignAnalyticsIndividual(campaignIds, conversionMetricId)
     }
   }
