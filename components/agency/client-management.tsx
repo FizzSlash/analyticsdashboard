@@ -130,25 +130,43 @@ export function ClientManagement({ agency, clients: initialClients }: ClientMana
       console.log('Step 7: Client data prepared:', clientData)
 
       if (editingClient) {
-        // Update existing client
-        const updateData: any = { ...clientData }
+        // Update existing client via API
+        console.log('Step 8: Updating existing client...')
         
-        // Only update API key if provided
-        if (formData.klaviyo_api_key) {
-          updateData.klaviyo_api_key = encryptApiKey(formData.klaviyo_api_key)
+        const updatePayload: any = {
+          brand_name: formData.brand_name,
+          brand_slug: cleanSlug,
+          agency_id: agency.id,
+          logo_url: formData.logo_url || null,
+          primary_color: formData.primary_color,
+          secondary_color: formData.secondary_color,
+          background_image_url: formData.background_image_url || null
         }
-
-        const { error } = await supabase
-          .from('clients')
-          .update(updateData)
-          .eq('id', editingClient.id)
-
-        if (error) throw error
+        
+        // Only include API key if provided
+        if (formData.klaviyo_api_key) {
+          updatePayload.klaviyo_api_key = formData.klaviyo_api_key
+        }
+        
+        const response = await fetch(`/api/clients/${editingClient.id}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(updatePayload)
+        })
+        
+        const result = await response.json()
+        console.log('Step 9: Update API response:', result)
+        
+        if (!response.ok) {
+          throw new Error(result.error || 'Failed to update client')
+        }
 
         // Update local state
         setClients(clients.map(c => 
           c.id === editingClient.id 
-            ? { ...c, ...clientData, klaviyo_api_key: c.klaviyo_api_key }
+            ? { ...c, ...clientData }
             : c
         ))
 
@@ -218,12 +236,14 @@ export function ClientManagement({ agency, clients: initialClients }: ClientMana
 
     setLoading(true)
     try {
-      const { error } = await supabase
-        .from('clients')
-        .delete()
-        .eq('id', client.id)
+      const response = await fetch(`/api/clients/${client.id}`, {
+        method: 'DELETE'
+      })
 
-      if (error) throw error
+      if (!response.ok) {
+        const result = await response.json()
+        throw new Error(result.error || 'Failed to delete client')
+      }
 
       setClients(clients.filter(c => c.id !== client.id))
       setSuccess('Client deleted successfully!')
