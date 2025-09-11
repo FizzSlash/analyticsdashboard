@@ -9,65 +9,122 @@ export class SyncService {
 
   constructor(client: Client) {
     this.client = client
-    // Decrypt the API key before using it
-    const decryptedApiKey = decryptApiKey(client.klaviyo_api_key)
-    this.klaviyo = new KlaviyoAPI(decryptedApiKey)
+    console.log(`🔑 SYNC INIT: Initializing sync for ${client.brand_name}`)
+    
+    try {
+      // Decrypt the API key before using it
+      console.log(`🔓 SYNC INIT: Decrypting Klaviyo API key...`)
+      const decryptedApiKey = decryptApiKey(client.klaviyo_api_key)
+      console.log(`✅ SYNC INIT: API key decrypted successfully (starts with: ${decryptedApiKey.substring(0, 6)}...)`)
+      
+      this.klaviyo = new KlaviyoAPI(decryptedApiKey)
+      console.log(`🎯 SYNC INIT: Klaviyo API client initialized`)
+    } catch (error) {
+      console.error(`❌ SYNC INIT: Failed to initialize Klaviyo API:`, error)
+      throw error
+    }
   }
 
   // Main sync function
   async syncAllData() {
-    console.log(`Starting sync for client: ${this.client.brand_name}`)
+    console.log(`🚀 SYNC START: Starting comprehensive sync for client: ${this.client.brand_name}`)
     
     try {
-      await Promise.all([
-        this.syncCampaigns(),
-        this.syncFlows(),
-        this.syncAudienceMetrics(),
-        this.syncRevenueAttribution()
-      ])
+      console.log(`📅 SYNC SCOPE: Pulling data from the past 365 days`)
+      
+      console.log(`📧 SYNC STEP 1: Starting campaigns sync...`)
+      await this.syncCampaigns()
+      console.log(`✅ SYNC STEP 1: Campaigns sync completed`)
+      
+      console.log(`🔄 SYNC STEP 2: Starting flows sync...`)
+      await this.syncFlows()
+      console.log(`✅ SYNC STEP 2: Flows sync completed`)
+      
+      console.log(`👥 SYNC STEP 3: Starting audience metrics sync...`)
+      await this.syncAudienceMetrics()
+      console.log(`✅ SYNC STEP 3: Audience metrics sync completed`)
+      
+      console.log(`💰 SYNC STEP 4: Starting revenue attribution sync...`)
+      await this.syncRevenueAttribution()
+      console.log(`✅ SYNC STEP 4: Revenue attribution sync completed`)
 
       // Update last sync timestamp
       await DatabaseService.updateClientSyncTime(this.client.id)
       
-      console.log(`Sync completed for client: ${this.client.brand_name}`)
+      console.log(`🎉 SYNC COMPLETE: All data synced successfully for ${this.client.brand_name}`)
     } catch (error) {
-      console.error(`Sync failed for client ${this.client.brand_name}:`, error)
+      console.error(`❌ SYNC FAILED for client ${this.client.brand_name}:`, error)
       throw error
     }
   }
 
   // Sync campaign data
   async syncCampaigns() {
-    console.log('Syncing campaigns...')
+    console.log('📧 CAMPAIGNS: Starting campaigns sync...')
     
     try {
+      // Calculate date filter for past year
+      const oneYearAgo = new Date()
+      oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1)
+      const dateFilter = oneYearAgo.toISOString()
+      
+      console.log(`📅 CAMPAIGNS: Filtering campaigns from ${oneYearAgo.toDateString()} onwards`)
+      
       let allCampaigns: any[] = []
       let cursor: string | undefined
       let hasMore = true
+      let pageCount = 0
 
-      // Fetch all campaigns with pagination
+      // Fetch campaigns with pagination (limited to past year)
       while (hasMore) {
+        pageCount++
+        console.log(`📄 CAMPAIGNS: Fetching page ${pageCount}...`)
+        
         const response = await this.klaviyo.getCampaigns(50, cursor)
-        allCampaigns = [...allCampaigns, ...response.data]
+        const campaigns = response.data || []
+        
+        // Filter campaigns to past year only
+        const recentCampaigns = campaigns.filter((campaign: any) => {
+          const sendTime = campaign.attributes?.send_time
+          return !sendTime || new Date(sendTime) >= oneYearAgo
+        })
+        
+        allCampaigns = [...allCampaigns, ...recentCampaigns]
+        console.log(`📊 CAMPAIGNS: Page ${pageCount} - Found ${campaigns.length} campaigns, ${recentCampaigns.length} within past year`)
         
         cursor = response.links?.next ? new URL(response.links.next).searchParams.get('page[cursor]') || undefined : undefined
         hasMore = !!cursor
+        
+        // Stop if we've gone back more than a year
+        if (campaigns.length > 0 && campaigns.every((c: any) => c.attributes?.send_time && new Date(c.attributes.send_time) < oneYearAgo)) {
+          console.log(`📅 CAMPAIGNS: Reached campaigns older than 1 year, stopping pagination`)
+          break
+        }
       }
+      
+      console.log(`📈 CAMPAIGNS: Total campaigns to process: ${allCampaigns.length}`)
 
       // Process each campaign
-      for (const campaign of allCampaigns) {
+      for (let i = 0; i < allCampaigns.length; i++) {
+        const campaign = allCampaigns[i]
+        console.log(`🔄 CAMPAIGNS: Processing campaign ${i + 1}/${allCampaigns.length} - ${campaign.attributes?.name || 'Unnamed'}`)
+        
         try {
           // Get campaign messages for subject line
           let messages: any[] = []
           try {
+            console.log(`📩 CAMPAIGNS: Fetching messages for campaign ${campaign.id}`)
             const messagesResponse = await this.klaviyo.getCampaignMessages(campaign.id)
             messages = messagesResponse.data || []
+            console.log(`📩 CAMPAIGNS: Found ${messages.length} messages`)
           } catch (error) {
-            console.warn(`Could not fetch messages for campaign ${campaign.id}:`, error)
+            console.warn(`⚠️ CAMPAIGNS: Could not fetch messages for campaign ${campaign.id}:`, error)
           }
 
           // Get campaign metrics from events
+          console.log(`📊 CAMPAIGNS: Calculating metrics for campaign ${campaign.id}`)
           const metrics = await this.getCampaignMetrics(campaign.id)
+          console.log(`📊 CAMPAIGNS: Metrics calculated - Recipients: ${metrics.recipients_count}, Opens: ${metrics.opened_count}`)
           
           const campaignData = {
             ...transformCampaignData(campaign, messages),
@@ -75,9 +132,12 @@ export class SyncService {
             ...metrics
           }
 
+          console.log(`💾 CAMPAIGNS: Saving campaign data to database`)
           await DatabaseService.upsertCampaignMetric(campaignData)
+          console.log(`✅ CAMPAIGNS: Campaign ${i + 1} saved successfully`)
         } catch (error) {
-          console.error(`Error processing campaign ${campaign.id}:`, error)
+          console.error(`❌ CAMPAIGNS: Error processing campaign ${campaign.id}:`, error)
+          throw error // Stop on first error to see exactly what's failing
         }
       }
 
