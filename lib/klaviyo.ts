@@ -318,7 +318,7 @@ export class KlaviyoAPI {
   // REPORTING API METHODS
   
   // Campaign Analytics Report - BATCHED APPROACH (365 DAYS)
-  async getCampaignAnalytics(campaignIds: string[]) {
+  async getCampaignAnalytics(campaignIds: string[], conversionMetricId: string | null = null) {
     console.log(`📊 CAMPAIGNS: Calling Campaign Values Report API for ${campaignIds.length} campaigns - BATCHED APPROACH`)
     
     // Calculate dynamic 365-day timeframe
@@ -327,29 +327,36 @@ export class KlaviyoAPI {
     
     console.log(`📅 CAMPAIGNS: Dynamic timeframe - ${startDate} to ${endDate} (365 days)`)
     console.log(`🔄 CAMPAIGNS: BATCHED CALL - Getting analytics for ALL ${campaignIds.length} campaigns in single API call`)
+    console.log(`🎯 CAMPAIGNS: Using conversion metric ID: ${conversionMetricId || 'none'}`)
     
     try {
+      const requestBody: any = {
+        data: {
+          type: 'campaign-values-report',
+          attributes: {
+            statistics: [
+              // Core engagement stats only (to minimize rate limit impact)
+              'opens', 'opens_unique', 'open_rate',
+              'clicks', 'clicks_unique', 'click_rate', 'click_to_open_rate',
+              'delivered', 'delivery_rate',
+              'bounced', 'bounce_rate',
+              'conversions', 'conversion_rate', 'conversion_value',
+              'recipients', 'revenue_per_recipient'
+            ],
+            timeframe: { start: startDate, end: endDate },
+            filter: `any(campaign_id,["${campaignIds.join('","')}"])` // BATCH ALL CAMPAIGNS
+          }
+        }
+      }
+      
+      // Only add conversion_metric_id if we have one
+      if (conversionMetricId) {
+        requestBody.data.attributes.conversion_metric_id = conversionMetricId
+      }
+      
       const result = await this.makeRequest('/campaign-values-reports', {
         method: 'POST',
-        body: JSON.stringify({
-          data: {
-            type: 'campaign-values-report',
-            attributes: {
-              statistics: [
-                // Core engagement stats only (to minimize rate limit impact)
-                'opens', 'opens_unique', 'open_rate',
-                'clicks', 'clicks_unique', 'click_rate', 'click_to_open_rate',
-                'delivered', 'delivery_rate',
-                'bounced', 'bounce_rate',
-                'conversions', 'conversion_rate', 'conversion_value',
-                'recipients', 'revenue_per_recipient'
-              ],
-              timeframe: { start: startDate, end: endDate },
-              filter: `any(campaign_id,["${campaignIds.join('","')}"])`, // BATCH ALL CAMPAIGNS
-              conversion_metric_id: 'QSwNRK' // We'll fix this dynamically later
-            }
-          }
-        })
+        body: JSON.stringify(requestBody)
       })
       
       console.log(`✅ CAMPAIGNS: BATCHED API call successful - got data for ${campaignIds.length} campaigns`)
@@ -376,12 +383,12 @@ export class KlaviyoAPI {
       console.log(`🔄 CAMPAIGNS: Falling back to individual calls...`)
       
       // Fallback to individual calls with much longer delays
-      return this.getCampaignAnalyticsIndividual(campaignIds)
+      return this.getCampaignAnalyticsIndividual(campaignIds, conversionMetricId)
     }
   }
 
   // Fallback method for individual calls (if batching fails)
-  private async getCampaignAnalyticsIndividual(campaignIds: string[]) {
+  private async getCampaignAnalyticsIndividual(campaignIds: string[], conversionMetricId: string | null = null) {
     console.log(`📊 CAMPAIGNS: Using individual calls with extended delays`)
     
     const endDate = new Date().toISOString().split('T')[0]
@@ -399,19 +406,25 @@ export class KlaviyoAPI {
           await new Promise(resolve => setTimeout(resolve, 30000))
         }
         
+        const requestBody: any = {
+          data: {
+            type: 'campaign-values-report',
+            attributes: {
+              statistics: ['opens', 'clicks', 'conversions', 'conversion_value'], // Minimal stats
+              timeframe: { start: startDate, end: endDate },
+              filter: `equals(campaign_id,"${campaignId}")`
+            }
+          }
+        }
+        
+        // Only add conversion_metric_id if we have one
+        if (conversionMetricId) {
+          requestBody.data.attributes.conversion_metric_id = conversionMetricId
+        }
+        
         const result = await this.makeRequest('/campaign-values-reports', {
           method: 'POST',
-          body: JSON.stringify({
-            data: {
-              type: 'campaign-values-report',
-              attributes: {
-                statistics: ['opens', 'clicks', 'conversions', 'conversion_value'], // Minimal stats
-                timeframe: { start: startDate, end: endDate },
-                filter: `equals(campaign_id,"${campaignId}")`,
-                conversion_metric_id: 'QSwNRK'
-              }
-            }
-          })
+          body: JSON.stringify(requestBody)
         })
         
         if (result.data?.attributes?.results && Array.isArray(result.data.attributes.results)) {
@@ -432,7 +445,7 @@ export class KlaviyoAPI {
   }
 
   // Flow Analytics Report - BATCHED APPROACH (365 DAYS)
-  async getFlowAnalytics(flowIds: string[]) {
+  async getFlowAnalytics(flowIds: string[], conversionMetricId: string | null = null) {
     console.log(`🔄 FLOWS: Calling Flow Values Report API for ${flowIds.length} flows - BATCHED APPROACH`)
     
     // Calculate dynamic 365-day timeframe
@@ -441,29 +454,36 @@ export class KlaviyoAPI {
     
     console.log(`📅 FLOWS: Dynamic timeframe - ${startDate} to ${endDate} (365 days)`)
     console.log(`🔄 FLOWS: BATCHED CALL - Getting analytics for ALL ${flowIds.length} flows in single API call`)
+    console.log(`🎯 FLOWS: Using conversion metric ID: ${conversionMetricId || 'none'}`)
     
     try {
+      const requestBody: any = {
+        data: {
+          type: 'flow-values-report',
+          attributes: {
+            statistics: [
+              // Core engagement stats only
+              'opens', 'opens_unique', 'open_rate',
+              'clicks', 'clicks_unique', 'click_rate', 'click_to_open_rate',
+              'delivered', 'delivery_rate',
+              'bounced', 'bounce_rate',
+              'conversions', 'conversion_rate', 'conversion_value',
+              'recipients', 'revenue_per_recipient'
+            ],
+            timeframe: { start: startDate, end: endDate },
+            filter: `any(flow_id,["${flowIds.join('","')}"])` // BATCH ALL FLOWS
+          }
+        }
+      }
+      
+      // Only add conversion_metric_id if we have one
+      if (conversionMetricId) {
+        requestBody.data.attributes.conversion_metric_id = conversionMetricId
+      }
+      
       const result = await this.makeRequest('/flow-values-reports', {
         method: 'POST',
-        body: JSON.stringify({
-          data: {
-            type: 'flow-values-report',
-            attributes: {
-              statistics: [
-                // Core engagement stats only
-                'opens', 'opens_unique', 'open_rate',
-                'clicks', 'clicks_unique', 'click_rate', 'click_to_open_rate',
-                'delivered', 'delivery_rate',
-                'bounced', 'bounce_rate',
-                'conversions', 'conversion_rate', 'conversion_value',
-                'recipients', 'revenue_per_recipient'
-              ],
-              timeframe: { start: startDate, end: endDate },
-              filter: `any(flow_id,["${flowIds.join('","')}"])`, // BATCH ALL FLOWS
-              conversion_metric_id: 'QSwNRK'
-            }
-          }
-        })
+        body: JSON.stringify(requestBody)
       })
       
       console.log(`✅ FLOWS: BATCHED API call successful - got data for ${flowIds.length} flows`)
@@ -490,12 +510,12 @@ export class KlaviyoAPI {
       console.log(`🔄 FLOWS: Falling back to individual calls...`)
       
       // Fallback to individual calls with much longer delays
-      return this.getFlowAnalyticsIndividual(flowIds)
+      return this.getFlowAnalyticsIndividual(flowIds, conversionMetricId)
     }
   }
 
   // Fallback method for individual flow calls
-  private async getFlowAnalyticsIndividual(flowIds: string[]) {
+  private async getFlowAnalyticsIndividual(flowIds: string[], conversionMetricId: string | null = null) {
     console.log(`📊 FLOWS: Using individual calls with extended delays`)
     
     const endDate = new Date().toISOString().split('T')[0]
@@ -513,19 +533,25 @@ export class KlaviyoAPI {
           await new Promise(resolve => setTimeout(resolve, 30000))
         }
         
+        const requestBody: any = {
+          data: {
+            type: 'flow-values-report',
+            attributes: {
+              statistics: ['opens', 'clicks', 'conversions', 'conversion_value'], // Minimal stats
+              timeframe: { start: startDate, end: endDate },
+              filter: `equals(flow_id,"${flowId}")`
+            }
+          }
+        }
+        
+        // Only add conversion_metric_id if we have one
+        if (conversionMetricId) {
+          requestBody.data.attributes.conversion_metric_id = conversionMetricId
+        }
+        
         const result = await this.makeRequest('/flow-values-reports', {
           method: 'POST',
-          body: JSON.stringify({
-            data: {
-              type: 'flow-values-report',
-              attributes: {
-                statistics: ['opens', 'clicks', 'conversions', 'conversion_value'], // Minimal stats
-                timeframe: { start: startDate, end: endDate },
-                filter: `equals(flow_id,"${flowId}")`,
-                conversion_metric_id: 'QSwNRK'
-              }
-            }
-          })
+          body: JSON.stringify(requestBody)
         })
         
         if (result.data?.attributes?.results && Array.isArray(result.data.attributes.results)) {

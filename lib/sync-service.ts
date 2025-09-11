@@ -36,6 +36,31 @@ export class SyncService {
     return new Promise(resolve => setTimeout(resolve, ms))
   }
 
+  // Get dynamic conversion metric ID
+  private async getConversionMetricId(): Promise<string | null> {
+    this.log('🎯 METRICS: Getting dynamic conversion metric ID...')
+    
+    try {
+      const metricsResponse = await this.klaviyo.getMetrics()
+      
+      // Find "Placed Order" metric
+      const placedOrderMetric = metricsResponse.data?.find((metric: any) => 
+        metric.attributes?.name === 'Placed Order'
+      )
+      
+      if (placedOrderMetric) {
+        this.log(`✅ METRICS: Found Placed Order metric ID: ${placedOrderMetric.id}`)
+        return placedOrderMetric.id
+      } else {
+        this.log(`⚠️ METRICS: No "Placed Order" metric found in account`)
+        return null
+      }
+    } catch (error) {
+      this.log(`❌ METRICS: Error fetching conversion metric: ${error}`)
+      return null
+    }
+  }
+
   // Main sync function
   async syncAllData() {
     this.log(`🚀 SYNC START: Starting comprehensive PARALLEL sync for client: ${this.client.brand_name}`)
@@ -43,12 +68,15 @@ export class SyncService {
     this.log(`⚡ SYNC STRATEGY: Running campaigns, flows, and segments in PARALLEL to avoid Vercel timeout`)
     
     try {
+      // STEP 1: Get conversion metric ID dynamically
+      const conversionMetricId = await this.getConversionMetricId()
+      
       // PARALLEL PROCESSING: Run all 3 main syncs simultaneously
       this.log(`🔄 SYNC PARALLEL: Starting campaigns, flows, and segments simultaneously...`)
       
       const [campaignsResult, flowsResult, segmentsResult] = await Promise.allSettled([
-        this.syncCampaigns(),
-        this.syncFlows(), 
+        this.syncCampaigns(conversionMetricId),
+        this.syncFlows(conversionMetricId), 
         this.syncSegments()
       ])
       
@@ -92,7 +120,7 @@ export class SyncService {
   }
 
   // Sync campaign data
-  async syncCampaigns() {
+  async syncCampaigns(conversionMetricId: string | null) {
     this.log('📧 CAMPAIGNS: Starting campaigns sync...')
     
     try {
@@ -143,7 +171,7 @@ export class SyncService {
       
       let campaignAnalytics: any = {}
       try {
-        const analyticsResponse = await this.klaviyo.getCampaignAnalytics(campaignIds)
+        const analyticsResponse = await this.klaviyo.getCampaignAnalytics(campaignIds, conversionMetricId)
         
         // COMPREHENSIVE LOGGING - Single log with all data
         this.log(`📊 CAMPAIGNS ANALYTICS COMPLETE REPORT:
@@ -259,7 +287,7 @@ export class SyncService {
   }
 
   // Sync flow data
-  async syncFlows() {
+  async syncFlows(conversionMetricId: string | null) {
     this.log('🔄 FLOWS: Starting flows sync...')
     this.log('📋 FLOWS: Structure - flow_metrics for ACTIVE flows, flow_message_metrics for individual emails')
     
@@ -312,7 +340,7 @@ export class SyncService {
           const startDate = format(subDays(new Date(), 30), 'yyyy-MM-dd')
           const endDate = format(new Date(), 'yyyy-MM-dd')
           
-          const metrics = await this.getFlowMetrics(flow.id, startDate, endDate)
+          const metrics = await this.getFlowMetrics(flow.id, startDate, endDate, conversionMetricId)
           
           const flowData = {
             ...transformFlowData(flow),
@@ -526,12 +554,12 @@ export class SyncService {
   }
 
   // Helper: Get flow metrics - DISABLED Events API (flow_id not valid filter)
-  private async getFlowMetrics(flowId: string, startDate: string, endDate: string) {
+  private async getFlowMetrics(flowId: string, startDate: string, endDate: string, conversionMetricId: string | null) {
     this.log(`📊 FLOWS: Using Flow Values Report API for flow ${flowId} - MAXIMUM DATA EXTRACTION`)
     
     try {
       // Use the fixed Flow Values Report API
-      const analytics = await this.klaviyo.getFlowAnalytics([flowId])
+      const analytics = await this.klaviyo.getFlowAnalytics([flowId], conversionMetricId)
       
       if (analytics.data && analytics.data.length > 0) {
         const flowAnalytics = analytics.data[0].attributes
