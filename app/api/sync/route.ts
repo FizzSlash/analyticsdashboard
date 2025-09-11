@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
 
     console.log(`SYNC API: Starting sync for client: ${clientId}`)
 
-    // Get client data
+    // Get client data by brand_slug
     const client = await DatabaseService.getClientBySlug(clientId)
     if (!client) {
       return NextResponse.json({ error: 'Client not found' }, { status: 404 })
@@ -22,7 +22,8 @@ export async function POST(request: NextRequest) {
     console.log('SYNC API: Client query result:', { client: client, clientError: null })
 
     // Get the base URL for internal API calls
-    const baseUrl = request.url.replace('/api/sync', '')
+    const url = new URL(request.url)
+    const baseUrl = `${url.protocol}//${url.host}`
     
     // Call separate sync endpoints in parallel
     console.log('SYNC API: Starting parallel sync calls...')

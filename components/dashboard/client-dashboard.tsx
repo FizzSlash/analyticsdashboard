@@ -21,6 +21,15 @@ import { formatCurrency, formatNumber, formatPercentage, aggregateMetricsByDate 
 
 interface ClientDashboardProps {
   client: Client
+  data?: {
+    summary: any
+    campaigns: any[]
+    flows: any[]
+    audience: any[]
+    revenue: any[]
+    topCampaigns: any[]
+    topFlows: any[]
+  }
 }
 
 interface DashboardData {
@@ -34,7 +43,7 @@ interface DashboardData {
   loading: boolean
 }
 
-export function ClientDashboard({ client }: ClientDashboardProps) {
+export function ClientDashboard({ client, data: providedData }: ClientDashboardProps) {
   const [data, setData] = useState<DashboardData>({
     summary: null,
     campaigns: [],
@@ -47,6 +56,16 @@ export function ClientDashboard({ client }: ClientDashboardProps) {
   })
 
   useEffect(() => {
+    // If data is provided as prop, use it directly
+    if (providedData) {
+      setData({
+        ...providedData,
+        loading: false
+      })
+      return
+    }
+
+    // Otherwise, fetch data (legacy behavior)
     async function fetchDashboardData() {
       try {
         const [
@@ -84,7 +103,7 @@ export function ClientDashboard({ client }: ClientDashboardProps) {
     }
 
     fetchDashboardData()
-  }, [client.id])
+  }, [client.id, providedData])
 
   if (data.loading) {
     return (

@@ -477,36 +477,11 @@ export class KlaviyoAPI {
     return this.makeRequest(endpoint)
   }
 
-  // Segment Analytics Report - MAXIMUM DATA EXTRACTION (365 DAYS)
+  // Segment Analytics Report - DISABLED (Klaviyo API doesn't support proper segment analytics)
   async getSegmentAnalytics(segmentIds: string[]) {
-    console.log(`👥 SEGMENTS: Calling Segment Values Report API for ${segmentIds.length} segments - MAXIMUM DATA EXTRACTION`)
-    
-    // Calculate dynamic 365-day timeframe
-    const endDate = new Date().toISOString().split('T')[0]
-    const startDate = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-    
-    console.log(`📅 SEGMENTS: Dynamic timeframe - ${startDate} to ${endDate} (365 days)`)
-    
-    return this.makeRequest('/segment-values-reports', {
-      method: 'POST',
-      body: JSON.stringify({
-        data: {
-          type: 'segment-values-report',
-          attributes: {
-            statistics: [
-              'profiles',
-              'profiles_added',
-              'profiles_removed'
-            ],
-            timeframe: {
-              start: startDate,
-              end: endDate
-            },
-            filter: `any(segment_id,["${segmentIds.join('","')}"])`
-          }
-        }
-      })
-    })
+    console.log(`👥 SEGMENTS: Segment analytics disabled - Klaviyo API limitations`)
+    // Return empty result to avoid API errors
+    return { data: [] }
   }
 
   // Segment Series Report - GROWTH TRENDS (365 DAYS)

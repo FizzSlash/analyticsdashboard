@@ -606,9 +606,9 @@ export class SyncService {
   }
   // NEW SYNC METHODS FOR 4-SECTION STRUCTURE
 
-  // Sync segments data
+  // Sync segments data (SKIP ANALYTICS - just save segment info)
   async syncSegments() {
-    this.log('👥 SEGMENTS: Starting segments sync...')
+    this.log('👥 SEGMENTS: Starting segments sync (basic info only)...')
     
     try {
       let allSegments: any[] = []
@@ -616,7 +616,7 @@ export class SyncService {
       let hasMore = true
       let pageCount = 0
 
-      // Fetch all segments
+      // Fetch segments with pagination
       while (hasMore) {
         pageCount++
         this.log(`📄 SEGMENTS: Fetching page ${pageCount}...`)
@@ -628,47 +628,35 @@ export class SyncService {
         this.log(`📊 SEGMENTS: Page ${pageCount} - Found ${segments.length} segments`)
         
         cursor = response.links?.next ? new URL(response.links.next).searchParams.get('page[cursor]') || undefined : undefined
-        hasMore = !!cursor && pageCount < 10 // Safety limit
+        hasMore = !!cursor
+
+        if (pageCount >= 10) {
+          this.log(`⚠️ SEGMENTS: Reached page limit (10), stopping pagination`)
+          break
+        }
       }
       
       this.log(`📈 SEGMENTS: Total segments to process: ${allSegments.length}`)
 
-      // Get segment analytics
-      if (allSegments.length > 0) {
-        const segmentIds = allSegments.map(s => s.id)
-        
+      // Save basic segment info (no analytics)
+      for (const segment of allSegments) {
         try {
-          const analyticsResponse = await this.klaviyo.getSegmentAnalytics(segmentIds)
-          this.log(`📊 SEGMENTS: Analytics fetched for segments`)
-          
-          // Process and save segment metrics
-          for (const segment of allSegments) {
-            // Get profile count for this segment
-            let profileCount = 0
-            try {
-              const profilesResponse = await this.klaviyo.getSegmentProfiles(segment.id)
-              profileCount = profilesResponse.data?.length || 0
-            } catch (error) {
-              this.log(`⚠️ SEGMENTS: Could not get profile count for segment ${segment.id}`)
-            }
-
-            const segmentData = {
-              client_id: this.client.id,
-              segment_id: segment.id,
-              segment_name: segment.attributes?.name || 'Unnamed Segment',
-              date_recorded: format(new Date(), 'yyyy-MM-dd'),
-              total_profiles: profileCount,
-              // Add more metrics from analytics response as needed
-            }
-
-            await DatabaseService.upsertSegmentMetric(segmentData)
+          const segmentData = {
+            client_id: this.client.id,
+            segment_id: segment.id,
+            segment_name: segment.attributes?.name || 'Unnamed Segment',
+            date_recorded: new Date().toISOString().split('T')[0],
+            profile_count: 0 // We'll skip getting the actual count to avoid API issues
           }
+
+          await DatabaseService.upsertSegmentMetric(segmentData)
+          this.log(`✅ SEGMENTS: Saved segment ${segment.attributes?.name}`)
         } catch (error) {
-          this.log(`⚠️ SEGMENTS: Could not fetch segment analytics: ${error}`)
+          this.log(`❌ SEGMENTS: Error processing segment ${segment.id}: ${error}`)
         }
       }
 
-      this.log(`✅ SEGMENTS: Synced ${allSegments.length} segments`)
+      this.log(`✅ SEGMENTS: Synced ${allSegments.length} segments (basic info only)`)
     } catch (error) {
       this.log(`❌ SEGMENTS: Error syncing segments: ${error}`)
       throw error

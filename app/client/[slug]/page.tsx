@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react'
 import { ClientDashboard } from '@/components/dashboard/client-dashboard'
 import { useRouter } from 'next/navigation'
-import { useAuth } from '@/components/auth/auth-provider'
 
 interface PageProps {
   params: {
@@ -11,12 +10,24 @@ interface PageProps {
   }
 }
 
+interface DashboardData {
+  client: any
+  data: {
+    summary: any
+    campaigns: any[]
+    flows: any[]
+    audience: any[]
+    revenue: any[]
+    topCampaigns: any[]
+    topFlows: any[]
+  }
+}
+
 export default function ClientDashboardPage({ params }: PageProps) {
-  const [client, setClient] = useState<any>(null)
+  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
-  const { supabase, loading: authLoading } = useAuth() // Use centralized Supabase client
 
   // Fallback timeout to prevent infinite loading
   useEffect(() => {
@@ -32,58 +43,39 @@ export default function ClientDashboardPage({ params }: PageProps) {
   }, [loading])
 
   useEffect(() => {
-    async function loadClient() {
-      console.log('CLIENT DASHBOARD: Starting loadClient function')
-      console.log('CLIENT DASHBOARD: authLoading =', authLoading)
-      console.log('CLIENT DASHBOARD: supabase =', !!supabase)
+    async function fetchDashboardData() {
+      console.log('CLIENT DASHBOARD: Starting dashboard data fetch for slug:', params.slug)
       
       try {
-        // Wait for auth to finish loading
-        if (authLoading) {
-          console.log('CLIENT DASHBOARD: Auth still loading, returning early')
-          return
+        const response = await fetch(`/api/dashboard?clientSlug=${params.slug}`)
+        const result = await response.json()
+
+        console.log('CLIENT DASHBOARD: API response:', result)
+
+        if (!response.ok) {
+          if (response.status === 404) {
+            console.log('CLIENT DASHBOARD: Client not found, redirecting to not-found')
+            router.push('/not-found')
+            return
+          }
+          throw new Error(result.message || 'Failed to fetch dashboard data')
         }
 
-        if (!supabase) {
-          console.error('CLIENT DASHBOARD: Supabase client not available - check environment variables')
-          setError('Database connection failed. Please check configuration.')
-          setLoading(false)
-          return
-        }
-
-        console.log('CLIENT DASHBOARD: Querying for client with slug:', params.slug)
-        
-        // Get client data
-        const { data: clientData, error: clientError } = await supabase
-          .from('clients')
-          .select('*')
-          .eq('brand_slug', params.slug)
-          .single()
-
-        console.log('CLIENT DASHBOARD: Query result:', { clientData, clientError })
-
-        if (clientError || !clientData) {
-          console.error('CLIENT DASHBOARD: Client not found:', clientError)
-          router.push('/not-found')
-          return
-        }
-
-        console.log('CLIENT DASHBOARD: Setting client data:', clientData)
-        setClient(clientData)
+        console.log('CLIENT DASHBOARD: Setting dashboard data')
+        setDashboardData(result)
       } catch (error) {
-        console.error('CLIENT DASHBOARD: Error loading client:', error)
-        setError('Failed to load client data')
+        console.error('CLIENT DASHBOARD: Error fetching dashboard data:', error)
+        setError(error instanceof Error ? error.message : 'Failed to load dashboard data')
       } finally {
         console.log('CLIENT DASHBOARD: Setting loading to false')
         setLoading(false)
       }
     }
 
-    console.log('CLIENT DASHBOARD: useEffect triggered, calling loadClient')
-    loadClient()
-  }, [params.slug, router, supabase, authLoading])
+    fetchDashboardData()
+  }, [params.slug, router])
 
-  if (loading || authLoading) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -110,16 +102,16 @@ export default function ClientDashboardPage({ params }: PageProps) {
     )
   }
 
-  if (!client) {
+  if (!dashboardData) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <p className="text-red-600">Client not found</p>
+          <p className="text-red-600">No dashboard data available</p>
         </div>
       </div>
     )
   }
 
-  return <ClientDashboard client={client} />
+  return <ClientDashboard client={dashboardData.client} data={dashboardData.data} />
 }
 
