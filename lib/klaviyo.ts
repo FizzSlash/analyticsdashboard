@@ -108,23 +108,21 @@ export class KlaviyoAPI {
     return this.makeRequest(`/flows/${flowId}`)
   }
 
-  // Get Flow Actions
-  async getFlowActions(flowId: string) {
-    return this.makeRequest(`/flows/${flowId}/flow-actions`)
-  }
-
-  // Get Flow Messages for Action
-  async getFlowMessages(actionId: string) {
-    return this.makeRequest(`/flow-actions/${actionId}/flow-messages`)
-  }
-
-  // Get Metrics
-  async getMetrics(pageSize: number = 50, cursor?: string) {
-    let endpoint = `/metrics?page[size]=${pageSize}`
+  // Get Metrics (fixed - no page size)
+  async getMetrics(cursor?: string) {
+    let endpoint = `/metrics`
+    const params = new URLSearchParams()
+    
     if (cursor) {
-      endpoint += `&page[cursor]=${cursor}`
+      params.set('page[cursor]', cursor)
     }
     
+    const queryString = params.toString()
+    if (queryString) {
+      endpoint += `?${queryString}`
+    }
+    
+    console.log(`📊 METRICS API: Full endpoint: ${endpoint}`)
     return this.makeRequest(endpoint)
   }
 
