@@ -1,4 +1,4 @@
-import { supabase, supabaseAdmin, createSupabaseServerClient, Client, CampaignMetric, FlowMetric, AudienceMetric, RevenueAttribution, Agency, UserProfile } from './supabase'
+import { supabase, supabaseAdmin, Client, CampaignMetric, FlowMetric, AudienceMetric, RevenueAttribution, Agency, UserProfile } from './supabase'
 
 export class DatabaseService {
   // Agency Management
