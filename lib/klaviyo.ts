@@ -66,18 +66,21 @@ export class KlaviyoAPI {
     return this.makeRequest(`/campaigns/${campaignId}`)
   }
 
-  // Get Campaign Messages - Use correct fields per Klaviyo error message
+  // Get Campaign Messages - MAXIMUM DATA EXTRACTION
   async getCampaignMessages(campaignId: string) {
     let endpoint = `/campaigns/${campaignId}/campaign-messages`
     const params = new URLSearchParams()
     
-    // Use only valid fields according to Klaviyo error: created_at, definition, id, send_times, updated_at
-    params.set('fields[campaign-message]', 'definition,send_times,id')
+    // Request ALL available fields for maximum data extraction
+    params.set('fields[campaign-message]', 'definition,send_times,id,created_at,updated_at')
+    params.set('fields[template]', 'name,html,subject')
+    params.set('fields[image]', 'image_url,name')
+    params.set('include', 'template,image')
     
     endpoint += `?${params.toString()}`
     
     console.log(`📧 CAMPAIGN MESSAGES API: Full endpoint: ${endpoint}`)
-    console.log(`📧 CAMPAIGN MESSAGES API: Using valid fields only: definition,send_times,id`)
+    console.log(`📧 CAMPAIGN MESSAGES API: Maximum data extraction - definition,send_times,template,images`)
     return this.makeRequest(endpoint)
   }
 
@@ -231,11 +234,74 @@ export class KlaviyoAPI {
     return this.makeRequest('/accounts')
   }
 
+  // REVENUE ATTRIBUTION - CUSTOM METRICS API
+
+  // Get Placed Order Metric ID
+  async getPlacedOrderMetric() {
+    console.log(`💰 REVENUE: Getting Placed Order metric ID`)
+    return this.makeRequest('/metrics?filter=equals(name,"Placed Order")')
+  }
+
+  // Revenue Attribution Query (365 DAYS)
+  async getRevenueAttribution(metricId: string) {
+    console.log(`💰 REVENUE: Querying email revenue attribution - 365 DAYS`)
+    
+    // Calculate dynamic 365-day timeframe
+    const endDate = new Date().toISOString()
+    const startDate = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString()
+    
+    console.log(`📅 REVENUE: Dynamic timeframe - ${startDate} to ${endDate}`)
+    
+    return this.makeRequest(`/metrics/${metricId}/query`, {
+      method: 'POST',
+      body: JSON.stringify({
+        data: {
+          type: 'metric-aggregate',
+          attributes: {
+            measurements: ['sum_value', 'count', 'average_value', 'unique_count'],
+            filter: `and(greater-than(datetime,"${startDate}"),exists($message))`,
+            by: ['$source', '$flow', '$message', '$campaign'],
+            timezone: 'UTC'
+          }
+        }
+      })
+    })
+  }
+
+  // Revenue Trends Over Time (365 DAYS)
+  async getRevenueTrends(metricId: string) {
+    console.log(`📈 REVENUE: Getting revenue trends over time - 365 DAYS`)
+    
+    const endDate = new Date().toISOString()
+    const startDate = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString()
+    
+    return this.makeRequest(`/metrics/${metricId}/query`, {
+      method: 'POST',
+      body: JSON.stringify({
+        data: {
+          type: 'metric-aggregate',
+          attributes: {
+            measurements: ['sum_value', 'count'],
+            filter: `greater-than(datetime,"${startDate}")`,
+            interval: 'week',
+            timezone: 'UTC'
+          }
+        }
+      })
+    })
+  }
+
   // REPORTING API METHODS
   
-  // Campaign Analytics Report - PROPERLY IMPLEMENTED
+  // Campaign Analytics Report - MAXIMUM DATA EXTRACTION (365 DAYS)
   async getCampaignAnalytics(campaignIds: string[]) {
-    console.log(`📊 CAMPAIGNS: Calling Campaign Values Report API for ${campaignIds.length} campaigns`)
+    console.log(`📊 CAMPAIGNS: Calling Campaign Values Report API for ${campaignIds.length} campaigns - MAXIMUM DATA EXTRACTION`)
+    
+    // Calculate dynamic 365-day timeframe
+    const endDate = new Date().toISOString().split('T')[0]
+    const startDate = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+    
+    console.log(`📅 CAMPAIGNS: Dynamic timeframe - ${startDate} to ${endDate} (365 days)`)
     
     return this.makeRequest('/campaign-values-reports', {
       method: 'POST',
@@ -244,34 +310,130 @@ export class KlaviyoAPI {
           type: 'campaign-values-report',
           attributes: {
             statistics: [
-              'bounced',
-              'bounced_or_failed', 
-              'clicked',
-              'delivered',
-              'failed_to_deliver',
-              'opened',
-              'received',
-              'unsubscribed'
+              // DELIVERY METRICS
+              'bounces',
+              'bounces_unique', 
+              'deliveries',
+              'deliveries_unique',
+              'recipients',
+              'sends',
+              
+              // ENGAGEMENT METRICS  
+              'opens',
+              'opens_unique',
+              'clicks', 
+              'clicks_unique',
+              'click_to_open_rate',
+              'open_rate',
+              'click_rate',
+              
+              // NEGATIVE METRICS
+              'spam_complaints',
+              'unsubscribes',
+              'bounce_rate',
+              'unsubscribe_rate',
+              'spam_complaint_rate',
+              
+              // REVENUE METRICS
+              'revenue',
+              'revenue_per_recipient',
+              'average_order_value',
+              'orders',
+              'conversion_rate',
+              
+              // ADVANCED METRICS
+              'forwards',
+              'forwards_unique', 
+              'reply_rate',
+              'deliverability_rate'
             ],
-            timeframe: 'last_30_days',
-            conversion_metric_id: null,
-            filter: `any(campaign_id,["${campaignIds.join('","')}"])`
+            timeframe: {
+              key: 'custom',
+              start: startDate,
+              end: endDate
+            },
+            filter: `any(campaign_id,["${campaignIds.join('","')}"])`,
+            conversion_metric_id: null // Will get this from metrics API
           }
         }
       })
     })
   }
 
-  // Flow Analytics Report  
+  // Flow Analytics Report - MAXIMUM DATA EXTRACTION (365 DAYS)
   async getFlowAnalytics(flowIds: string[]) {
+    console.log(`🔄 FLOWS: Calling Flow Values Report API for ${flowIds.length} flows - MAXIMUM DATA EXTRACTION`)
+    
+    // Calculate dynamic 365-day timeframe
+    const endDate = new Date().toISOString().split('T')[0]
+    const startDate = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+    
+    console.log(`📅 FLOWS: Dynamic timeframe - ${startDate} to ${endDate} (365 days)`)
+    
     return this.makeRequest('/flow-values-reports', {
       method: 'POST',
       body: JSON.stringify({
         data: {
           type: 'flow-values-report',
           attributes: {
-            flow_ids: flowIds,
-            metrics: ['triggered', 'completed', 'completion_rate', 'revenue']
+            statistics: [
+              // FLOW PERFORMANCE
+              'opens',
+              'opens_unique',
+              'clicks', 
+              'clicks_unique',
+              'deliveries',
+              'bounces',
+              'open_rate',
+              'click_rate',
+              'bounce_rate',
+              
+              // FLOW SPECIFIC
+              'flow_completions',
+              'flow_completion_rate', 
+              'flow_exits',
+              'flow_exit_rate',
+              
+              // REVENUE
+              'revenue',
+              'orders',
+              'conversion_rate',
+              'average_order_value',
+              'revenue_per_recipient'
+            ],
+            timeframe: {
+              key: 'custom',
+              start: startDate,
+              end: endDate
+            },
+            filter: `any(flow_id,["${flowIds.join('","')}"])`
+          }
+        }
+      })
+    })
+  }
+
+  // Flow Series Report - TIME TRENDS (365 DAYS)
+  async getFlowSeries(flowIds: string[]) {
+    console.log(`📈 FLOWS: Calling Flow Series Report API for time trends - 365 DAYS`)
+    
+    const endDate = new Date().toISOString().split('T')[0]
+    const startDate = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+    
+    return this.makeRequest('/flow-series-reports', {
+      method: 'POST',
+      body: JSON.stringify({
+        data: {
+          type: 'flow-series-report',
+          attributes: {
+            statistics: ['opens_unique', 'clicks_unique', 'revenue', 'flow_completions'],
+            timeframe: {
+              key: 'custom',
+              start: startDate,
+              end: endDate
+            },
+            interval: 'weekly',
+            filter: `any(flow_id,["${flowIds.join('","')}"])`
           }
         }
       })
@@ -316,34 +478,73 @@ export class KlaviyoAPI {
     return this.makeRequest(endpoint)
   }
 
-  // Segment Analytics Report
+  // Segment Analytics Report - MAXIMUM DATA EXTRACTION (365 DAYS)
   async getSegmentAnalytics(segmentIds: string[]) {
+    console.log(`👥 SEGMENTS: Calling Segment Values Report API for ${segmentIds.length} segments - MAXIMUM DATA EXTRACTION`)
+    
+    // Calculate dynamic 365-day timeframe
+    const endDate = new Date().toISOString().split('T')[0]
+    const startDate = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+    
+    console.log(`📅 SEGMENTS: Dynamic timeframe - ${startDate} to ${endDate} (365 days)`)
+    
     return this.makeRequest('/segment-values-reports', {
       method: 'POST',
       body: JSON.stringify({
         data: {
           type: 'segment-values-report',
           attributes: {
-            segment_ids: segmentIds,
-            metrics: ['size', 'growth_rate', 'engagement_rate']
+            statistics: [
+              'opens',
+              'opens_unique',
+              'clicks',
+              'clicks_unique', 
+              'deliveries',
+              'bounces',
+              'open_rate',
+              'click_rate',
+              'bounce_rate',
+              'revenue',
+              'orders',
+              'conversion_rate',
+              'average_order_value',
+              'unsubscribes',
+              'unsubscribe_rate'
+            ],
+            timeframe: {
+              key: 'custom',
+              start: startDate,
+              end: endDate
+            },
+            filter: `any(segment_id,["${segmentIds.join('","')}"])`
           }
         }
       })
     })
   }
 
-  // Segment Series Report (growth over time)
-  async getSegmentSeries(segmentIds: string[], startDate: string, endDate: string) {
+  // Segment Series Report - GROWTH TRENDS (365 DAYS)
+  async getSegmentSeries(segmentIds: string[]) {
+    console.log(`📈 SEGMENTS: Calling Segment Series Report API for growth trends - 365 DAYS`)
+    
+    // Calculate dynamic 365-day timeframe
+    const endDate = new Date().toISOString().split('T')[0]
+    const startDate = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+    
     return this.makeRequest('/segment-series-reports', {
       method: 'POST',
       body: JSON.stringify({
         data: {
           type: 'segment-series-report',
           attributes: {
-            segment_ids: segmentIds,
-            start_date: startDate,
-            end_date: endDate,
-            metrics: ['size', 'growth_rate']
+            statistics: ['size', 'opens_unique', 'revenue'],
+            timeframe: {
+              key: 'custom',
+              start: startDate,
+              end: endDate
+            },
+            interval: 'monthly',
+            filter: `any(segment_id,["${segmentIds.join('","')}"])`
           }
         }
       })
@@ -393,10 +594,14 @@ export class KlaviyoAPI {
 export function transformCampaignData(klaviyoCampaign: any, messages: any[] = []) {
   const message = messages[0] // Assuming single message per campaign for now
   
+  // Extract subject line from the correct location (seen in logs: email_content.subject)
+  const emailContent = message?.attributes?.definition || {}
+  const subjectLine = emailContent?.subject || message?.attributes?.subject || null
+  
   return {
     campaign_id: klaviyoCampaign.id,
     campaign_name: klaviyoCampaign.attributes.name,
-    subject_line: message?.attributes?.definition?.subject || message?.attributes?.subject || null,
+    subject_line: subjectLine,
     send_date: klaviyoCampaign.attributes.send_time || null,
     recipients_count: klaviyoCampaign.attributes.send_job_status?.recipients || 0,
     delivered_count: 0,
@@ -406,9 +611,13 @@ export function transformCampaignData(klaviyoCampaign: any, messages: any[] = []
     bounced_count: 0,
     revenue: 0,
     orders_count: 0,
-    // Add required database fields
-    image_url: null, // Will be populated from message data
-    email_content: message?.attributes?.definition?.content || null
+    // Maximum data fields
+    preview_text: emailContent?.preview_text || null,
+    from_email: emailContent?.from_email || null,
+    from_label: emailContent?.from_label || null,
+    image_url: null, // Will be populated from included image data
+    email_content: JSON.stringify(emailContent),
+    template_id: null // Will be populated from included template data
   }
 }
 
