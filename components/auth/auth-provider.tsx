@@ -86,10 +86,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { data: { subscription } } = client.auth.onAuthStateChange(
       async (event: any, session: any) => {
         console.log('AUTH PROVIDER: Auth state changed:', event, !!session)
+        console.log('AUTH PROVIDER: Processing auth state change...')
         try {
           setUser(session?.user ?? null)
+          console.log('AUTH PROVIDER: User state updated')
           
           if (session?.user) {
+            console.log('AUTH PROVIDER: User exists, fetching profile')
             // Fetch user profile
             const { data: profileData } = await client
               .from('user_profiles')
@@ -97,16 +100,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               .eq('id', session.user.id)
               .single()
             
+            console.log('AUTH PROVIDER: Profile fetched:', !!profileData)
             setProfile(profileData)
           } else {
+            console.log('AUTH PROVIDER: No user, setting profile to null')
             setProfile(null)
           }
           
           // CRITICAL FIX: Always set loading to false after auth state change
           console.log('AUTH PROVIDER: Setting loading to false after auth state change')
           setLoading(false)
+          console.log('AUTH PROVIDER: Loading state set to false - auth processing complete')
         } catch (error) {
           console.error('AUTH PROVIDER: Error handling auth state change:', error)
+          console.log('AUTH PROVIDER: Setting loading to false due to error')
           setLoading(false)
         }
       }

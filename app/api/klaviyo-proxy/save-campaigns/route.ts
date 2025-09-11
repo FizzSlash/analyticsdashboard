@@ -29,6 +29,7 @@ export async function POST(request: NextRequest) {
       
       try {
         console.log(`💾 SAVE CAMPAIGNS: Upserting campaign ${i + 1}/${campaignDetails.length} - ${campaign.campaign_name}`)
+        console.log(`💾 SAVE CAMPAIGNS: Campaign ID: ${campaign.id}`)
         
         // Prepare campaign data for database
         const campaignData = {
@@ -72,14 +73,17 @@ export async function POST(request: NextRequest) {
           image_url: null // Will be populated later if needed
         }
         
+        console.log(`💾 SAVE CAMPAIGNS: Prepared data for campaign ${campaign.id}:`, JSON.stringify(campaignData, null, 2))
+        
         // Upsert to database
         await DatabaseService.upsertCampaignMetric(campaignData)
         
         results.successful++
-        console.log(`✅ SAVE CAMPAIGNS: Campaign ${i + 1} saved successfully`)
+        console.log(`✅ SAVE CAMPAIGNS: Campaign ${i + 1} saved successfully to campaign_metrics table`)
         
       } catch (error: any) {
         console.error(`❌ SAVE CAMPAIGNS: Error saving campaign ${campaign.id}:`, error)
+        console.error(`❌ SAVE CAMPAIGNS: Error details:`, error.message)
         results.failed++
         results.errors.push({
           campaignId: campaign.id,
