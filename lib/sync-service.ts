@@ -150,21 +150,36 @@ export class SyncService {
 
   // Sync flow data
   async syncFlows() {
-    console.log('Syncing flows...')
+    console.log('🔄 FLOWS: Starting flows sync (live flows only)...')
     
     try {
       let allFlows: any[] = []
       let cursor: string | undefined
       let hasMore = true
+      let pageCount = 0
 
-      // Fetch all flows with pagination
+      // Fetch flows with pagination
       while (hasMore) {
+        pageCount++
+        console.log(`📄 FLOWS: Fetching page ${pageCount}...`)
+        
         const response = await this.klaviyo.getFlows(50, cursor)
-        allFlows = [...allFlows, ...response.data]
+        const flows = response.data || []
+        
+        // Filter to only active/live flows
+        const liveFlows = flows.filter((flow: any) => {
+          const status = flow.attributes?.status?.toLowerCase()
+          return status === 'active' || status === 'live'
+        })
+        
+        allFlows = [...allFlows, ...liveFlows]
+        console.log(`📊 FLOWS: Page ${pageCount} - Found ${flows.length} flows, ${liveFlows.length} live/active`)
         
         cursor = response.links?.next ? new URL(response.links.next).searchParams.get('page[cursor]') || undefined : undefined
         hasMore = !!cursor
       }
+      
+      console.log(`📈 FLOWS: Total live flows to process: ${allFlows.length}`)
 
       // Process each flow
       for (const flow of allFlows) {
@@ -198,26 +213,55 @@ export class SyncService {
 
   // Sync audience metrics
   async syncAudienceMetrics() {
-    console.log('Syncing audience metrics...')
+    console.log('👥 AUDIENCE: Starting comprehensive audience analysis...')
     
     try {
-      // Get current profile count
+      // Get comprehensive profile data
+      console.log('👥 AUDIENCE: Fetching total profile count...')
       const profilesResponse = await this.klaviyo.getProfiles(1)
       const totalProfiles = profilesResponse.data?.length || 0
+      console.log(`👥 AUDIENCE: Total profiles: ${totalProfiles}`)
 
-      // Get subscribed profiles (you may need to adjust this based on your list setup)
+      // Get detailed list data and growth metrics
+      console.log('📋 AUDIENCE: Fetching all lists for comprehensive analysis...')
       const listsResponse = await this.klaviyo.getLists(50)
+      console.log(`📋 AUDIENCE: Found ${listsResponse.data?.length || 0} lists`)
+      
       let totalSubscribed = 0
+      const listGrowthData: any[] = []
       
       for (const list of listsResponse.data || []) {
         try {
-          const listProfilesResponse = await this.klaviyo.getListProfiles(list.id, 1)
-          // This is a simplified count - in reality you'd need to paginate through all profiles
-          totalSubscribed += listProfilesResponse.data?.length || 0
+          console.log(`📋 AUDIENCE: Analyzing list: ${list.attributes?.name || 'Unnamed'}`)
+          
+          // Get full list profile count (paginate through all)
+          let listProfileCount = 0
+          let cursor: string | undefined
+          let hasMore = true
+          
+          while (hasMore) {
+            const listProfilesResponse = await this.klaviyo.getListProfiles(list.id, 50, cursor)
+            const profiles = listProfilesResponse.data || []
+            listProfileCount += profiles.length
+            
+            cursor = listProfilesResponse.links?.next ? new URL(listProfilesResponse.links.next).searchParams.get('page[cursor]') || undefined : undefined
+            hasMore = !!cursor && profiles.length > 0
+          }
+          
+          totalSubscribed += listProfileCount
+          listGrowthData.push({
+            list_id: list.id,
+            list_name: list.attributes?.name,
+            subscriber_count: listProfileCount
+          })
+          
+          console.log(`📊 AUDIENCE: List "${list.attributes?.name}" has ${listProfileCount} subscribers`)
         } catch (error) {
-          console.warn(`Could not fetch profiles for list ${list.id}:`, error)
+          console.warn(`⚠️ AUDIENCE: Could not fetch profiles for list ${list.id}:`, error)
         }
       }
+      
+      console.log(`📈 AUDIENCE: Total subscribed across all lists: ${totalSubscribed}`)
 
       // Get previous day's metrics for comparison
       const previousMetric = await DatabaseService.getLatestAudienceMetric(this.client.id)
@@ -247,12 +291,17 @@ export class SyncService {
 
   // Sync revenue attribution
   async syncRevenueAttribution() {
-    console.log('Syncing revenue attribution...')
+    console.log('💰 REVENUE: Starting revenue attribution analysis (past year)...')
     
     try {
-      // Get recent campaign metrics to calculate revenue
-      const campaigns = await DatabaseService.getRecentCampaignMetrics(this.client.id, 1)
-      const flows = await DatabaseService.getRecentFlowMetrics(this.client.id, 1)
+      // Get past year of campaign and flow metrics for comprehensive analysis
+      console.log('💰 REVENUE: Fetching campaign metrics from past 365 days...')
+      const campaigns = await DatabaseService.getRecentCampaignMetrics(this.client.id, 365)
+      console.log(`💰 REVENUE: Found ${campaigns.length} campaigns with revenue data`)
+      
+      console.log('💰 REVENUE: Fetching flow metrics from past 365 days...')
+      const flows = await DatabaseService.getRecentFlowMetrics(this.client.id, 365)
+      console.log(`💰 REVENUE: Found ${flows.length} flows with revenue data`)
 
       const campaignRevenue = campaigns.reduce((sum, c) => sum + c.revenue, 0)
       const campaignOrders = campaigns.reduce((sum, c) => sum + c.orders_count, 0)

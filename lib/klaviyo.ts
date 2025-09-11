@@ -10,6 +10,9 @@ export class KlaviyoAPI {
   private async makeRequest(endpoint: string, options: RequestInit = {}) {
     const url = `${this.baseURL}${endpoint}`
     
+    console.log(`🌐 KLAVIYO API: Making request to ${endpoint}`)
+    console.log(`🔑 KLAVIYO API: Using API key starting with: ${this.apiKey.substring(0, 8)}...`)
+    
     const response = await fetch(url, {
       ...options,
       headers: {
@@ -21,11 +24,18 @@ export class KlaviyoAPI {
       },
     })
 
+    console.log(`📡 KLAVIYO API: Response status: ${response.status} ${response.statusText}`)
+    
     if (!response.ok) {
-      throw new Error(`Klaviyo API Error: ${response.status} ${response.statusText}`)
+      const errorText = await response.text()
+      console.error(`❌ KLAVIYO API: Error response body:`, errorText)
+      throw new Error(`Klaviyo API Error: ${response.status} ${response.statusText} - ${errorText}`)
     }
 
-    return response.json()
+    const data = await response.json()
+    console.log(`✅ KLAVIYO API: Success - Data keys:`, Object.keys(data))
+    
+    return data
   }
 
   // Get Campaigns
