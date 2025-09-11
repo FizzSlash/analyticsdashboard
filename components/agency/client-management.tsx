@@ -256,29 +256,82 @@ export function ClientManagement({ agency, clients: initialClients }: ClientMana
 
   const triggerSync = async (client: Client) => {
     setLoading(true)
+    setError('')
+    setSuccess('')
+    
     try {
-      console.log('Triggering sync for client:', client.brand_slug)
+      console.log('Starting sequential sync for client:', client.brand_slug)
       
-      const response = await fetch('/api/sync', {
+      // Phase 1: Campaigns
+      setSuccess('Phase 1/3: Syncing campaigns...')
+      console.log('Phase 1: Starting campaigns sync')
+      
+      const campaignsResponse = await fetch('/api/sync/campaigns', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ clientId: client.brand_slug })
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ client })
+      })
+      
+      if (!campaignsResponse.ok) {
+        const error = await campaignsResponse.json()
+        throw new Error(`Campaigns sync failed: ${error.message}`)
+      }
+      
+      const campaignsResult = await campaignsResponse.json()
+      console.log('Phase 1 completed:', campaignsResult)
+      
+      // Phase 2: Flows
+      setSuccess('Phase 2/3: Syncing flows...')
+      console.log('Phase 2: Starting flows sync')
+      
+      const flowsResponse = await fetch('/api/sync/flows', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ client })
+      })
+      
+      if (!flowsResponse.ok) {
+        const error = await flowsResponse.json()
+        throw new Error(`Flows sync failed: ${error.message}`)
+      }
+      
+      const flowsResult = await flowsResponse.json()
+      console.log('Phase 2 completed:', flowsResult)
+      
+      // Phase 3: Segments
+      setSuccess('Phase 3/3: Syncing segments...')
+      console.log('Phase 3: Starting segments sync')
+      
+      const segmentsResponse = await fetch('/api/sync/segments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ client })
+      })
+      
+      if (!segmentsResponse.ok) {
+        const error = await segmentsResponse.json()
+        throw new Error(`Segments sync failed: ${error.message}`)
+      }
+      
+      const segmentsResult = await segmentsResponse.json()
+      console.log('Phase 3 completed:', segmentsResult)
+      
+      // Update last sync time
+      await fetch(`/api/clients/${client.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ last_sync: new Date().toISOString() })
       })
 
-      console.log('Sync response status:', response.status)
-      const result = await response.json()
-      console.log('Sync response data:', result)
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Sync failed')
-      }
-
-      setSuccess(`Sync completed for ${client.brand_name}`)
+      setSuccess(`✅ Sequential sync completed successfully for ${client.brand_name}!
+      
+Phase 1: ${campaignsResult.message}
+Phase 2: ${flowsResult.message}  
+Phase 3: ${segmentsResult.message}`)
+      
     } catch (err) {
-      console.error('Sync error:', err)
-      setError(err instanceof Error ? err.message : 'Sync failed')
+      console.error('Sequential sync error:', err)
+      setError(err instanceof Error ? err.message : 'Sequential sync failed')
     } finally {
       setLoading(false)
     }
