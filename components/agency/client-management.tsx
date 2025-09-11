@@ -382,18 +382,34 @@ export function ClientManagement({ agency, clients: initialClients }: ClientMana
       
       console.log(`✅ FRONTEND: Completed campaign details - ${campaignDetails.length}/${totalCampaigns} campaigns processed`)
       
-      // Step 4: Process and save data
-      setSuccess('Step 4/4: Saving campaign data to database...')
-      console.log('💾 FRONTEND: Processing complete campaign data for database save')
+      // Step 4: Save complete data to Supabase
+      setSuccess('Step 4/4: Saving campaign data to Supabase...')
+      console.log('💾 FRONTEND: Calling bulk save API for Supabase upsert')
       
-      // Here you'd call another proxy to save the complete data
-      // For now, just show success
+      const saveResponse = await fetch('/api/klaviyo-proxy/save-campaigns', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          campaignDetails,
+          clientId: client.id
+        })
+      })
       
-      setSuccess(`✅ Complete LUXE blueprint sync finished for ${client.brand_name}!
+      if (!saveResponse.ok) {
+        const saveError = await saveResponse.json()
+        console.log('❌ FRONTEND: Save API failed:', saveError)
+        throw new Error(`Save API failed: ${saveError.message}`)
+      }
+      
+      const saveResult = await saveResponse.json()
+      console.log('💾 FRONTEND: Bulk save completed:', saveResult)
+      
+      setSuccess(`✅ Complete LUXE blueprint sync with Supabase save finished for ${client.brand_name}!
       
 📊 Metrics: ${metricsResult.data?.data?.length || 0} found
 📈 Analytics: ${analyticsResult.data?.data?.length || 0} campaigns processed
 📧 Details: ${campaignDetails.length} campaigns with complete data
+💾 Saved: ${saveResult.results?.successful || 0}/${saveResult.results?.total || 0} campaigns to Supabase
 🎯 Conversion Metric: ${conversionMetricId}
 
 Sample campaigns:
@@ -401,8 +417,8 @@ ${campaignDetails.slice(0, 5).map((c: any, i: number) =>
   `${i + 1}. ${c.campaign_name} - Opens: ${c.attributes?.opens || 0}, Revenue: $${c.attributes?.conversion_value || 0}`
 ).join('\n')}`)
       
-      console.log('🎉 FRONTEND: Complete LUXE blueprint sync completed successfully')
-      console.log('📊 FRONTEND: Complete campaign data:', campaignDetails)
+      console.log('🎉 FRONTEND: Complete LUXE blueprint sync with Supabase save completed successfully')
+      console.log('💾 FRONTEND: Save results:', saveResult)
       
     } catch (err) {
       console.error('❌ FRONTEND: Sync error:', err)
