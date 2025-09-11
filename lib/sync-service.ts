@@ -6,23 +6,29 @@ import { format, subDays } from 'date-fns'
 export class SyncService {
   private klaviyo: KlaviyoAPI
   private client: Client
+  public syncLogs: string[] = []
 
   constructor(client: Client) {
     this.client = client
-    console.log(`🔑 SYNC INIT: Initializing sync for ${client.brand_name}`)
+    this.log(`🔑 SYNC INIT: Initializing sync for ${client.brand_name}`)
     
     try {
       // Decrypt the API key before using it
-      console.log(`🔓 SYNC INIT: Decrypting Klaviyo API key...`)
+      this.log(`🔓 SYNC INIT: Decrypting Klaviyo API key...`)
       const decryptedApiKey = decryptApiKey(client.klaviyo_api_key)
-      console.log(`✅ SYNC INIT: API key decrypted successfully (starts with: ${decryptedApiKey.substring(0, 6)}...)`)
+      this.log(`✅ SYNC INIT: API key decrypted successfully (starts with: ${decryptedApiKey.substring(0, 6)}...)`)
       
       this.klaviyo = new KlaviyoAPI(decryptedApiKey)
-      console.log(`🎯 SYNC INIT: Klaviyo API client initialized`)
+      this.log(`🎯 SYNC INIT: Klaviyo API client initialized`)
     } catch (error) {
-      console.error(`❌ SYNC INIT: Failed to initialize Klaviyo API:`, error)
+      this.log(`❌ SYNC INIT: Failed to initialize Klaviyo API: ${error}`)
       throw error
     }
+  }
+
+  private log(message: string) {
+    console.log(message)
+    this.syncLogs.push(`${new Date().toISOString()}: ${message}`)
   }
 
   // Main sync function

@@ -32,14 +32,23 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'Client not found' }, { status: 404 })
     }
 
+    console.log('SYNC API: Creating sync service for client:', client.brand_name)
     const syncService = new SyncService(client)
+    
+    console.log('SYNC API: Starting syncAllData...')
     await syncService.syncAllData()
+    console.log('SYNC API: syncAllData completed successfully')
     
     return NextResponse.json({ 
       success: true, 
       message: `Sync completed for ${client.brand_name}`,
       client: client.brand_slug,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      debug: {
+        serverLogs: 'Check server console for detailed Klaviyo API logs',
+        note: 'API calls are logged server-side, not in browser console',
+        recentLogs: syncService.syncLogs.slice(-10) // Last 10 log entries
+      }
     })
   } catch (error) {
     console.error('Client sync API error:', error)
