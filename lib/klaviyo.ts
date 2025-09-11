@@ -142,6 +142,53 @@ export class KlaviyoAPI {
     return this.makeRequest(`/flows/${flowId}`)
   }
 
+  // Get Flow Messages for all flows
+  async getFlowMessages(flowIds: string[]) {
+    console.log(`🔄 FLOW MESSAGES: Getting messages for ${flowIds.length} flows`)
+    
+    const allMessages: any[] = []
+    
+    for (const flowId of flowIds) {
+      try {
+        // Get flow actions first
+        const actionsResponse = await this.makeRequest(`/flows/${flowId}/flow-actions`)
+        const actions = actionsResponse.data || []
+        
+        // Get messages for each action
+        for (const action of actions) {
+          if (action.type === 'flow-action') {
+            try {
+              const messagesResponse = await this.makeRequest(`/flows/${flowId}/flow-actions/${action.id}/flow-messages`)
+              const messages = messagesResponse.data || []
+              
+              // Add flow context to each message
+              messages.forEach((message: any) => {
+                allMessages.push({
+                  ...message,
+                  flow_id: flowId,
+                  flow_action_id: action.id
+                })
+              })
+            } catch (messageError) {
+              console.log(`⚠️ FLOW MESSAGES: No messages for flow ${flowId} action ${action.id}`)
+            }
+          }
+        }
+        
+        // Rate limiting between flows
+        if (flowIds.indexOf(flowId) < flowIds.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 1000))
+        }
+        
+      } catch (error) {
+        console.log(`❌ FLOW MESSAGES: Error getting messages for flow ${flowId}:`, error)
+      }
+    }
+    
+    console.log(`✅ FLOW MESSAGES: Found ${allMessages.length} total messages`)
+    return { data: allMessages }
+  }
+
   // Get Metrics (fixed - no page size)
   async getMetrics(cursor?: string) {
     let endpoint = `/metrics`
@@ -475,33 +522,36 @@ export class KlaviyoAPI {
     return { data: results }
   }
 
-  // Flow Analytics Report - BATCHED APPROACH (365 DAYS)
+  // Flow Analytics Report - SERIES APPROACH (Daily Data for 365 Days)
   async getFlowAnalytics(flowIds: string[], conversionMetricId: string | null = null) {
-    console.log(`🔄 FLOWS: Calling Flow Values Report API for ${flowIds.length} flows - BATCHED APPROACH`)
+    console.log(`🔄 FLOWS: Calling Flow Series Report API for ${flowIds.length} flows - DAILY SERIES`)
     
-    // Calculate dynamic 365-day timeframe
-    const endDate = new Date().toISOString().split('T')[0]
-    const startDate = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-    
-    console.log(`📅 FLOWS: Dynamic timeframe - ${startDate} to ${endDate} (365 days)`)
-    console.log(`🔄 FLOWS: BATCHED CALL - Getting analytics for ALL ${flowIds.length} flows in single API call`)
+    console.log(`📅 FLOWS: Using last_365_days timeframe for daily series data`)
+    console.log(`📊 FLOWS: SERIES CALL - Getting daily analytics for ALL ${flowIds.length} flows`)
     console.log(`🎯 FLOWS: Using conversion metric ID: ${conversionMetricId || 'none'}`)
     
     try {
       const requestBody: any = {
         data: {
-          type: 'flow-values-report',
+          type: 'flow-series-report',
           attributes: {
             statistics: [
-              // Core engagement stats only
+              // All statistics for comprehensive daily data
               'opens', 'opens_unique', 'open_rate',
               'clicks', 'clicks_unique', 'click_rate', 'click_to_open_rate',
               'delivered', 'delivery_rate',
               'bounced', 'bounce_rate',
               'conversions', 'conversion_rate', 'conversion_value',
-              'recipients', 'revenue_per_recipient'
+              'recipients', 'revenue_per_recipient',
+              'sends', 'deliveries_unique', 'bounces_unique',
+              'bounced_or_failed', 'bounced_or_failed_rate',
+              'failed', 'failed_rate',
+              'unsubscribes', 'unsubscribe_rate', 'unsubscribe_uniques',
+              'spam_complaints', 'spam_complaint_rate',
+              'average_order_value'
             ],
-            timeframe: { start: startDate, end: endDate },
+            timeframe: { key: 'last_365_days' },
+            interval: 'day', // Daily breakdown
             filter: `contains-any(flow_id,["${flowIds.join('","')}"])` // BATCH ALL FLOWS
           }
         }
@@ -512,26 +562,56 @@ export class KlaviyoAPI {
         requestBody.data.attributes.conversion_metric_id = conversionMetricId
       }
       
-      const result = await this.makeRequest('/flow-values-reports', {
+      const result = await this.makeRequest('/flow-series-reports', {
         method: 'POST',
         body: JSON.stringify(requestBody)
       })
       
-      console.log(`✅ FLOWS: BATCHED API call successful - got data for ${flowIds.length} flows`)
+      console.log(`✅ FLOWS: SERIES API call successful - got daily data for ${flowIds.length} flows`)
       console.log(`📊 FLOWS: Response structure:`, JSON.stringify(result, null, 2))
       
-      // Parse the batched response
+      // Parse the series response - aggregate daily data to totals
       const results = []
+      const dateTimes = result.data?.attributes?.date_times || []
+      
       if (result.data?.attributes?.results && Array.isArray(result.data.attributes.results)) {
+        // Group by flow_id and aggregate arrays to totals
+        const flowData: { [flowId: string]: any } = {}
+        
         for (const item of result.data.attributes.results) {
+          const flowId = item.groupings?.flow_id || 'unknown'
+          
+          if (!flowData[flowId]) {
+            flowData[flowId] = { flow_id: flowId, statistics: {} }
+          }
+          
+          // Aggregate array statistics to totals
+          const stats = item.statistics || {}
+          for (const [statKey, statArray] of Object.entries(stats)) {
+            if (Array.isArray(statArray)) {
+              // Sum arrays for count statistics
+              if (statKey.includes('rate') || statKey.includes('_rate')) {
+                // For rates, take the average
+                flowData[flowId].statistics[statKey] = statArray.reduce((sum: number, val: number) => sum + val, 0) / statArray.length
+              } else {
+                // For counts, sum the values
+                flowData[flowId].statistics[statKey] = statArray.reduce((sum: number, val: number) => sum + val, 0)
+              }
+            }
+          }
+        }
+        
+        // Convert to results array
+        for (const [flowId, data] of Object.entries(flowData)) {
           results.push({
-            id: item.groupings?.flow_id || 'unknown',
-            attributes: item.statistics || {}
+            id: flowId,
+            attributes: data.statistics
           })
         }
-        console.log(`📈 FLOWS: Processed ${results.length} flow analytics from batched response`)
+        
+        console.log(`📈 FLOWS: Processed ${results.length} flows from ${dateTimes.length} days of series data`)
       } else {
-        console.log(`⚠️ FLOWS: Unexpected response structure from batched call`)
+        console.log(`⚠️ FLOWS: Unexpected response structure from series call`)
       }
       
       return { data: results }

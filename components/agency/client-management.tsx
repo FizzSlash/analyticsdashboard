@@ -438,25 +438,164 @@ ${campaignDetails.slice(0, 3).map((c: any, i: number) =>
     setSuccess('')
     
     try {
-      console.log('🔄 FLOW SYNC: Starting flow sync for:', client.brand_slug)
+      console.log('🔄 FLOW SYNC: Starting optimized 4-call flow sync for:', client.brand_slug)
       
-      // Use existing flow sync API endpoint
-      setSuccess('🔄 Syncing flows...')
+      // Step 1: Get conversion metric ID
+      setSuccess('Step 1/4: Getting conversion metric ID...')
+      console.log('📡 FRONTEND: Calling metrics proxy API')
       
-      const response = await fetch('/api/sync/flows', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ client })
-      })
-      
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(`Flow sync failed: ${errorData.message}`)
+      const metricsResponse = await fetch(`/api/klaviyo-proxy/metrics?clientSlug=${client.brand_slug}`)
+      if (!metricsResponse.ok) {
+        throw new Error(`Metrics API failed: ${metricsResponse.status}`)
       }
       
-      const result = await response.json()
-      setSuccess(`✅ Flow sync completed! Check logs for details.`)
-      console.log('✅ FRONTEND: Flow sync completed:', result)
+      const metricsResult = await metricsResponse.json()
+      console.log('📊 FRONTEND: Metrics response:', metricsResult)
+      
+      // Find Placed Order metric
+      const placedOrderMetric = metricsResult.data?.data?.find((m: any) => 
+        m.attributes?.name === 'Placed Order'
+      )
+      const conversionMetricId = placedOrderMetric?.id || null
+      console.log('🎯 FRONTEND: Found conversion metric ID:', conversionMetricId)
+      
+      // Step 2: Get flow analytics (series data)
+      setSuccess('Step 2/4: Getting flow analytics (series data)...')
+      console.log('📡 FRONTEND: Calling flow analytics proxy API')
+      
+      const analyticsResponse = await fetch('/api/klaviyo-proxy/flow-analytics', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          clientSlug: client.brand_slug,
+          conversionMetricId 
+        })
+      })
+      
+      if (!analyticsResponse.ok) {
+        const errorData = await analyticsResponse.json()
+        console.log('❌ FRONTEND: Flow analytics API failed:', errorData)
+        throw new Error(`Flow analytics API failed: ${errorData.message}`)
+      }
+      
+      const analyticsResult = await analyticsResponse.json()
+      console.log('📊 FRONTEND: Flow analytics response:', analyticsResult)
+      
+      // Step 3: Get ALL flows with metadata
+      setSuccess('Step 3/4: Getting all flow details...')
+      console.log('📡 FRONTEND: Calling bulk flows API')
+      
+      const flowsResponse = await fetch(`/api/klaviyo-proxy/flows-bulk?clientSlug=${client.brand_slug}`)
+      if (!flowsResponse.ok) {
+        const errorData = await flowsResponse.json()
+        console.log('❌ FRONTEND: Bulk flows API failed:', errorData)
+        throw new Error(`Bulk flows API failed: ${errorData.message}`)
+      }
+      
+      const flowsResult = await flowsResponse.json()
+      console.log('🔄 FRONTEND: Bulk flows response:', flowsResult)
+      console.log('📊 FRONTEND: Got flows:', flowsResult.data?.data?.length || 0)
+      
+      // Extract active flow IDs for messages
+      const activeFlows = flowsResult.data?.data?.filter((flow: any) => 
+        flow.attributes?.status === 'active'
+      ) || []
+      const flowIds = activeFlows.map((flow: any) => flow.id)
+      console.log('🎯 FRONTEND: Active flow IDs:', flowIds)
+      
+      // Step 4: Get flow messages for active flows
+      setSuccess('Step 4/4: Getting flow messages...')
+      console.log('📡 FRONTEND: Calling flow messages API')
+      
+      const messagesResponse = await fetch('/api/klaviyo-proxy/flow-messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          clientSlug: client.brand_slug,
+          flowIds: flowIds
+        })
+      })
+      
+      if (!messagesResponse.ok) {
+        const errorData = await messagesResponse.json()
+        console.log('❌ FRONTEND: Flow messages API failed:', errorData)
+        throw new Error(`Flow messages API failed: ${errorData.message}`)
+      }
+      
+      const messagesResult = await messagesResponse.json()
+      console.log('📧 FRONTEND: Flow messages response:', messagesResult)
+      console.log('📩 FRONTEND: Got messages:', messagesResult.data?.data?.length || 0)
+      
+      // Step 5: Process and combine data
+      const flowDetails: any[] = []
+      const analyticsLookup: { [key: string]: any } = {}
+      
+      // Create analytics lookup
+      if (analyticsResult.data?.data) {
+        analyticsResult.data.data.forEach((item: any) => {
+          analyticsLookup[item.id] = item.attributes
+        })
+      }
+      
+      // Create messages lookup
+      const messagesLookup: { [key: string]: any[] } = {}
+      if (messagesResult.data?.data) {
+        messagesResult.data.data.forEach((message: any) => {
+          const flowId = message.flow_id
+          if (!messagesLookup[flowId]) messagesLookup[flowId] = []
+          messagesLookup[flowId].push(message)
+        })
+      }
+      
+      // Combine all data
+      if (flowsResult.data?.data) {
+        flowsResult.data.data.forEach((flow: any) => {
+          const analytics = analyticsLookup[flow.id] || {}
+          const messages = messagesLookup[flow.id] || []
+          
+          flowDetails.push({
+            flow_id: flow.id,
+            flow_name: flow.attributes?.name,
+            flow_status: flow.attributes?.status,
+            flow_type: 'email',
+            archived: flow.attributes?.archived,
+            flow_created: flow.attributes?.created,
+            flow_updated: flow.attributes?.updated,
+            trigger_type: flow.attributes?.trigger_type,
+            
+            // Analytics data (aggregated from series)
+            opens: analytics.opens || 0,
+            opens_unique: analytics.opens_unique || 0,
+            clicks: analytics.clicks || 0,
+            clicks_unique: analytics.clicks_unique || 0,
+            open_rate: analytics.open_rate || 0,
+            click_rate: analytics.click_rate || 0,
+            conversions: analytics.conversions || 0,
+            conversion_value: analytics.conversion_value || 0,
+            revenue: analytics.conversion_value || 0,
+            
+            // Messages
+            messages: messages,
+            message_count: messages.length
+          })
+        })
+      }
+      
+      console.log(`💾 FRONTEND: Prepared ${flowDetails.length} flows for saving`)
+      
+      setSuccess(`✅ Optimized 4-call flow sync completed for ${client.brand_name}!
+      
+📊 Analytics: ${analyticsResult.data?.data?.length || 0} flows processed
+🔄 Flow Details: ${flowsResult.data?.data?.length || 0} flows with complete data
+📧 Messages: ${messagesResult.data?.data?.length || 0} flow messages
+🎯 Conversion Metric: ${conversionMetricId}
+
+Sample flows:
+${flowDetails.slice(0, 3).map((f: any, i: number) => 
+  `${i + 1}. ${f.flow_name} - Status: ${f.flow_status} - Opens: ${f.opens || 0} - Messages: ${f.message_count}`
+).join('\n')}`)
+      
+      console.log('🎉 FRONTEND: Optimized 4-call flow sync completed successfully')
       
     } catch (error: any) {
       console.error('❌ FRONTEND: Flow sync failed:', error)
