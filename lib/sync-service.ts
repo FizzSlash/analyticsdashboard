@@ -31,6 +31,11 @@ export class SyncService {
     this.syncLogs.push(`${new Date().toISOString()}: ${message}`)
   }
 
+  // Rate limiting utility
+  private async delay(ms: number) {
+    return new Promise(resolve => setTimeout(resolve, ms))
+  }
+
   // Main sync function
   async syncAllData() {
     this.log(`🚀 SYNC START: Starting comprehensive PARALLEL sync for client: ${this.client.brand_name}`)
@@ -527,24 +532,26 @@ export class SyncService {
         this.log(`📈 FLOWS: Got analytics for flow ${flowId}: opens_unique=${flowAnalytics?.opens_unique || 0}, clicks_unique=${flowAnalytics?.clicks_unique || 0}, open_rate=${flowAnalytics?.open_rate || 0}, conversion_rate=${flowAnalytics?.conversion_rate || 0}`)
         
         return {
-          // ALL AVAILABLE FLOW STATISTICS (from user screenshots)
-          opens: flowAnalytics?.opens || 0,
           opens_unique: flowAnalytics?.opens_unique || 0,
-          open_rate: flowAnalytics?.open_rate || 0,
-          clicks: flowAnalytics?.clicks || 0,
           clicks_unique: flowAnalytics?.clicks_unique || 0,
-          click_rate: flowAnalytics?.click_rate || 0,
-          click_to_open_rate: flowAnalytics?.click_to_open_rate || 0,
-          delivered: flowAnalytics?.delivered || 0,
-          delivery_rate: flowAnalytics?.delivery_rate || 0,
-          bounced: flowAnalytics?.bounced || 0,
-          bounce_rate: flowAnalytics?.bounce_rate || 0,
+          opens: flowAnalytics?.opens || 0,
+          clicks: flowAnalytics?.clicks || 0,
+          sends: flowAnalytics?.sends || 0,
+          deliveries: flowAnalytics?.deliveries || 0,
+          deliveries_unique: flowAnalytics?.deliveries_unique || 0,
+          bounces: flowAnalytics?.bounces || 0,
+          bounces_unique: flowAnalytics?.bounces_unique || 0,
           bounced_or_failed: flowAnalytics?.bounced_or_failed || 0,
           bounced_or_failed_rate: flowAnalytics?.bounced_or_failed_rate || 0,
           failed: flowAnalytics?.failed || 0,
           failed_rate: flowAnalytics?.failed_rate || 0,
-          conversions: flowAnalytics?.conversions || 0,
+          delivery_rate: flowAnalytics?.delivery_rate || 0,
+          open_rate: flowAnalytics?.open_rate || 0,
+          click_rate: flowAnalytics?.click_rate || 0,
+          click_to_open_rate: flowAnalytics?.click_to_open_rate || 0,
+          bounce_rate: flowAnalytics?.bounce_rate || 0,
           conversion_rate: flowAnalytics?.conversion_rate || 0,
+          conversions: flowAnalytics?.conversions || 0,
           conversion_uniques: flowAnalytics?.conversion_uniques || 0,
           conversion_value: flowAnalytics?.conversion_value || 0,
           unsubscribes: flowAnalytics?.unsubscribes || 0,

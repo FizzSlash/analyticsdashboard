@@ -494,21 +494,9 @@ export class KlaviyoAPI {
           type: 'segment-values-report',
           attributes: {
             statistics: [
-              'opens',
-              'opens_unique',
-              'clicks',
-              'clicks_unique', 
-              'deliveries',
-              'bounces',
-              'open_rate',
-              'click_rate',
-              'bounce_rate',
-              'revenue',
-              'orders',
-              'conversion_rate',
-              'average_order_value',
-              'unsubscribes',
-              'unsubscribe_rate'
+              'profiles',
+              'profiles_added',
+              'profiles_removed'
             ],
             timeframe: {
               start: startDate,
