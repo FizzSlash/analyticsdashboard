@@ -1,31 +1,75 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { syncAllClients } from '@/lib/sync-service'
+import { DatabaseService } from '@/lib/database'
 
 export async function POST(request: NextRequest) {
+  console.log('SYNC API: Starting parallel sync process...')
+  
   try {
-    // You might want to add authentication here to prevent unauthorized syncs
-    const authHeader = request.headers.get('authorization')
-    if (authHeader !== `Bearer ${process.env.SYNC_API_KEY}`) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const { clientId } = await request.json()
+    
+    if (!clientId) {
+      return NextResponse.json({ error: 'Client ID is required' }, { status: 400 })
     }
 
-    await syncAllClients()
+    console.log(`SYNC API: Starting sync for client: ${clientId}`)
+
+    // Get client data
+    const client = await DatabaseService.getClientBySlug(clientId)
+    if (!client) {
+      return NextResponse.json({ error: 'Client not found' }, { status: 404 })
+    }
+
+    console.log('SYNC API: Client query result:', { client: client, clientError: null })
+
+    // Get the base URL for internal API calls
+    const baseUrl = request.url.replace('/api/sync', '')
     
-    return NextResponse.json({ 
-      success: true, 
-      message: 'Sync completed successfully',
-      timestamp: new Date().toISOString()
+    // Call separate sync endpoints in parallel
+    console.log('SYNC API: Starting parallel sync calls...')
+    
+    const [campaignsResult, flowsResult, segmentsResult] = await Promise.allSettled([
+      fetch(`${baseUrl}/api/sync/campaigns`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ client })
+      }),
+      fetch(`${baseUrl}/api/sync/flows`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ client })
+      }),
+      fetch(`${baseUrl}/api/sync/segments`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ client })
+      })
+    ])
+
+    // Process results
+    const results = {
+      campaigns: campaignsResult.status === 'fulfilled' ? await campaignsResult.value.json() : { error: campaignsResult.reason },
+      flows: flowsResult.status === 'fulfilled' ? await flowsResult.value.json() : { error: flowsResult.reason },
+      segments: segmentsResult.status === 'fulfilled' ? await segmentsResult.value.json() : { error: segmentsResult.reason }
+    }
+
+    // Update last sync timestamp
+    await DatabaseService.updateClientSyncTime(client.id)
+    
+    console.log('SYNC API: All parallel syncs completed')
+
+    return NextResponse.json({
+      success: true,
+      message: 'Sync completed',
+      client: client.brand_name,
+      results
     })
-  } catch (error) {
-    console.error('Sync API error:', error)
-    return NextResponse.json(
-      { 
-        error: 'Sync failed', 
-        message: error instanceof Error ? error.message : 'Unknown error',
-        timestamp: new Date().toISOString()
-      }, 
-      { status: 500 }
-    )
+
+  } catch (error: any) {
+    console.error('SYNC API: Error:', error)
+    return NextResponse.json({
+      error: 'Sync failed',
+      message: error.message
+    }, { status: 500 })
   }
 }
 
