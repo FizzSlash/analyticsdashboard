@@ -38,6 +38,28 @@ export async function POST(request: NextRequest) {
           campaign_name: campaign.campaign_name || 'Unknown Campaign',
           subject_line: campaign.subject_line || null,
           send_date: campaign.send_date || null,
+          // NEW FIELDS - Campaign metadata
+          campaign_status: campaign.campaign_status || null,
+          campaign_archived: campaign.campaign_archived || false,
+          campaign_created_at: campaign.campaign_created_at || null,
+          campaign_updated_at: campaign.campaign_updated_at || null,
+          campaign_scheduled_at: campaign.campaign_scheduled_at || null,
+          // NEW FIELDS - Email content
+          from_email: campaign.from_email || null,
+          from_label: campaign.from_label || null,
+          reply_to_email: campaign.reply_to_email || null,
+          email_html: campaign.email_html || null,
+          preview_text: campaign.preview_text || null,
+          // NEW FIELDS - Targeting
+          included_audiences: campaign.included_audiences || [],
+          excluded_audiences: campaign.excluded_audiences || [],
+          estimated_recipients: campaign.estimated_recipients || null,
+          // NEW FIELDS - Settings
+          use_smart_sending: campaign.use_smart_sending || false,
+          is_tracking_clicks: campaign.is_tracking_clicks !== false,
+          is_tracking_opens: campaign.is_tracking_opens !== false,
+          add_utm_tracking: campaign.add_utm_tracking || false,
+          send_strategy: campaign.send_strategy || 'static',
           // Map all analytics fields
           recipients_count: campaign.attributes?.recipients || 0,
           delivered_count: campaign.attributes?.delivered || 0,
@@ -68,9 +90,8 @@ export async function POST(request: NextRequest) {
           unsubscribe_rate: campaign.attributes?.unsubscribe_rate || 0,
           spam_complaint_rate: campaign.attributes?.spam_complaint_rate || 0,
           conversion_rate: campaign.attributes?.conversion_rate || 0,
-          // Additional fields
-          preview_text: campaign.preview_text || null,
-          image_url: null // Will be populated later if needed
+          // Legacy field
+          image_url: null
         }
         
         console.log(`💾 SAVE CAMPAIGNS: Prepared data for campaign ${campaign.id}:`, JSON.stringify(campaignData, null, 2))

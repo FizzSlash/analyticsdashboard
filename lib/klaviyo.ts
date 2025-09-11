@@ -64,8 +64,8 @@ export class KlaviyoAPI {
     }
   }
 
-  // Get Campaigns - REQUIRES channel filter per Klaviyo docs
-  async getCampaigns(cursor?: string, channel: 'email' | 'sms' | 'mobile_push' = 'email') {
+  // Get Campaigns - ENHANCED with includes for complete data
+  async getCampaigns(cursor?: string, channel: 'email' | 'sms' | 'mobile_push' = 'email', includes?: string[]) {
     let endpoint = `/campaigns`
     const params = new URLSearchParams()
     
@@ -77,11 +77,21 @@ export class KlaviyoAPI {
       params.set('page[cursor]', cursor)
     }
     
+    // Optional: Include related data (campaign-messages, tags, images, templates)
+    if (includes && includes.length > 0) {
+      params.set('include', includes.join(','))
+    }
+    
+    // Optional: Specific fields to reduce payload size
+    params.set('fields[campaign]', 'name,status,send_time,audiences,tracking_options,send_strategy,created_at,updated_at,scheduled_at,archived')
+    params.set('fields[campaign-message]', 'definition,send_times,created_at,updated_at')
+    
     const queryString = params.toString()
     endpoint += `?${queryString}`
     
-    console.log(`📧 CAMPAIGNS API: Full endpoint: ${endpoint}`)
-    console.log(`📧 CAMPAIGNS API: Required channel filter: ${channel}`)
+    console.log(`📧 CAMPAIGNS API: Enhanced endpoint: ${endpoint}`)
+    console.log(`📧 CAMPAIGNS API: Channel filter: ${channel}`)
+    console.log(`📧 CAMPAIGNS API: Includes: ${includes?.join(', ') || 'none'}`)
     return this.makeRequest(endpoint)
   }
 

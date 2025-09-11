@@ -260,10 +260,10 @@ export function ClientManagement({ agency, clients: initialClients }: ClientMana
     setSuccess('')
     
     try {
-      console.log('🚀 FRONTEND SYNC: Starting campaign sync for:', client.brand_slug)
+      console.log('🚀 FRONTEND SYNC: Starting optimized 2-call sync for:', client.brand_slug)
       
-      // Step 1: Get metrics (via secure proxy)
-      setSuccess('Step 1/3: Getting conversion metric ID...')
+      // Step 1: Get conversion metric ID
+      setSuccess('Step 1/4: Getting conversion metric ID...')
       console.log('📡 FRONTEND: Calling metrics proxy API')
       
       const metricsResponse = await fetch(`/api/klaviyo-proxy/metrics?clientSlug=${client.brand_slug}`)
@@ -279,11 +279,10 @@ export function ClientManagement({ agency, clients: initialClients }: ClientMana
         m.attributes?.name === 'Placed Order'
       )
       const conversionMetricId = placedOrderMetric?.id || null
-      
       console.log('🎯 FRONTEND: Found conversion metric ID:', conversionMetricId)
       
-      // Step 2: Get campaign analytics (via secure proxy)
-      setSuccess('Step 2/3: Getting campaign analytics...')
+      // Step 2: Get bulk campaign analytics
+      setSuccess('Step 2/4: Getting campaign analytics...')
       console.log('📡 FRONTEND: Calling campaign analytics proxy API')
       
       const analyticsResponse = await fetch('/api/klaviyo-proxy/campaign-analytics', {
@@ -303,87 +302,92 @@ export function ClientManagement({ agency, clients: initialClients }: ClientMana
       
       const analyticsResult = await analyticsResponse.json()
       console.log('📊 FRONTEND: Campaign analytics response:', analyticsResult)
-      console.log('📈 FRONTEND: Analytics data:', analyticsResult.data)
       
-      if (analyticsResult.data?.data?.length > 0) {
-        console.log(`✅ FRONTEND: Got analytics for ${analyticsResult.data.data.length} campaigns`)
-        analyticsResult.data.data.forEach((campaign: any, index: number) => {
-          console.log(`📊 FRONTEND: Campaign ${index + 1}:`, {
-            id: campaign.id,
-            opens: campaign.attributes?.opens || 0,
-            clicks: campaign.attributes?.clicks || 0,
-            revenue: campaign.attributes?.conversion_value || 0
-          })
-        })
-      } else {
-        console.log('⚠️ FRONTEND: No campaign analytics data returned')
+      // Step 3: Get ALL campaigns with messages in single call (OPTIMIZED!)
+      setSuccess('Step 3/4: Getting all campaign details and messages...')
+      console.log('📡 FRONTEND: Calling bulk campaigns API with includes')
+      
+      const campaignsResponse = await fetch(`/api/klaviyo-proxy/campaigns-bulk?clientSlug=${client.brand_slug}`)
+      if (!campaignsResponse.ok) {
+        const errorData = await campaignsResponse.json()
+        console.log('❌ FRONTEND: Bulk campaigns API failed:', errorData)
+        throw new Error(`Bulk campaigns API failed: ${errorData.message}`)
       }
       
-      // Step 3: Get individual campaign details (LUXE Blueprint approach)
-      setSuccess('Step 3/4: Getting campaign details and messages...')
-      console.log('📧 FRONTEND: Getting individual campaign details for 83 campaigns')
+      const campaignsResult = await campaignsResponse.json()
+      console.log('📧 FRONTEND: Bulk campaigns response:', campaignsResult)
+      console.log('📊 FRONTEND: Got campaigns:', campaignsResult.data?.data?.length || 0)
+      console.log('📩 FRONTEND: Got included data:', campaignsResult.data?.included?.length || 0)
       
-      const campaignDetails = []
-      const totalCampaigns = analyticsResult.data.data.length
+      // Process and combine data
+      const campaignDetails: any[] = []
+      const analyticsLookup: { [key: string]: any } = {}
       
-      for (let i = 0; i < analyticsResult.data.data.length; i++) {
-        const campaign = analyticsResult.data.data[i]
-        console.log(`📧 FRONTEND: Processing campaign ${i + 1}/${totalCampaigns} - ${campaign.id}`)
-        
-        try {
-          // Get campaign basic details
-          const campaignResponse = await fetch(`/api/klaviyo-proxy/campaigns/${campaign.id}?clientSlug=${client.brand_slug}`)
-          if (!campaignResponse.ok) {
-            console.log(`⚠️ FRONTEND: Failed to get campaign ${campaign.id} details`)
-            continue
+      // Create analytics lookup
+      if (analyticsResult.data?.data) {
+        analyticsResult.data.data.forEach((item: any) => {
+          analyticsLookup[item.id] = item.attributes
+        })
+      }
+      
+      // Create messages lookup from included data
+      const messagesLookup: { [key: string]: any } = {}
+      if (campaignsResult.data?.included) {
+        campaignsResult.data.included.forEach((item: any) => {
+          if (item.type === 'campaign-message') {
+            // Extract campaign ID from relationships or use message ID
+            const campaignId = item.relationships?.campaign?.data?.id || item.id
+            messagesLookup[campaignId] = item.attributes
           }
+        })
+      }
+      
+      // Combine all data
+      if (campaignsResult.data?.data) {
+        campaignsResult.data.data.forEach((campaign: any, index: number) => {
+          const analytics = analyticsLookup[campaign.id] || {}
+          const messageData = messagesLookup[campaign.id] || {}
           
-          const campaignData = await campaignResponse.json()
-          console.log(`📋 FRONTEND: Got campaign details for ${campaign.id}:`, campaignData.data?.data?.attributes?.name || 'Unknown')
-          
-          // Get campaign messages (subject lines, content)
-          const messagesResponse = await fetch(`/api/klaviyo-proxy/campaign-messages/${campaign.id}?clientSlug=${client.brand_slug}`)
-          if (!messagesResponse.ok) {
-            console.log(`⚠️ FRONTEND: Failed to get messages for campaign ${campaign.id}`)
-            continue
-          }
-          
-          const messagesData = await messagesResponse.json()
-          console.log(`📩 FRONTEND: Got ${messagesData.data?.data?.length || 0} messages for campaign ${campaign.id}`)
-          
-          // Extract subject line and content
-          const message = messagesData.data?.data?.[0]
-          const subjectLine = message?.attributes?.content?.subject || 'No subject'
-          const previewText = message?.attributes?.content?.preview_text || ''
-          
-          console.log(`📝 FRONTEND: Campaign ${campaign.id} - Subject: "${subjectLine}"`)
-          
-          // Combine analytics + details
           const completeData = {
-            ...campaign,
-            campaign_name: campaignData.data?.data?.attributes?.name || 'Unknown Campaign',
-            subject_line: subjectLine,
-            preview_text: previewText,
-            send_date: campaignData.data?.data?.attributes?.send_time || null,
-            status: campaignData.data?.data?.attributes?.status || 'unknown'
+            id: campaign.id,
+            attributes: analytics,
+            // Campaign details
+            campaign_name: campaign.attributes?.name || 'Unknown Campaign',
+            campaign_status: campaign.attributes?.status || 'unknown',
+            send_date: campaign.attributes?.send_time || null,
+            campaign_archived: campaign.attributes?.archived || false,
+            campaign_created_at: campaign.attributes?.created_at || null,
+            campaign_updated_at: campaign.attributes?.updated_at || null,
+            campaign_scheduled_at: campaign.attributes?.scheduled_at || null,
+            // Message content
+            subject_line: messageData?.definition?.content?.subject || 'No subject',
+            preview_text: messageData?.definition?.content?.preview_text || null,
+            from_email: messageData?.definition?.content?.from_email || null,
+            from_label: messageData?.definition?.content?.from_label || null,
+            reply_to_email: messageData?.definition?.content?.reply_to_email || null,
+            email_html: null, // Will be populated from template if available
+            // Targeting data
+            included_audiences: campaign.attributes?.audiences?.included || [],
+            excluded_audiences: campaign.attributes?.audiences?.excluded || [],
+            estimated_recipients: null, // Would need separate API call
+            // Settings
+            use_smart_sending: campaign.attributes?.send_options?.use_smart_sending || false,
+            is_tracking_clicks: campaign.attributes?.tracking_options?.is_tracking_clicks || true,
+            is_tracking_opens: campaign.attributes?.tracking_options?.is_tracking_opens || true,
+            add_utm_tracking: campaign.attributes?.tracking_options?.add_tracking_params || false,
+            send_strategy: campaign.attributes?.send_strategy?.method || 'static'
           }
           
           campaignDetails.push(completeData)
           
-          // Small delay to respect rate limits
-          if (i < totalCampaigns - 1) {
-            await new Promise(resolve => setTimeout(resolve, 100)) // 100ms delay
-          }
-          
-        } catch (error) {
-          console.error(`❌ FRONTEND: Error processing campaign ${campaign.id}:`, error)
-        }
+          console.log(`📊 FRONTEND: Campaign ${index + 1}: ${completeData.campaign_name} - Subject: "${completeData.subject_line}"`)
+        })
       }
       
-      console.log(`✅ FRONTEND: Completed campaign details - ${campaignDetails.length}/${totalCampaigns} campaigns processed`)
+      console.log(`✅ FRONTEND: Processed ${campaignDetails.length} campaigns with complete data`)
       
-      // Step 4: Save complete data to Supabase
-      setSuccess('Step 4/4: Saving campaign data to Supabase...')
+      // Step 4: Save to Supabase
+      setSuccess('Step 4/4: Saving complete data to Supabase...')
       console.log('💾 FRONTEND: Calling bulk save API for Supabase upsert')
       
       const saveResponse = await fetch('/api/klaviyo-proxy/save-campaigns', {
@@ -404,25 +408,23 @@ export function ClientManagement({ agency, clients: initialClients }: ClientMana
       const saveResult = await saveResponse.json()
       console.log('💾 FRONTEND: Bulk save completed:', saveResult)
       
-      setSuccess(`✅ Complete LUXE blueprint sync with Supabase save finished for ${client.brand_name}!
+      setSuccess(`✅ Optimized 2-call sync with Supabase save completed for ${client.brand_name}!
       
-📊 Metrics: ${metricsResult.data?.data?.length || 0} found
-📈 Analytics: ${analyticsResult.data?.data?.length || 0} campaigns processed
-📧 Details: ${campaignDetails.length} campaigns with complete data
+📊 Analytics: ${analyticsResult.data?.data?.length || 0} campaigns processed
+📧 Campaign Details: ${campaignsResult.data?.data?.length || 0} campaigns with complete data
 💾 Saved: ${saveResult.results?.successful || 0}/${saveResult.results?.total || 0} campaigns to Supabase
 🎯 Conversion Metric: ${conversionMetricId}
 
 Sample campaigns:
-${campaignDetails.slice(0, 5).map((c: any, i: number) => 
-  `${i + 1}. ${c.campaign_name} - Opens: ${c.attributes?.opens || 0}, Revenue: $${c.attributes?.conversion_value || 0}`
+${campaignDetails.slice(0, 3).map((c: any, i: number) => 
+  `${i + 1}. ${c.campaign_name} - Subject: "${c.subject_line}" - Opens: ${c.attributes?.opens || 0}`
 ).join('\n')}`)
       
-      console.log('🎉 FRONTEND: Complete LUXE blueprint sync with Supabase save completed successfully')
-      console.log('💾 FRONTEND: Save results:', saveResult)
+      console.log('🎉 FRONTEND: Optimized 2-call sync completed successfully')
       
     } catch (err) {
       console.error('❌ FRONTEND: Sync error:', err)
-      setError(err instanceof Error ? err.message : 'Frontend sync failed')
+      setError(err instanceof Error ? err.message : 'Optimized sync failed')
     } finally {
       setLoading(false)
     }
