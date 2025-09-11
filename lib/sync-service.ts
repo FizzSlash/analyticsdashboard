@@ -521,12 +521,7 @@ export class SyncService {
       if (analytics.data && analytics.data.length > 0) {
         const flowAnalytics = analytics.data[0].attributes
         
-        this.log(`📈 FLOWS: Got analytics for flow ${flowId}:`, {
-          opens_unique: flowAnalytics?.opens_unique || 0,
-          clicks_unique: flowAnalytics?.clicks_unique || 0,
-          open_rate: flowAnalytics?.open_rate || 0,
-          conversion_rate: flowAnalytics?.conversion_rate || 0
-        })
+        this.log(`📈 FLOWS: Got analytics for flow ${flowId}: opens_unique=${flowAnalytics?.opens_unique || 0}, clicks_unique=${flowAnalytics?.clicks_unique || 0}, open_rate=${flowAnalytics?.open_rate || 0}, conversion_rate=${flowAnalytics?.conversion_rate || 0}`)
         
         return {
           // ALL AVAILABLE FLOW STATISTICS (from user screenshots)
