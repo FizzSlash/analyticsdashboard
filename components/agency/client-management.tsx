@@ -259,12 +259,12 @@ export function ClientManagement({ agency, clients: initialClients }: ClientMana
     try {
       console.log('Triggering sync for client:', client.brand_slug)
       
-      const response = await fetch(`/api/sync/${client.brand_slug}`, {
+      const response = await fetch('/api/sync', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer dev-sync-key`
-        }
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ clientId: client.brand_slug })
       })
 
       console.log('Sync response status:', response.status)
