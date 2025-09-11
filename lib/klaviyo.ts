@@ -12,6 +12,7 @@ export class KlaviyoAPI {
     
     console.log(`🌐 KLAVIYO API: Making request to ${endpoint}`)
     console.log(`🔑 KLAVIYO API: Using API key starting with: ${this.apiKey.substring(0, 8)}...`)
+    console.log(`🔗 KLAVIYO API: Full URL: ${url}`)
     
     const response = await fetch(url, {
       ...options,
@@ -34,6 +35,7 @@ export class KlaviyoAPI {
 
     const data = await response.json()
     console.log(`✅ KLAVIYO API: Success - Data keys:`, Object.keys(data))
+    console.log(`📊 KLAVIYO API: Data count: ${data.data ? data.data.length : 'N/A'}`)
     
     return data
   }

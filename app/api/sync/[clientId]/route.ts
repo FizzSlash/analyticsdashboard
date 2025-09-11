@@ -47,7 +47,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       debug: {
         serverLogs: 'Check server console for detailed Klaviyo API logs',
         note: 'API calls are logged server-side, not in browser console',
-        recentLogs: syncService.syncLogs.slice(-10) // Last 10 log entries
+        recentLogs: syncService.syncLogs.slice(-50) // Last 50 log entries to see full sync process
       }
     })
   } catch (error) {

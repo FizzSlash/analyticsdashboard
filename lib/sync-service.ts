@@ -33,40 +33,40 @@ export class SyncService {
 
   // Main sync function
   async syncAllData() {
-    console.log(`🚀 SYNC START: Starting comprehensive sync for client: ${this.client.brand_name}`)
+    this.log(`🚀 SYNC START: Starting comprehensive sync for client: ${this.client.brand_name}`)
     
     try {
-      console.log(`📅 SYNC SCOPE: Pulling data from the past 365 days`)
+      this.log(`📅 SYNC SCOPE: Pulling data from the past 365 days`)
       
-      console.log(`📧 SYNC STEP 1: Starting campaigns sync...`)
+      this.log(`📧 SYNC STEP 1: Starting campaigns sync...`)
       await this.syncCampaigns()
-      console.log(`✅ SYNC STEP 1: Campaigns sync completed`)
+      this.log(`✅ SYNC STEP 1: Campaigns sync completed`)
       
-      console.log(`🔄 SYNC STEP 2: Starting flows sync...`)
+      this.log(`🔄 SYNC STEP 2: Starting flows sync...`)
       await this.syncFlows()
-      console.log(`✅ SYNC STEP 2: Flows sync completed`)
+      this.log(`✅ SYNC STEP 2: Flows sync completed`)
       
-      console.log(`👥 SYNC STEP 3: Starting audience metrics sync...`)
+      this.log(`👥 SYNC STEP 3: Starting audience metrics sync...`)
       await this.syncAudienceMetrics()
-      console.log(`✅ SYNC STEP 3: Audience metrics sync completed`)
+      this.log(`✅ SYNC STEP 3: Audience metrics sync completed`)
       
-      console.log(`💰 SYNC STEP 4: Starting revenue attribution sync...`)
+      this.log(`💰 SYNC STEP 4: Starting revenue attribution sync...`)
       await this.syncRevenueAttribution()
-      console.log(`✅ SYNC STEP 4: Revenue attribution sync completed`)
+      this.log(`✅ SYNC STEP 4: Revenue attribution sync completed`)
 
       // Update last sync timestamp
       await DatabaseService.updateClientSyncTime(this.client.id)
       
-      console.log(`🎉 SYNC COMPLETE: All data synced successfully for ${this.client.brand_name}`)
+      this.log(`🎉 SYNC COMPLETE: All data synced successfully for ${this.client.brand_name}`)
     } catch (error) {
-      console.error(`❌ SYNC FAILED for client ${this.client.brand_name}:`, error)
+      this.log(`❌ SYNC FAILED for client ${this.client.brand_name}: ${error}`)
       throw error
     }
   }
 
   // Sync campaign data
   async syncCampaigns() {
-    console.log('📧 CAMPAIGNS: Starting campaigns sync...')
+    this.log('📧 CAMPAIGNS: Starting campaigns sync...')
     
     try {
       // Calculate date filter for past year
@@ -74,7 +74,7 @@ export class SyncService {
       oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1)
       const dateFilter = oneYearAgo.toISOString()
       
-      console.log(`📅 CAMPAIGNS: Filtering campaigns from ${oneYearAgo.toDateString()} onwards`)
+      this.log(`📅 CAMPAIGNS: Filtering campaigns from ${oneYearAgo.toDateString()} onwards`)
       
       let allCampaigns: any[] = []
       let cursor: string | undefined
@@ -84,7 +84,7 @@ export class SyncService {
       // Fetch campaigns with pagination (limited to past year)
       while (hasMore) {
         pageCount++
-        console.log(`📄 CAMPAIGNS: Fetching page ${pageCount}...`)
+        this.log(`📄 CAMPAIGNS: Fetching page ${pageCount}...`)
         
         const response = await this.klaviyo.getCampaigns(cursor)
         const campaigns = response.data || []
@@ -96,7 +96,7 @@ export class SyncService {
         })
         
         allCampaigns = [...allCampaigns, ...recentCampaigns]
-        console.log(`📊 CAMPAIGNS: Page ${pageCount} - Found ${campaigns.length} campaigns, ${recentCampaigns.length} within past year`)
+        this.log(`📊 CAMPAIGNS: Page ${pageCount} - Found ${campaigns.length} campaigns, ${recentCampaigns.length} within past year`)
         
         cursor = response.links?.next ? new URL(response.links.next).searchParams.get('page[cursor]') || undefined : undefined
         hasMore = !!cursor
@@ -108,21 +108,21 @@ export class SyncService {
         }
       }
       
-      console.log(`📈 CAMPAIGNS: Total campaigns to process: ${allCampaigns.length}`)
+      this.log(`📈 CAMPAIGNS: Total campaigns to process: ${allCampaigns.length}`)
 
       // Process each campaign
       for (let i = 0; i < allCampaigns.length; i++) {
         const campaign = allCampaigns[i]
-        console.log(`🔄 CAMPAIGNS: Processing campaign ${i + 1}/${allCampaigns.length} - ${campaign.attributes?.name || 'Unnamed'}`)
+        this.log(`🔄 CAMPAIGNS: Processing campaign ${i + 1}/${allCampaigns.length} - ${campaign.attributes?.name || 'Unnamed'}`)
         
         try {
           // Get campaign messages for subject line
           let messages: any[] = []
           try {
-            console.log(`📩 CAMPAIGNS: Fetching messages for campaign ${campaign.id}`)
+            this.log(`📩 CAMPAIGNS: Fetching messages for campaign ${campaign.id}`)
             const messagesResponse = await this.klaviyo.getCampaignMessages(campaign.id)
             messages = messagesResponse.data || []
-            console.log(`📩 CAMPAIGNS: Found ${messages.length} messages`)
+            this.log(`📩 CAMPAIGNS: Found ${messages.length} messages`)
           } catch (error) {
             console.warn(`⚠️ CAMPAIGNS: Could not fetch messages for campaign ${campaign.id}:`, error)
           }
