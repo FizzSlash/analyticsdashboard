@@ -33,6 +33,8 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
   const [timeframe, setTimeframe] = useState(365) // Default to 365 days
   const [data, setData] = useState(initialData)
   const [loading, setLoading] = useState(false)
+  const [sortField, setSortField] = useState('send_date')
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc')
 
   const tabs = [
     { id: 'dashboard', label: 'Overview', icon: BarChart3 },
@@ -224,9 +226,6 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
   )
 
   const renderCampaignsTab = () => {
-    const [sortField, setSortField] = useState('send_date')
-    const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc')
-    
     const campaigns = data?.campaigns || []
     
     // Calculate total campaign revenue
