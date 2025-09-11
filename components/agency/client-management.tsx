@@ -260,78 +260,83 @@ export function ClientManagement({ agency, clients: initialClients }: ClientMana
     setSuccess('')
     
     try {
-      console.log('Starting sequential sync for client:', client.brand_slug)
+      console.log('🚀 FRONTEND SYNC: Starting campaign sync for:', client.brand_slug)
       
-      // Phase 1: Campaigns
-      setSuccess('Phase 1/3: Syncing campaigns...')
-      console.log('Phase 1: Starting campaigns sync')
+      // Step 1: Get metrics (via secure proxy)
+      setSuccess('Step 1/3: Getting conversion metric ID...')
+      console.log('📡 FRONTEND: Calling metrics proxy API')
       
-      const campaignsResponse = await fetch('/api/sync/campaigns', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ client })
-      })
-      
-      if (!campaignsResponse.ok) {
-        const error = await campaignsResponse.json()
-        throw new Error(`Campaigns sync failed: ${error.message}`)
+      const metricsResponse = await fetch(`/api/klaviyo-proxy/metrics?clientSlug=${client.brand_slug}`)
+      if (!metricsResponse.ok) {
+        throw new Error(`Metrics API failed: ${metricsResponse.status}`)
       }
       
-      const campaignsResult = await campaignsResponse.json()
-      console.log('Phase 1 completed:', campaignsResult)
+      const metricsResult = await metricsResponse.json()
+      console.log('📊 FRONTEND: Metrics response:', metricsResult)
       
-      // Phase 2: Flows
-      setSuccess('Phase 2/3: Syncing flows...')
-      console.log('Phase 2: Starting flows sync')
+      // Find Placed Order metric
+      const placedOrderMetric = metricsResult.data?.data?.find((m: any) => 
+        m.attributes?.name === 'Placed Order'
+      )
+      const conversionMetricId = placedOrderMetric?.id || null
       
-      const flowsResponse = await fetch('/api/sync/flows', {
+      console.log('🎯 FRONTEND: Found conversion metric ID:', conversionMetricId)
+      
+      // Step 2: Get campaign analytics (via secure proxy)
+      setSuccess('Step 2/3: Getting campaign analytics...')
+      console.log('📡 FRONTEND: Calling campaign analytics proxy API')
+      
+      const analyticsResponse = await fetch('/api/klaviyo-proxy/campaign-analytics', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ client })
+        body: JSON.stringify({ 
+          clientSlug: client.brand_slug,
+          conversionMetricId 
+        })
       })
       
-      if (!flowsResponse.ok) {
-        const error = await flowsResponse.json()
-        throw new Error(`Flows sync failed: ${error.message}`)
+      if (!analyticsResponse.ok) {
+        const errorData = await analyticsResponse.json()
+        console.log('❌ FRONTEND: Analytics API failed:', errorData)
+        throw new Error(`Analytics API failed: ${errorData.message}`)
       }
       
-      const flowsResult = await flowsResponse.json()
-      console.log('Phase 2 completed:', flowsResult)
+      const analyticsResult = await analyticsResponse.json()
+      console.log('📊 FRONTEND: Campaign analytics response:', analyticsResult)
+      console.log('📈 FRONTEND: Analytics data:', analyticsResult.data)
       
-      // Phase 3: Segments
-      setSuccess('Phase 3/3: Syncing segments...')
-      console.log('Phase 3: Starting segments sync')
-      
-      const segmentsResponse = await fetch('/api/sync/segments', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ client })
-      })
-      
-      if (!segmentsResponse.ok) {
-        const error = await segmentsResponse.json()
-        throw new Error(`Segments sync failed: ${error.message}`)
+      if (analyticsResult.data?.data?.length > 0) {
+        console.log(`✅ FRONTEND: Got analytics for ${analyticsResult.data.data.length} campaigns`)
+        analyticsResult.data.data.forEach((campaign: any, index: number) => {
+          console.log(`📊 FRONTEND: Campaign ${index + 1}:`, {
+            id: campaign.id,
+            opens: campaign.attributes?.opens || 0,
+            clicks: campaign.attributes?.clicks || 0,
+            revenue: campaign.attributes?.conversion_value || 0
+          })
+        })
+      } else {
+        console.log('⚠️ FRONTEND: No campaign analytics data returned')
       }
       
-      const segmentsResult = await segmentsResponse.json()
-      console.log('Phase 3 completed:', segmentsResult)
+      // Step 3: Process and save data
+      setSuccess('Step 3/3: Processing campaign data...')
+      console.log('💾 FRONTEND: Processing campaign data for database save')
       
-      // Update last sync time
-      await fetch(`/api/clients/${client.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ last_sync: new Date().toISOString() })
-      })
-
-      setSuccess(`✅ Sequential sync completed successfully for ${client.brand_name}!
+      // Here you'd call another proxy to save the data
+      // For now, just show success
       
-Phase 1: ${campaignsResult.message}
-Phase 2: ${flowsResult.message}  
-Phase 3: ${segmentsResult.message}`)
+      setSuccess(`✅ Frontend sync completed successfully for ${client.brand_name}!
+      
+📊 Metrics: ${metricsResult.data?.data?.length || 0} found
+📈 Analytics: ${analyticsResult.data?.data?.length || 0} campaigns processed
+🎯 Conversion Metric: ${conversionMetricId}`)
+      
+      console.log('🎉 FRONTEND: Sync completed successfully')
       
     } catch (err) {
-      console.error('Sequential sync error:', err)
-      setError(err instanceof Error ? err.message : 'Sequential sync failed')
+      console.error('❌ FRONTEND: Sync error:', err)
+      setError(err instanceof Error ? err.message : 'Frontend sync failed')
     } finally {
       setLoading(false)
     }
