@@ -8,6 +8,7 @@ export interface Agency {
   secondary_color: string
   logo_url?: string
   background_image_url?: string
+  custom_domain?: string
   created_at: string
 }
 
