@@ -306,8 +306,15 @@ export class KlaviyoAPI {
     // SOLUTION: Call API for each campaign individually (equals filter only supports single values)
     const results = []
     
-    for (const campaignId of campaignIds) {
-      console.log(`📊 CAMPAIGNS: Getting analytics for campaign ${campaignId}`)
+    for (let i = 0; i < campaignIds.length; i++) {
+      const campaignId = campaignIds[i]
+      console.log(`📊 CAMPAIGNS: Getting analytics for campaign ${campaignId} (${i + 1}/${campaignIds.length})`)
+      
+      // Add delay to avoid rate limiting (except for first request)
+      if (i > 0) {
+        console.log(`⏳ CAMPAIGNS: Waiting 2 seconds to avoid rate limits...`)
+        await new Promise(resolve => setTimeout(resolve, 2000))
+      }
       
       try {
         const result = await this.makeRequest('/campaign-values-reports', {
@@ -341,11 +348,13 @@ export class KlaviyoAPI {
           })
         })
         
-        if (result.data) {
+        if (result.data && Array.isArray(result.data)) {
           results.push(...result.data)
+        } else if (result.data) {
+          results.push(result.data)
         }
         
-        console.log(`✅ CAMPAIGNS: Got analytics for ${campaignId} - ${result.data?.length || 0} rows`)
+        console.log(`✅ CAMPAIGNS: Got analytics for ${campaignId} - ${Array.isArray(result.data) ? result.data.length : (result.data ? 1 : 0)} rows`)
         
       } catch (error: any) {
         console.log(`⚠️ CAMPAIGNS: Failed to get analytics for ${campaignId}: ${error.message}`)
@@ -404,11 +413,13 @@ export class KlaviyoAPI {
           })
         })
         
-        if (result.data) {
+        if (result.data && Array.isArray(result.data)) {
           results.push(...result.data)
+        } else if (result.data) {
+          results.push(result.data)
         }
         
-        console.log(`✅ FLOWS: Got analytics for ${flowId} - ${result.data?.length || 0} rows`)
+        console.log(`✅ FLOWS: Got analytics for ${flowId} - ${Array.isArray(result.data) ? result.data.length : (result.data ? 1 : 0)} rows`)
         
       } catch (error: any) {
         console.log(`⚠️ FLOWS: Failed to get analytics for ${flowId}: ${error.message}`)
