@@ -502,7 +502,7 @@ export class KlaviyoAPI {
               'recipients', 'revenue_per_recipient'
             ],
             timeframe: { start: startDate, end: endDate },
-            filter: `any(flow_id,["${flowIds.join('","')}"])` // BATCH ALL FLOWS
+            filter: `contains-any(flow_id,["${flowIds.join('","')}"])` // BATCH ALL FLOWS
           }
         }
       }
