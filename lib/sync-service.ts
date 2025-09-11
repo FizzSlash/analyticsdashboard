@@ -39,20 +39,40 @@ export class SyncService {
       this.log(`📅 SYNC SCOPE: Pulling data from the past 365 days`)
       
       this.log(`📧 SYNC STEP 1: Starting campaigns sync...`)
-      await this.syncCampaigns()
-      this.log(`✅ SYNC STEP 1: Campaigns sync completed`)
+      try {
+        await this.syncCampaigns()
+        this.log(`✅ SYNC STEP 1: Campaigns sync completed`)
+      } catch (campaignError) {
+        this.log(`❌ SYNC STEP 1: Campaigns sync failed: ${campaignError}`)
+        throw campaignError
+      }
       
       this.log(`🔄 SYNC STEP 2: Starting flows sync...`)
-      await this.syncFlows()
-      this.log(`✅ SYNC STEP 2: Flows sync completed`)
+      try {
+        await this.syncFlows()
+        this.log(`✅ SYNC STEP 2: Flows sync completed`)
+      } catch (flowError) {
+        this.log(`❌ SYNC STEP 2: Flows sync failed: ${flowError}`)
+        throw flowError
+      }
       
       this.log(`👥 SYNC STEP 3: Starting segments sync...`)
-      await this.syncSegments()
-      this.log(`✅ SYNC STEP 3: Segments sync completed`)
+      try {
+        await this.syncSegments()
+        this.log(`✅ SYNC STEP 3: Segments sync completed`)
+      } catch (segmentError) {
+        this.log(`❌ SYNC STEP 3: Segments sync failed: ${segmentError}`)
+        throw segmentError
+      }
       
       this.log(`📬 SYNC STEP 4: Starting deliverability sync...`)
-      await this.syncDeliverability()
-      this.log(`✅ SYNC STEP 4: Deliverability sync completed`)
+      try {
+        await this.syncDeliverability()
+        this.log(`✅ SYNC STEP 4: Deliverability sync completed`)
+      } catch (deliverabilityError) {
+        this.log(`❌ SYNC STEP 4: Deliverability sync failed: ${deliverabilityError}`)
+        throw deliverabilityError
+      }
 
       // Update last sync timestamp
       await DatabaseService.updateClientSyncTime(this.client.id)
@@ -115,10 +135,21 @@ export class SyncService {
       const campaignIds = allCampaigns.map(c => c.id)
       
       let campaignAnalytics: any = {}
-      this.log(`⚠️ CAMPAIGNS: Skipping Campaign Values Report API (complex requirements) - using campaign data only`)
-      
-      // For now, we'll get basic metrics from campaign attributes instead of complex reporting API
-      // TODO: Implement proper Campaign Values Report API with required statistics, timeframe, conversion_metric_id
+      try {
+        const analyticsResponse = await this.klaviyo.getCampaignAnalytics(campaignIds)
+        this.log(`📊 CAMPAIGNS: Campaign analytics API response received`)
+        
+        // Process analytics response to create lookup by campaign ID
+        if (analyticsResponse.data) {
+          for (const metric of analyticsResponse.data) {
+            campaignAnalytics[metric.attributes.campaign_id] = metric.attributes
+          }
+        }
+        this.log(`📊 CAMPAIGNS: Analytics processed for ${Object.keys(campaignAnalytics).length} campaigns`)
+      } catch (error) {
+        this.log(`⚠️ CAMPAIGNS: Could not fetch campaign analytics: ${error}`)
+        campaignAnalytics = {}
+      }
 
       // Process each campaign with messages (using correct fields)
       for (let i = 0; i < allCampaigns.length; i++) {
@@ -169,8 +200,10 @@ export class SyncService {
 
       this.log(`✅ CAMPAIGNS: Synced ${allCampaigns.length} campaigns successfully`)
       this.log(`🎯 CAMPAIGNS: Campaign sync completed, proceeding to flows...`)
+      this.log(`🔍 CAMPAIGNS: Campaign sync method completed without errors`)
     } catch (error) {
       this.log(`❌ CAMPAIGNS: Error syncing campaigns: ${error}`)
+      this.log(`❌ CAMPAIGNS: Error details: ${JSON.stringify(error)}`)
       throw error
     }
   }

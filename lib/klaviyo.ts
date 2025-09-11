@@ -233,11 +233,33 @@ export class KlaviyoAPI {
 
   // REPORTING API METHODS
   
-  // Campaign Analytics Report - DISABLED for now due to complex requirements
+  // Campaign Analytics Report - PROPERLY IMPLEMENTED
   async getCampaignAnalytics(campaignIds: string[]) {
-    console.log(`⚠️ CAMPAIGNS: Campaign Values Report API requires complex setup - using campaign data only for now`)
-    // Return empty analytics - we'll get basic data from campaign attributes
-    return { data: [] }
+    console.log(`📊 CAMPAIGNS: Calling Campaign Values Report API for ${campaignIds.length} campaigns`)
+    
+    return this.makeRequest('/campaign-values-reports', {
+      method: 'POST',
+      body: JSON.stringify({
+        data: {
+          type: 'campaign-values-report',
+          attributes: {
+            statistics: [
+              'bounced',
+              'bounced_or_failed', 
+              'clicked',
+              'delivered',
+              'failed_to_deliver',
+              'opened',
+              'received',
+              'unsubscribed'
+            ],
+            timeframe: 'last_30_days',
+            conversion_metric_id: null,
+            filter: `any(campaign_id,["${campaignIds.join('","')}"])`
+          }
+        }
+      })
+    })
   }
 
   // Flow Analytics Report  
