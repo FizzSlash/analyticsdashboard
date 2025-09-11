@@ -317,26 +317,86 @@ export class KlaviyoAPI {
 
   // REPORTING API METHODS
   
-  // Campaign Analytics Report - MAXIMUM DATA EXTRACTION (365 DAYS)
+  // Campaign Analytics Report - BATCHED APPROACH (365 DAYS)
   async getCampaignAnalytics(campaignIds: string[]) {
-    console.log(`📊 CAMPAIGNS: Calling Campaign Values Report API for ${campaignIds.length} campaigns - MAXIMUM DATA EXTRACTION`)
+    console.log(`📊 CAMPAIGNS: Calling Campaign Values Report API for ${campaignIds.length} campaigns - BATCHED APPROACH`)
     
     // Calculate dynamic 365-day timeframe
     const endDate = new Date().toISOString().split('T')[0]
     const startDate = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
     
     console.log(`📅 CAMPAIGNS: Dynamic timeframe - ${startDate} to ${endDate} (365 days)`)
+    console.log(`🔄 CAMPAIGNS: BATCHED CALL - Getting analytics for ALL ${campaignIds.length} campaigns in single API call`)
     
-    // SOLUTION: Call API for each campaign individually with smart retry
+    try {
+      const result = await this.makeRequest('/campaign-values-reports', {
+        method: 'POST',
+        body: JSON.stringify({
+          data: {
+            type: 'campaign-values-report',
+            attributes: {
+              statistics: [
+                // Core engagement stats only (to minimize rate limit impact)
+                'opens', 'opens_unique', 'open_rate',
+                'clicks', 'clicks_unique', 'click_rate', 'click_to_open_rate',
+                'delivered', 'delivery_rate',
+                'bounced', 'bounce_rate',
+                'conversions', 'conversion_rate', 'conversion_value',
+                'recipients', 'revenue_per_recipient'
+              ],
+              timeframe: { start: startDate, end: endDate },
+              filter: `any(campaign_id,["${campaignIds.join('","')}"])`, // BATCH ALL CAMPAIGNS
+              conversion_metric_id: 'QSwNRK' // We'll fix this dynamically later
+            }
+          }
+        })
+      })
+      
+      console.log(`✅ CAMPAIGNS: BATCHED API call successful - got data for ${campaignIds.length} campaigns`)
+      console.log(`📊 CAMPAIGNS: Response structure:`, JSON.stringify(result, null, 2))
+      
+      // Parse the batched response
+      const results = []
+      if (result.data?.attributes?.results && Array.isArray(result.data.attributes.results)) {
+        for (const item of result.data.attributes.results) {
+          results.push({
+            id: item.groupings?.campaign_id || 'unknown',
+            attributes: item.statistics || {}
+          })
+        }
+        console.log(`📈 CAMPAIGNS: Processed ${results.length} campaign analytics from batched response`)
+      } else {
+        console.log(`⚠️ CAMPAIGNS: Unexpected response structure from batched call`)
+      }
+      
+      return { data: results }
+      
+    } catch (error: any) {
+      console.log(`❌ CAMPAIGNS: Batched API call failed: ${error.message}`)
+      console.log(`🔄 CAMPAIGNS: Falling back to individual calls...`)
+      
+      // Fallback to individual calls with much longer delays
+      return this.getCampaignAnalyticsIndividual(campaignIds)
+    }
+  }
+
+  // Fallback method for individual calls (if batching fails)
+  private async getCampaignAnalyticsIndividual(campaignIds: string[]) {
+    console.log(`📊 CAMPAIGNS: Using individual calls with extended delays`)
+    
+    const endDate = new Date().toISOString().split('T')[0]
+    const startDate = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+    
     const results = []
     
     for (const campaignId of campaignIds) {
-      console.log(`📊 CAMPAIGNS: Getting analytics for campaign ${campaignId}`)
+      console.log(`📊 CAMPAIGNS: Getting analytics for campaign ${campaignId} (${campaignIds.indexOf(campaignId) + 1}/${campaignIds.length})`)
       
       try {
-        // Add small delay between calls to avoid rate limiting
+        // Much longer delay between individual calls (30 seconds)
         if (campaignIds.indexOf(campaignId) > 0) {
-          await new Promise(resolve => setTimeout(resolve, 500)) // 500ms delay between calls
+          console.log(`⏱️ CAMPAIGNS: Waiting 30 seconds before next call to respect rate limits`)
+          await new Promise(resolve => setTimeout(resolve, 30000))
         }
         
         const result = await this.makeRequest('/campaign-values-reports', {
@@ -345,24 +405,7 @@ export class KlaviyoAPI {
             data: {
               type: 'campaign-values-report',
               attributes: {
-                statistics: [
-                  // Email engagement stats
-                  'opens', 'opens_unique', 'open_rate',
-                  'clicks', 'clicks_unique', 'click_rate', 'click_to_open_rate',
-                  // Delivery stats (FIXED - using valid statistics only)
-                  'delivered', 'delivery_rate',
-                  'bounced', 'bounce_rate',
-                  'bounced_or_failed', 'bounced_or_failed_rate',
-                  'failed', 'failed_rate',
-                  // Conversion stats
-                  'conversions', 'conversion_rate', 'conversion_uniques', 'conversion_value',
-                  // Unsubscribe stats
-                  'unsubscribes', 'unsubscribe_rate', 'unsubscribe_uniques',
-                  // Spam stats
-                  'spam_complaints', 'spam_complaint_rate',
-                  // Recipient stats
-                  'recipients', 'revenue_per_recipient', 'average_order_value'
-                ],
+                statistics: ['opens', 'clicks', 'conversions', 'conversion_value'], // Minimal stats
                 timeframe: { start: startDate, end: endDate },
                 filter: `equals(campaign_id,"${campaignId}")`,
                 conversion_metric_id: 'QSwNRK'
@@ -371,14 +414,13 @@ export class KlaviyoAPI {
           })
         })
         
-        // Parse response structure
         if (result.data?.attributes?.results && Array.isArray(result.data.attributes.results)) {
           const transformedData = result.data.attributes.results.map((item: any) => ({
             id: item.groupings?.campaign_id || campaignId,
             attributes: item.statistics || {}
           }))
           results.push(...transformedData)
-          console.log(`✅ CAMPAIGNS: Got analytics for ${campaignId} - REAL DATA`)
+          console.log(`✅ CAMPAIGNS: Got analytics for ${campaignId}`)
         }
         
       } catch (error: any) {
@@ -389,26 +431,86 @@ export class KlaviyoAPI {
     return { data: results }
   }
 
-  // Flow Analytics Report - MAXIMUM DATA EXTRACTION (365 DAYS)
+  // Flow Analytics Report - BATCHED APPROACH (365 DAYS)
   async getFlowAnalytics(flowIds: string[]) {
-    console.log(`🔄 FLOWS: Calling Flow Values Report API for ${flowIds.length} flows - MAXIMUM DATA EXTRACTION`)
+    console.log(`🔄 FLOWS: Calling Flow Values Report API for ${flowIds.length} flows - BATCHED APPROACH`)
     
     // Calculate dynamic 365-day timeframe
     const endDate = new Date().toISOString().split('T')[0]
     const startDate = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
     
     console.log(`📅 FLOWS: Dynamic timeframe - ${startDate} to ${endDate} (365 days)`)
+    console.log(`🔄 FLOWS: BATCHED CALL - Getting analytics for ALL ${flowIds.length} flows in single API call`)
     
-    // SOLUTION: Call API for each flow individually with clean syntax
+    try {
+      const result = await this.makeRequest('/flow-values-reports', {
+        method: 'POST',
+        body: JSON.stringify({
+          data: {
+            type: 'flow-values-report',
+            attributes: {
+              statistics: [
+                // Core engagement stats only
+                'opens', 'opens_unique', 'open_rate',
+                'clicks', 'clicks_unique', 'click_rate', 'click_to_open_rate',
+                'delivered', 'delivery_rate',
+                'bounced', 'bounce_rate',
+                'conversions', 'conversion_rate', 'conversion_value',
+                'recipients', 'revenue_per_recipient'
+              ],
+              timeframe: { start: startDate, end: endDate },
+              filter: `any(flow_id,["${flowIds.join('","')}"])`, // BATCH ALL FLOWS
+              conversion_metric_id: 'QSwNRK'
+            }
+          }
+        })
+      })
+      
+      console.log(`✅ FLOWS: BATCHED API call successful - got data for ${flowIds.length} flows`)
+      console.log(`📊 FLOWS: Response structure:`, JSON.stringify(result, null, 2))
+      
+      // Parse the batched response
+      const results = []
+      if (result.data?.attributes?.results && Array.isArray(result.data.attributes.results)) {
+        for (const item of result.data.attributes.results) {
+          results.push({
+            id: item.groupings?.flow_id || 'unknown',
+            attributes: item.statistics || {}
+          })
+        }
+        console.log(`📈 FLOWS: Processed ${results.length} flow analytics from batched response`)
+      } else {
+        console.log(`⚠️ FLOWS: Unexpected response structure from batched call`)
+      }
+      
+      return { data: results }
+      
+    } catch (error: any) {
+      console.log(`❌ FLOWS: Batched API call failed: ${error.message}`)
+      console.log(`🔄 FLOWS: Falling back to individual calls...`)
+      
+      // Fallback to individual calls with much longer delays
+      return this.getFlowAnalyticsIndividual(flowIds)
+    }
+  }
+
+  // Fallback method for individual flow calls
+  private async getFlowAnalyticsIndividual(flowIds: string[]) {
+    console.log(`📊 FLOWS: Using individual calls with extended delays`)
+    
+    const endDate = new Date().toISOString().split('T')[0]
+    const startDate = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+    
     const results = []
     
     for (const flowId of flowIds) {
-      console.log(`📊 FLOWS: Getting analytics for flow ${flowId}`)
+      console.log(`📊 FLOWS: Getting analytics for flow ${flowId} (${flowIds.indexOf(flowId) + 1}/${flowIds.length})`)
       
       try {
-        // Add small delay between calls to avoid rate limiting
+        // Much longer delay between individual calls (30 seconds)
         if (flowIds.indexOf(flowId) > 0) {
-          await new Promise(resolve => setTimeout(resolve, 500)) // 500ms delay between calls
+          console.log(`⏱️ FLOWS: Waiting 30 seconds before next call to respect rate limits`)
+          await new Promise(resolve => setTimeout(resolve, 30000))
         }
         
         const result = await this.makeRequest('/flow-values-reports', {
@@ -417,24 +519,7 @@ export class KlaviyoAPI {
             data: {
               type: 'flow-values-report',
               attributes: {
-                statistics: [
-                  // Email engagement stats
-                  'opens', 'opens_unique', 'open_rate',
-                  'clicks', 'clicks_unique', 'click_rate', 'click_to_open_rate',
-                  // Delivery stats (FIXED - using valid statistics only)
-                  'delivered', 'delivery_rate',
-                  'bounced', 'bounce_rate', 
-                  'bounced_or_failed', 'bounced_or_failed_rate',
-                  'failed', 'failed_rate',
-                  // Conversion stats
-                  'conversions', 'conversion_rate', 'conversion_uniques', 'conversion_value',
-                  // Unsubscribe stats
-                  'unsubscribes', 'unsubscribe_rate', 'unsubscribe_uniques',
-                  // Spam stats
-                  'spam_complaints', 'spam_complaint_rate',
-                  // Recipient stats
-                  'recipients', 'revenue_per_recipient', 'average_order_value'
-                ],
+                statistics: ['opens', 'clicks', 'conversions', 'conversion_value'], // Minimal stats
                 timeframe: { start: startDate, end: endDate },
                 filter: `equals(flow_id,"${flowId}")`,
                 conversion_metric_id: 'QSwNRK'
@@ -443,14 +528,13 @@ export class KlaviyoAPI {
           })
         })
         
-        // Parse response structure
         if (result.data?.attributes?.results && Array.isArray(result.data.attributes.results)) {
           const transformedData = result.data.attributes.results.map((item: any) => ({
             id: item.groupings?.flow_id || flowId,
             attributes: item.statistics || {}
           }))
           results.push(...transformedData)
-          console.log(`✅ FLOWS: Got analytics for ${flowId} - REAL DATA`)
+          console.log(`✅ FLOWS: Got analytics for ${flowId}`)
         }
         
       } catch (error: any) {

@@ -137,23 +137,30 @@ export class SyncService {
       
       this.log(`📈 CAMPAIGNS: Total campaigns to process: ${allCampaigns.length}`)
 
-      // Get comprehensive analytics for all campaigns using NEW Reporting API
-      this.log(`📊 CAMPAIGNS: Fetching analytics for ${allCampaigns.length} campaigns using Campaign Values Report API`)
+      // Get comprehensive analytics for all campaigns using BATCHED Reporting API
+      this.log(`📊 CAMPAIGNS: Fetching analytics for ${allCampaigns.length} campaigns using BATCHED Campaign Values Report API`)
       const campaignIds = allCampaigns.map(c => c.id)
       
       let campaignAnalytics: any = {}
       try {
         const analyticsResponse = await this.klaviyo.getCampaignAnalytics(campaignIds)
-        this.log(`📊 CAMPAIGNS: Campaign analytics API response received`)
+        
+        // COMPREHENSIVE LOGGING - Single log with all data
+        this.log(`📊 CAMPAIGNS ANALYTICS COMPLETE REPORT:
+🔢 Total Campaigns: ${allCampaigns.length}
+📡 API Response Status: Success
+📊 Analytics Data Count: ${analyticsResponse.data?.length || 0}
+🔍 Full Response Structure: ${JSON.stringify(analyticsResponse, null, 2)}
+📈 Campaign IDs Processed: ${campaignIds.join(', ')}`)
         
         // Process analytics response to create lookup by campaign ID
         if (analyticsResponse.data) {
           for (const metric of analyticsResponse.data) {
-            // FIXED: Use metric.id (campaign ID) since we transformed the response structure
             campaignAnalytics[metric.id] = metric.attributes
           }
         }
-        this.log(`📊 CAMPAIGNS: Analytics processed for ${Object.keys(campaignAnalytics).length} campaigns`)
+        
+        this.log(`📊 CAMPAIGNS: Analytics processed - ${Object.keys(campaignAnalytics).length} campaigns have data`)
       } catch (error) {
         this.log(`⚠️ CAMPAIGNS: Could not fetch campaign analytics: ${error}`)
         campaignAnalytics = {}
