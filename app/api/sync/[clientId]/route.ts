@@ -17,7 +17,16 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     //   return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     // }
 
-    const client = await DatabaseService.getClientBySlug(params.clientId)
+    // Use admin client to bypass RLS for API operations
+    const { supabaseAdmin } = await import('@/lib/supabase')
+    const { data: client, error: clientError } = await supabaseAdmin
+      .from('clients')
+      .select('*')
+      .eq('brand_slug', params.clientId)
+      .eq('is_active', true)
+      .single()
+    
+    console.log('SYNC API: Client query result:', { client, clientError })
     
     if (!client) {
       return NextResponse.json({ error: 'Client not found' }, { status: 404 })
