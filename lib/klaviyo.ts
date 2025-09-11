@@ -349,9 +349,9 @@ export class KlaviyoAPI {
                   // Email engagement stats
                   'opens', 'opens_unique', 'open_rate',
                   'clicks', 'clicks_unique', 'click_rate', 'click_to_open_rate',
-                  // Delivery stats
-                  'sends', 'deliveries', 'deliveries_unique', 'delivery_rate',
-                  'bounces', 'bounces_unique', 'bounce_rate',
+                  // Delivery stats (FIXED - using valid statistics only)
+                  'delivered', 'delivery_rate',
+                  'bounced', 'bounce_rate',
                   'bounced_or_failed', 'bounced_or_failed_rate',
                   'failed', 'failed_rate',
                   // Conversion stats
@@ -421,9 +421,9 @@ export class KlaviyoAPI {
                   // Email engagement stats
                   'opens', 'opens_unique', 'open_rate',
                   'clicks', 'clicks_unique', 'click_rate', 'click_to_open_rate',
-                  // Delivery stats  
-                  'sends', 'deliveries', 'deliveries_unique', 'delivery_rate',
-                  'bounces', 'bounces_unique', 'bounce_rate', 
+                  // Delivery stats (FIXED - using valid statistics only)
+                  'delivered', 'delivery_rate',
+                  'bounced', 'bounce_rate', 
                   'bounced_or_failed', 'bounced_or_failed_rate',
                   'failed', 'failed_rate',
                   // Conversion stats

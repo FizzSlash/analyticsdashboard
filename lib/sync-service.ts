@@ -195,15 +195,15 @@ export class SyncService {
           const campaignData = {
             ...transformCampaignData(campaign, messages),
             client_id: this.client.id,
-            // ALL AVAILABLE CAMPAIGN STATISTICS (from user screenshots)
+            // ALL AVAILABLE CAMPAIGN STATISTICS (using valid API fields)
             // Basic counts
             recipients_count: analytics.recipients || 0,
-            delivered_count: analytics.delivered || 0,
+            delivered_count: analytics.delivered || 0, // API returns 'delivered'
             opened_count: analytics.opens || 0,
             opens_unique: analytics.opens_unique || 0,
             clicked_count: analytics.clicks || 0,
             clicks_unique: analytics.clicks_unique || 0,
-            bounced_count: analytics.bounced || 0,
+            bounced_count: analytics.bounced || 0, // API returns 'bounced'
             bounced_or_failed: analytics.bounced_or_failed || 0,
             failed_count: analytics.failed || 0,
             unsubscribed_count: analytics.unsubscribes || 0,
@@ -536,11 +536,12 @@ export class SyncService {
           clicks_unique: flowAnalytics?.clicks_unique || 0,
           opens: flowAnalytics?.opens || 0,
           clicks: flowAnalytics?.clicks || 0,
-          sends: flowAnalytics?.sends || 0,
-          deliveries: flowAnalytics?.deliveries || 0,
-          deliveries_unique: flowAnalytics?.deliveries_unique || 0,
-          bounces: flowAnalytics?.bounces || 0,
-          bounces_unique: flowAnalytics?.bounces_unique || 0,
+          // Map API field names to database field names
+          sends: 0, // Not available in API
+          deliveries: flowAnalytics?.delivered || 0, // API returns 'delivered'
+          deliveries_unique: 0, // Not available in API
+          bounces: flowAnalytics?.bounced || 0, // API returns 'bounced'
+          bounces_unique: 0, // Not available in API
           bounced_or_failed: flowAnalytics?.bounced_or_failed || 0,
           bounced_or_failed_rate: flowAnalytics?.bounced_or_failed_rate || 0,
           failed: flowAnalytics?.failed || 0,
@@ -588,12 +589,12 @@ export class SyncService {
       clicks_unique: 0,
       opens: 0,
       clicks: 0,
-      // Delivery stats
-      sends: 0,
-      deliveries: 0,
-      deliveries_unique: 0,
-      bounces: 0,
-      bounces_unique: 0,
+      // Delivery stats (using valid API field names)
+      sends: 0, // Not available in API
+      deliveries: 0, // Maps to 'delivered' from API
+      deliveries_unique: 0, // Not available in API
+      bounces: 0, // Maps to 'bounced' from API
+      bounces_unique: 0, // Not available in API
       bounced_or_failed: 0,
       bounced_or_failed_rate: 0,
       failed: 0,
