@@ -103,7 +103,7 @@ export class SyncService {
         
         // Stop if we've gone back more than a year
         if (campaigns.length > 0 && campaigns.every((c: any) => c.attributes?.send_time && new Date(c.attributes.send_time) < oneYearAgo)) {
-          console.log(`📅 CAMPAIGNS: Reached campaigns older than 1 year, stopping pagination`)
+          this.log(`📅 CAMPAIGNS: Reached campaigns older than 1 year, stopping pagination`)
           break
         }
       }
@@ -115,21 +115,10 @@ export class SyncService {
       const campaignIds = allCampaigns.map(c => c.id)
       
       let campaignAnalytics: any = {}
-      try {
-        const analyticsResponse = await this.klaviyo.getCampaignAnalytics(campaignIds)
-        this.log(`📊 CAMPAIGNS: Campaign analytics API response received`)
-        
-        // Process analytics response to create lookup by campaign ID
-        if (analyticsResponse.data) {
-          for (const metric of analyticsResponse.data) {
-            campaignAnalytics[metric.attributes.campaign_id] = metric.attributes
-          }
-        }
-        this.log(`📊 CAMPAIGNS: Analytics processed for ${Object.keys(campaignAnalytics).length} campaigns`)
-      } catch (error) {
-        this.log(`⚠️ CAMPAIGNS: Could not fetch campaign analytics: ${error}`)
-        campaignAnalytics = {}
-      }
+      this.log(`⚠️ CAMPAIGNS: Skipping Campaign Values Report API (complex requirements) - using campaign data only`)
+      
+      // For now, we'll get basic metrics from campaign attributes instead of complex reporting API
+      // TODO: Implement proper Campaign Values Report API with required statistics, timeframe, conversion_metric_id
 
       // Process each campaign with messages (using correct fields)
       for (let i = 0; i < allCampaigns.length; i++) {
@@ -263,14 +252,14 @@ export class SyncService {
       // Get detailed list data and growth metrics
       this.log('📋 AUDIENCE: Fetching all lists for comprehensive analysis...')
       const listsResponse = await this.klaviyo.getLists()
-      console.log(`📋 AUDIENCE: Found ${listsResponse.data?.length || 0} lists`)
+      this.log(`📋 AUDIENCE: Found ${listsResponse.data?.length || 0} lists`)
       
       let totalSubscribed = 0
       const listGrowthData: any[] = []
       
       for (const list of listsResponse.data || []) {
         try {
-          console.log(`📋 AUDIENCE: Analyzing list: ${list.attributes?.name || 'Unnamed'}`)
+          this.log(`📋 AUDIENCE: Analyzing list: ${list.attributes?.name || 'Unnamed'}`)
           
           // Get full list profile count (paginate through all)
           let listProfileCount = 0
@@ -293,13 +282,13 @@ export class SyncService {
             subscriber_count: listProfileCount
           })
           
-          console.log(`📊 AUDIENCE: List "${list.attributes?.name}" has ${listProfileCount} subscribers`)
+          this.log(`📊 AUDIENCE: List "${list.attributes?.name}" has ${listProfileCount} subscribers`)
         } catch (error) {
           console.warn(`⚠️ AUDIENCE: Could not fetch profiles for list ${list.id}:`, error)
         }
       }
       
-      console.log(`📈 AUDIENCE: Total subscribed across all lists: ${totalSubscribed}`)
+      this.log(`📈 AUDIENCE: Total subscribed across all lists: ${totalSubscribed}`)
 
       // Get previous day's metrics for comparison
       const previousMetric = await DatabaseService.getLatestAudienceMetric(this.client.id)
@@ -320,7 +309,7 @@ export class SyncService {
       }
 
       await DatabaseService.upsertAudienceMetric(audienceData)
-      console.log('Synced audience metrics')
+      this.log('✅ AUDIENCE: Synced audience metrics')
     } catch (error) {
       console.error('Error syncing audience metrics:', error)
       throw error
@@ -329,17 +318,17 @@ export class SyncService {
 
   // Sync revenue attribution
   async syncRevenueAttribution() {
-    console.log('💰 REVENUE: Starting revenue attribution analysis (past year)...')
+    this.log('💰 REVENUE: Starting revenue attribution analysis (past year)...')
     
     try {
       // Get past year of campaign and flow metrics for comprehensive analysis
-      console.log('💰 REVENUE: Fetching campaign metrics from past 365 days...')
+      this.log('💰 REVENUE: Fetching campaign metrics from past 365 days...')
       const campaigns = await DatabaseService.getRecentCampaignMetrics(this.client.id, 365)
-      console.log(`💰 REVENUE: Found ${campaigns.length} campaigns with revenue data`)
+      this.log(`💰 REVENUE: Found ${campaigns.length} campaigns with revenue data`)
       
-      console.log('💰 REVENUE: Fetching flow metrics from past 365 days...')
+      this.log('💰 REVENUE: Fetching flow metrics from past 365 days...')
       const flows = await DatabaseService.getRecentFlowMetrics(this.client.id, 365)
-      console.log(`💰 REVENUE: Found ${flows.length} flows with revenue data`)
+      this.log(`💰 REVENUE: Found ${flows.length} flows with revenue data`)
 
       const campaignRevenue = campaigns.reduce((sum, c) => sum + c.revenue, 0)
       const campaignOrders = campaigns.reduce((sum, c) => sum + c.orders_count, 0)
@@ -362,7 +351,7 @@ export class SyncService {
       }
 
       await DatabaseService.upsertRevenueAttribution(revenueData)
-      console.log('Synced revenue attribution')
+      this.log('✅ REVENUE: Synced revenue attribution')
     } catch (error) {
       console.error('Error syncing revenue attribution:', error)
       throw error
