@@ -441,52 +441,19 @@ export class SyncService {
     }
   }
 
-  // Helper: Get flow metrics
+  // Helper: Get flow metrics - DISABLED Events API (flow_id not valid filter)
   private async getFlowMetrics(flowId: string, startDate: string, endDate: string) {
-    try {
-      // This would need to be implemented based on your specific flow tracking
-      // You'd query events related to this flow within the date range
-      const filter = `equals(flow_id,"${flowId}") and greater-than(datetime,"${startDate}") and less-than(datetime,"${endDate}")`
-      const events = await this.klaviyo.getEvents(undefined, filter, '-datetime')
-      
-      let triggered = 0, completed = 0, revenue = 0, orders = 0
-
-      // Process events to calculate metrics
-      for (const event of events.data || []) {
-        const eventType = event.attributes?.metric?.data?.attributes?.name
-        
-        switch (eventType) {
-          case 'Flow Started':
-            triggered++
-            break
-          case 'Flow Completed':
-            completed++
-            break
-          case 'Placed Order':
-            orders++
-            revenue += event.attributes?.properties?.value || 0
-            break
-        }
-      }
-
-      return {
-        triggered_count: triggered,
-        completed_count: completed,
-        completion_rate: triggered > 0 ? (completed / triggered) * 100 : 0,
-        revenue,
-        orders_count: orders,
-        revenue_per_trigger: triggered > 0 ? revenue / triggered : 0
-      }
-    } catch (error) {
-      console.warn(`Could not fetch metrics for flow ${flowId}:`, error)
-      return {
-        triggered_count: 0,
-        completed_count: 0,
-        completion_rate: 0,
-        revenue: 0,
-        orders_count: 0,
-        revenue_per_trigger: 0
-      }
+    this.log(`⚠️ FLOWS: Skipping Events API for flow ${flowId} (flow_id not valid filter) - using default metrics`)
+    
+    // Return default metrics since Events API can't filter by flow_id
+    // TODO: Use Flow Values Report API when properly implemented
+    return {
+      triggered_count: 0,
+      completed_count: 0,
+      completion_rate: 0,
+      revenue: 0,
+      orders_count: 0,
+      revenue_per_trigger: 0
     }
   }
   // NEW SYNC METHODS FOR 4-SECTION STRUCTURE

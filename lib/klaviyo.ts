@@ -374,10 +374,9 @@ export function transformCampaignData(klaviyoCampaign: any, messages: any[] = []
   return {
     campaign_id: klaviyoCampaign.id,
     campaign_name: klaviyoCampaign.attributes.name,
-    subject_line: message?.attributes?.subject || null,
+    subject_line: message?.attributes?.definition?.subject || message?.attributes?.subject || null,
     send_date: klaviyoCampaign.attributes.send_time || null,
     recipients_count: klaviyoCampaign.attributes.send_job_status?.recipients || 0,
-    // Note: Detailed metrics need to be fetched from events/metrics endpoints
     delivered_count: 0,
     opened_count: 0,
     clicked_count: 0,
@@ -385,6 +384,9 @@ export function transformCampaignData(klaviyoCampaign: any, messages: any[] = []
     bounced_count: 0,
     revenue: 0,
     orders_count: 0,
+    // Add required database fields
+    image_url: null, // Will be populated from message data
+    email_content: message?.attributes?.definition?.content || null
   }
 }
 
