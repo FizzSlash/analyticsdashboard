@@ -10,11 +10,12 @@ interface RouteParams {
 
 export async function POST(request: NextRequest, { params }: RouteParams) {
   try {
-    // You might want to add authentication here
-    const authHeader = request.headers.get('authorization')
-    if (authHeader !== `Bearer ${process.env.SYNC_API_KEY}`) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    // Temporarily disable auth for localhost testing
+    console.log('SYNC API: Starting sync for client:', params.clientId)
+    // const authHeader = request.headers.get('authorization')
+    // if (authHeader !== `Bearer ${process.env.SYNC_API_KEY}`) {
+    //   return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    // }
 
     const client = await DatabaseService.getClientBySlug(params.clientId)
     

@@ -54,6 +54,7 @@ export async function POST(request: NextRequest) {
       primary_color: body.primary_color || '#3B82F6',
       secondary_color: body.secondary_color || '#EF4444',
       background_image_url: body.background_image_url || null,
+      last_sync: null, // Add missing required field
       is_active: true
     }
 
