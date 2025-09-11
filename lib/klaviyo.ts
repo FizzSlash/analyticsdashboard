@@ -198,7 +198,7 @@ export function transformFlowData(klaviyoFlow: any) {
 import { createCipheriv, createDecipheriv, randomBytes } from 'crypto'
 
 const ALGORITHM = 'aes-256-gcm'
-const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || 'your-32-character-encryption-key!!'
+const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || 'abcdefghijklmnopqrstuvwxyz123456'
 
 export function encryptApiKey(apiKey: string): string {
   const iv = randomBytes(16)

@@ -10,15 +10,25 @@ interface AuthContextType {
   profile: UserProfile | null
   loading: boolean
   signOut: () => Promise<void>
+  supabase: any
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 // Create a single supabase instance to avoid multiple clients
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
+let supabaseInstance: any = null
+
+const getSupabaseClient = () => {
+  if (!supabaseInstance) {
+    supabaseInstance = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    )
+  }
+  return supabaseInstance
+}
+
+const supabase = getSupabaseClient()
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
@@ -79,7 +89,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, profile, loading, signOut }}>
+    <AuthContext.Provider value={{ user, profile, loading, signOut, supabase }}>
       {children}
     </AuthContext.Provider>
   )
@@ -92,3 +102,6 @@ export function useAuth() {
   }
   return context
 }
+
+// Export the shared supabase client
+export { getSupabaseClient }
