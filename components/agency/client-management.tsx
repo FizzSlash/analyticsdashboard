@@ -15,7 +15,9 @@ import {
   AlertCircle,
   CheckCircle,
   RotateCw,
-  Building2
+  Building2,
+  Mail,
+  Zap
 } from 'lucide-react'
 
 interface ClientManagementProps {
@@ -254,13 +256,13 @@ export function ClientManagement({ agency, clients: initialClients }: ClientMana
     }
   }
 
-  const triggerSync = async (client: Client) => {
+  const triggerCampaignSync = async (client: Client) => {
     setLoading(true)
     setError('')
     setSuccess('')
     
     try {
-      console.log('🚀 FRONTEND SYNC: Starting optimized 2-call sync for:', client.brand_slug)
+      console.log('📧 CAMPAIGN SYNC: Starting campaign sync for:', client.brand_slug)
       
       // Step 1: Get conversion metric ID
       setSuccess('Step 1/4: Getting conversion metric ID...')
@@ -425,6 +427,40 @@ ${campaignDetails.slice(0, 3).map((c: any, i: number) =>
     } catch (err) {
       console.error('❌ FRONTEND: Sync error:', err)
       setError(err instanceof Error ? err.message : 'Optimized sync failed')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const triggerFlowSync = async (client: Client) => {
+    setLoading(true)
+    setError('')
+    setSuccess('')
+    
+    try {
+      console.log('🔄 FLOW SYNC: Starting flow sync for:', client.brand_slug)
+      
+      // Use existing flow sync API endpoint
+      setSuccess('🔄 Syncing flows...')
+      
+      const response = await fetch('/api/sync/flows', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ client })
+      })
+      
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(`Flow sync failed: ${errorData.message}`)
+      }
+      
+      const result = await response.json()
+      setSuccess(`✅ Flow sync completed! Check logs for details.`)
+      console.log('✅ FRONTEND: Flow sync completed:', result)
+      
+    } catch (error: any) {
+      console.error('❌ FRONTEND: Flow sync failed:', error)
+      setError(error.message || 'Flow sync failed')
     } finally {
       setLoading(false)
     }
@@ -652,12 +688,21 @@ ${campaignDetails.slice(0, 3).map((c: any, i: number) =>
 
                   <div className="flex items-center gap-2">
                     <button
-                      onClick={() => triggerSync(client)}
+                      onClick={() => triggerCampaignSync(client)}
                       disabled={loading}
                       className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
-                      title="Sync Data"
+                      title="Sync Campaigns"
                     >
-                      <RotateCw className="h-4 w-4" />
+                      <Mail className="h-4 w-4" />
+                    </button>
+                    
+                    <button
+                      onClick={() => triggerFlowSync(client)}
+                      disabled={loading}
+                      className="p-2 text-gray-600 hover:text-purple-600 hover:bg-purple-50 rounded-md transition-colors"
+                      title="Sync Flows"
+                    >
+                      <Zap className="h-4 w-4" />
                     </button>
                     
                     <a 
