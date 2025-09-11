@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { Agency, Client, UserProfile } from '@/lib/supabase'
-import { createClient } from '@supabase/supabase-js'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { 
   UserPlus, 
@@ -34,10 +33,7 @@ export function UserManagement({ agency, clients, clientUsers: initialUsers }: U
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
+  // Using API calls instead of direct supabase calls
 
   const [formData, setFormData] = useState<InviteFormData>({
     email: '',
@@ -70,91 +66,32 @@ export function UserManagement({ agency, clients, clientUsers: initialUsers }: U
         throw new Error('Email and client selection are required')
       }
 
-      // Check if user already exists
-      const { data: existingUser } = await supabase.auth.admin.getUserByEmail(formData.email)
+      console.log('Creating user invitation for:', formData.email)
       
-      if (existingUser.user) {
-        // User exists, check if they already have access to this client
-        const { data: existingProfile } = await supabase
-          .from('user_profiles')
-          .select('*')
-          .eq('id', existingUser.user.id)
-          .eq('client_id', formData.client_id)
-          .single()
-
-        if (existingProfile) {
-          throw new Error('User already has access to this client')
-        }
-
-        // Create user profile for existing user
-        const { error: profileError } = await supabase
-          .from('user_profiles')
-          .insert({
-            id: existingUser.user.id,
-            role: 'client_user',
-            agency_id: agency.id,
-            client_id: formData.client_id,
-            first_name: formData.first_name,
-            last_name: formData.last_name
-          })
-
-        if (profileError) throw profileError
-
-        setSuccess('User granted access successfully!')
-      } else {
-        // Create new user with invite
-        const { data: newUser, error: signUpError } = await supabase.auth.admin.createUser({
+      // Create user invitation via API (to be implemented)
+      const response = await fetch('/api/users/invite', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
           email: formData.email,
-          email_confirm: true,
-          user_metadata: {
-            first_name: formData.first_name,
-            last_name: formData.last_name
-          }
+          client_id: formData.client_id,
+          agency_id: agency.id,
+          first_name: formData.first_name,
+          last_name: formData.last_name
         })
+      })
 
-        if (signUpError) throw signUpError
-
-        if (newUser.user) {
-          // Create user profile
-          const { error: profileError } = await supabase
-            .from('user_profiles')
-            .insert({
-              id: newUser.user.id,
-              role: 'client_user',
-              agency_id: agency.id,
-              client_id: formData.client_id,
-              first_name: formData.first_name,
-              last_name: formData.last_name
-            })
-
-          if (profileError) throw profileError
-
-          // Send password reset email (acts as invitation)
-          const { error: resetError } = await supabase.auth.resetPasswordForEmail(
-            formData.email,
-            { redirectTo: `${window.location.origin}/login` }
-          )
-
-          if (resetError) throw resetError
-
-          setSuccess('Invitation sent successfully! The user will receive an email to set their password.')
-        }
+      const result = await response.json()
+      
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to send invitation')
       }
 
-      // Refresh user list
-      const { data: updatedUsers } = await supabase
-        .from('user_profiles')
-        .select(`
-          *,
-          clients:client_id (
-            brand_name,
-            brand_slug
-          )
-        `)
-        .eq('agency_id', agency.id)
-        .eq('role', 'client_user')
-
-      setClientUsers(updatedUsers || [])
+      setSuccess('Invitation sent successfully! The user will receive an email to set their password.')
+      
+      // Refresh user list (simplified for now)
       resetForm()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred')
@@ -170,12 +107,14 @@ export function UserManagement({ agency, clients, clientUsers: initialUsers }: U
 
     setLoading(true)
     try {
-      const { error } = await supabase
-        .from('user_profiles')
-        .delete()
-        .eq('id', userId)
+      const response = await fetch(`/api/users/${userId}`, {
+        method: 'DELETE'
+      })
 
-      if (error) throw error
+      if (!response.ok) {
+        const result = await response.json()
+        throw new Error(result.error || 'Failed to remove user')
+      }
 
       setClientUsers(clientUsers.filter(u => u.id !== userId))
       setSuccess('User removed successfully!')
@@ -189,12 +128,18 @@ export function UserManagement({ agency, clients, clientUsers: initialUsers }: U
   const resendInvite = async (email: string) => {
     setLoading(true)
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(
-        email,
-        { redirectTo: `${window.location.origin}/login` }
-      )
+      const response = await fetch('/api/users/resend-invite', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email })
+      })
 
-      if (error) throw error
+      if (!response.ok) {
+        const result = await response.json()
+        throw new Error(result.error || 'Failed to resend invitation')
+      }
 
       setSuccess('Invitation resent successfully!')
     } catch (err) {

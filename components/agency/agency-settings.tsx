@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { Agency } from '@/lib/supabase'
-import { createClient } from '@supabase/supabase-js'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { 
   Save,
@@ -33,10 +32,7 @@ export function AgencySettings({ agency: initialAgency }: AgencySettingsProps) {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
+  // Using API calls instead of direct supabase calls
 
   const [formData, setFormData] = useState<SettingsFormData>({
     agency_name: agency.agency_name,
@@ -54,9 +50,12 @@ export function AgencySettings({ agency: initialAgency }: AgencySettingsProps) {
     setSuccess('')
 
     try {
-      const { error: updateError } = await supabase
-        .from('agencies')
-        .update({
+      const response = await fetch(`/api/agencies/${agency.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
           agency_name: formData.agency_name,
           logo_url: formData.logo_url || null,
           primary_color: formData.primary_color,
@@ -64,9 +63,13 @@ export function AgencySettings({ agency: initialAgency }: AgencySettingsProps) {
           background_image_url: formData.background_image_url || null,
           custom_domain: formData.custom_domain || null
         })
-        .eq('id', agency.id)
+      })
 
-      if (updateError) throw updateError
+      const result = await response.json()
+      
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to update agency')
+      }
 
       // Update local state
       setAgency({
