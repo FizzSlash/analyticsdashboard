@@ -187,37 +187,39 @@ export class SyncService {
           const campaignData = {
             ...transformCampaignData(campaign, messages),
             client_id: this.client.id,
-            // MAXIMUM analytics data from Reporting API (ALL FIELDS NOW EXIST)
-            sends: analytics.sends || 0,
+            // ALL AVAILABLE CAMPAIGN STATISTICS (from user screenshots)
+            // Basic counts
             recipients_count: analytics.recipients || 0,
-            delivered_count: analytics.deliveries || 0,
-            deliveries_unique: analytics.deliveries_unique || 0,
+            delivered_count: analytics.delivered || 0,
             opened_count: analytics.opens || 0,
             opens_unique: analytics.opens_unique || 0,
             clicked_count: analytics.clicks || 0,
             clicks_unique: analytics.clicks_unique || 0,
-            bounced_count: analytics.bounces || 0,
-            bounces_unique: analytics.bounces_unique || 0,
+            bounced_count: analytics.bounced || 0,
+            bounced_or_failed: analytics.bounced_or_failed || 0,
+            failed_count: analytics.failed || 0,
             unsubscribed_count: analytics.unsubscribes || 0,
+            unsubscribe_uniques: analytics.unsubscribe_uniques || 0,
             spam_complaints: analytics.spam_complaints || 0,
-            forwards: analytics.forwards || 0,
-            forwards_unique: analytics.forwards_unique || 0,
-            revenue: analytics.revenue || 0,
-            orders_count: analytics.orders || 0,
-            // Calculated rates
+            // Conversions and revenue
+            conversions: analytics.conversions || 0,
+            conversion_uniques: analytics.conversion_uniques || 0,
+            conversion_value: analytics.conversion_value || 0,
+            revenue: analytics.conversion_value || 0, // Map conversion_value to revenue
+            orders_count: analytics.conversions || 0, // Map conversions to orders
+            revenue_per_recipient: analytics.revenue_per_recipient || 0,
+            average_order_value: analytics.average_order_value || 0,
+            // Rates
             open_rate: analytics.open_rate || 0,
             click_rate: analytics.click_rate || 0,
             click_to_open_rate: analytics.click_to_open_rate || 0,
             bounce_rate: analytics.bounce_rate || 0,
+            bounced_or_failed_rate: analytics.bounced_or_failed_rate || 0,
+            failed_rate: analytics.failed_rate || 0,
+            delivery_rate: analytics.delivery_rate || 0,
             unsubscribe_rate: analytics.unsubscribe_rate || 0,
             spam_complaint_rate: analytics.spam_complaint_rate || 0,
             conversion_rate: analytics.conversion_rate || 0,
-            deliverability_rate: analytics.deliverability_rate || 0,
-            reply_rate: analytics.reply_rate || 0,
-            revenue_per_recipient: analytics.revenue_per_recipient || 0,
-            revenue_per_send: analytics.revenue_per_send || 0,
-            average_order_value: analytics.average_order_value || 0,
-            list_additions: analytics.list_additions || 0,
             // Image data
             image_url: imageUrl
           }
@@ -527,26 +529,40 @@ export class SyncService {
         })
         
         return {
-          // MAXIMUM flow analytics from Flow Values Report API
-          opens_unique: flowAnalytics?.opens_unique || 0,
-          clicks_unique: flowAnalytics?.clicks_unique || 0,
+          // ALL AVAILABLE FLOW STATISTICS (from user screenshots)
           opens: flowAnalytics?.opens || 0,
-          clicks: flowAnalytics?.clicks || 0,
-          spam_complaints: flowAnalytics?.spam_complaints || 0,
+          opens_unique: flowAnalytics?.opens_unique || 0,
           open_rate: flowAnalytics?.open_rate || 0,
+          clicks: flowAnalytics?.clicks || 0,
+          clicks_unique: flowAnalytics?.clicks_unique || 0,
           click_rate: flowAnalytics?.click_rate || 0,
+          click_to_open_rate: flowAnalytics?.click_to_open_rate || 0,
+          delivered: flowAnalytics?.delivered || 0,
+          delivery_rate: flowAnalytics?.delivery_rate || 0,
+          bounced: flowAnalytics?.bounced || 0,
           bounce_rate: flowAnalytics?.bounce_rate || 0,
-          unsubscribe_rate: flowAnalytics?.unsubscribe_rate || 0,
-          spam_complaint_rate: flowAnalytics?.spam_complaint_rate || 0,
+          bounced_or_failed: flowAnalytics?.bounced_or_failed || 0,
+          bounced_or_failed_rate: flowAnalytics?.bounced_or_failed_rate || 0,
+          failed: flowAnalytics?.failed || 0,
+          failed_rate: flowAnalytics?.failed_rate || 0,
+          conversions: flowAnalytics?.conversions || 0,
           conversion_rate: flowAnalytics?.conversion_rate || 0,
+          conversion_uniques: flowAnalytics?.conversion_uniques || 0,
+          conversion_value: flowAnalytics?.conversion_value || 0,
+          unsubscribes: flowAnalytics?.unsubscribes || 0,
+          unsubscribe_rate: flowAnalytics?.unsubscribe_rate || 0,
+          unsubscribe_uniques: flowAnalytics?.unsubscribe_uniques || 0,
+          spam_complaints: flowAnalytics?.spam_complaints || 0,
+          spam_complaint_rate: flowAnalytics?.spam_complaint_rate || 0,
+          recipients: flowAnalytics?.recipients || 0,
           revenue_per_recipient: flowAnalytics?.revenue_per_recipient || 0,
           average_order_value: flowAnalytics?.average_order_value || 0,
           // Legacy fields for backwards compatibility
           triggered_count: 0, // Not available from Flow Values Report
           completed_count: 0, // Not available from Flow Values Report
           completion_rate: 0, // Not available from Flow Values Report
-          revenue: 0, // Not supported by Flow Values Report
-          orders_count: 0, // Not supported by Flow Values Report
+          revenue: flowAnalytics?.conversion_value || 0, // Use conversion_value as revenue
+          orders_count: flowAnalytics?.conversions || 0, // Use conversions as orders
           revenue_per_trigger: 0 // Not available from Flow Values Report
         }
       } else {

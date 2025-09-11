@@ -317,12 +317,18 @@ export class KlaviyoAPI {
               type: 'campaign-values-report',
               attributes: {
                 statistics: [
-                  // VERIFIED: Valid Klaviyo statistics names
-                  'opens_unique',
-                  'clicks_unique', 
-                  'opens',
-                  'clicks',
-                  'spam_complaints'
+                  // ALL AVAILABLE CAMPAIGN STATISTICS (from user screenshots)
+                  'opens', 'opens_unique', 'open_rate',
+                  'clicks', 'clicks_unique', 'click_rate', 'click_to_open_rate',
+                  'delivered', 'delivery_rate',
+                  'bounced', 'bounce_rate', 'bounced_or_failed', 'bounced_or_failed_rate',
+                  'failed', 'failed_rate',
+                  'conversions', 'conversion_rate', 'conversion_uniques', 'conversion_value',
+                  'unsubscribes', 'unsubscribe_rate', 'unsubscribe_uniques',
+                  'spam_complaints', 'spam_complaint_rate',
+                  'recipients',
+                  'revenue_per_recipient',
+                  'average_order_value'
                 ],
                 timeframe: {
                   start: startDate,
@@ -374,19 +380,16 @@ export class KlaviyoAPI {
               type: 'flow-values-report',
               attributes: {
                 statistics: [
-                  // MAXIMUM SUPPORTED Flow statistics (tested and verified)
-                  'opens_unique',
-                  'clicks_unique',
-                  'opens',
-                  'clicks',
-                  'spam_complaints',
-                  // Additional supported flow statistics
-                  'open_rate',
-                  'click_rate',
-                  'bounce_rate',
-                  'unsubscribe_rate',
-                  'spam_complaint_rate',
-                  'conversion_rate',
+                  // ALL AVAILABLE FLOW STATISTICS (from user screenshots)
+                  'opens', 'opens_unique', 'open_rate',
+                  'clicks', 'clicks_unique', 'click_rate', 'click_to_open_rate',
+                  'delivered', 'delivery_rate',
+                  'bounced', 'bounce_rate', 'bounced_or_failed', 'bounced_or_failed_rate',
+                  'failed', 'failed_rate',
+                  'conversions', 'conversion_rate', 'conversion_uniques', 'conversion_value',
+                  'unsubscribes', 'unsubscribe_rate', 'unsubscribe_uniques',
+                  'spam_complaints', 'spam_complaint_rate',
+                  'recipients',
                   'revenue_per_recipient',
                   'average_order_value'
                 ],
