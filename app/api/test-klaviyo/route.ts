@@ -93,6 +93,50 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // TEST 2B: BATCHED Campaign Analytics (NEW TEST)
+    if ((testType === 'all' || testType === 'batched-campaigns') && results.tests.campaigns_list?.success) {
+      console.log('🚀 Testing: BATCHED Campaign Analytics')
+      try {
+        // Get conversion metric ID first
+        const metricsResponse = await klaviyo.getMetrics()
+        const placedOrderMetric = metricsResponse.data?.find((m: any) => m.attributes?.name === 'Placed Order')
+        const conversionMetricId = placedOrderMetric?.id || null
+        
+        const campaigns = await klaviyo.getCampaigns()
+        if (campaigns.data && campaigns.data.length > 0) {
+          // Test with first 3 campaigns only
+          const testCampaignIds = campaigns.data.slice(0, 3).map((c: any) => c.id)
+          
+          console.log(`🧪 Testing batched analytics for ${testCampaignIds.length} campaigns`)
+          console.log(`🎯 Using conversion metric ID: ${conversionMetricId}`)
+          
+          const analytics = await klaviyo.getCampaignAnalytics(testCampaignIds, conversionMetricId)
+          
+          results.tests.batched_campaign_analytics = {
+            success: true,
+            campaign_count: testCampaignIds.length,
+            campaign_ids: testCampaignIds,
+            conversion_metric_id: conversionMetricId,
+            data_rows: analytics.data?.length || 0,
+            full_response: analytics,
+            sample_data: analytics.data?.[0] || null,
+            endpoint: 'POST /campaign-values-reports (BATCHED)',
+            statistics_used: ['opens', 'clicks', 'conversions', 'conversion_value']
+          }
+          console.log(`✅ BATCHED Campaign Analytics: ${analytics.data?.length || 0} campaigns processed`)
+          console.log(`📊 Full response:`, JSON.stringify(analytics, null, 2))
+        }
+      } catch (err: any) {
+        results.tests.batched_campaign_analytics = {
+          success: false,
+          error: err.message,
+          error_details: err.response?.data || null,
+          endpoint: 'POST /campaign-values-reports (BATCHED)'
+        }
+        console.log(`❌ BATCHED Campaign Analytics failed: ${err.message}`)
+      }
+    }
+
     // TEST 3: Campaign Messages (for images)
     if ((testType === 'all' || testType === 'campaign-messages') && results.tests.campaigns_list?.success) {
       console.log('📩 Testing: GET /campaigns/{id}/campaign-messages')
