@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { ClientDashboard } from '@/components/dashboard/client-dashboard'
+import { ModernDashboard } from '@/components/dashboard/modern-dashboard'
 import { useRouter } from 'next/navigation'
 
 interface PageProps {
@@ -112,6 +112,6 @@ export default function ClientDashboardPage({ params }: PageProps) {
     )
   }
 
-  return <ClientDashboard client={dashboardData.client} data={dashboardData.data} />
+  return <ModernDashboard client={dashboardData.client} data={dashboardData.data} />
 }
 
