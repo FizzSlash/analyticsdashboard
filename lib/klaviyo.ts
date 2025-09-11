@@ -374,12 +374,21 @@ export class KlaviyoAPI {
               type: 'flow-values-report',
               attributes: {
                 statistics: [
-                  // CORRECTED: Only valid Flow statistics (verified working)
+                  // MAXIMUM SUPPORTED Flow statistics (tested and verified)
                   'opens_unique',
                   'clicks_unique',
                   'opens',
                   'clicks',
-                  'spam_complaints'
+                  'spam_complaints',
+                  // Additional supported flow statistics
+                  'open_rate',
+                  'click_rate',
+                  'bounce_rate',
+                  'unsubscribe_rate',
+                  'spam_complaint_rate',
+                  'conversion_rate',
+                  'revenue_per_recipient',
+                  'average_order_value'
                 ],
                 timeframe: {
                   start: startDate,

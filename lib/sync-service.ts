@@ -243,7 +243,8 @@ export class SyncService {
 
   // Sync flow data
   async syncFlows() {
-    this.log('🔄 FLOWS: Starting flows sync (live flows only)...')
+    this.log('🔄 FLOWS: Starting flows sync...')
+    this.log('📋 FLOWS: Structure - flow_metrics for ACTIVE flows, flow_message_metrics for individual emails')
     
     try {
       let allFlows: any[] = []
@@ -263,7 +264,7 @@ export class SyncService {
           const flows = response.data || []
           this.log(`📊 FLOWS: Raw flows received: ${flows.length}`)
           
-          // Filter to only active/live flows
+          // Filter to only ACTIVE flows (for flow_metrics table)
           const liveFlows = flows.filter((flow: any) => {
             const status = flow.attributes?.status?.toLowerCase()
             return status === 'active' || status === 'live'
@@ -509,11 +510,71 @@ export class SyncService {
 
   // Helper: Get flow metrics - DISABLED Events API (flow_id not valid filter)
   private async getFlowMetrics(flowId: string, startDate: string, endDate: string) {
-    this.log(`⚠️ FLOWS: Skipping Events API for flow ${flowId} (flow_id not valid filter) - using default metrics`)
+    this.log(`📊 FLOWS: Using Flow Values Report API for flow ${flowId} - MAXIMUM DATA EXTRACTION`)
     
-    // Return default metrics since Events API can't filter by flow_id
-    // TODO: Use Flow Values Report API when properly implemented
+    try {
+      // Use the fixed Flow Values Report API
+      const analytics = await this.klaviyo.getFlowAnalytics([flowId])
+      
+      if (analytics.data && analytics.data.length > 0) {
+        const flowAnalytics = analytics.data[0].attributes
+        
+        this.log(`📈 FLOWS: Got analytics for flow ${flowId}:`, {
+          opens_unique: flowAnalytics?.opens_unique || 0,
+          clicks_unique: flowAnalytics?.clicks_unique || 0,
+          open_rate: flowAnalytics?.open_rate || 0,
+          conversion_rate: flowAnalytics?.conversion_rate || 0
+        })
+        
+        return {
+          // MAXIMUM flow analytics from Flow Values Report API
+          opens_unique: flowAnalytics?.opens_unique || 0,
+          clicks_unique: flowAnalytics?.clicks_unique || 0,
+          opens: flowAnalytics?.opens || 0,
+          clicks: flowAnalytics?.clicks || 0,
+          spam_complaints: flowAnalytics?.spam_complaints || 0,
+          open_rate: flowAnalytics?.open_rate || 0,
+          click_rate: flowAnalytics?.click_rate || 0,
+          bounce_rate: flowAnalytics?.bounce_rate || 0,
+          unsubscribe_rate: flowAnalytics?.unsubscribe_rate || 0,
+          spam_complaint_rate: flowAnalytics?.spam_complaint_rate || 0,
+          conversion_rate: flowAnalytics?.conversion_rate || 0,
+          revenue_per_recipient: flowAnalytics?.revenue_per_recipient || 0,
+          average_order_value: flowAnalytics?.average_order_value || 0,
+          // Legacy fields for backwards compatibility
+          triggered_count: 0, // Not available from Flow Values Report
+          completed_count: 0, // Not available from Flow Values Report
+          completion_rate: 0, // Not available from Flow Values Report
+          revenue: 0, // Not supported by Flow Values Report
+          orders_count: 0, // Not supported by Flow Values Report
+          revenue_per_trigger: 0 // Not available from Flow Values Report
+        }
+      } else {
+        this.log(`⚠️ FLOWS: No analytics data returned for flow ${flowId}`)
+        return this.getDefaultFlowMetrics()
+      }
+      
+    } catch (error) {
+      this.log(`❌ FLOWS: Error getting analytics for flow ${flowId}: ${error}`)
+      return this.getDefaultFlowMetrics()
+    }
+  }
+  
+  private getDefaultFlowMetrics() {
     return {
+      opens_unique: 0,
+      clicks_unique: 0,
+      opens: 0,
+      clicks: 0,
+      spam_complaints: 0,
+      open_rate: 0,
+      click_rate: 0,
+      bounce_rate: 0,
+      unsubscribe_rate: 0,
+      spam_complaint_rate: 0,
+      conversion_rate: 0,
+      revenue_per_recipient: 0,
+      average_order_value: 0,
       triggered_count: 0,
       completed_count: 0,
       completion_rate: 0,
