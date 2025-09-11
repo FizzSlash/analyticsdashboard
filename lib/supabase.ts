@@ -141,12 +141,44 @@ export interface FlowMetric {
   flow_status: string
   date_start: string
   date_end: string
+  // Core legacy fields
   triggered_count: number
   completed_count: number
   completion_rate: number
   revenue: number
   orders_count: number
   revenue_per_trigger: number
+  // Analytics fields from Flow Values Report API (optional)
+  opens_unique?: number
+  clicks_unique?: number
+  opens?: number
+  clicks?: number
+  sends?: number
+  deliveries?: number
+  deliveries_unique?: number
+  bounces?: number
+  bounces_unique?: number
+  bounced_or_failed?: number
+  bounced_or_failed_rate?: number
+  failed?: number
+  failed_rate?: number
+  delivery_rate?: number
+  open_rate?: number
+  click_rate?: number
+  click_to_open_rate?: number
+  bounce_rate?: number
+  conversion_rate?: number
+  conversions?: number
+  conversion_uniques?: number
+  conversion_value?: number
+  unsubscribes?: number
+  unsubscribe_rate?: number
+  unsubscribe_uniques?: number
+  spam_complaints?: number
+  spam_complaint_rate?: number
+  recipients?: number
+  revenue_per_recipient?: number
+  average_order_value?: number
   created_at: string
   updated_at: string
 }
@@ -190,5 +222,27 @@ export interface RevenueAttribution {
   total_revenue?: number
   email_orders?: number
   total_orders?: number
+  created_at: string
+}
+
+export interface SegmentMetric {
+  id: string
+  client_id: string
+  segment_id: string
+  segment_name: string
+  date_recorded: string
+  profile_count: number
+  created_at: string
+  updated_at: string
+}
+
+export interface DeliverabilityMetric {
+  id: string
+  client_id: string
+  date_recorded: string
+  delivery_rate: number
+  bounce_rate: number
+  spam_rate: number
+  reputation_score: number
   created_at: string
 }

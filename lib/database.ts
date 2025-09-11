@@ -1,4 +1,4 @@
-import { supabaseAdmin, Client, CampaignMetric, FlowMetric, AudienceMetric, RevenueAttribution, Agency, UserProfile } from './supabase'
+import { supabaseAdmin, Client, CampaignMetric, FlowMetric, AudienceMetric, RevenueAttribution, Agency, UserProfile, SegmentMetric, DeliverabilityMetric } from './supabase'
 import { format, subDays } from 'date-fns'
 
 export class DatabaseService {
@@ -418,7 +418,7 @@ export class DatabaseService {
   // NEW METHODS FOR 4-SECTION STRUCTURE
 
   // Segment Metrics
-  static async upsertSegmentMetric(metric: any): Promise<void> {
+  static async upsertSegmentMetric(metric: Omit<SegmentMetric, 'id' | 'created_at' | 'updated_at'>): Promise<void> {
     const { error } = await supabaseAdmin
       .from('segment_metrics')
       .upsert(metric, {
@@ -431,7 +431,7 @@ export class DatabaseService {
     }
   }
 
-  static async getSegmentMetrics(clientId: string, days: number = 30): Promise<any[]> {
+  static async getSegmentMetrics(clientId: string, days: number = 30): Promise<SegmentMetric[]> {
     const startDate = format(subDays(new Date(), days), 'yyyy-MM-dd')
     
     const { data, error } = await supabaseAdmin
@@ -450,7 +450,7 @@ export class DatabaseService {
   }
 
   // Deliverability Metrics
-  static async upsertDeliverabilityMetric(metric: any): Promise<void> {
+  static async upsertDeliverabilityMetric(metric: Omit<DeliverabilityMetric, 'id' | 'created_at'>): Promise<void> {
     const { error } = await supabaseAdmin
       .from('deliverability_metrics')
       .upsert(metric, {
@@ -463,7 +463,7 @@ export class DatabaseService {
     }
   }
 
-  static async getDeliverabilityMetrics(clientId: string, days: number = 30): Promise<any[]> {
+  static async getDeliverabilityMetrics(clientId: string, days: number = 30): Promise<DeliverabilityMetric[]> {
     const startDate = format(subDays(new Date(), days), 'yyyy-MM-dd')
     
     const { data, error } = await supabaseAdmin
