@@ -157,14 +157,25 @@ export class SyncService {
         this.log(`🔄 CAMPAIGNS: Processing campaign ${i + 1}/${allCampaigns.length} - ${campaign.attributes?.name || 'Unnamed'}`)
         
         try {
-          // Get campaign messages with correct fields (no images for now due to field errors)
+          // Get campaign messages with correct fields and maximum data extraction
           let messages: any[] = []
+          let imageUrl: string | null = null
+          let messagesResponse: any = null
+          
           try {
             this.log(`📩 CAMPAIGNS: Fetching messages for campaign ${campaign.id}`)
-            // Use the Get Messages for Campaign endpoint (the one that works)
-            const messagesResponse = await this.klaviyo.getCampaignMessages(campaign.id)
+            messagesResponse = await this.klaviyo.getCampaignMessages(campaign.id)
             messages = messagesResponse.data || []
             this.log(`📩 CAMPAIGNS: Found ${messages.length} messages`)
+            
+            // Extract images from included data
+            if (messagesResponse?.included) {
+              const imageData = messagesResponse.included.find((item: any) => item.type === 'image')
+              if (imageData?.attributes?.image_url) {
+                imageUrl = imageData.attributes.image_url
+                this.log(`🖼️ CAMPAIGNS: Found image for campaign ${campaign.id}`)
+              }
+            }
           } catch (error) {
             this.log(`⚠️ CAMPAIGNS: Could not fetch messages for campaign ${campaign.id}: ${error}`)
           }
@@ -172,15 +183,6 @@ export class SyncService {
           // Use analytics from Campaign Values Report API (MAXIMUM DATA)
           const analytics = campaignAnalytics[campaign.id] || {}
           this.log(`📊 CAMPAIGNS: Using MAXIMUM analytics data - Opens: ${analytics.opens_unique || 0}, Clicks: ${analytics.clicks_unique || 0}, Revenue: ${analytics.revenue || 0}`)
-          
-          // Extract images from included data
-          let imageUrl = null
-          if (messagesResponse?.included) {
-            const imageData = messagesResponse.included.find((item: any) => item.type === 'image')
-            if (imageData?.attributes?.image_url) {
-              imageUrl = imageData.attributes.image_url
-            }
-          }
           
           const campaignData = {
             ...transformCampaignData(campaign, messages),
