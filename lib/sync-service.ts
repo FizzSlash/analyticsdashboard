@@ -337,7 +337,7 @@ export class SyncService {
       // This is a simplified version - you'd need to query specific metrics
       // Based on the Klaviyo API, you'd use the events endpoint with filters
       const filter = `equals(campaign_id,"${campaignId}")`
-      const events = await this.klaviyo.getEvents(100, undefined, filter, '-datetime')
+      const events = await this.klaviyo.getEvents(undefined, filter, '-datetime')
       
       let delivered = 0, opened = 0, clicked = 0, bounced = 0, unsubscribed = 0
       let revenue = 0, orders = 0
@@ -407,7 +407,7 @@ export class SyncService {
       // This would need to be implemented based on your specific flow tracking
       // You'd query events related to this flow within the date range
       const filter = `equals(flow_id,"${flowId}") and greater-than(datetime,"${startDate}") and less-than(datetime,"${endDate}")`
-      const events = await this.klaviyo.getEvents(100, undefined, filter, '-datetime')
+      const events = await this.klaviyo.getEvents(undefined, filter, '-datetime')
       
       let triggered = 0, completed = 0, revenue = 0, orders = 0
 

@@ -38,24 +38,24 @@ export class KlaviyoAPI {
     return data
   }
 
-  // Get Campaigns
-  async getCampaigns(cursor?: string) {
-    // Klaviyo uses cursor-based pagination ONLY - no page size parameter!
+  // Get Campaigns - REQUIRES channel filter per Klaviyo docs
+  async getCampaigns(cursor?: string, channel: 'email' | 'sms' | 'mobile_push' = 'email') {
     let endpoint = `/campaigns`
     const params = new URLSearchParams()
     
-    // Only add cursor for pagination - Klaviyo doesn't support page[size]
+    // REQUIRED: Channel filter per Klaviyo API documentation
+    params.set('filter', `equals(messages.channel,'${channel}')`)
+    
+    // Optional: Cursor for pagination
     if (cursor) {
       params.set('page[cursor]', cursor)
     }
     
     const queryString = params.toString()
-    if (queryString) {
-      endpoint += `?${queryString}`
-    }
+    endpoint += `?${queryString}`
     
     console.log(`📧 CAMPAIGNS API: Full endpoint: ${endpoint}`)
-    console.log(`📧 CAMPAIGNS API: Query params:`, queryString)
+    console.log(`📧 CAMPAIGNS API: Required channel filter: ${channel}`)
     return this.makeRequest(endpoint)
   }
 
@@ -193,18 +193,26 @@ export class KlaviyoAPI {
   }
 
   // Get Events
-  async getEvents(pageSize: number = 50, cursor?: string, filter?: string, sort?: string) {
-    let endpoint = `/events?page[size]=${pageSize}`
+  async getEvents(cursor?: string, filter?: string, sort?: string) {
+    let endpoint = `/events`
+    const params = new URLSearchParams()
+    
     if (cursor) {
-      endpoint += `&page[cursor]=${cursor}`
+      params.set('page[cursor]', cursor)
     }
     if (filter) {
-      endpoint += `&filter=${encodeURIComponent(filter)}`
+      params.set('filter', filter)
     }
     if (sort) {
-      endpoint += `&sort=${sort}`
+      params.set('sort', sort)
     }
     
+    const queryString = params.toString()
+    if (queryString) {
+      endpoint += `?${queryString}`
+    }
+    
+    console.log(`📊 EVENTS API: Full endpoint: ${endpoint}`)
     return this.makeRequest(endpoint)
   }
 
