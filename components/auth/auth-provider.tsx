@@ -22,34 +22,44 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [supabase, setSupabase] = useState<any>(null)
 
   useEffect(() => {
+    console.log('AUTH PROVIDER: useEffect triggered')
+    
     // Initialize Supabase client on the client side
     const initSupabase = () => {
+      console.log('AUTH PROVIDER: Initializing Supabase client')
       try {
         const client = getSupabaseClient()
         if (!client) {
-          console.warn('Supabase client could not be initialized - missing environment variables')
+          console.warn('AUTH PROVIDER: Supabase client could not be initialized - missing environment variables')
           setLoading(false)
           return null
         }
+        console.log('AUTH PROVIDER: Supabase client initialized successfully')
         setSupabase(client)
         return client
       } catch (error) {
-        console.error('Failed to initialize Supabase:', error)
+        console.error('AUTH PROVIDER: Failed to initialize Supabase:', error)
         setLoading(false)
         return null
       }
     }
 
     const client = initSupabase()
-    if (!client) return
+    if (!client) {
+      console.log('AUTH PROVIDER: No client available, exiting')
+      return
+    }
 
     // Get initial session
     const getInitialSession = async () => {
+      console.log('AUTH PROVIDER: Getting initial session')
       try {
         const { data: { session } } = await client.auth.getSession()
+        console.log('AUTH PROVIDER: Session result:', !!session)
         setUser(session?.user ?? null)
         
         if (session?.user) {
+          console.log('AUTH PROVIDER: User found, fetching profile')
           // Fetch user profile
           const { data: profileData } = await client
             .from('user_profiles')
@@ -57,12 +67,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             .eq('id', session.user.id)
             .single()
           
+          console.log('AUTH PROVIDER: Profile data:', !!profileData)
           setProfile(profileData)
         }
         
+        console.log('AUTH PROVIDER: Setting loading to false')
         setLoading(false)
       } catch (error) {
-        console.error('Error getting initial session:', error)
+        console.error('AUTH PROVIDER: Error getting initial session:', error)
         setLoading(false)
       }
     }
@@ -70,8 +82,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     getInitialSession()
 
     // Listen for auth changes
+    console.log('AUTH PROVIDER: Setting up auth state listener')
     const { data: { subscription } } = client.auth.onAuthStateChange(
       async (event: any, session: any) => {
+        console.log('AUTH PROVIDER: Auth state changed:', event, !!session)
         try {
           setUser(session?.user ?? null)
           
@@ -90,13 +104,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           
           setLoading(false)
         } catch (error) {
-          console.error('Error handling auth state change:', error)
+          console.error('AUTH PROVIDER: Error handling auth state change:', error)
           setLoading(false)
         }
       }
     )
 
-    return () => subscription.unsubscribe()
+    return () => {
+      console.log('AUTH PROVIDER: Cleaning up auth listener')
+      subscription.unsubscribe()
+    }
   }, [])
 
   const signOut = async () => {

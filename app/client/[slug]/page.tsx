@@ -18,21 +18,41 @@ export default function ClientDashboardPage({ params }: PageProps) {
   const router = useRouter()
   const { supabase, loading: authLoading } = useAuth() // Use centralized Supabase client
 
+  // Fallback timeout to prevent infinite loading
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      if (loading) {
+        console.log('CLIENT DASHBOARD: Loading timeout reached, forcing error state')
+        setError('Loading timeout - please check your internet connection and try again')
+        setLoading(false)
+      }
+    }, 15000) // 15 second timeout
+
+    return () => clearTimeout(timeout)
+  }, [loading])
+
   useEffect(() => {
     async function loadClient() {
+      console.log('CLIENT DASHBOARD: Starting loadClient function')
+      console.log('CLIENT DASHBOARD: authLoading =', authLoading)
+      console.log('CLIENT DASHBOARD: supabase =', !!supabase)
+      
       try {
         // Wait for auth to finish loading
         if (authLoading) {
+          console.log('CLIENT DASHBOARD: Auth still loading, returning early')
           return
         }
 
         if (!supabase) {
-          console.error('Supabase client not available - check environment variables')
+          console.error('CLIENT DASHBOARD: Supabase client not available - check environment variables')
           setError('Database connection failed. Please check configuration.')
           setLoading(false)
           return
         }
 
+        console.log('CLIENT DASHBOARD: Querying for client with slug:', params.slug)
+        
         // Get client data
         const { data: clientData, error: clientError } = await supabase
           .from('clients')
@@ -40,21 +60,26 @@ export default function ClientDashboardPage({ params }: PageProps) {
           .eq('brand_slug', params.slug)
           .single()
 
+        console.log('CLIENT DASHBOARD: Query result:', { clientData, clientError })
+
         if (clientError || !clientData) {
-          console.error('Client not found:', clientError)
+          console.error('CLIENT DASHBOARD: Client not found:', clientError)
           router.push('/not-found')
           return
         }
 
+        console.log('CLIENT DASHBOARD: Setting client data:', clientData)
         setClient(clientData)
       } catch (error) {
-        console.error('Error loading client:', error)
+        console.error('CLIENT DASHBOARD: Error loading client:', error)
         setError('Failed to load client data')
       } finally {
+        console.log('CLIENT DASHBOARD: Setting loading to false')
         setLoading(false)
       }
     }
 
+    console.log('CLIENT DASHBOARD: useEffect triggered, calling loadClient')
     loadClient()
   }, [params.slug, router, supabase, authLoading])
 
