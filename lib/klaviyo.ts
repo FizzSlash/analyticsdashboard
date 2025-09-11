@@ -66,21 +66,18 @@ export class KlaviyoAPI {
     return this.makeRequest(`/campaigns/${campaignId}`)
   }
 
-  // Get Campaign Messages with Images
+  // Get Campaign Messages - Use correct fields per Klaviyo error message
   async getCampaignMessages(campaignId: string) {
     let endpoint = `/campaigns/${campaignId}/campaign-messages`
     const params = new URLSearchParams()
     
-    // Request specific fields including image URLs
-    params.set('fields[campaign-message]', '')
-    params.set('fields[campaign]', '')
-    params.set('fields[image]', 'image_url')
-    params.set('fields[template]', '')
-    params.set('include', 'image')
+    // Use only valid fields according to Klaviyo error: created_at, definition, id, send_times, updated_at
+    params.set('fields[campaign-message]', 'definition,send_times,id')
     
     endpoint += `?${params.toString()}`
     
     console.log(`📧 CAMPAIGN MESSAGES API: Full endpoint: ${endpoint}`)
+    console.log(`📧 CAMPAIGN MESSAGES API: Using valid fields only: definition,send_times,id`)
     return this.makeRequest(endpoint)
   }
 

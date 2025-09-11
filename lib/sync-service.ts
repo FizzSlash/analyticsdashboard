@@ -110,40 +110,71 @@ export class SyncService {
       
       this.log(`📈 CAMPAIGNS: Total campaigns to process: ${allCampaigns.length}`)
 
-      // Process each campaign
+      // Get comprehensive analytics for all campaigns using NEW Reporting API
+      this.log(`📊 CAMPAIGNS: Fetching analytics for ${allCampaigns.length} campaigns using Campaign Values Report API`)
+      const campaignIds = allCampaigns.map(c => c.id)
+      
+      let campaignAnalytics: any = {}
+      try {
+        const analyticsResponse = await this.klaviyo.getCampaignAnalytics(campaignIds)
+        this.log(`📊 CAMPAIGNS: Campaign analytics API response received`)
+        
+        // Process analytics response to create lookup by campaign ID
+        if (analyticsResponse.data) {
+          for (const metric of analyticsResponse.data) {
+            campaignAnalytics[metric.attributes.campaign_id] = metric.attributes
+          }
+        }
+        this.log(`📊 CAMPAIGNS: Analytics processed for ${Object.keys(campaignAnalytics).length} campaigns`)
+      } catch (error) {
+        this.log(`⚠️ CAMPAIGNS: Could not fetch campaign analytics: ${error}`)
+        campaignAnalytics = {}
+      }
+
+      // Process each campaign with messages (using correct fields)
       for (let i = 0; i < allCampaigns.length; i++) {
         const campaign = allCampaigns[i]
         this.log(`🔄 CAMPAIGNS: Processing campaign ${i + 1}/${allCampaigns.length} - ${campaign.attributes?.name || 'Unnamed'}`)
         
         try {
-          // Get campaign messages for subject line
+          // Get campaign messages with correct fields (no images for now due to field errors)
           let messages: any[] = []
           try {
             this.log(`📩 CAMPAIGNS: Fetching messages for campaign ${campaign.id}`)
+            // Use the Get Messages for Campaign endpoint (the one that works)
             const messagesResponse = await this.klaviyo.getCampaignMessages(campaign.id)
             messages = messagesResponse.data || []
             this.log(`📩 CAMPAIGNS: Found ${messages.length} messages`)
           } catch (error) {
-            console.warn(`⚠️ CAMPAIGNS: Could not fetch messages for campaign ${campaign.id}:`, error)
+            this.log(`⚠️ CAMPAIGNS: Could not fetch messages for campaign ${campaign.id}: ${error}`)
           }
 
-          // Get campaign metrics from events
-          console.log(`📊 CAMPAIGNS: Calculating metrics for campaign ${campaign.id}`)
-          const metrics = await this.getCampaignMetrics(campaign.id)
-          console.log(`📊 CAMPAIGNS: Metrics calculated - Recipients: ${metrics.recipients_count}, Opens: ${metrics.opened_count}`)
+          // Use analytics from Campaign Values Report API
+          const analytics = campaignAnalytics[campaign.id] || {}
+          this.log(`📊 CAMPAIGNS: Using analytics data - Opens: ${analytics.opens || 0}, Clicks: ${analytics.clicks || 0}`)
           
           const campaignData = {
             ...transformCampaignData(campaign, messages),
             client_id: this.client.id,
-            ...metrics
+            // Use NEW analytics data from Reporting API
+            recipients_count: analytics.recipients || 0,
+            delivered_count: analytics.deliveries || 0,
+            opened_count: analytics.opens || 0,
+            clicked_count: analytics.clicks || 0,
+            bounced_count: analytics.bounces || 0,
+            unsubscribed_count: analytics.unsubscribes || 0,
+            revenue: analytics.revenue || 0,
+            open_rate: analytics.open_rate || 0,
+            click_rate: analytics.click_rate || 0,
+            bounce_rate: analytics.bounce_rate || 0
           }
 
-          console.log(`💾 CAMPAIGNS: Saving campaign data to database`)
+          this.log(`💾 CAMPAIGNS: Saving campaign data to database`)
           await DatabaseService.upsertCampaignMetric(campaignData)
-          console.log(`✅ CAMPAIGNS: Campaign ${i + 1} saved successfully`)
+          this.log(`✅ CAMPAIGNS: Campaign ${i + 1} saved successfully`)
         } catch (error) {
-          console.error(`❌ CAMPAIGNS: Error processing campaign ${campaign.id}:`, error)
-          throw error // Stop on first error to see exactly what's failing
+          this.log(`❌ CAMPAIGNS: Error processing campaign ${campaign.id}: ${error}`)
+          // Continue processing other campaigns instead of stopping
         }
       }
 
