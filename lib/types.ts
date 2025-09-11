@@ -103,9 +103,11 @@ export interface RevenueAttribution {
   flow_revenue: number
   campaign_revenue: number
   total_revenue: number
+  total_email_revenue: number
   email_orders: number
   flow_orders: number
   campaign_orders: number
   total_orders: number
+  total_email_orders: number
   created_at: string
 }
