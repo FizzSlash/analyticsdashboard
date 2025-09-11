@@ -37,7 +37,7 @@ export class SyncService {
   }
 
   // Get dynamic conversion metric ID
-  private async getConversionMetricId(): Promise<string | null> {
+  public async getConversionMetricId(): Promise<string | null> {
     this.log('🎯 METRICS: Getting dynamic conversion metric ID...')
     
     try {

@@ -19,13 +19,16 @@ export async function POST(request: NextRequest) {
     // Create sync service
     const syncService = new SyncService(client)
     
+    // Get conversion metric ID dynamically
+    const conversionMetricId = await syncService.getConversionMetricId()
+    
     // Sync flows with rate limiting
     let retryCount = 0
     const maxRetries = 3
     
     while (retryCount < maxRetries) {
       try {
-        await syncService.syncFlows()
+        await syncService.syncFlows(conversionMetricId)
         console.log('✅ FLOWS SYNC: Completed successfully')
         break
       } catch (error: any) {
