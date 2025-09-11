@@ -366,28 +366,28 @@ export class KlaviyoAPI {
       if (!result) {
         throw new Error(`Failed to get analytics after ${maxRetries} retries`)
       }
-        
-        // Parse Campaign Values Report response structure
-        if (result.data?.attributes?.results && Array.isArray(result.data.attributes.results)) {
-          // Transform to expected format
-          const transformedData = result.data.attributes.results.map((item: any) => ({
-            id: item.groupings?.campaign_id || campaignId,
-            attributes: item.statistics || {}
-          }))
-          results.push(...transformedData)
-          console.log(`✅ CAMPAIGNS: Got analytics for ${campaignId} - ${transformedData.length} rows with REAL DATA`)
-        } else if (result.data && Array.isArray(result.data)) {
-          results.push(...result.data)
-          console.log(`✅ CAMPAIGNS: Got analytics for ${campaignId} - ${result.data.length} rows`)
-        } else if (result.data) {
-          results.push(result.data)
-          console.log(`✅ CAMPAIGNS: Got analytics for ${campaignId} - 1 row`)
-        }
-        
-      } catch (error: any) {
-        console.log(`⚠️ CAMPAIGNS: Failed to get analytics for ${campaignId}: ${error.message}`)
-        // Continue with other campaigns
+      
+      // Parse Campaign Values Report response structure
+      if (result.data?.attributes?.results && Array.isArray(result.data.attributes.results)) {
+        // Transform to expected format
+        const transformedData = result.data.attributes.results.map((item: any) => ({
+          id: item.groupings?.campaign_id || campaignId,
+          attributes: item.statistics || {}
+        }))
+        results.push(...transformedData)
+        console.log(`✅ CAMPAIGNS: Got analytics for ${campaignId} - ${transformedData.length} rows with REAL DATA`)
+      } else if (result.data && Array.isArray(result.data)) {
+        results.push(...result.data)
+        console.log(`✅ CAMPAIGNS: Got analytics for ${campaignId} - ${result.data.length} rows`)
+      } else if (result.data) {
+        results.push(result.data)
+        console.log(`✅ CAMPAIGNS: Got analytics for ${campaignId} - 1 row`)
       }
+      
+    } catch (error: any) {
+      console.log(`⚠️ CAMPAIGNS: Failed to get analytics for ${campaignId}: ${error.message}`)
+      // Continue with other campaigns
+    }
     }
     
     return { data: results }
