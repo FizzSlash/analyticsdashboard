@@ -312,8 +312,8 @@ export class KlaviyoAPI {
       
       // Add delay to avoid rate limiting (except for first request)
       if (i > 0) {
-        console.log(`⏳ CAMPAIGNS: Waiting 2 seconds to avoid rate limits...`)
-        await new Promise(resolve => setTimeout(resolve, 2000))
+        console.log(`⏳ CAMPAIGNS: Waiting 20 seconds to avoid rate limits...`)
+        await new Promise(resolve => setTimeout(resolve, 20000))
       }
       
       try {
@@ -387,8 +387,15 @@ export class KlaviyoAPI {
     // SOLUTION: Call API for each flow individually (same pattern as campaigns)
     const results = []
     
-    for (const flowId of flowIds) {
-      console.log(`📊 FLOWS: Getting analytics for flow ${flowId}`)
+    for (let i = 0; i < flowIds.length; i++) {
+      const flowId = flowIds[i]
+      console.log(`📊 FLOWS: Getting analytics for flow ${flowId} (${i + 1}/${flowIds.length})`)
+      
+      // Add delay to avoid rate limiting (except for first request)
+      if (i > 0) {
+        console.log(`⏳ FLOWS: Waiting 20 seconds to avoid rate limits...`)
+        await new Promise(resolve => setTimeout(resolve, 20000))
+      }
       
       try {
         const result = await this.makeRequest('/flow-values-reports', {
