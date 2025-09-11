@@ -364,7 +364,8 @@ export class KlaviyoAPI {
       }
       
       if (!result) {
-        throw new Error(`Failed to get analytics after ${maxRetries} retries`)
+        console.log(`⚠️ CAMPAIGNS: Failed to get analytics for ${campaignId} after ${maxRetries} retries`)
+        continue // Skip this campaign and continue with others
       }
       
       // Parse Campaign Values Report response structure
@@ -383,11 +384,6 @@ export class KlaviyoAPI {
         results.push(result.data)
         console.log(`✅ CAMPAIGNS: Got analytics for ${campaignId} - 1 row`)
       }
-      
-    } catch (error: any) {
-      console.log(`⚠️ CAMPAIGNS: Failed to get analytics for ${campaignId}: ${error.message}`)
-      // Continue with other campaigns
-    }
     }
     
     return { data: results }
