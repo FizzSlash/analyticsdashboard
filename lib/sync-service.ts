@@ -190,20 +190,33 @@ export class SyncService {
         pageCount++
         this.log(`📄 FLOWS: Fetching page ${pageCount}...`)
         
-        const response = await this.klaviyo.getFlows(cursor)
-        const flows = response.data || []
-        
-        // Filter to only active/live flows
-        const liveFlows = flows.filter((flow: any) => {
-          const status = flow.attributes?.status?.toLowerCase()
-          return status === 'active' || status === 'live'
-        })
-        
-        allFlows = [...allFlows, ...liveFlows]
-        this.log(`📊 FLOWS: Page ${pageCount} - Found ${flows.length} flows, ${liveFlows.length} live/active`)
-        
-        cursor = response.links?.next ? new URL(response.links.next).searchParams.get('page[cursor]') || undefined : undefined
-        hasMore = !!cursor
+        try {
+          const response = await this.klaviyo.getFlows(cursor)
+          this.log(`📡 FLOWS: API response received for page ${pageCount}`)
+          
+          const flows = response.data || []
+          this.log(`📊 FLOWS: Raw flows received: ${flows.length}`)
+          
+          // Filter to only active/live flows
+          const liveFlows = flows.filter((flow: any) => {
+            const status = flow.attributes?.status?.toLowerCase()
+            return status === 'active' || status === 'live'
+          })
+          
+          allFlows = [...allFlows, ...liveFlows]
+          this.log(`📊 FLOWS: Page ${pageCount} - Found ${flows.length} flows, ${liveFlows.length} live/active`)
+          
+          cursor = response.links?.next ? new URL(response.links.next).searchParams.get('page[cursor]') || undefined : undefined
+          hasMore = !!cursor
+          
+          if (pageCount >= 5) {
+            this.log(`⚠️ FLOWS: Reached page limit (5), stopping pagination`)
+            break
+          }
+        } catch (flowError) {
+          this.log(`❌ FLOWS: Error fetching flows page ${pageCount}: ${flowError}`)
+          throw flowError
+        }
       }
       
       this.log(`📈 FLOWS: Total live flows to process: ${allFlows.length}`)

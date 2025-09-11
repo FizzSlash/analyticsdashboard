@@ -171,15 +171,22 @@ export class DatabaseService {
   }
 
   static async upsertCampaignMetric(metric: Omit<CampaignMetric, 'id' | 'created_at' | 'updated_at'>): Promise<void> {
-    const { error } = await supabaseAdmin
+    console.log(`💾 DATABASE: Attempting to save campaign metric for campaign: ${metric.campaign_id}`)
+    console.log(`💾 DATABASE: Campaign data:`, JSON.stringify(metric, null, 2))
+    
+    const { data, error } = await supabaseAdmin
       .from('campaign_metrics')
       .upsert(metric, {
         onConflict: 'client_id,campaign_id',
         ignoreDuplicates: false
       })
+      .select()
 
     if (error) {
-      console.error('Error upserting campaign metric:', error)
+      console.error('❌ DATABASE: Error upserting campaign metric:', error)
+      console.error('❌ DATABASE: Failed metric data:', metric)
+    } else {
+      console.log(`✅ DATABASE: Campaign metric saved successfully:`, data)
     }
   }
 
