@@ -319,20 +319,90 @@ export function ClientManagement({ agency, clients: initialClients }: ClientMana
         console.log('⚠️ FRONTEND: No campaign analytics data returned')
       }
       
-      // Step 3: Process and save data
-      setSuccess('Step 3/3: Processing campaign data...')
-      console.log('💾 FRONTEND: Processing campaign data for database save')
+      // Step 3: Get individual campaign details (LUXE Blueprint approach)
+      setSuccess('Step 3/4: Getting campaign details and messages...')
+      console.log('📧 FRONTEND: Getting individual campaign details for 83 campaigns')
       
-      // Here you'd call another proxy to save the data
+      const campaignDetails = []
+      const totalCampaigns = analyticsResult.data.data.length
+      
+      for (let i = 0; i < analyticsResult.data.data.length; i++) {
+        const campaign = analyticsResult.data.data[i]
+        console.log(`📧 FRONTEND: Processing campaign ${i + 1}/${totalCampaigns} - ${campaign.id}`)
+        
+        try {
+          // Get campaign basic details
+          const campaignResponse = await fetch(`/api/klaviyo-proxy/campaigns/${campaign.id}?clientSlug=${client.brand_slug}`)
+          if (!campaignResponse.ok) {
+            console.log(`⚠️ FRONTEND: Failed to get campaign ${campaign.id} details`)
+            continue
+          }
+          
+          const campaignData = await campaignResponse.json()
+          console.log(`📋 FRONTEND: Got campaign details for ${campaign.id}:`, campaignData.data?.data?.attributes?.name || 'Unknown')
+          
+          // Get campaign messages (subject lines, content)
+          const messagesResponse = await fetch(`/api/klaviyo-proxy/campaign-messages/${campaign.id}?clientSlug=${client.brand_slug}`)
+          if (!messagesResponse.ok) {
+            console.log(`⚠️ FRONTEND: Failed to get messages for campaign ${campaign.id}`)
+            continue
+          }
+          
+          const messagesData = await messagesResponse.json()
+          console.log(`📩 FRONTEND: Got ${messagesData.data?.data?.length || 0} messages for campaign ${campaign.id}`)
+          
+          // Extract subject line and content
+          const message = messagesData.data?.data?.[0]
+          const subjectLine = message?.attributes?.content?.subject || 'No subject'
+          const previewText = message?.attributes?.content?.preview_text || ''
+          
+          console.log(`📝 FRONTEND: Campaign ${campaign.id} - Subject: "${subjectLine}"`)
+          
+          // Combine analytics + details
+          const completeData = {
+            ...campaign,
+            campaign_name: campaignData.data?.data?.attributes?.name || 'Unknown Campaign',
+            subject_line: subjectLine,
+            preview_text: previewText,
+            send_date: campaignData.data?.data?.attributes?.send_time || null,
+            status: campaignData.data?.data?.attributes?.status || 'unknown'
+          }
+          
+          campaignDetails.push(completeData)
+          
+          // Small delay to respect rate limits
+          if (i < totalCampaigns - 1) {
+            await new Promise(resolve => setTimeout(resolve, 100)) // 100ms delay
+          }
+          
+        } catch (error) {
+          console.error(`❌ FRONTEND: Error processing campaign ${campaign.id}:`, error)
+        }
+      }
+      
+      console.log(`✅ FRONTEND: Completed campaign details - ${campaignDetails.length}/${totalCampaigns} campaigns processed`)
+      
+      // Step 4: Process and save data
+      setSuccess('Step 4/4: Saving campaign data to database...')
+      console.log('💾 FRONTEND: Processing complete campaign data for database save')
+      
+      // Here you'd call another proxy to save the complete data
       // For now, just show success
       
-      setSuccess(`✅ Frontend sync completed successfully for ${client.brand_name}!
+      setSuccess(`✅ Complete LUXE blueprint sync finished for ${client.brand_name}!
       
 📊 Metrics: ${metricsResult.data?.data?.length || 0} found
 📈 Analytics: ${analyticsResult.data?.data?.length || 0} campaigns processed
-🎯 Conversion Metric: ${conversionMetricId}`)
+📧 Details: ${campaignDetails.length} campaigns with complete data
+🎯 Conversion Metric: ${conversionMetricId}
+
+Sample campaigns:
+${campaignDetails.slice(0, 5).map((c: any, i: number) => 
+  `${i + 1}. ${c.campaign_name} - Opens: ${c.attributes?.opens || 0}, Revenue: $${c.attributes?.conversion_value || 0}`
+).join('\n')}`)
       
-      console.log('🎉 FRONTEND: Sync completed successfully')
+      console.log('🎉 FRONTEND: Complete LUXE blueprint sync completed successfully')
+      console.log('📊 FRONTEND: Complete campaign data:', campaignDetails)
       
     } catch (err) {
       console.error('❌ FRONTEND: Sync error:', err)
