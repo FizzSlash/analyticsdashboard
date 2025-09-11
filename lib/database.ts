@@ -406,4 +406,70 @@ export class DatabaseService {
 
     return data || []
   }
+
+  // NEW METHODS FOR 4-SECTION STRUCTURE
+
+  // Segment Metrics
+  static async upsertSegmentMetric(metric: any): Promise<void> {
+    const { error } = await supabaseAdmin
+      .from('segment_metrics')
+      .upsert(metric, {
+        onConflict: 'client_id,segment_id,date_recorded',
+        ignoreDuplicates: false
+      })
+
+    if (error) {
+      console.error('Error upserting segment metric:', error)
+    }
+  }
+
+  static async getSegmentMetrics(clientId: string, days: number = 30): Promise<any[]> {
+    const startDate = format(subDays(new Date(), days), 'yyyy-MM-dd')
+    
+    const { data, error } = await supabase
+      .from('segment_metrics')
+      .select('*')
+      .eq('client_id', clientId)
+      .gte('date_recorded', startDate)
+      .order('date_recorded', { ascending: false })
+
+    if (error) {
+      console.error('Error fetching segment metrics:', error)
+      return []
+    }
+
+    return data || []
+  }
+
+  // Deliverability Metrics
+  static async upsertDeliverabilityMetric(metric: any): Promise<void> {
+    const { error } = await supabaseAdmin
+      .from('deliverability_metrics')
+      .upsert(metric, {
+        onConflict: 'client_id,date_recorded',
+        ignoreDuplicates: false
+      })
+
+    if (error) {
+      console.error('Error upserting deliverability metric:', error)
+    }
+  }
+
+  static async getDeliverabilityMetrics(clientId: string, days: number = 30): Promise<any[]> {
+    const startDate = format(subDays(new Date(), days), 'yyyy-MM-dd')
+    
+    const { data, error } = await supabase
+      .from('deliverability_metrics')
+      .select('*')
+      .eq('client_id', clientId)
+      .gte('date_recorded', startDate)
+      .order('date_recorded', { ascending: false })
+
+    if (error) {
+      console.error('Error fetching deliverability metrics:', error)
+      return []
+    }
+
+    return data || []
+  }
 }

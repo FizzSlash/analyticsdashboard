@@ -46,13 +46,13 @@ export class SyncService {
       await this.syncFlows()
       this.log(`✅ SYNC STEP 2: Flows sync completed`)
       
-      this.log(`👥 SYNC STEP 3: Starting audience metrics sync...`)
-      await this.syncAudienceMetrics()
-      this.log(`✅ SYNC STEP 3: Audience metrics sync completed`)
+      this.log(`👥 SYNC STEP 3: Starting segments sync...`)
+      await this.syncSegments()
+      this.log(`✅ SYNC STEP 3: Segments sync completed`)
       
-      this.log(`💰 SYNC STEP 4: Starting revenue attribution sync...`)
-      await this.syncRevenueAttribution()
-      this.log(`✅ SYNC STEP 4: Revenue attribution sync completed`)
+      this.log(`📬 SYNC STEP 4: Starting deliverability sync...`)
+      await this.syncDeliverability()
+      this.log(`✅ SYNC STEP 4: Deliverability sync completed`)
 
       // Update last sync timestamp
       await DatabaseService.updateClientSyncTime(this.client.id)
@@ -453,6 +453,138 @@ export class SyncService {
         orders_count: 0,
         revenue_per_trigger: 0
       }
+    }
+  }
+  // NEW SYNC METHODS FOR 4-SECTION STRUCTURE
+
+  // Sync segments data
+  async syncSegments() {
+    this.log('👥 SEGMENTS: Starting segments sync...')
+    
+    try {
+      let allSegments: any[] = []
+      let cursor: string | undefined
+      let hasMore = true
+      let pageCount = 0
+
+      // Fetch all segments
+      while (hasMore) {
+        pageCount++
+        this.log(`📄 SEGMENTS: Fetching page ${pageCount}...`)
+        
+        const response = await this.klaviyo.getSegments(cursor)
+        const segments = response.data || []
+        
+        allSegments = [...allSegments, ...segments]
+        this.log(`📊 SEGMENTS: Page ${pageCount} - Found ${segments.length} segments`)
+        
+        cursor = response.links?.next ? new URL(response.links.next).searchParams.get('page[cursor]') || undefined : undefined
+        hasMore = !!cursor && pageCount < 10 // Safety limit
+      }
+      
+      this.log(`📈 SEGMENTS: Total segments to process: ${allSegments.length}`)
+
+      // Get segment analytics
+      if (allSegments.length > 0) {
+        const segmentIds = allSegments.map(s => s.id)
+        
+        try {
+          const analyticsResponse = await this.klaviyo.getSegmentAnalytics(segmentIds)
+          this.log(`📊 SEGMENTS: Analytics fetched for segments`)
+          
+          // Process and save segment metrics
+          for (const segment of allSegments) {
+            // Get profile count for this segment
+            let profileCount = 0
+            try {
+              const profilesResponse = await this.klaviyo.getSegmentProfiles(segment.id)
+              profileCount = profilesResponse.data?.length || 0
+            } catch (error) {
+              this.log(`⚠️ SEGMENTS: Could not get profile count for segment ${segment.id}`)
+            }
+
+            const segmentData = {
+              client_id: this.client.id,
+              segment_id: segment.id,
+              segment_name: segment.attributes?.name || 'Unnamed Segment',
+              date_recorded: format(new Date(), 'yyyy-MM-dd'),
+              total_profiles: profileCount,
+              // Add more metrics from analytics response as needed
+            }
+
+            await DatabaseService.upsertSegmentMetric(segmentData)
+          }
+        } catch (error) {
+          this.log(`⚠️ SEGMENTS: Could not fetch segment analytics: ${error}`)
+        }
+      }
+
+      this.log(`✅ SEGMENTS: Synced ${allSegments.length} segments`)
+    } catch (error) {
+      this.log(`❌ SEGMENTS: Error syncing segments: ${error}`)
+      throw error
+    }
+  }
+
+  // Sync deliverability data
+  async syncDeliverability() {
+    this.log('📬 DELIVERABILITY: Starting deliverability sync...')
+    
+    try {
+      // Get recent campaigns and flows for deliverability analysis
+      const campaigns = await DatabaseService.getRecentCampaignMetrics(this.client.id, 30)
+      const flows = await DatabaseService.getRecentFlowMetrics(this.client.id, 30)
+      
+      // Calculate deliverability metrics from campaign/flow data
+      let totalSent = 0, totalDelivered = 0, totalBounced = 0, totalSpam = 0, totalUnsub = 0
+      let hardBounces = 0, softBounces = 0
+      
+      for (const campaign of campaigns) {
+        totalSent += campaign.recipients_count || 0
+        totalDelivered += campaign.delivered_count || 0
+        totalBounced += campaign.bounced_count || 0
+        totalUnsub += campaign.unsubscribed_count || 0
+        // Assume 70% of bounces are soft, 30% hard (typical split)
+        hardBounces += Math.floor((campaign.bounced_count || 0) * 0.3)
+        softBounces += Math.floor((campaign.bounced_count || 0) * 0.7)
+      }
+
+      // Calculate rates
+      const deliveryRate = totalSent > 0 ? (totalDelivered / totalSent) * 100 : 0
+      const bounceRate = totalSent > 0 ? (totalBounced / totalSent) * 100 : 0
+      const unsubRate = totalSent > 0 ? (totalUnsub / totalSent) * 100 : 0
+      
+      // Calculate reputation score (simple algorithm)
+      let reputationScore = 100
+      if (bounceRate > 5) reputationScore -= (bounceRate - 5) * 10
+      if (unsubRate > 0.5) reputationScore -= (unsubRate - 0.5) * 20
+      reputationScore = Math.max(0, Math.min(100, reputationScore))
+
+      const deliverabilityData = {
+        client_id: this.client.id,
+        date_recorded: format(new Date(), 'yyyy-MM-dd'),
+        total_sent: totalSent,
+        total_delivered: totalDelivered,
+        total_bounced: totalBounced,
+        hard_bounces: hardBounces,
+        soft_bounces: softBounces,
+        spam_complaints: totalSpam,
+        unsubscribes: totalUnsub,
+        delivery_rate: deliveryRate,
+        bounce_rate: bounceRate,
+        hard_bounce_rate: totalSent > 0 ? (hardBounces / totalSent) * 100 : 0,
+        soft_bounce_rate: totalSent > 0 ? (softBounces / totalSent) * 100 : 0,
+        unsubscribe_rate: unsubRate,
+        overall_reputation_score: reputationScore,
+        sender_reputation: reputationScore >= 90 ? 'excellent' : reputationScore >= 75 ? 'good' : reputationScore >= 60 ? 'fair' : 'poor',
+        list_health_score: Math.max(0, 100 - bounceRate * 10)
+      }
+
+      await DatabaseService.upsertDeliverabilityMetric(deliverabilityData)
+      this.log(`✅ DELIVERABILITY: Synced deliverability metrics - Score: ${reputationScore.toFixed(1)}`)
+    } catch (error) {
+      this.log(`❌ DELIVERABILITY: Error syncing deliverability: ${error}`)
+      throw error
     }
   }
 }

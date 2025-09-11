@@ -66,9 +66,22 @@ export class KlaviyoAPI {
     return this.makeRequest(`/campaigns/${campaignId}`)
   }
 
-  // Get Campaign Messages
+  // Get Campaign Messages with Images
   async getCampaignMessages(campaignId: string) {
-    return this.makeRequest(`/campaigns/${campaignId}/messages`)
+    let endpoint = `/campaigns/${campaignId}/campaign-messages`
+    const params = new URLSearchParams()
+    
+    // Request specific fields including image URLs
+    params.set('fields[campaign-message]', '')
+    params.set('fields[campaign]', '')
+    params.set('fields[image]', 'image_url')
+    params.set('fields[template]', '')
+    params.set('include', 'image')
+    
+    endpoint += `?${params.toString()}`
+    
+    console.log(`📧 CAMPAIGN MESSAGES API: Full endpoint: ${endpoint}`)
+    return this.makeRequest(endpoint)
   }
 
   // Get Flows
@@ -221,6 +234,150 @@ export class KlaviyoAPI {
   // Get Account
   async getAccount() {
     return this.makeRequest('/accounts')
+  }
+
+  // REPORTING API METHODS
+  
+  // Campaign Analytics Report
+  async getCampaignAnalytics(campaignIds: string[]) {
+    return this.makeRequest('/campaign-values-reports', {
+      method: 'POST',
+      body: JSON.stringify({
+        data: {
+          type: 'campaign-values-report',
+          attributes: {
+            campaign_ids: campaignIds,
+            metrics: ['opens', 'clicks', 'bounces', 'deliveries', 'unsubscribes', 'revenue', 'open_rate', 'click_rate', 'bounce_rate']
+          }
+        }
+      })
+    })
+  }
+
+  // Flow Analytics Report  
+  async getFlowAnalytics(flowIds: string[]) {
+    return this.makeRequest('/flow-values-reports', {
+      method: 'POST',
+      body: JSON.stringify({
+        data: {
+          type: 'flow-values-report',
+          attributes: {
+            flow_ids: flowIds,
+            metrics: ['triggered', 'completed', 'completion_rate', 'revenue']
+          }
+        }
+      })
+    })
+  }
+
+  // SEGMENT API METHODS
+
+  // Get Segments
+  async getSegments(cursor?: string) {
+    let endpoint = `/segments`
+    const params = new URLSearchParams()
+    
+    if (cursor) {
+      params.set('page[cursor]', cursor)
+    }
+    
+    const queryString = params.toString()
+    if (queryString) {
+      endpoint += `?${queryString}`
+    }
+    
+    console.log(`👥 SEGMENTS API: Full endpoint: ${endpoint}`)
+    return this.makeRequest(endpoint)
+  }
+
+  // Get Segment Profiles
+  async getSegmentProfiles(segmentId: string, cursor?: string) {
+    let endpoint = `/segments/${segmentId}/profiles`
+    const params = new URLSearchParams()
+    
+    if (cursor) {
+      params.set('page[cursor]', cursor)
+    }
+    
+    const queryString = params.toString()
+    if (queryString) {
+      endpoint += `?${queryString}`
+    }
+    
+    console.log(`👥 SEGMENT PROFILES API: Full endpoint: ${endpoint}`)
+    return this.makeRequest(endpoint)
+  }
+
+  // Segment Analytics Report
+  async getSegmentAnalytics(segmentIds: string[]) {
+    return this.makeRequest('/segment-values-reports', {
+      method: 'POST',
+      body: JSON.stringify({
+        data: {
+          type: 'segment-values-report',
+          attributes: {
+            segment_ids: segmentIds,
+            metrics: ['size', 'growth_rate', 'engagement_rate']
+          }
+        }
+      })
+    })
+  }
+
+  // Segment Series Report (growth over time)
+  async getSegmentSeries(segmentIds: string[], startDate: string, endDate: string) {
+    return this.makeRequest('/segment-series-reports', {
+      method: 'POST',
+      body: JSON.stringify({
+        data: {
+          type: 'segment-series-report',
+          attributes: {
+            segment_ids: segmentIds,
+            start_date: startDate,
+            end_date: endDate,
+            metrics: ['size', 'growth_rate']
+          }
+        }
+      })
+    })
+  }
+
+  // FLOW STRUCTURE METHODS
+
+  // Get Flow Actions (steps in flow)
+  async getFlowActions(flowId: string, cursor?: string) {
+    let endpoint = `/flows/${flowId}/flow-actions`
+    const params = new URLSearchParams()
+    
+    if (cursor) {
+      params.set('page[cursor]', cursor)
+    }
+    
+    const queryString = params.toString()
+    if (queryString) {
+      endpoint += `?${queryString}`
+    }
+    
+    console.log(`🔄 FLOW ACTIONS API: Full endpoint: ${endpoint}`)
+    return this.makeRequest(endpoint)
+  }
+
+  // Get Flow Messages (emails in each action/step)
+  async getFlowActionMessages(actionId: string, cursor?: string) {
+    let endpoint = `/flow-actions/${actionId}/flow-messages`
+    const params = new URLSearchParams()
+    
+    if (cursor) {
+      params.set('page[cursor]', cursor)
+    }
+    
+    const queryString = params.toString()
+    if (queryString) {
+      endpoint += `?${queryString}`
+    }
+    
+    console.log(`📧 FLOW MESSAGES API: Full endpoint: ${endpoint}`)
+    return this.makeRequest(endpoint)
   }
 }
 
