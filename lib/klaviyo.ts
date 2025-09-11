@@ -7,37 +7,61 @@ export class KlaviyoAPI {
     this.apiKey = apiKey
   }
 
-  private async makeRequest(endpoint: string, options: RequestInit = {}) {
+  private async makeRequest(endpoint: string, options: RequestInit = {}, retryCount = 0): Promise<any> {
     const url = `${this.baseURL}${endpoint}`
+    const maxRetries = 3
     
     console.log(`🌐 KLAVIYO API: Making request to ${endpoint}`)
     console.log(`🔑 KLAVIYO API: Using API key starting with: ${this.apiKey.substring(0, 8)}...`)
     console.log(`🔗 KLAVIYO API: Full URL: ${url}`)
     
-    const response = await fetch(url, {
-      ...options,
-      headers: {
-        'Authorization': `Klaviyo-API-Key ${this.apiKey}`,
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-        'revision': '2025-07-15',
-        ...options.headers,
-      },
-    })
+    try {
+      const response = await fetch(url, {
+        ...options,
+        headers: {
+          'Authorization': `Klaviyo-API-Key ${this.apiKey}`,
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'revision': '2025-07-15',
+          ...options.headers,
+        },
+      })
 
-    console.log(`📡 KLAVIYO API: Response status: ${response.status} ${response.statusText}`)
-    
-    if (!response.ok) {
-      const errorText = await response.text()
-      console.error(`❌ KLAVIYO API: Error response body:`, errorText)
-      throw new Error(`Klaviyo API Error: ${response.status} ${response.statusText} - ${errorText}`)
+      console.log(`📡 KLAVIYO API: Response status: ${response.status} ${response.statusText}`)
+      
+      if (response.status === 429) {
+        // Rate limited - retry with exponential backoff
+        if (retryCount < maxRetries) {
+          const delayMs = Math.min(1000 * Math.pow(2, retryCount), 30000) // Max 30s
+          console.log(`⏱️ KLAVIYO API: Rate limited, waiting ${delayMs}ms before retry ${retryCount + 1}/${maxRetries}`)
+          await new Promise(resolve => setTimeout(resolve, delayMs))
+          return this.makeRequest(endpoint, options, retryCount + 1)
+        } else {
+          throw new Error(`Rate limit exceeded after ${maxRetries} attempts`)
+        }
+      }
+      
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error(`❌ KLAVIYO API: Error response body:`, errorText)
+        throw new Error(`Klaviyo API Error: ${response.status} ${response.statusText} - ${errorText}`)
+      }
+
+      const data = await response.json()
+      console.log(`✅ KLAVIYO API: Success - Data keys:`, Object.keys(data))
+      console.log(`📊 KLAVIYO API: Data count: ${data.data ? data.data.length : 'N/A'}`)
+      
+      return data
+    } catch (error) {
+      if (retryCount < maxRetries && (error as Error).message.includes('fetch')) {
+        // Network error - retry
+        const delayMs = 1000 * (retryCount + 1)
+        console.log(`🔄 KLAVIYO API: Network error, retrying in ${delayMs}ms`)
+        await new Promise(resolve => setTimeout(resolve, delayMs))
+        return this.makeRequest(endpoint, options, retryCount + 1)
+      }
+      throw error
     }
-
-    const data = await response.json()
-    console.log(`✅ KLAVIYO API: Success - Data keys:`, Object.keys(data))
-    console.log(`📊 KLAVIYO API: Data count: ${data.data ? data.data.length : 'N/A'}`)
-    
-    return data
   }
 
   // Get Campaigns - REQUIRES channel filter per Klaviyo docs

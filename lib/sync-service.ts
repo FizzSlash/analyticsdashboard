@@ -673,48 +673,32 @@ export class SyncService {
       const flows = await DatabaseService.getRecentFlowMetrics(this.client.id, 30)
       
       // Calculate deliverability metrics from campaign/flow data
-      let totalSent = 0, totalDelivered = 0, totalBounced = 0, totalSpam = 0, totalUnsub = 0
-      let hardBounces = 0, softBounces = 0
+      let totalSent = 0, totalDelivered = 0, totalBounced = 0, totalSpam = 0
       
       for (const campaign of campaigns) {
         totalSent += campaign.recipients_count || 0
         totalDelivered += campaign.delivered_count || 0
         totalBounced += campaign.bounced_count || 0
-        totalUnsub += campaign.unsubscribed_count || 0
-        // Assume 70% of bounces are soft, 30% hard (typical split)
-        hardBounces += Math.floor((campaign.bounced_count || 0) * 0.3)
-        softBounces += Math.floor((campaign.bounced_count || 0) * 0.7)
       }
 
       // Calculate rates
       const deliveryRate = totalSent > 0 ? (totalDelivered / totalSent) * 100 : 0
       const bounceRate = totalSent > 0 ? (totalBounced / totalSent) * 100 : 0
-      const unsubRate = totalSent > 0 ? (totalUnsub / totalSent) * 100 : 0
+      const spamRate = totalSent > 0 ? (totalSpam / totalSent) * 100 : 0
       
       // Calculate reputation score (simple algorithm)
       let reputationScore = 100
       if (bounceRate > 5) reputationScore -= (bounceRate - 5) * 10
-      if (unsubRate > 0.5) reputationScore -= (unsubRate - 0.5) * 20
+      if (spamRate > 0.1) reputationScore -= spamRate * 50
       reputationScore = Math.max(0, Math.min(100, reputationScore))
 
       const deliverabilityData = {
         client_id: this.client.id,
-        date_recorded: format(new Date(), 'yyyy-MM-dd'),
-        total_sent: totalSent,
-        total_delivered: totalDelivered,
-        total_bounced: totalBounced,
-        hard_bounces: hardBounces,
-        soft_bounces: softBounces,
-        spam_complaints: totalSpam,
-        unsubscribes: totalUnsub,
+        date_recorded: new Date().toISOString().split('T')[0],
         delivery_rate: deliveryRate,
         bounce_rate: bounceRate,
-        hard_bounce_rate: totalSent > 0 ? (hardBounces / totalSent) * 100 : 0,
-        soft_bounce_rate: totalSent > 0 ? (softBounces / totalSent) * 100 : 0,
-        unsubscribe_rate: unsubRate,
-        overall_reputation_score: reputationScore,
-        sender_reputation: reputationScore >= 90 ? 'excellent' : reputationScore >= 75 ? 'good' : reputationScore >= 60 ? 'fair' : 'poor',
-        list_health_score: Math.max(0, 100 - bounceRate * 10)
+        spam_rate: spamRate,
+        reputation_score: reputationScore
       }
 
       await DatabaseService.upsertDeliverabilityMetric(deliverabilityData)
