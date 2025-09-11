@@ -208,8 +208,9 @@ export async function GET(request: NextRequest) {
             success: true,
             segment_id: segmentId,
             data_rows: analytics.data?.length || 0,
-            sample_stats: analytics.data?.[0]?.attributes ? Object.keys(analytics.data[0].attributes) : [],
-            endpoint: 'POST /segment-values-reports'
+            sample_stats: [],
+            endpoint: 'POST /segment-values-reports',
+            note: 'Segment analytics disabled due to API limitations'
           }
           console.log(`✅ Segment Analytics: ${analytics.data?.length || 0} rows`)
         }
