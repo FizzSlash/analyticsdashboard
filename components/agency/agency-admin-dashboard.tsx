@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Agency, Client, UserProfile } from '@/lib/types'
+import { Agency, Client, UserProfile } from '@/lib/supabase'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { LogoutButton } from '@/components/auth/logout-button'
 import { ClientManagement } from './client-management'

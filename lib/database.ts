@@ -1,5 +1,4 @@
-import { supabaseAdmin } from './supabase-admin'
-import { Client, CampaignMetric, FlowMetric, AudienceMetric, RevenueAttribution, Agency, UserProfile } from './types'
+import { supabaseAdmin, Client, CampaignMetric, FlowMetric, AudienceMetric, RevenueAttribution, Agency, UserProfile } from './supabase'
 import { format, subDays } from 'date-fns'
 
 export class DatabaseService {

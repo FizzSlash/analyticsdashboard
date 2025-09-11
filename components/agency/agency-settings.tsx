@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Agency } from '@/lib/types'
+import { Agency } from '@/lib/supabase'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { 
   Save,
