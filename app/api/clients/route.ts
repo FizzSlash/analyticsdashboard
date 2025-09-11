@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { DatabaseService } from '@/lib/database'
 import { encryptApiKey } from '@/lib/klaviyo'
+import { supabaseAdmin } from '@/lib/supabase'
 
 export async function GET() {
   try {
@@ -93,5 +94,43 @@ export async function POST(request: NextRequest) {
       }, 
       { status: 500 }
     )
+  }
+}
+
+export async function PATCH(request: NextRequest) {
+  try {
+    const body = await request.json()
+    const url = new URL(request.url)
+    const clientId = url.pathname.split('/').pop()
+    
+    if (!clientId) {
+      return NextResponse.json({ error: 'Client ID required' }, { status: 400 })
+    }
+
+    console.log('Updating client:', clientId, body)
+
+    // Update client data
+    const { error } = await supabaseAdmin
+      .from('clients')
+      .update({
+        brand_name: body.brand_name,
+        brand_slug: body.brand_slug,
+        logo_url: body.logo_url || null,
+        primary_color: body.primary_color,
+        secondary_color: body.secondary_color,
+        background_image_url: body.background_image_url || null,
+        ...(body.klaviyo_api_key && { klaviyo_api_key: encryptApiKey(body.klaviyo_api_key) })
+      })
+      .eq('id', clientId)
+
+    if (error) {
+      console.error('Update client error:', error)
+      return NextResponse.json({ error: 'Failed to update client' }, { status: 500 })
+    }
+
+    return NextResponse.json({ success: true, message: 'Client updated successfully' })
+  } catch (error) {
+    console.error('Update client API error:', error)
+    return NextResponse.json({ error: 'Failed to update client' }, { status: 500 })
   }
 }
