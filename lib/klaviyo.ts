@@ -348,13 +348,22 @@ export class KlaviyoAPI {
           })
         })
         
-        if (result.data && Array.isArray(result.data)) {
+        // Parse Campaign Values Report response structure
+        if (result.data?.attributes?.results && Array.isArray(result.data.attributes.results)) {
+          // Transform to expected format
+          const transformedData = result.data.attributes.results.map((item: any) => ({
+            id: item.groupings?.campaign_id || campaignId,
+            attributes: item.statistics || {}
+          }))
+          results.push(...transformedData)
+          console.log(`✅ CAMPAIGNS: Got analytics for ${campaignId} - ${transformedData.length} rows with REAL DATA`)
+        } else if (result.data && Array.isArray(result.data)) {
           results.push(...result.data)
+          console.log(`✅ CAMPAIGNS: Got analytics for ${campaignId} - ${result.data.length} rows`)
         } else if (result.data) {
           results.push(result.data)
+          console.log(`✅ CAMPAIGNS: Got analytics for ${campaignId} - 1 row`)
         }
-        
-        console.log(`✅ CAMPAIGNS: Got analytics for ${campaignId} - ${Array.isArray(result.data) ? result.data.length : (result.data ? 1 : 0)} rows`)
         
       } catch (error: any) {
         console.log(`⚠️ CAMPAIGNS: Failed to get analytics for ${campaignId}: ${error.message}`)
@@ -413,13 +422,22 @@ export class KlaviyoAPI {
           })
         })
         
-        if (result.data && Array.isArray(result.data)) {
+        // Parse Flow Values Report response structure (same as campaigns)
+        if (result.data?.attributes?.results && Array.isArray(result.data.attributes.results)) {
+          // Transform to expected format
+          const transformedData = result.data.attributes.results.map((item: any) => ({
+            id: item.groupings?.flow_id || flowId,
+            attributes: item.statistics || {}
+          }))
+          results.push(...transformedData)
+          console.log(`✅ FLOWS: Got analytics for ${flowId} - ${transformedData.length} rows with REAL DATA`)
+        } else if (result.data && Array.isArray(result.data)) {
           results.push(...result.data)
+          console.log(`✅ FLOWS: Got analytics for ${flowId} - ${result.data.length} rows`)
         } else if (result.data) {
           results.push(result.data)
+          console.log(`✅ FLOWS: Got analytics for ${flowId} - 1 row`)
         }
-        
-        console.log(`✅ FLOWS: Got analytics for ${flowId} - ${Array.isArray(result.data) ? result.data.length : (result.data ? 1 : 0)} rows`)
         
       } catch (error: any) {
         console.log(`⚠️ FLOWS: Failed to get analytics for ${flowId}: ${error.message}`)
