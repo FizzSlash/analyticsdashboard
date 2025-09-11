@@ -57,11 +57,11 @@ export function AgencySettings({ agency: initialAgency }: AgencySettingsProps) {
         },
         body: JSON.stringify({
           agency_name: formData.agency_name,
-          logo_url: formData.logo_url || null,
+          logo_url: formData.logo_url || undefined,
           primary_color: formData.primary_color,
           secondary_color: formData.secondary_color,
-          background_image_url: formData.background_image_url || null,
-          custom_domain: formData.custom_domain || null
+          background_image_url: formData.background_image_url || undefined,
+          custom_domain: formData.custom_domain || undefined
         })
       })
 
@@ -75,11 +75,11 @@ export function AgencySettings({ agency: initialAgency }: AgencySettingsProps) {
       setAgency({
         ...agency,
         agency_name: formData.agency_name,
-        logo_url: formData.logo_url || null,
+        logo_url: formData.logo_url || undefined,
         primary_color: formData.primary_color,
         secondary_color: formData.secondary_color,
-        background_image_url: formData.background_image_url || null,
-        custom_domain: formData.custom_domain || null
+        background_image_url: formData.background_image_url || undefined,
+        custom_domain: formData.custom_domain || undefined
       })
 
       setSuccess('Settings updated successfully!')

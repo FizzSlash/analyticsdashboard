@@ -51,10 +51,10 @@ export async function POST(request: NextRequest) {
       brand_name,
       brand_slug: brand_slug.toLowerCase().replace(/[^a-z0-9-]/g, ''),
       klaviyo_api_key: encryptedApiKey,
-      logo_url: body.logo_url || null,
+      logo_url: body.logo_url || undefined,
       primary_color: body.primary_color || '#3B82F6',
       secondary_color: body.secondary_color || '#EF4444',
-      background_image_url: body.background_image_url || null,
+      background_image_url: body.background_image_url || undefined,
       last_sync: null, // Add missing required field
       is_active: true
     }

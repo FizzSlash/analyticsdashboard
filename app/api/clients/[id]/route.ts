@@ -19,10 +19,10 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     const updateData: any = {
       brand_name: body.brand_name,
       brand_slug: body.brand_slug,
-      logo_url: body.logo_url || null,
+      logo_url: body.logo_url || undefined,
       primary_color: body.primary_color,
       secondary_color: body.secondary_color,
-      background_image_url: body.background_image_url || null,
+      background_image_url: body.background_image_url || undefined,
     }
 
     // Only update API key if provided

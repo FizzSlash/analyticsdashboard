@@ -120,10 +120,10 @@ export function ClientManagement({ agency, clients: initialClients }: ClientMana
         agency_id: agency.id,
         brand_name: formData.brand_name,
         brand_slug: cleanSlug,
-        logo_url: formData.logo_url || null,
+        logo_url: formData.logo_url || undefined,
         primary_color: formData.primary_color,
         secondary_color: formData.secondary_color,
-        background_image_url: formData.background_image_url || null,
+        background_image_url: formData.background_image_url || undefined,
         is_active: true
       }
       
@@ -137,10 +137,10 @@ export function ClientManagement({ agency, clients: initialClients }: ClientMana
           brand_name: formData.brand_name,
           brand_slug: cleanSlug,
           agency_id: agency.id,
-          logo_url: formData.logo_url || null,
+          logo_url: formData.logo_url || undefined,
           primary_color: formData.primary_color,
           secondary_color: formData.secondary_color,
-          background_image_url: formData.background_image_url || null
+          background_image_url: formData.background_image_url || undefined
         }
         
         // Only include API key if provided
@@ -196,10 +196,10 @@ export function ClientManagement({ agency, clients: initialClients }: ClientMana
             brand_slug: cleanSlug,
             klaviyo_api_key: formData.klaviyo_api_key,
             agency_id: agency.id,
-            logo_url: formData.logo_url || null,
+            logo_url: formData.logo_url || undefined,
             primary_color: formData.primary_color,
             secondary_color: formData.secondary_color,
-            background_image_url: formData.background_image_url || null
+            background_image_url: formData.background_image_url || undefined
           })
         })
         
