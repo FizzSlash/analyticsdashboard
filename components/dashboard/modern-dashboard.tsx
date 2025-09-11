@@ -256,7 +256,7 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
     
     // Send time analysis
     const sendTimeAnalysis = campaigns
-      .filter(c => c.send_date)
+      .filter((c: any) => c.send_date)
       .reduce((acc: any, campaign: any) => {
         const date = new Date(campaign.send_date)
         const hour = date.getHours()
