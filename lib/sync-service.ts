@@ -178,16 +178,17 @@ export class SyncService {
         }
       }
 
-      console.log(`Synced ${allCampaigns.length} campaigns`)
+      this.log(`✅ CAMPAIGNS: Synced ${allCampaigns.length} campaigns successfully`)
+      this.log(`🎯 CAMPAIGNS: Campaign sync completed, proceeding to flows...`)
     } catch (error) {
-      console.error('Error syncing campaigns:', error)
+      this.log(`❌ CAMPAIGNS: Error syncing campaigns: ${error}`)
       throw error
     }
   }
 
   // Sync flow data
   async syncFlows() {
-    console.log('🔄 FLOWS: Starting flows sync (live flows only)...')
+    this.log('🔄 FLOWS: Starting flows sync (live flows only)...')
     
     try {
       let allFlows: any[] = []
@@ -198,7 +199,7 @@ export class SyncService {
       // Fetch flows with pagination
       while (hasMore) {
         pageCount++
-        console.log(`📄 FLOWS: Fetching page ${pageCount}...`)
+        this.log(`📄 FLOWS: Fetching page ${pageCount}...`)
         
         const response = await this.klaviyo.getFlows(cursor)
         const flows = response.data || []
@@ -210,13 +211,13 @@ export class SyncService {
         })
         
         allFlows = [...allFlows, ...liveFlows]
-        console.log(`📊 FLOWS: Page ${pageCount} - Found ${flows.length} flows, ${liveFlows.length} live/active`)
+        this.log(`📊 FLOWS: Page ${pageCount} - Found ${flows.length} flows, ${liveFlows.length} live/active`)
         
         cursor = response.links?.next ? new URL(response.links.next).searchParams.get('page[cursor]') || undefined : undefined
         hasMore = !!cursor
       }
       
-      console.log(`📈 FLOWS: Total live flows to process: ${allFlows.length}`)
+      this.log(`📈 FLOWS: Total live flows to process: ${allFlows.length}`)
 
       // Process each flow
       for (const flow of allFlows) {
@@ -241,26 +242,26 @@ export class SyncService {
         }
       }
 
-      console.log(`Synced ${allFlows.length} flows`)
+      this.log(`✅ FLOWS: Synced ${allFlows.length} flows`)
     } catch (error) {
-      console.error('Error syncing flows:', error)
+      this.log(`❌ FLOWS: Error syncing flows: ${error}`)
       throw error
     }
   }
 
   // Sync audience metrics
   async syncAudienceMetrics() {
-    console.log('👥 AUDIENCE: Starting comprehensive audience analysis...')
+    this.log('👥 AUDIENCE: Starting comprehensive audience analysis...')
     
     try {
       // Get comprehensive profile data
-      console.log('👥 AUDIENCE: Fetching total profile count...')
+      this.log('👥 AUDIENCE: Fetching total profile count...')
       const profilesResponse = await this.klaviyo.getProfiles()
       const totalProfiles = profilesResponse.data?.length || 0
-      console.log(`👥 AUDIENCE: Total profiles: ${totalProfiles}`)
+      this.log(`👥 AUDIENCE: Total profiles: ${totalProfiles}`)
 
       // Get detailed list data and growth metrics
-      console.log('📋 AUDIENCE: Fetching all lists for comprehensive analysis...')
+      this.log('📋 AUDIENCE: Fetching all lists for comprehensive analysis...')
       const listsResponse = await this.klaviyo.getLists()
       console.log(`📋 AUDIENCE: Found ${listsResponse.data?.length || 0} lists`)
       
