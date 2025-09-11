@@ -80,7 +80,7 @@ export class SyncService {
         pageCount++
         console.log(`📄 CAMPAIGNS: Fetching page ${pageCount}...`)
         
-        const response = await this.klaviyo.getCampaigns(50, cursor)
+        const response = await this.klaviyo.getCampaigns(20, cursor)
         const campaigns = response.data || []
         
         // Filter campaigns to past year only
