@@ -142,7 +142,8 @@ export class SyncService {
         // Process analytics response to create lookup by campaign ID
         if (analyticsResponse.data) {
           for (const metric of analyticsResponse.data) {
-            campaignAnalytics[metric.attributes.campaign_id] = metric.attributes
+            // FIXED: Use metric.id (campaign ID) since we transformed the response structure
+            campaignAnalytics[metric.id] = metric.attributes
           }
         }
         this.log(`📊 CAMPAIGNS: Analytics processed for ${Object.keys(campaignAnalytics).length} campaigns`)
