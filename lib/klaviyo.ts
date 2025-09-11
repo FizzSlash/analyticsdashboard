@@ -310,19 +310,21 @@ export class KlaviyoAPI {
           type: 'campaign-values-report',
           attributes: {
             statistics: [
-              // Use only BASIC valid statistics to start
-              'unique_opens',
-              'unique_clicks', 
-              'total_opens',
-              'total_clicks'
+              // CORRECTED: Use valid Klaviyo statistics names
+              'opens_unique',
+              'clicks_unique', 
+              'opens',
+              'clicks',
+              'sends',
+              'deliveries_unique',
+              'bounces_unique',
+              'spam_complaints'
             ],
             timeframe: {
-              key: 'custom',
               start: startDate,
               end: endDate
             },
-            filter: `any(campaign_id,["${campaignIds.join('","')}"])`,
-            conversion_metric_id: null // Will get this from metrics API
+            filter: `any(campaign_id,["${campaignIds.join('","')}"])`
           }
         }
       })
@@ -371,7 +373,6 @@ export class KlaviyoAPI {
               'revenue_per_recipient'
             ],
             timeframe: {
-              key: 'custom',
               start: startDate,
               end: endDate
             },
@@ -397,7 +398,6 @@ export class KlaviyoAPI {
           attributes: {
             statistics: ['opens_unique', 'clicks_unique', 'revenue', 'flow_completions'],
             timeframe: {
-              key: 'custom',
               start: startDate,
               end: endDate
             },
@@ -481,7 +481,6 @@ export class KlaviyoAPI {
               'unsubscribe_rate'
             ],
             timeframe: {
-              key: 'custom',
               start: startDate,
               end: endDate
             },
@@ -508,7 +507,6 @@ export class KlaviyoAPI {
           attributes: {
             statistics: ['size', 'opens_unique', 'revenue'],
             timeframe: {
-              key: 'custom',
               start: startDate,
               end: endDate
             },
