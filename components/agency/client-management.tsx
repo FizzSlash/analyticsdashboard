@@ -459,30 +459,8 @@ ${campaignDetails.slice(0, 3).map((c: any, i: number) =>
       const conversionMetricId = placedOrderMetric?.id || null
       console.log('🎯 FRONTEND: Found conversion metric ID:', conversionMetricId)
       
-      // Step 2: Get flow analytics (series data)
-      setSuccess('Step 2/4: Getting flow analytics (series data)...')
-      console.log('📡 FRONTEND: Calling flow analytics proxy API')
-      
-      const analyticsResponse = await fetch('/api/klaviyo-proxy/flow-analytics', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          clientSlug: client.brand_slug,
-          conversionMetricId 
-        })
-      })
-      
-      if (!analyticsResponse.ok) {
-        const errorData = await analyticsResponse.json()
-        console.log('❌ FRONTEND: Flow analytics API failed:', errorData)
-        throw new Error(`Flow analytics API failed: ${errorData.message}`)
-      }
-      
-      const analyticsResult = await analyticsResponse.json()
-      console.log('📊 FRONTEND: Flow analytics response:', analyticsResult)
-      
-      // Step 3: Get ALL flows with metadata
-      setSuccess('Step 3/4: Getting all flow details...')
+      // Step 2: Get ALL flows with metadata FIRST
+      setSuccess('Step 2/4: Getting all flow details...')
       console.log('📡 FRONTEND: Calling bulk flows API')
       
       const flowsResponse = await fetch(`/api/klaviyo-proxy/flows-bulk?clientSlug=${client.brand_slug}`)
@@ -496,12 +474,35 @@ ${campaignDetails.slice(0, 3).map((c: any, i: number) =>
       console.log('🔄 FRONTEND: Bulk flows response:', flowsResult)
       console.log('📊 FRONTEND: Got flows:', flowsResult.data?.data?.length || 0)
       
-      // Extract active flow IDs for messages
+      // Extract active flow IDs for analytics and messages
       const activeFlows = flowsResult.data?.data?.filter((flow: any) => 
         flow.attributes?.status === 'active'
       ) || []
       const flowIds = activeFlows.map((flow: any) => flow.id)
       console.log('🎯 FRONTEND: Active flow IDs:', flowIds)
+      
+      // Step 3: Get flow analytics (series data) with actual flow IDs
+      setSuccess('Step 3/4: Getting flow analytics (series data)...')
+      console.log('📡 FRONTEND: Calling flow analytics proxy API with flow IDs:', flowIds)
+      
+      const analyticsResponse = await fetch('/api/klaviyo-proxy/flow-analytics', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          clientSlug: client.brand_slug,
+          conversionMetricId,
+          flowIds: flowIds  // Pass the actual flow IDs
+        })
+      })
+      
+      if (!analyticsResponse.ok) {
+        const errorData = await analyticsResponse.json()
+        console.log('❌ FRONTEND: Flow analytics API failed:', errorData)
+        throw new Error(`Flow analytics API failed: ${errorData.message}`)
+      }
+      
+      const analyticsResult = await analyticsResponse.json()
+      console.log('📊 FRONTEND: Flow analytics response:', analyticsResult)
       
       // Step 4: Get flow messages for active flows
       setSuccess('Step 4/4: Getting flow messages...')

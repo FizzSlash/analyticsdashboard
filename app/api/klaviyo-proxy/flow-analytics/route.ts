@@ -5,7 +5,7 @@ import { KlaviyoAPI, decryptApiKey } from '@/lib/klaviyo'
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { clientSlug, conversionMetricId } = body
+    const { clientSlug, conversionMetricId, flowIds } = body
     
     if (!clientSlug) {
       return NextResponse.json({ error: 'Client slug required' }, { status: 400 })
@@ -20,20 +20,10 @@ export async function POST(request: NextRequest) {
     const decryptedKey = decryptApiKey(client.klaviyo_api_key)
     const klaviyo = new KlaviyoAPI(decryptedKey)
 
-    // First get all flows to extract flow IDs
-    const flowsResponse = await klaviyo.getFlows()
-    const allFlows = flowsResponse.data || []
+    console.log(`🎯 FLOW ANALYTICS: Using ${flowIds?.length || 0} flow IDs from frontend`)
     
-    // Extract active flow IDs
-    const activeFlows = allFlows.filter((flow: any) => 
-      flow.attributes?.status === 'active'
-    )
-    const flowIds = activeFlows.map((flow: any) => flow.id)
-    
-    console.log(`🎯 FLOW ANALYTICS: Found ${flowIds.length} active flows for analytics`)
-    
-    // Call Klaviyo flow analytics API with actual flow IDs
-    const analytics = await klaviyo.getFlowAnalytics(flowIds, conversionMetricId)
+    // Call Klaviyo flow analytics API with flow IDs from frontend
+    const analytics = await klaviyo.getFlowAnalytics(flowIds || [], conversionMetricId)
     
     // Return raw Klaviyo response to frontend
     return NextResponse.json({
