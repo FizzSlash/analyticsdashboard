@@ -237,7 +237,18 @@ export class DatabaseService {
     }
 
     if (!weeklyData || weeklyData.length === 0) {
-      console.log('📊 DATABASE: No weekly flow data found, returning empty array')
+      console.log('📊 DATABASE: No weekly flow data found for timeframe, checking all data...')
+      
+      // Check if there's any data at all
+      const { data: allData } = await supabaseAdmin
+        .from('flow_message_metrics')
+        .select('flow_id, week_date, opens, revenue')
+        .eq('client_id', clientId)
+        .limit(5)
+      
+      console.log('📊 DATABASE: Sample of all flow_message_metrics data:', allData)
+      console.log('📊 DATABASE: Cutoff date used:', cutoffDate.toISOString().split('T')[0])
+      
       return []
     }
 

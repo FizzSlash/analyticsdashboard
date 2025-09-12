@@ -40,7 +40,8 @@ export async function GET(request: NextRequest) {
       DatabaseService.getFlowWeeklyTrends(client.id, timeframe)
     ])
 
-    console.log(`DASHBOARD API: Fetched ${campaigns.length} campaigns for ${timeframe} days`)
+    console.log(`DASHBOARD API: Fetched ${campaigns.length} campaigns, ${flows.length} flows for ${timeframe} days`)
+    console.log(`DASHBOARD API: Flow data sample:`, flows.slice(0, 2))
 
     return NextResponse.json({
       success: true,
