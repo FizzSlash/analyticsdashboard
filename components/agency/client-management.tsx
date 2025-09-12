@@ -577,10 +577,14 @@ ${campaignDetails.slice(0, 3).map((c: any, i: number) =>
         })
       }
       
-      // Combine all data
+      // Combine all data with proper weekly structure
       if (flowsResult.data?.data) {
         flowsResult.data.data.forEach((flow: any) => {
-          const analytics = analyticsLookup[flow.id] || {}
+          // Get all weekly records for this flow from analytics
+          const flowWeeklyData = analyticsResult.data?.data?.filter((record: any) => 
+            record.flow_id === flow.id
+          ) || []
+          
           const messages = messagesLookup[flow.id] || []
           
           flowDetails.push({
@@ -593,16 +597,8 @@ ${campaignDetails.slice(0, 3).map((c: any, i: number) =>
             flow_updated: flow.attributes?.updated,
             trigger_type: flow.attributes?.trigger_type,
             
-            // Analytics data (aggregated from series)
-            opens: analytics.opens || 0,
-            opens_unique: analytics.opens_unique || 0,
-            clicks: analytics.clicks || 0,
-            clicks_unique: analytics.clicks_unique || 0,
-            open_rate: analytics.open_rate || 0,
-            click_rate: analytics.click_rate || 0,
-            conversions: analytics.conversions || 0,
-            conversion_value: analytics.conversion_value || 0,
-            revenue: analytics.conversion_value || 0,
+            // Weekly data array for database save
+            weeklyData: flowWeeklyData,
             
             // Messages
             messages: messages,
@@ -610,6 +606,8 @@ ${campaignDetails.slice(0, 3).map((c: any, i: number) =>
           })
         })
       }
+      
+      console.log(`📊 FRONTEND: Sample weekly data structure:`, flowDetails[0]?.weeklyData?.slice(0, 2))
       
       console.log(`💾 FRONTEND: Prepared ${flowDetails.length} flows for saving`)
       
