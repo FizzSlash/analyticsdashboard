@@ -239,6 +239,19 @@ export class DatabaseService {
     }
   }
 
+  static async upsertFlowMessageMetric(metric: any): Promise<void> {
+    const { error } = await supabaseAdmin
+      .from('flow_message_metrics')
+      .upsert(metric, {
+        onConflict: 'client_id,message_id,week_date',
+        ignoreDuplicates: false
+      })
+
+    if (error) {
+      console.error('Error upserting flow message metric:', error)
+    }
+  }
+
   // Audience Metrics
   static async getAudienceMetrics(clientId: string, days: number = 30): Promise<AudienceMetric[]> {
     const startDate = new Date()
