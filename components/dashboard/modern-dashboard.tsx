@@ -12,7 +12,9 @@ import {
   Tooltip, 
   ResponsiveContainer,
   ScatterChart,
-  Scatter
+  Scatter,
+  BarChart,
+  Bar
 } from 'recharts'
 import { 
   BarChart3, 
@@ -75,6 +77,16 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
         clickRate: parseFloat(campaign.click_rate) * 100,
         name: campaign.campaign_name?.substring(0, 20) + '...' || 'Campaign'
       }))
+  }
+
+  const getFlowTrendData = (flows: any[]) => {
+    // Placeholder trend data - will be enhanced with weekly data later
+    const weeks = ['Week 1', 'Week 2', 'Week 3', 'Week 4']
+    return weeks.map(week => ({
+      week,
+      revenue: flows.reduce((sum, flow) => sum + (flow.revenue || 0), 0) / weeks.length,
+      opens: flows.reduce((sum, flow) => sum + (flow.opens || 0), 0) / weeks.length
+    }))
   }
 
   const tabs = [
@@ -725,21 +737,251 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
     )
   }
 
-  const renderFlowsTab = () => (
-    <div className="space-y-6">
-      <Card className="bg-white/10 backdrop-blur-md border-white/20">
-        <CardHeader>
-          <CardTitle className="text-white flex items-center gap-2">
-            <Zap className="w-5 h-5" />
-            Flow Performance
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-white/80">Flow analytics will be displayed here</p>
-        </CardContent>
-      </Card>
-    </div>
-  )
+  const renderFlowsTab = () => {
+    const flows = data?.flows || []
+    
+    // Calculate total flow revenue
+    const totalFlowRevenue = flows.reduce((sum: number, flow: any) => sum + (flow.revenue || 0), 0)
+    
+    // Get flow performance data for charts
+    const flowRevenueData = flows.map((flow: any) => ({
+      name: flow.flow_name?.substring(0, 15) + '...' || 'Untitled',
+      revenue: parseFloat(flow.revenue || 0),
+      opens: flow.opens || 0,
+      clicks: flow.clicks || 0
+    })).sort((a: any, b: any) => b.revenue - a.revenue)
+
+    // Get weekly trend data (placeholder for now)
+    const weeklyTrendData = getFlowTrendData(flows)
+
+    return (
+      <div className="space-y-6">
+        {/* Flow Overview Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Card className="bg-white/10 backdrop-blur-md border-white/20">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-white/60 text-sm font-medium">Total Flow Revenue</p>
+                  <p className="text-2xl font-bold text-white mt-1">${totalFlowRevenue.toLocaleString()}</p>
+                </div>
+                <div className="bg-white/10 p-3 rounded-lg">
+                  <DollarSign className="w-6 h-6 text-white" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-white/10 backdrop-blur-md border-white/20">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-white/60 text-sm font-medium">Active Flows</p>
+                  <p className="text-2xl font-bold text-white mt-1">{flows.length}</p>
+                  <p className="text-white/60 text-xs mt-1">
+                    {flows.filter((f: any) => f.flow_status === 'live').length} live, {flows.filter((f: any) => f.flow_status === 'draft').length} draft
+                  </p>
+                </div>
+                <div className="bg-white/10 p-3 rounded-lg">
+                  <Zap className="w-6 h-6 text-white" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-white/10 backdrop-blur-md border-white/20">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-white/60 text-sm font-medium">Avg Performance</p>
+                  <p className="text-2xl font-bold text-white mt-1">
+                    {flows.length > 0 ? (flows.reduce((sum: number, f: any) => sum + (f.open_rate || 0), 0) / flows.length * 100).toFixed(1) : 0}%
+                  </p>
+                  <p className="text-white/60 text-xs mt-1">Average open rate</p>
+                </div>
+                <div className="bg-white/10 p-3 rounded-lg">
+                  <Target className="w-6 h-6 text-white" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Charts Row */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* 1. Flow Performance Over Time */}
+          <Card className="bg-white/10 backdrop-blur-md border-white/20">
+            <CardHeader>
+              <CardTitle className="text-white flex items-center gap-2">
+                <BarChart3 className="w-5 h-5" />
+                Flow Performance Over Time
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={weeklyTrendData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+                    <XAxis 
+                      dataKey="week" 
+                      tick={{ fill: 'rgba(255,255,255,0.7)', fontSize: 12 }}
+                      axisLine={{ stroke: 'rgba(255,255,255,0.2)' }}
+                    />
+                    <YAxis 
+                      tick={{ fill: 'rgba(255,255,255,0.7)', fontSize: 12 }}
+                      axisLine={{ stroke: 'rgba(255,255,255,0.2)' }}
+                      tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
+                    />
+                    <Tooltip 
+                      contentStyle={{
+                        backgroundColor: 'rgba(0,0,0,0.8)',
+                        border: '1px solid rgba(255,255,255,0.2)',
+                        borderRadius: '8px',
+                        color: 'white'
+                      }}
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="revenue" 
+                      stroke="#A78BFA"
+                      strokeWidth={3}
+                      dot={{ fill: '#A78BFA', strokeWidth: 2, r: 4 }}
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="opens" 
+                      stroke="#60A5FA"
+                      strokeWidth={2}
+                      dot={{ fill: '#60A5FA', strokeWidth: 2, r: 3 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* 2. Flow Revenue Comparison */}
+          <Card className="bg-white/10 backdrop-blur-md border-white/20">
+            <CardHeader>
+              <CardTitle className="text-white flex items-center gap-2">
+                <BarChart3 className="w-5 h-5" />
+                Flow Revenue Comparison
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={flowRevenueData.slice(0, 8)}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+                    <XAxis 
+                      dataKey="name" 
+                      tick={{ fill: 'rgba(255,255,255,0.7)', fontSize: 11 }}
+                      axisLine={{ stroke: 'rgba(255,255,255,0.2)' }}
+                      angle={-45}
+                      textAnchor="end"
+                      height={80}
+                    />
+                    <YAxis 
+                      tick={{ fill: 'rgba(255,255,255,0.7)', fontSize: 12 }}
+                      axisLine={{ stroke: 'rgba(255,255,255,0.2)' }}
+                      tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
+                    />
+                    <Tooltip 
+                      contentStyle={{
+                        backgroundColor: 'rgba(0,0,0,0.8)',
+                        border: '1px solid rgba(255,255,255,0.2)',
+                        borderRadius: '8px',
+                        color: 'white'
+                      }}
+                      formatter={(value: number) => [`$${value.toLocaleString()}`, 'Revenue']}
+                    />
+                    <Bar 
+                      dataKey="revenue" 
+                      fill="#A78BFA"
+                      radius={[4, 4, 0, 0]}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* 10. Flow Performance Table */}
+        <Card className="bg-white/10 backdrop-blur-md border-white/20">
+          <CardHeader>
+            <CardTitle className="text-white flex items-center gap-2">
+              <Activity className="w-5 h-5" />
+              Flow Performance Table
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-white/20">
+                    <th className="text-left text-white/80 font-medium text-sm py-3 px-2">Flow Name</th>
+                    <th className="text-right text-white/80 font-medium text-sm py-3 px-2">Status</th>
+                    <th className="text-right text-white/80 font-medium text-sm py-3 px-2">Opens</th>
+                    <th className="text-right text-white/80 font-medium text-sm py-3 px-2">Clicks</th>
+                    <th className="text-right text-white/80 font-medium text-sm py-3 px-2">Open Rate</th>
+                    <th className="text-right text-white/80 font-medium text-sm py-3 px-2">Click Rate</th>
+                    <th className="text-right text-white/80 font-medium text-sm py-3 px-2">Revenue</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {flows.map((flow: any, index: number) => (
+                    <tr key={flow.id} className={index !== flows.length - 1 ? 'border-b border-white/10' : ''}>
+                      <td className="text-white text-sm py-4 px-2">
+                        <div>
+                          <div className="font-medium">{flow.flow_name || 'Untitled Flow'}</div>
+                          <div className="text-white/60 text-xs">{flow.trigger_type || 'Unknown trigger'}</div>
+                        </div>
+                      </td>
+                      <td className="text-right text-white text-sm py-4">
+                        <span className={`px-2 py-1 rounded-full text-xs ${
+                          flow.flow_status === 'live' ? 'bg-green-500/20 text-green-300' : 
+                          flow.flow_status === 'draft' ? 'bg-yellow-500/20 text-yellow-300' : 
+                          'bg-gray-500/20 text-gray-300'
+                        }`}>
+                          {flow.flow_status || 'Unknown'}
+                        </span>
+                      </td>
+                      <td className="text-right text-white text-sm py-4">
+                        {flow.opens?.toLocaleString() || '0'}
+                      </td>
+                      <td className="text-right text-white text-sm py-4">
+                        {flow.clicks?.toLocaleString() || '0'}
+                      </td>
+                      <td className="text-right text-white text-sm py-4">
+                        <span className={`${
+                          (flow.open_rate * 100) > 25 ? 'text-green-300' : 
+                          (flow.open_rate * 100) > 15 ? 'text-yellow-300' : 'text-red-300'
+                        }`}>
+                          {(flow.open_rate * 100)?.toFixed(1)}%
+                        </span>
+                      </td>
+                      <td className="text-right text-white text-sm py-4">
+                        <span className={`${
+                          (flow.click_rate * 100) > 3 ? 'text-green-300' : 
+                          (flow.click_rate * 100) > 1 ? 'text-yellow-300' : 'text-red-300'
+                        }`}>
+                          {(flow.click_rate * 100)?.toFixed(1)}%
+                        </span>
+                      </td>
+                      <td className="text-right text-white font-semibold text-sm py-4">
+                        ${flow.revenue?.toLocaleString() || '0'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
 
   const renderListGrowthTab = () => (
     <div className="space-y-6">
