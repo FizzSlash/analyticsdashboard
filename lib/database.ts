@@ -302,19 +302,25 @@ export class DatabaseService {
         }
       }
       
-      // Aggregate the weekly data
+      // Aggregate the weekly data with proper type conversion
       const agg = flowAggregates[flowId]
-      agg.opens += record.opens || 0
-      agg.opens_unique += record.opens_unique || 0
-      agg.clicks += record.clicks || 0
-      agg.clicks_unique += record.clicks_unique || 0
-      agg.conversions += record.conversions || 0
-      agg.conversion_value += parseFloat(record.conversion_value || 0)
-      agg.revenue += parseFloat(record.conversion_value || 0)
-      agg.recipients += record.recipients || 0
-      agg.delivered += record.delivered || 0
-      agg.bounced += record.bounced || 0
+      agg.opens += parseInt(record.opens) || 0
+      agg.opens_unique += parseInt(record.opens_unique) || 0
+      agg.clicks += parseInt(record.clicks) || 0
+      agg.clicks_unique += parseInt(record.clicks_unique) || 0
+      agg.conversions += parseInt(record.conversions) || 0
+      
+      // Handle revenue/conversion_value as strings
+      const revenueValue = parseFloat(record.conversion_value || record.revenue || 0)
+      agg.conversion_value += revenueValue
+      agg.revenue += revenueValue
+      
+      agg.recipients += parseInt(record.recipients) || 0
+      agg.delivered += parseInt(record.delivered) || 0
+      agg.bounced += parseInt(record.bounced) || 0
       agg.recordCount++
+      
+      console.log(`📊 AGGREGATING: Flow ${flowId}, Week ${record.week_date}, Opens: ${record.opens}, Revenue: ${revenueValue}`)
       
       // Update date range
       if (record.week_date > agg.date_end) {
