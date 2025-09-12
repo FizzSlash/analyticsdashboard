@@ -49,6 +49,7 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
   const [sortField, setSortField] = useState('send_date')
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc')
   const [expandedFlows, setExpandedFlows] = useState<Set<string>>(new Set())
+  const [flowEmails, setFlowEmails] = useState<{ [flowId: string]: any[] }>({})
 
   // Chart data processing functions
   const getRevenueChartData = (campaigns: any[]) => {
@@ -101,6 +102,70 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
       revenue: data.revenue,
       opens: data.opens
     }))
+  }
+
+  const getSubjectLineInsights = (campaigns: any[]) => {
+    const insights = {
+      withEmoji: { count: 0, avgOpenRate: 0, totalOpens: 0 },
+      withoutEmoji: { count: 0, avgOpenRate: 0, totalOpens: 0 },
+      shortLines: { count: 0, avgOpenRate: 0, totalOpens: 0 }, // <30 chars
+      longLines: { count: 0, avgOpenRate: 0, totalOpens: 0 },  // >50 chars
+      withPersonalization: { count: 0, avgOpenRate: 0, totalOpens: 0 },
+      withUrgency: { count: 0, avgOpenRate: 0, totalOpens: 0 }
+    }
+
+    campaigns.forEach(campaign => {
+      const subject = campaign.subject_line?.toLowerCase() || ''
+      const openRate = campaign.open_rate || 0
+      const opens = campaign.opened_count || 0
+
+      // Emoji analysis
+      const hasEmoji = /[\uD83C-\uDBFF\uDC00-\uDFFF]|[\u2600-\u27FF]/.test(subject)
+      if (hasEmoji) {
+        insights.withEmoji.count++
+        insights.withEmoji.avgOpenRate += openRate
+        insights.withEmoji.totalOpens += opens
+      } else {
+        insights.withoutEmoji.count++
+        insights.withoutEmoji.avgOpenRate += openRate
+        insights.withoutEmoji.totalOpens += opens
+      }
+
+      // Length analysis
+      if (subject.length < 30) {
+        insights.shortLines.count++
+        insights.shortLines.avgOpenRate += openRate
+        insights.shortLines.totalOpens += opens
+      } else if (subject.length > 50) {
+        insights.longLines.count++
+        insights.longLines.avgOpenRate += openRate
+        insights.longLines.totalOpens += opens
+      }
+
+      // Personalization analysis
+      if (subject.includes('hi ') || subject.includes('hello ') || subject.includes('hey ') || subject.includes('[name]')) {
+        insights.withPersonalization.count++
+        insights.withPersonalization.avgOpenRate += openRate
+        insights.withPersonalization.totalOpens += opens
+      }
+
+      // Urgency analysis
+      if (subject.includes('limited') || subject.includes('urgent') || subject.includes('expires') || 
+          subject.includes('last chance') || subject.includes('ending soon') || subject.includes('hurry')) {
+        insights.withUrgency.count++
+        insights.withUrgency.avgOpenRate += openRate
+        insights.withUrgency.totalOpens += opens
+      }
+    })
+
+    // Calculate averages
+    Object.values(insights).forEach((insight: any) => {
+      if (insight.count > 0) {
+        insight.avgOpenRate = (insight.avgOpenRate / insight.count) * 100
+      }
+    })
+
+    return insights
   }
 
   const tabs = [
@@ -319,6 +384,9 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
       .filter((c: any) => c.open_rate > 0)
       .sort((a, b) => b.open_rate - a.open_rate)
       .slice(0, 5)
+    
+    // Subject line insights
+    const subjectInsights = getSubjectLineInsights(campaigns)
     
     // Send time analysis
     const sendTimeAnalysis = campaigns
@@ -775,12 +843,30 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
     // Calculate total flow revenue
     const totalFlowRevenue = flows.reduce((sum: number, flow: any) => sum + (flow.revenue || 0), 0)
     
-    const toggleFlowExpansion = (flowId: string) => {
+    const toggleFlowExpansion = async (flowId: string) => {
       const newExpanded = new Set(expandedFlows)
       if (newExpanded.has(flowId)) {
         newExpanded.delete(flowId)
       } else {
         newExpanded.add(flowId)
+        
+        // Load emails for this flow if not already loaded
+        if (!flowEmails[flowId]) {
+          try {
+            const response = await fetch(`/api/flow-emails?flowId=${flowId}&clientSlug=${client?.brand_slug}`)
+            const result = await response.json()
+            
+            if (response.ok) {
+              setFlowEmails(prev => ({
+                ...prev,
+                [flowId]: result.emails || []
+              }))
+              console.log(`📧 FRONTEND: Loaded ${result.count} emails for flow ${flowId}`)
+            }
+          } catch (error) {
+            console.error('Error loading flow emails:', error)
+          }
+        }
       }
       setExpandedFlows(newExpanded)
     }
@@ -1030,21 +1116,43 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
                        <tr>
                          <td colSpan={7} className="bg-white/5 px-4 py-3">
                            <div className="text-white/80 text-sm">
-                             <div className="font-medium mb-2">Emails in this flow:</div>
-                             <div className="space-y-2">
-                               <div className="text-white/60 text-xs grid grid-cols-6 gap-4 font-medium">
-                                 <span>Subject Line</span>
-                                 <span>Opens</span>
-                                 <span>Clicks</span>
-                                 <span>Open Rate</span>
-                                 <span>Click Rate</span>
-                                 <span>Revenue</span>
+                             <div className="font-medium mb-2">Emails in this flow ({flow.emails?.length || 0}):</div>
+                             {flow.emails && flow.emails.length > 0 ? (
+                               <div className="space-y-2">
+                                 <div className="text-white/60 text-xs grid grid-cols-6 gap-4 font-medium border-b border-white/20 pb-2">
+                                   <span>Subject Line</span>
+                                   <span>Opens</span>
+                                   <span>Clicks</span>
+                                   <span>Open Rate</span>
+                                   <span>Click Rate</span>
+                                   <span>Revenue</span>
+                                 </div>
+                                 {flow.emails.map((email: any, emailIndex: number) => (
+                                   <div key={email.message_id} className="text-white/70 text-xs grid grid-cols-6 gap-4 py-1">
+                                     <span className="truncate">{email.subject_line}</span>
+                                     <span>{email.opens?.toLocaleString()}</span>
+                                     <span>{email.clicks?.toLocaleString()}</span>
+                                     <span className={`${
+                                       email.open_rate > 25 ? 'text-green-300' :
+                                       email.open_rate > 15 ? 'text-yellow-300' : 'text-red-300'
+                                     }`}>
+                                       {email.open_rate?.toFixed(1)}%
+                                     </span>
+                                     <span className={`${
+                                       email.click_rate > 3 ? 'text-green-300' :
+                                       email.click_rate > 1 ? 'text-yellow-300' : 'text-red-300'
+                                     }`}>
+                                       {email.click_rate?.toFixed(1)}%
+                                     </span>
+                                     <span>${email.revenue?.toLocaleString()}</span>
+                                   </div>
+                                 ))}
                                </div>
+                             ) : (
                                <div className="text-white/60 text-xs">
-                                 Loading email details for Flow {flow.flow_id}...
-                                 <br />Call /api/flow-emails?flowId={flow.flow_id} to load email performance
+                                 No email data available for this flow
                                </div>
-                             </div>
+                             )}
                            </div>
                          </td>
                        </tr>

@@ -223,9 +223,8 @@ export class DatabaseService {
         .order('week_date', { ascending: false }),
       supabaseAdmin
         .from('flow_metrics')
-        .select('flow_id, flow_name, flow_status, trigger_type')
+        .select('DISTINCT flow_id, flow_name, flow_status, trigger_type')
         .eq('client_id', clientId)
-        .limit(1) // Just need one record per flow for metadata
     ])
 
     const weeklyData = weeklyResult.data
@@ -337,8 +336,49 @@ export class DatabaseService {
       delete agg.recordCount
     })
 
+    // Add email details to each flow
+    Object.values(flowAggregates).forEach((flow: any) => {
+      // Get unique emails for this flow
+      const flowEmails = weeklyData
+        .filter((record: any) => record.flow_id === flow.flow_id)
+        .reduce((emails: any[], record: any) => {
+          const existing = emails.find(e => e.message_id === record.message_id)
+          if (!existing) {
+            emails.push({
+              message_id: record.message_id,
+              message_name: record.message_name || 'Untitled Email',
+              subject_line: record.subject_line || 'No subject',
+              opens: 0,
+              clicks: 0,
+              revenue: 0,
+              open_rate: 0,
+              click_rate: 0
+            })
+          }
+          return emails
+        }, [])
+      
+      // Aggregate performance for each email
+      flowEmails.forEach((email: any) => {
+        const emailRecords = weeklyData.filter((r: any) => 
+          r.flow_id === flow.flow_id && r.message_id === email.message_id
+        )
+        
+        email.opens = emailRecords.reduce((sum: number, r: any) => sum + (r.opens || 0), 0)
+        email.clicks = emailRecords.reduce((sum: number, r: any) => sum + (r.clicks || 0), 0)
+        email.revenue = emailRecords.reduce((sum: number, r: any) => sum + parseFloat(r.conversion_value || 0), 0)
+        
+        if (email.opens > 0) {
+          email.open_rate = (email.opens / emailRecords.reduce((sum: number, r: any) => sum + (r.recipients || 0), 0)) * 100
+          email.click_rate = (email.clicks / email.opens) * 100
+        }
+      })
+      
+      flow.emails = flowEmails
+    })
+
     const result = Object.values(flowAggregates) as FlowMetric[]
-    console.log(`📊 DATABASE: Aggregated ${weeklyData.length} weekly records into ${result.length} flows for ${days} days`)
+    console.log(`📊 DATABASE: Aggregated ${weeklyData.length} weekly records into ${result.length} flows with email details for ${days} days`)
     
     return result
   }
