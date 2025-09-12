@@ -21,6 +21,12 @@ export default function LoginPage() {
     setLoading(true)
     setError('')
 
+    // Add timeout to prevent infinite loading
+    const timeoutId = setTimeout(() => {
+      setLoading(false)
+      setError('Login timeout - please try again')
+    }, 10000) // 10 second timeout
+
     try {
       const supabase = getSupabaseClient()
       if (!supabase) {
@@ -39,17 +45,22 @@ export default function LoginPage() {
       }
 
       if (data.user) {
+        console.log('LOGIN: User authenticated, redirecting...')
         // Simple redirect to avoid infinite loops
         if (redirectTo) {
+          console.log('LOGIN: Redirecting to:', redirectTo)
           router.push(redirectTo)
         } else {
-          // Default redirect to retention harbor admin for now
-          router.push('/agency/retention-harbor/admin')
+          // Default redirect to client dashboard
+          console.log('LOGIN: Redirecting to client dashboard')
+          router.push('/client/hydrus')
         }
       }
     } catch (err) {
+      console.error('LOGIN: Error during login:', err)
       setError('An unexpected error occurred')
     } finally {
+      clearTimeout(timeoutId)
       setLoading(false)
     }
   }
