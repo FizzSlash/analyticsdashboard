@@ -219,7 +219,6 @@ export class DatabaseService {
         .from('flow_message_metrics')
         .select('*')
         .eq('client_id', clientId)
-        // .gte('week_date', cutoffDate.toISOString().split('T')[0]) // Temporarily disabled to test
         .order('week_date', { ascending: false }),
       supabaseAdmin
         .from('flow_metrics')
