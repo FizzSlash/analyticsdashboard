@@ -548,12 +548,16 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
                         <div>
                           <p className="text-white font-medium text-sm">{campaign.subject_line}</p>
                           <p className="text-white/60 text-xs">{campaign.campaign_name}</p>
+                          <p className="text-white/40 text-xs mt-1">
+                            👥 {campaign.recipients_count?.toLocaleString()} recipients • 💰 ${campaign.revenue?.toLocaleString() || '0'}
+                          </p>
                         </div>
                       </div>
                     </div>
                     <div className="text-right ml-4">
                       <p className="text-white font-semibold text-sm">{(campaign.open_rate * 100).toFixed(1)}%</p>
                       <p className="text-white/60 text-xs">{(campaign.click_rate * 100).toFixed(1)}% CTR</p>
+                      <p className="text-white/40 text-xs">{campaign.opened_count?.toLocaleString()} opens</p>
                     </div>
                   </div>
                 ))}
@@ -592,24 +596,38 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
                   </div>
                 </div>
 
-                {/* Best Hour Analysis */}
+                {/* Complete Hour Analysis - Show ALL times */}
                 <div className="border-t border-white/20 pt-4">
-                  <p className="text-white/80 text-sm font-medium mb-2">Best Performing Hours</p>
-                  <div className="space-y-2">
+                  <p className="text-white/80 text-sm font-medium mb-2">Send Time Performance (All Hours)</p>
+                  <div className="grid grid-cols-3 gap-2 max-h-48 overflow-y-auto">
                     {Object.entries(sendTimeAnalysis.byHour)
                       .sort(([,a]: any, [,b]: any) => b.avgOpenRate - a.avgOpenRate)
-                      .slice(0, 3)
-                      .map(([hour, data]: any) => (
-                        <div key={hour} className="flex justify-between items-center">
-                          <span className="text-white/70 text-sm">{hour}</span>
-                          <div className="text-right">
-                            <span className="text-white font-semibold text-sm">
-                              {(data.avgOpenRate * 100).toFixed(1)}%
-                            </span>
-                            <span className="text-white/60 text-xs ml-2">({data.count} campaigns)</span>
+                      .map(([hour, data]: any, index: number) => {
+                        const isTop3 = index < 3
+                        const isBottom3 = index >= Object.keys(sendTimeAnalysis.byHour).length - 3
+                        return (
+                          <div key={hour} className={`flex justify-between items-center p-2 rounded ${
+                            isTop3 ? 'bg-green-500/20 border border-green-500/30' :
+                            isBottom3 ? 'bg-red-500/20 border border-red-500/30' :
+                            'bg-white/5'
+                          }`}>
+                            <span className="text-white/70 text-xs">{hour}</span>
+                            <div className="text-right">
+                              <span className={`font-semibold text-xs ${
+                                isTop3 ? 'text-green-300' :
+                                isBottom3 ? 'text-red-300' :
+                                'text-white'
+                              }`}>
+                                {(data.avgOpenRate * 100).toFixed(1)}%
+                              </span>
+                              <div className="text-white/40 text-xs">({data.count})</div>
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        )
+                      })}
+                  </div>
+                  <div className="mt-3 text-white/60 text-xs">
+                    🟢 Top performers • 🔴 Underperformers • Compare all send times
                   </div>
                 </div>
               </div>
