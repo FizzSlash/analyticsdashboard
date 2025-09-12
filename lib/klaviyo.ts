@@ -569,32 +569,43 @@ export class KlaviyoAPI {
       console.log(`✅ FLOWS: SERIES API call successful - got daily data for ${flowIds.length} flows`)
       console.log(`📊 FLOWS: Response structure:`, JSON.stringify(result, null, 2))
       
-      // Parse the series response - aggregate daily data to totals
+      // Parse the series response - aggregate weekly data by flow_id
       const results = []
       const dateTimes = result.data?.attributes?.date_times || []
       
       if (result.data?.attributes?.results && Array.isArray(result.data.attributes.results)) {
-        // Group by flow_id and aggregate arrays to totals
+        // Group by flow_id and aggregate arrays to totals (each result is a flow message)
         const flowData: { [flowId: string]: any } = {}
         
         for (const item of result.data.attributes.results) {
           const flowId = item.groupings?.flow_id || 'unknown'
+          const messageId = item.groupings?.flow_message_id || 'unknown'
+          
+          console.log(`📊 FLOWS: Processing message ${messageId} for flow ${flowId}`)
           
           if (!flowData[flowId]) {
-            flowData[flowId] = { flow_id: flowId, statistics: {} }
+            flowData[flowId] = { flow_id: flowId, statistics: {}, messageCount: 0 }
           }
+          
+          flowData[flowId].messageCount++
           
           // Aggregate array statistics to totals
           const stats = item.statistics || {}
           for (const [statKey, statArray] of Object.entries(stats)) {
-            if (Array.isArray(statArray)) {
-              // Sum arrays for count statistics
+            if (Array.isArray(statArray) && statArray.length > 0) {
+              if (!flowData[flowId].statistics[statKey]) {
+                flowData[flowId].statistics[statKey] = 0
+              }
+              
+              // Sum arrays for count statistics, average for rates
               if (statKey.includes('rate') || statKey.includes('_rate')) {
-                // For rates, take the average
-                flowData[flowId].statistics[statKey] = statArray.reduce((sum: number, val: number) => sum + val, 0) / statArray.length
+                // For rates, calculate weighted average across all messages in flow
+                const avgRate = statArray.reduce((sum: number, val: number) => sum + (val || 0), 0) / statArray.length
+                flowData[flowId].statistics[statKey] = (flowData[flowId].statistics[statKey] + avgRate) / flowData[flowId].messageCount
               } else {
-                // For counts, sum the values
-                flowData[flowId].statistics[statKey] = statArray.reduce((sum: number, val: number) => sum + val, 0)
+                // For counts, sum all values across all weeks and messages
+                const totalCount = statArray.reduce((sum: number, val: number) => sum + (val || 0), 0)
+                flowData[flowId].statistics[statKey] += totalCount
               }
             }
           }
@@ -608,7 +619,8 @@ export class KlaviyoAPI {
           })
         }
         
-        console.log(`📈 FLOWS: Processed ${results.length} flows from ${dateTimes.length} days of series data`)
+        console.log(`📈 FLOWS: Processed ${results.length} flows from ${dateTimes.length} weeks of series data`)
+        console.log(`📧 FLOWS: Total flow messages processed: ${Object.values(flowData).reduce((sum, flow: any) => sum + flow.messageCount, 0)}`)
       } else {
         console.log(`⚠️ FLOWS: Unexpected response structure from series call`)
       }
