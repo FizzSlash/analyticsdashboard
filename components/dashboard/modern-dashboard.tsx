@@ -80,12 +80,25 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
   }
 
   const getFlowTrendData = (flows: any[]) => {
-    // Placeholder trend data - will be enhanced with weekly data later
-    const weeks = ['Week 1', 'Week 2', 'Week 3', 'Week 4']
-    return weeks.map(week => ({
+    // For now, create sample weekly data - will be replaced with real weekly aggregation
+    const weeklyData: { [week: string]: { revenue: number, opens: number } } = {}
+    
+    // Generate last 8 weeks of data
+    for (let i = 7; i >= 0; i--) {
+      const date = new Date()
+      date.setDate(date.getDate() - (i * 7))
+      const weekKey = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+      
+      weeklyData[weekKey] = {
+        revenue: flows.reduce((sum, flow) => sum + (flow.revenue || 0), 0) / 8, // Distribute evenly for now
+        opens: flows.reduce((sum, flow) => sum + (flow.opens || 0), 0) / 8
+      }
+    }
+    
+    return Object.entries(weeklyData).map(([week, data]) => ({
       week,
-      revenue: flows.reduce((sum, flow) => sum + (flow.revenue || 0), 0) / weeks.length,
-      opens: flows.reduce((sum, flow) => sum + (flow.opens || 0), 0) / weeks.length
+      revenue: data.revenue,
+      opens: data.opens
     }))
   }
 
@@ -739,9 +752,20 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
 
   const renderFlowsTab = () => {
     const flows = data?.flows || []
+    const [expandedFlows, setExpandedFlows] = useState<Set<string>>(new Set())
     
     // Calculate total flow revenue
     const totalFlowRevenue = flows.reduce((sum: number, flow: any) => sum + (flow.revenue || 0), 0)
+    
+    const toggleFlowExpansion = (flowId: string) => {
+      const newExpanded = new Set(expandedFlows)
+      if (newExpanded.has(flowId)) {
+        newExpanded.delete(flowId)
+      } else {
+        newExpanded.add(flowId)
+      }
+      setExpandedFlows(newExpanded)
+    }
     
     // Get flow performance data for charts
     const flowRevenueData = flows.map((flow: any) => ({
@@ -929,15 +953,24 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
                     <th className="text-right text-white/80 font-medium text-sm py-3 px-2">Revenue</th>
                   </tr>
                 </thead>
-                <tbody>
-                  {flows.map((flow: any, index: number) => (
-                    <tr key={flow.id} className={index !== flows.length - 1 ? 'border-b border-white/10' : ''}>
-                      <td className="text-white text-sm py-4 px-2">
-                        <div>
-                          <div className="font-medium">{flow.flow_name || 'Untitled Flow'}</div>
-                          <div className="text-white/60 text-xs">{flow.trigger_type || 'Unknown trigger'}</div>
-                        </div>
-                      </td>
+                                 <tbody>
+                   {flows.map((flow: any, index: number) => (
+                     <>
+                       <tr key={flow.id} className={index !== flows.length - 1 ? 'border-b border-white/10' : ''}>
+                         <td className="text-white text-sm py-4 px-2">
+                           <div className="flex items-center gap-2">
+                             <button
+                               onClick={() => toggleFlowExpansion(flow.flow_id)}
+                               className="text-white/60 hover:text-white"
+                             >
+                               {expandedFlows.has(flow.flow_id) ? '−' : '+'}
+                             </button>
+                             <div>
+                               <div className="font-medium">{flow.flow_name || 'Untitled Flow'}</div>
+                               <div className="text-white/60 text-xs">{flow.trigger_type || 'Unknown trigger'}</div>
+                             </div>
+                           </div>
+                         </td>
                       <td className="text-right text-white text-sm py-4">
                         <span className={`px-2 py-1 rounded-full text-xs ${
                           flow.flow_status === 'live' ? 'bg-green-500/20 text-green-300' : 
@@ -969,12 +1002,29 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
                           {(flow.click_rate * 100)?.toFixed(1)}%
                         </span>
                       </td>
-                      <td className="text-right text-white font-semibold text-sm py-4">
-                        ${flow.revenue?.toLocaleString() || '0'}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
+                                             <td className="text-right text-white font-semibold text-sm py-4">
+                         ${flow.revenue?.toLocaleString() || '0'}
+                       </td>
+                     </tr>
+                     
+                     {/* Expandable email rows */}
+                     {expandedFlows.has(flow.flow_id) && (
+                       <tr>
+                         <td colSpan={7} className="bg-white/5 px-4 py-3">
+                           <div className="text-white/80 text-sm">
+                             <div className="font-medium mb-2">Emails in this flow:</div>
+                             <div className="text-white/60 text-xs">
+                               Email details will be loaded from flow_message_metrics table
+                               <br />Flow ID: {flow.flow_id}
+                               <br />Weekly records available for detailed email analysis
+                             </div>
+                           </div>
+                         </td>
+                       </tr>
+                     )}
+                   </>
+                   ))}
+                 </tbody>
               </table>
             </div>
           </CardContent>

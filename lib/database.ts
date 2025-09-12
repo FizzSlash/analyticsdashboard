@@ -213,13 +213,23 @@ export class DatabaseService {
     const cutoffDate = new Date()
     cutoffDate.setDate(cutoffDate.getDate() - days)
 
-    // Get weekly data from flow_message_metrics and aggregate by flow
-    const { data: weeklyData, error } = await supabaseAdmin
-      .from('flow_message_metrics')
-      .select('*')
-      .eq('client_id', clientId)
-      .gte('week_date', cutoffDate.toISOString().split('T')[0])
-      .order('week_date', { ascending: false })
+    // Get weekly data from flow_message_metrics and flow metadata
+    const [weeklyResult, flowMetaResult] = await Promise.all([
+      supabaseAdmin
+        .from('flow_message_metrics')
+        .select('*')
+        .eq('client_id', clientId)
+        .gte('week_date', cutoffDate.toISOString().split('T')[0])
+        .order('week_date', { ascending: false }),
+      supabaseAdmin
+        .from('flow_metrics')
+        .select('flow_id, flow_name, flow_status, trigger_type')
+        .eq('client_id', clientId)
+    ])
+
+    const weeklyData = weeklyResult.data
+    const flowMeta = flowMetaResult.data || []
+    const error = weeklyResult.error || flowMetaResult.error
 
     if (error) {
       console.error('Error fetching weekly flow message data:', error)
@@ -231,20 +241,28 @@ export class DatabaseService {
       return []
     }
 
+    // Create flow metadata lookup
+    const flowMetaLookup: { [flowId: string]: any } = {}
+    flowMeta.forEach((meta: any) => {
+      flowMetaLookup[meta.flow_id] = meta
+    })
+
     // Aggregate weekly data by flow_id
     const flowAggregates: { [flowId: string]: any } = {}
     
     weeklyData.forEach((record: any) => {
       const flowId = record.flow_id
+      const meta = flowMetaLookup[flowId] || {}
       
       if (!flowAggregates[flowId]) {
         flowAggregates[flowId] = {
           id: `${flowId}_${days}d`, // Unique ID for this timeframe
           client_id: clientId,
           flow_id: flowId,
-          flow_name: `Flow ${flowId}`, // Placeholder - will be updated
+          flow_name: meta.flow_name || `Flow ${flowId}`,
           flow_type: 'email',
-          flow_status: 'live',
+          flow_status: meta.flow_status || 'live',
+          trigger_type: meta.trigger_type,
           date_start: record.week_date,
           date_end: record.week_date,
           triggered_count: 0,
