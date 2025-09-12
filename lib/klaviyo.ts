@@ -550,7 +550,7 @@ export class KlaviyoAPI {
               'average_order_value'
             ],
             timeframe: { key: 'last_365_days' },
-            interval: 'daily', // Use 'daily' instead of 'day'
+            interval: 'weekly', // Weekly interval allows full 365 days
             filter: `contains-any(flow_id,["${flowIds.join('","')}"])` // BATCH ALL FLOWS
           }
         }
