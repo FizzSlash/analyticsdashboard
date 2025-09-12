@@ -47,7 +47,7 @@ export default function ClientDashboardPage({ params }: PageProps) {
       console.log('CLIENT DASHBOARD: Starting dashboard data fetch for slug:', params.slug)
       
       try {
-        const response = await fetch(`/api/dashboard?clientSlug=${params.slug}`)
+        const response = await fetch(`/api/dashboard?clientSlug=${params.slug}&timeframe=365`)
         const result = await response.json()
 
         console.log('CLIENT DASHBOARD: API response:', result)
