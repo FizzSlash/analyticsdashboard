@@ -161,12 +161,12 @@ export class KlaviyoAPI {
             const actionType = action.attributes?.action_type?.toLowerCase()
             console.log(`🔍 FLOW MESSAGES: Action ${action.id} type: ${actionType}`)
             
-            if (actionType === 'email') {
+            if (actionType === 'send_email') {
               try {
                 const messagesResponse = await this.makeRequest(`/flows/${flowId}/flow-actions/${action.id}/flow-messages`)
                 const messages = messagesResponse.data || []
                 
-                console.log(`✅ FLOW MESSAGES: Found ${messages.length} messages for email action ${action.id}`)
+                console.log(`✅ FLOW MESSAGES: Found ${messages.length} messages for send_email action ${action.id}`)
                 
                 // Add flow context to each message
                 messages.forEach((message: any) => {
@@ -177,10 +177,10 @@ export class KlaviyoAPI {
                   })
                 })
               } catch (messageError) {
-                console.log(`⚠️ FLOW MESSAGES: No messages for email action ${action.id}:`, messageError)
+                console.log(`⚠️ FLOW MESSAGES: No messages for send_email action ${action.id}:`, messageError)
               }
             } else {
-              console.log(`⏭️ FLOW MESSAGES: Skipping non-email action ${action.id} (type: ${actionType})`)
+              console.log(`⏭️ FLOW MESSAGES: Skipping non-send_email action ${action.id} (type: ${actionType})`)
             }
           }
         }
