@@ -230,6 +230,10 @@ export class DatabaseService {
     const flowMeta = flowMetaResult.data || []
     const error = weeklyResult.error || flowMetaResult.error
 
+    console.log(`📊 DATABASE: Raw query results - weeklyData: ${weeklyData?.length || 0} records, flowMeta: ${flowMeta?.length || 0} records`)
+    console.log(`📊 DATABASE: Sample weeklyData:`, weeklyData?.slice(0, 2))
+    console.log(`📊 DATABASE: Sample flowMeta:`, flowMeta?.slice(0, 2))
+
     if (error) {
       console.error('Error fetching weekly flow message data:', error)
       return []
@@ -256,6 +260,9 @@ export class DatabaseService {
     flowMeta.forEach((meta: any) => {
       flowMetaLookup[meta.flow_id] = meta
     })
+
+    console.log(`📊 DATABASE: Created metadata lookup for ${Object.keys(flowMetaLookup).length} flows`)
+    console.log(`📊 DATABASE: Starting aggregation of ${weeklyData.length} weekly records`)
 
     // Aggregate weekly data by flow_id
     const flowAggregates: { [flowId: string]: any } = {}
@@ -394,6 +401,8 @@ export class DatabaseService {
     })
 
     const result = Object.values(flowAggregates) as FlowMetric[]
+    console.log(`📊 DATABASE: Final result - ${result.length} flows aggregated`)
+    console.log(`📊 DATABASE: Sample result:`, result.slice(0, 1))
     console.log(`📊 DATABASE: Aggregated ${weeklyData.length} weekly records into ${result.length} flows with email details for ${days} days`)
     
     return result

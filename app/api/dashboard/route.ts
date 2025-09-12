@@ -41,7 +41,8 @@ export async function GET(request: NextRequest) {
     ])
 
     console.log(`DASHBOARD API: Fetched ${campaigns.length} campaigns, ${flows.length} flows for ${timeframe} days`)
-    console.log(`DASHBOARD API: Flow data sample:`, flows.slice(0, 2))
+    console.log(`DASHBOARD API: Flow data sample:`, flows.slice(0, 1))
+    console.log(`DASHBOARD API: Flow revenue check:`, flows.map(f => ({ id: f.flow_id, name: f.flow_name, revenue: f.revenue })).slice(0, 3))
 
     return NextResponse.json({
       success: true,
