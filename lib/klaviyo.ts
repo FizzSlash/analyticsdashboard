@@ -569,58 +569,43 @@ export class KlaviyoAPI {
       console.log(`✅ FLOWS: SERIES API call successful - got daily data for ${flowIds.length} flows`)
       console.log(`📊 FLOWS: Response structure:`, JSON.stringify(result, null, 2))
       
-      // Parse the series response - aggregate weekly data by flow_id
+      // Parse the series response - keep weekly data separate for trend tracking
       const results = []
       const dateTimes = result.data?.attributes?.date_times || []
       
       if (result.data?.attributes?.results && Array.isArray(result.data.attributes.results)) {
-        // Group by flow_id and aggregate arrays to totals (each result is a flow message)
-        const flowData: { [flowId: string]: any } = {}
+        console.log(`📊 FLOWS: Processing ${result.data.attributes.results.length} flow messages across ${dateTimes.length} weeks`)
         
         for (const item of result.data.attributes.results) {
           const flowId = item.groupings?.flow_id || 'unknown'
           const messageId = item.groupings?.flow_message_id || 'unknown'
-          
-          console.log(`📊 FLOWS: Processing message ${messageId} for flow ${flowId}`)
-          
-          if (!flowData[flowId]) {
-            flowData[flowId] = { flow_id: flowId, statistics: {}, messageCount: 0 }
-          }
-          
-          flowData[flowId].messageCount++
-          
-          // Aggregate array statistics to totals
           const stats = item.statistics || {}
-          for (const [statKey, statArray] of Object.entries(stats)) {
-            if (Array.isArray(statArray) && statArray.length > 0) {
-              if (!flowData[flowId].statistics[statKey]) {
-                flowData[flowId].statistics[statKey] = 0
-              }
-              
-              // Sum arrays for count statistics, average for rates
-              if (statKey.includes('rate') || statKey.includes('_rate')) {
-                // For rates, calculate weighted average across all messages in flow
-                const avgRate = statArray.reduce((sum: number, val: number) => sum + (val || 0), 0) / statArray.length
-                flowData[flowId].statistics[statKey] = (flowData[flowId].statistics[statKey] + avgRate) / flowData[flowId].messageCount
-              } else {
-                // For counts, sum all values across all weeks and messages
-                const totalCount = statArray.reduce((sum: number, val: number) => sum + (val || 0), 0)
-                flowData[flowId].statistics[statKey] += totalCount
+          
+          // Create one record per week per flow message
+          for (let weekIndex = 0; weekIndex < dateTimes.length; weekIndex++) {
+            const weekDate = dateTimes[weekIndex]
+            const weekStats: any = {}
+            
+            // Extract data for this specific week
+            for (const [statKey, statArray] of Object.entries(stats)) {
+              if (Array.isArray(statArray) && statArray[weekIndex] !== undefined) {
+                weekStats[statKey] = statArray[weekIndex]
               }
             }
+            
+            // Create flow record for this week
+            results.push({
+              id: `${flowId}_${weekDate}`, // Unique ID per week
+              flow_id: flowId,
+              flow_message_id: messageId,
+              week_date: weekDate,
+              attributes: weekStats
+            })
           }
         }
         
-        // Convert to results array
-        for (const [flowId, data] of Object.entries(flowData)) {
-          results.push({
-            id: flowId,
-            attributes: data.statistics
-          })
-        }
-        
-        console.log(`📈 FLOWS: Processed ${results.length} flows from ${dateTimes.length} weeks of series data`)
-        console.log(`📧 FLOWS: Total flow messages processed: ${Object.values(flowData).reduce((sum, flow: any) => sum + flow.messageCount, 0)}`)
+        console.log(`📈 FLOWS: Created ${results.length} weekly records from ${dateTimes.length} weeks of data`)
+        console.log(`🗓️ FLOWS: Date range: ${dateTimes[0]} to ${dateTimes[dateTimes.length - 1]}`)
       } else {
         console.log(`⚠️ FLOWS: Unexpected response structure from series call`)
       }

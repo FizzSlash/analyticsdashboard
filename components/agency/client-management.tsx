@@ -474,12 +474,30 @@ ${campaignDetails.slice(0, 3).map((c: any, i: number) =>
       console.log('🔄 FRONTEND: Bulk flows response:', flowsResult)
       console.log('📊 FRONTEND: Got flows:', flowsResult.data?.data?.length || 0)
       
+      // Debug: Check what statuses we actually have
+      const allStatuses = flowsResult.data?.data?.map((flow: any) => ({
+        id: flow.id,
+        name: flow.attributes?.name,
+        status: flow.attributes?.status
+      })) || []
+      console.log('🔍 FRONTEND: All flow statuses:', allStatuses)
+      
       // Extract active flow IDs for analytics and messages
       const activeFlows = flowsResult.data?.data?.filter((flow: any) => 
         flow.attributes?.status === 'active'
       ) || []
       const flowIds = activeFlows.map((flow: any) => flow.id)
       console.log('🎯 FRONTEND: Active flow IDs:', flowIds)
+      
+      // If no active flows, try 'live' status as fallback
+      if (flowIds.length === 0) {
+        const liveFlows = flowsResult.data?.data?.filter((flow: any) => 
+          flow.attributes?.status === 'live'
+        ) || []
+        const liveFlowIds = liveFlows.map((flow: any) => flow.id)
+        console.log('🔍 FRONTEND: Trying live flows as fallback:', liveFlowIds)
+        flowIds.push(...liveFlowIds)
+      }
       
       // Step 3: Get flow analytics (series data) with actual flow IDs
       setSuccess('Step 3/4: Getting flow analytics (series data)...')
