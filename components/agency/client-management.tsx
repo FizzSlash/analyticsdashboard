@@ -613,17 +613,17 @@ ${campaignDetails.slice(0, 3).map((c: any, i: number) =>
       
       console.log(`💾 FRONTEND: Prepared ${flowDetails.length} flows for saving`)
       
-      // Step 5: Save to database using existing sync service
+      // Step 5: Save to database using new save-flows endpoint
       setSuccess('Step 5/5: Saving flows to database...')
-      console.log('💾 FRONTEND: Saving flows to database via sync service')
+      console.log('💾 FRONTEND: Saving flows to database via save-flows endpoint')
       
-      // Use existing sync service to save the data
-      const saveResponse = await fetch('/api/sync/flows', {
+      // Save the combined proxy data to database
+      const saveResponse = await fetch('/api/klaviyo-proxy/save-flows', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          client: client,
-          forceUpdate: true // Force update with new data
+          flowDetails: flowDetails,
+          clientId: client.id
         })
       })
       
