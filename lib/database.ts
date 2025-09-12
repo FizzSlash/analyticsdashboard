@@ -233,6 +233,7 @@ export class DatabaseService {
     console.log(`📊 DATABASE: Raw query results - weeklyData: ${weeklyData?.length || 0} records, flowMeta: ${flowMeta?.length || 0} records`)
     console.log(`📊 DATABASE: Sample weeklyData:`, weeklyData?.slice(0, 2))
     console.log(`📊 DATABASE: Sample flowMeta:`, flowMeta?.slice(0, 2))
+    console.log(`📊 DATABASE: WeeklyData null check:`, !weeklyData, `Length check:`, weeklyData?.length === 0)
 
     if (error) {
       console.error('Error fetching weekly flow message data:', error)
@@ -403,6 +404,7 @@ export class DatabaseService {
     const result = Object.values(flowAggregates) as FlowMetric[]
     console.log(`📊 DATABASE: Final result - ${result.length} flows aggregated`)
     console.log(`📊 DATABASE: Sample result:`, result.slice(0, 1))
+    console.log(`📊 DATABASE: FlowAggregates keys:`, Object.keys(flowAggregates))
     console.log(`📊 DATABASE: Aggregated ${weeklyData.length} weekly records into ${result.length} flows with email details for ${days} days`)
     
     return result
