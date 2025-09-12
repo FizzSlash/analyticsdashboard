@@ -368,6 +368,49 @@ export class DatabaseService {
     }
   }
 
+  // Get weekly flow trend data for charts
+  static async getFlowWeeklyTrends(clientId: string, days: number = 30): Promise<any[]> {
+    const cutoffDate = new Date()
+    cutoffDate.setDate(cutoffDate.getDate() - days)
+
+    const { data, error } = await supabaseAdmin
+      .from('flow_message_metrics')
+      .select('week_date, opens, clicks, revenue, conversion_value')
+      .eq('client_id', clientId)
+      .gte('week_date', cutoffDate.toISOString().split('T')[0])
+      .order('week_date', { ascending: true })
+
+    if (error) {
+      console.error('Error fetching weekly flow trends:', error)
+      return []
+    }
+
+    if (!data || data.length === 0) {
+      return []
+    }
+
+    // Aggregate by week_date
+    const weeklyTotals: { [week: string]: any } = {}
+    
+    data.forEach((record: any) => {
+      const week = record.week_date
+      if (!weeklyTotals[week]) {
+        weeklyTotals[week] = {
+          week: new Date(week).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+          revenue: 0,
+          opens: 0,
+          clicks: 0
+        }
+      }
+      
+      weeklyTotals[week].revenue += parseFloat(record.conversion_value || 0)
+      weeklyTotals[week].opens += record.opens || 0
+      weeklyTotals[week].clicks += record.clicks || 0
+    })
+
+    return Object.values(weeklyTotals)
+  }
+
   // Audience Metrics
   static async getAudienceMetrics(clientId: string, days: number = 30): Promise<AudienceMetric[]> {
     const startDate = new Date()

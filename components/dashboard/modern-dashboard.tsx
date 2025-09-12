@@ -48,6 +48,7 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
   const [loading, setLoading] = useState(false)
   const [sortField, setSortField] = useState('send_date')
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc')
+  const [expandedFlows, setExpandedFlows] = useState<Set<string>>(new Set())
 
   // Chart data processing functions
   const getRevenueChartData = (campaigns: any[]) => {
@@ -752,7 +753,6 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
 
   const renderFlowsTab = () => {
     const flows = data?.flows || []
-    const [expandedFlows, setExpandedFlows] = useState<Set<string>>(new Set())
     
     // Calculate total flow revenue
     const totalFlowRevenue = flows.reduce((sum: number, flow: any) => sum + (flow.revenue || 0), 0)
@@ -775,8 +775,8 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
       clicks: flow.clicks || 0
     })).sort((a: any, b: any) => b.revenue - a.revenue)
 
-    // Get weekly trend data (placeholder for now)
-    const weeklyTrendData = getFlowTrendData(flows)
+    // Get real weekly trend data from dashboard API
+    const weeklyTrendData = data?.flowWeeklyTrends || getFlowTrendData(flows)
 
     return (
       <div className="space-y-6">

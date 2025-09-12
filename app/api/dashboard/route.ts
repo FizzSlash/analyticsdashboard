@@ -27,7 +27,8 @@ export async function GET(request: NextRequest) {
       audience,
       revenue,
       topCampaigns,
-      topFlows
+      topFlows,
+      flowWeeklyTrends
     ] = await Promise.all([
       DatabaseService.getDashboardSummary(client.id, timeframe),
       DatabaseService.getRecentCampaignMetrics(client.id, timeframe),
@@ -35,7 +36,8 @@ export async function GET(request: NextRequest) {
       DatabaseService.getAudienceMetrics(client.id, timeframe),
       DatabaseService.getRevenueAttribution(client.id, timeframe),
       DatabaseService.getTopCampaigns(client.id, 'open_rate', 5),
-      DatabaseService.getTopFlows(client.id, 'revenue', 5)
+      DatabaseService.getTopFlows(client.id, 'revenue', 5),
+      DatabaseService.getFlowWeeklyTrends(client.id, timeframe)
     ])
 
     console.log(`DASHBOARD API: Fetched ${campaigns.length} campaigns for ${timeframe} days`)
@@ -51,7 +53,8 @@ export async function GET(request: NextRequest) {
         audience,
         revenue,
         topCampaigns,
-        topFlows
+        topFlows,
+        flowWeeklyTrends
       }
     })
 
