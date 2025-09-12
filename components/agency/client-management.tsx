@@ -613,19 +613,43 @@ ${campaignDetails.slice(0, 3).map((c: any, i: number) =>
       
       console.log(`💾 FRONTEND: Prepared ${flowDetails.length} flows for saving`)
       
-      setSuccess(`✅ Optimized 4-call flow sync completed for ${client.brand_name}!
+      // Step 5: Save to database using existing sync service
+      setSuccess('Step 5/5: Saving flows to database...')
+      console.log('💾 FRONTEND: Saving flows to database via sync service')
+      
+      // Use existing sync service to save the data
+      const saveResponse = await fetch('/api/sync/flows', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          client: client,
+          forceUpdate: true // Force update with new data
+        })
+      })
+      
+      if (!saveResponse.ok) {
+        const saveError = await saveResponse.json()
+        console.log('❌ FRONTEND: Database save failed:', saveError)
+        throw new Error(`Database save failed: ${saveError.message}`)
+      }
+      
+      const saveResult = await saveResponse.json()
+      console.log('💾 FRONTEND: Database save completed:', saveResult)
+      
+      setSuccess(`✅ Optimized 4-call flow sync with database save completed for ${client.brand_name}!
       
 📊 Analytics: ${analyticsResult.data?.data?.length || 0} flows processed
 🔄 Flow Details: ${flowsResult.data?.data?.length || 0} flows with complete data
-📧 Messages: ${messagesResult.data?.data?.length || 0} flow messages
+📧 Messages: ${messagesResult.foundMessages || 0} flow messages found
 🎯 Conversion Metric: ${conversionMetricId}
+💾 Database: Flow data saved to Supabase
 
 Sample flows:
 ${flowDetails.slice(0, 3).map((f: any, i: number) => 
   `${i + 1}. ${f.flow_name} - Status: ${f.flow_status} - Opens: ${f.opens || 0} - Messages: ${f.message_count}`
 ).join('\n')}`)
       
-      console.log('🎉 FRONTEND: Optimized 4-call flow sync completed successfully')
+      console.log('🎉 FRONTEND: Optimized 4-call flow sync with database save completed successfully')
       
     } catch (error: any) {
       console.error('❌ FRONTEND: Flow sync failed:', error)
