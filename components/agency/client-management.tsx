@@ -522,16 +522,27 @@ ${campaignDetails.slice(0, 3).map((c: any, i: number) =>
       const analyticsResult = await analyticsResponse.json()
       console.log('📊 FRONTEND: Flow analytics response:', analyticsResult)
       
-      // Step 4: Get flow messages for active flows
-      setSuccess('Step 4/4: Getting flow messages...')
-      console.log('📡 FRONTEND: Calling flow messages API')
+      // Extract unique message IDs from Flow Series data
+      const messageIds: string[] = []
+      if (analyticsResult.data?.data) {
+        analyticsResult.data.data.forEach((record: any) => {
+          if (record.flow_message_id && !messageIds.includes(record.flow_message_id)) {
+            messageIds.push(record.flow_message_id)
+          }
+        })
+      }
+      console.log('📧 FRONTEND: Extracted message IDs from series:', messageIds)
+      
+      // Step 4: Get flow messages by message IDs
+      setSuccess('Step 4/4: Getting flow message details...')
+      console.log('📡 FRONTEND: Calling flow messages API with message IDs')
       
       const messagesResponse = await fetch('/api/klaviyo-proxy/flow-messages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           clientSlug: client.brand_slug,
-          flowIds: flowIds
+          messageIds: messageIds
         })
       })
       

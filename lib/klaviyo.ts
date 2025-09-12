@@ -142,56 +142,29 @@ export class KlaviyoAPI {
     return this.makeRequest(`/flows/${flowId}`)
   }
 
-  // Get Flow Messages for all flows
-  async getFlowMessages(flowIds: string[]) {
-    console.log(`🔄 FLOW MESSAGES: Getting messages for ${flowIds.length} flows`)
+  // Get Flow Messages by message IDs (direct API calls)
+  async getFlowMessages(messageIds: string[]) {
+    console.log(`🔄 FLOW MESSAGES: Getting ${messageIds.length} messages directly by ID`)
     
     const allMessages: any[] = []
     
-    for (const flowId of flowIds) {
+    for (const messageId of messageIds) {
       try {
-        // Get flow actions first
-        const actionsResponse = await this.makeRequest(`/flows/${flowId}/flow-actions`)
-        const actions = actionsResponse.data || []
+        // Direct API call to get message details
+        const messageResponse = await this.makeRequest(`/flow-messages/${messageId}`)
         
-        // Get messages for each EMAIL action only
-        for (const action of actions) {
-          if (action.type === 'flow-action') {
-            // Check if this is an email action (has action_type 'email')
-            const actionType = action.attributes?.action_type?.toLowerCase()
-            console.log(`🔍 FLOW MESSAGES: Action ${action.id} type: ${actionType}`)
-            
-            if (actionType === 'send_email') {
-              try {
-                const messagesResponse = await this.makeRequest(`/flows/${flowId}/flow-actions/${action.id}/flow-messages`)
-                const messages = messagesResponse.data || []
-                
-                console.log(`✅ FLOW MESSAGES: Found ${messages.length} messages for send_email action ${action.id}`)
-                
-                // Add flow context to each message
-                messages.forEach((message: any) => {
-                  allMessages.push({
-                    ...message,
-                    flow_id: flowId,
-                    flow_action_id: action.id
-                  })
-                })
-              } catch (messageError) {
-                console.log(`⚠️ FLOW MESSAGES: No messages for send_email action ${action.id}:`, messageError)
-              }
-            } else {
-              console.log(`⏭️ FLOW MESSAGES: Skipping non-send_email action ${action.id} (type: ${actionType})`)
-            }
-          }
+        if (messageResponse.data) {
+          allMessages.push(messageResponse.data)
+          console.log(`✅ FLOW MESSAGES: Got message ${messageId}`)
         }
         
-        // Rate limiting between flows
-        if (flowIds.indexOf(flowId) < flowIds.length - 1) {
-          await new Promise(resolve => setTimeout(resolve, 1000))
+        // Rate limiting: 3/s = 333ms, use 400ms for safety
+        if (messageIds.indexOf(messageId) < messageIds.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 400))
         }
         
       } catch (error) {
-        console.log(`❌ FLOW MESSAGES: Error getting messages for flow ${flowId}:`, error)
+        console.log(`❌ FLOW MESSAGES: Error getting message ${messageId}:`, error)
       }
     }
     
