@@ -549,8 +549,8 @@ export class KlaviyoAPI {
               'spam_complaints', 'spam_complaint_rate',
               'average_order_value'
             ],
-            timeframe: { key: 'last_52_weeks' },
-            interval: 'weekly', // Weekly interval limited to 52 weeks max
+            timeframe: { key: 'last_12_months' },
+            interval: 'weekly', // Weekly interval for 12 months
             filter: `contains-any(flow_id,["${flowIds.join('","')}"])` // BATCH ALL FLOWS
           }
         }
