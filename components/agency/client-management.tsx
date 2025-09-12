@@ -567,15 +567,14 @@ ${campaignDetails.slice(0, 3).map((c: any, i: number) =>
         })
       }
       
-      // Create messages lookup
-      const messagesLookup: { [key: string]: any[] } = {}
+      // Create messages lookup by message ID (not flow ID)
+      const messagesLookup: { [key: string]: any } = {}
       if (messagesResult.data?.data) {
         messagesResult.data.data.forEach((message: any) => {
-          const flowId = message.flow_id
-          if (!messagesLookup[flowId]) messagesLookup[flowId] = []
-          messagesLookup[flowId].push(message)
+          messagesLookup[message.id] = message
         })
       }
+      console.log('📧 FRONTEND: Messages lookup created for IDs:', Object.keys(messagesLookup))
       
       // Combine all data with proper weekly structure
       if (flowsResult.data?.data) {
@@ -585,7 +584,12 @@ ${campaignDetails.slice(0, 3).map((c: any, i: number) =>
             record.flow_id === flow.id
           ) || []
           
-          const messages = messagesLookup[flow.id] || []
+          // Get all messages for this flow (from weekly data message IDs)
+          const flowMessageIds = flowWeeklyData.map((record: any) => record.flow_message_id).filter(Boolean)
+          const uniqueMessageIds = Array.from(new Set(flowMessageIds)) as string[]
+          const messages = uniqueMessageIds.map((msgId: string) => messagesLookup[msgId]).filter(Boolean)
+          
+          console.log(`📧 FRONTEND: Flow ${flow.id} has ${uniqueMessageIds.length} unique messages`)
           
           flowDetails.push({
             flow_id: flow.id,
@@ -600,9 +604,10 @@ ${campaignDetails.slice(0, 3).map((c: any, i: number) =>
             // Weekly data array for database save
             weeklyData: flowWeeklyData,
             
-            // Messages
+            // Messages mapped by ID
             messages: messages,
-            message_count: messages.length
+            message_count: messages.length,
+            messagesLookup: messagesLookup // Pass the full lookup for save endpoint
           })
         })
       }
