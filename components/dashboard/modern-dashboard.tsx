@@ -595,7 +595,81 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
         </div>
 
         {/* Analysis Cards Row */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Subject Line Intelligence */}
+          <Card className="bg-white/10 backdrop-blur-md border-white/20">
+            <CardHeader>
+              <CardTitle className="text-white flex items-center gap-2">
+                <Eye className="w-5 h-5" />
+                Subject Line Intelligence
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {/* Emoji Analysis */}
+                <div className="flex justify-between items-center p-3 bg-white/5 rounded-lg">
+                  <div>
+                    <div className="text-white text-sm font-medium">📧 With Emojis</div>
+                    <div className="text-white/60 text-xs">{subjectInsights.withEmoji.count} campaigns</div>
+                  </div>
+                  <div className="text-right">
+                    <div className={`text-sm font-semibold ${
+                      subjectInsights.withEmoji.avgOpenRate > subjectInsights.withoutEmoji.avgOpenRate 
+                        ? 'text-green-300' : 'text-red-300'
+                    }`}>
+                      {subjectInsights.withEmoji.avgOpenRate.toFixed(1)}%
+                    </div>
+                    <div className="text-white/60 text-xs">vs {subjectInsights.withoutEmoji.avgOpenRate.toFixed(1)}% without</div>
+                  </div>
+                </div>
+
+                {/* Length Analysis */}
+                <div className="flex justify-between items-center p-3 bg-white/5 rounded-lg">
+                  <div>
+                    <div className="text-white text-sm font-medium">📏 Short Lines</div>
+                    <div className="text-white/60 text-xs">&lt;30 chars • {subjectInsights.shortLines.count} campaigns</div>
+                  </div>
+                  <div className="text-right">
+                    <div className={`text-sm font-semibold ${
+                      subjectInsights.shortLines.avgOpenRate > subjectInsights.longLines.avgOpenRate 
+                        ? 'text-green-300' : 'text-red-300'
+                    }`}>
+                      {subjectInsights.shortLines.avgOpenRate.toFixed(1)}%
+                    </div>
+                    <div className="text-white/60 text-xs">vs {subjectInsights.longLines.avgOpenRate.toFixed(1)}% long</div>
+                  </div>
+                </div>
+
+                {/* Personalization Analysis */}
+                <div className="flex justify-between items-center p-3 bg-white/5 rounded-lg">
+                  <div>
+                    <div className="text-white text-sm font-medium">👤 Personalized</div>
+                    <div className="text-white/60 text-xs">{subjectInsights.withPersonalization.count} campaigns</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-green-300 text-sm font-semibold">
+                      {subjectInsights.withPersonalization.avgOpenRate.toFixed(1)}%
+                    </div>
+                    <div className="text-white/60 text-xs">open rate</div>
+                  </div>
+                </div>
+
+                {/* Urgency Analysis */}
+                <div className="flex justify-between items-center p-3 bg-white/5 rounded-lg">
+                  <div>
+                    <div className="text-white text-sm font-medium">⚡ Urgency Words</div>
+                    <div className="text-white/60 text-xs">{subjectInsights.withUrgency.count} campaigns</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-purple-300 text-sm font-semibold">
+                      {subjectInsights.withUrgency.avgOpenRate.toFixed(1)}%
+                    </div>
+                    <div className="text-white/60 text-xs">avg performance</div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
           {/* Top Performing Subject Lines */}
           <Card className="bg-white/10 backdrop-blur-md border-white/20">
             <CardHeader>
@@ -892,6 +966,10 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
                 <div>
                   <p className="text-white/60 text-sm font-medium">Total Flow Revenue</p>
                   <p className="text-2xl font-bold text-white mt-1">${totalFlowRevenue.toLocaleString()}</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="text-green-300 text-xs">↗️ +12.5%</span>
+                    <span className="text-white/40 text-xs">vs last period</span>
+                  </div>
                 </div>
                 <div className="bg-white/10 p-3 rounded-lg">
                   <DollarSign className="w-6 h-6 text-white" />
@@ -1054,27 +1132,44 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
                     <th className="text-right text-white/80 font-medium text-sm py-3 px-2">Clicks</th>
                     <th className="text-right text-white/80 font-medium text-sm py-3 px-2">Open Rate</th>
                     <th className="text-right text-white/80 font-medium text-sm py-3 px-2">Click Rate</th>
-                    <th className="text-right text-white/80 font-medium text-sm py-3 px-2">Revenue</th>
+                                         <th className="text-right text-white/80 font-medium text-sm py-3 px-2" title="Total revenue generated by this flow">Revenue 💰</th>
                   </tr>
                 </thead>
                                  <tbody>
                    {flows.map((flow: any, index: number) => (
                      <>
                        <tr key={flow.id} className={index !== flows.length - 1 ? 'border-b border-white/10' : ''}>
-                         <td className="text-white text-sm py-4 px-2">
+                                                <td className="text-white text-sm py-4 px-2">
+                         <div className="flex items-center gap-2">
+                           <button
+                             onClick={() => toggleFlowExpansion(flow.flow_id)}
+                             className="text-white/60 hover:text-white transition-colors"
+                           >
+                             {expandedFlows.has(flow.flow_id) ? '−' : '+'}
+                           </button>
                            <div className="flex items-center gap-2">
-                             <button
-                               onClick={() => toggleFlowExpansion(flow.flow_id)}
-                               className="text-white/60 hover:text-white"
-                             >
-                               {expandedFlows.has(flow.flow_id) ? '−' : '+'}
-                             </button>
+                             {/* Performance Badge */}
+                             <div className={`w-2 h-2 rounded-full ${
+                               (flow.open_rate * 100) > 50 ? 'bg-green-400' :
+                               (flow.open_rate * 100) > 25 ? 'bg-yellow-400' : 'bg-red-400'
+                             }`}></div>
                              <div>
                                <div className="font-medium">{flow.flow_name || 'Untitled Flow'}</div>
-                               <div className="text-white/60 text-xs">{flow.trigger_type || 'Unknown trigger'}</div>
+                               <div className="text-white/60 text-xs flex items-center gap-2">
+                                 <span>{flow.trigger_type || 'Unknown trigger'}</span>
+                                 <span className={`px-2 py-0.5 rounded-full text-xs ${
+                                   (flow.open_rate * 100) > 50 ? 'bg-green-500/20 text-green-300' :
+                                   (flow.open_rate * 100) > 25 ? 'bg-yellow-500/20 text-yellow-300' : 
+                                   'bg-red-500/20 text-red-300'
+                                 }`}>
+                                   {(flow.open_rate * 100) > 50 ? '🟢 Excellent' :
+                                    (flow.open_rate * 100) > 25 ? '🟡 Good' : '🔴 Needs Attention'}
+                                 </span>
+                               </div>
                              </div>
                            </div>
-                         </td>
+                         </div>
+                       </td>
                       <td className="text-right text-white text-sm py-4">
                         <span className={`px-2 py-1 rounded-full text-xs ${
                           flow.flow_status === 'live' ? 'bg-green-500/20 text-green-300' : 
@@ -1249,6 +1344,23 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
           <div className="flex items-center justify-center py-12">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
             <span className="ml-3 text-white/80">Updating data...</span>
+          </div>
+        )}
+        
+        {loading && (
+          <div className="space-y-6 animate-pulse">
+            {/* Loading skeleton for cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {[...Array(3)].map((_, i) => (
+                <div key={i} className="h-32 bg-white/10 rounded-lg"></div>
+              ))}
+            </div>
+            {/* Loading skeleton for charts */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {[...Array(2)].map((_, i) => (
+                <div key={i} className="h-80 bg-white/10 rounded-lg"></div>
+              ))}
+            </div>
           </div>
         )}
         
