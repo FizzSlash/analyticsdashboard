@@ -1013,10 +1013,19 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
                          <td colSpan={7} className="bg-white/5 px-4 py-3">
                            <div className="text-white/80 text-sm">
                              <div className="font-medium mb-2">Emails in this flow:</div>
-                             <div className="text-white/60 text-xs">
-                               Email details will be loaded from flow_message_metrics table
-                               <br />Flow ID: {flow.flow_id}
-                               <br />Weekly records available for detailed email analysis
+                             <div className="space-y-2">
+                               <div className="text-white/60 text-xs grid grid-cols-6 gap-4 font-medium">
+                                 <span>Subject Line</span>
+                                 <span>Opens</span>
+                                 <span>Clicks</span>
+                                 <span>Open Rate</span>
+                                 <span>Click Rate</span>
+                                 <span>Revenue</span>
+                               </div>
+                               <div className="text-white/60 text-xs">
+                                 Loading email details for Flow {flow.flow_id}...
+                                 <br />Call /api/flow-emails?flowId={flow.flow_id} to load email performance
+                               </div>
                              </div>
                            </div>
                          </td>
