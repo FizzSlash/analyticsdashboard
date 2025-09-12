@@ -29,6 +29,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log('AUTH PROVIDER: Initializing Supabase client')
       try {
         const client = getSupabaseClient()
+        console.log('AUTH PROVIDER: getSupabaseClient() returned:', !!client)
         if (!client) {
           console.warn('AUTH PROVIDER: Supabase client could not be initialized - missing environment variables')
           setLoading(false)
@@ -46,7 +47,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const client = initSupabase()
     if (!client) {
-      console.log('AUTH PROVIDER: No client available, exiting')
+      console.log('AUTH PROVIDER: No client available, setting loading to false and exiting')
+      setLoading(false)
       return
     }
 
