@@ -154,23 +154,33 @@ export class KlaviyoAPI {
         const actionsResponse = await this.makeRequest(`/flows/${flowId}/flow-actions`)
         const actions = actionsResponse.data || []
         
-        // Get messages for each action
+        // Get messages for each EMAIL action only
         for (const action of actions) {
           if (action.type === 'flow-action') {
-            try {
-              const messagesResponse = await this.makeRequest(`/flows/${flowId}/flow-actions/${action.id}/flow-messages`)
-              const messages = messagesResponse.data || []
-              
-              // Add flow context to each message
-              messages.forEach((message: any) => {
-                allMessages.push({
-                  ...message,
-                  flow_id: flowId,
-                  flow_action_id: action.id
+            // Check if this is an email action (has action_type 'email')
+            const actionType = action.attributes?.action_type?.toLowerCase()
+            console.log(`🔍 FLOW MESSAGES: Action ${action.id} type: ${actionType}`)
+            
+            if (actionType === 'email') {
+              try {
+                const messagesResponse = await this.makeRequest(`/flows/${flowId}/flow-actions/${action.id}/flow-messages`)
+                const messages = messagesResponse.data || []
+                
+                console.log(`✅ FLOW MESSAGES: Found ${messages.length} messages for email action ${action.id}`)
+                
+                // Add flow context to each message
+                messages.forEach((message: any) => {
+                  allMessages.push({
+                    ...message,
+                    flow_id: flowId,
+                    flow_action_id: action.id
+                  })
                 })
-              })
-            } catch (messageError) {
-              console.log(`⚠️ FLOW MESSAGES: No messages for flow ${flowId} action ${action.id}`)
+              } catch (messageError) {
+                console.log(`⚠️ FLOW MESSAGES: No messages for email action ${action.id}:`, messageError)
+              }
+            } else {
+              console.log(`⏭️ FLOW MESSAGES: Skipping non-email action ${action.id} (type: ${actionType})`)
             }
           }
         }
