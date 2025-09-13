@@ -1,9 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { getSupabaseClient } from '@/lib/supabase'
+import { useAuth } from '@/components/auth/auth-provider'
 import { Mail, Lock, AlertCircle, Loader2 } from 'lucide-react'
 
 export default function LoginPage() {
@@ -15,54 +15,65 @@ export default function LoginPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const redirectTo = searchParams.get('redirectTo') || null
+  const { user, supabase, initialized } = useAuth()
+  
+  // Redirect if already logged in
+  useEffect(() => {
+    if (initialized && user) {
+      console.log('LOGIN: User already authenticated, redirecting')
+      const destination = redirectTo || '/client/hydrus'
+      router.push(destination)
+    }
+  }, [initialized, user, redirectTo, router])
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     setError('')
 
-    // Add timeout to prevent infinite loading
-    const timeoutId = setTimeout(() => {
-      setLoading(false)
-      setError('Login timeout - please try again')
-    }, 10000) // 10 second timeout
-
     try {
-      const supabase = getSupabaseClient()
       if (!supabase) {
-        setError('Unable to connect to authentication service')
+        setError('Authentication service not available')
         return
       }
 
+      console.log('LOGIN: Attempting to sign in')
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       })
 
       if (error) {
+        console.error('LOGIN: Auth error:', error)
         setError(error.message)
         return
       }
 
       if (data.user) {
-        console.log('LOGIN: User authenticated, redirecting...')
-        // Simple redirect to avoid infinite loops
-        if (redirectTo) {
-          console.log('LOGIN: Redirecting to:', redirectTo)
-          router.push(redirectTo)
-        } else {
-          // Default redirect to client dashboard
-          console.log('LOGIN: Redirecting to client dashboard')
-          router.push('/client/hydrus')
-        }
+        console.log('LOGIN: Authentication successful, waiting for auth state update')
+        // Don't redirect immediately - let the auth provider handle the state change
+        // The useEffect above will handle the redirect when user state updates
       }
     } catch (err) {
-      console.error('LOGIN: Error during login:', err)
+      console.error('LOGIN: Unexpected error:', err)
       setError('An unexpected error occurred')
     } finally {
-      clearTimeout(timeoutId)
       setLoading(false)
     }
+  }
+
+  // Show loading while auth initializes
+  if (!initialized) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+        <Card className="w-full max-w-md">
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-blue-600 mb-4" />
+            <p className="text-gray-600">Initializing...</p>
+          </CardContent>
+        </Card>
+      </div>
+    )
   }
 
   return (

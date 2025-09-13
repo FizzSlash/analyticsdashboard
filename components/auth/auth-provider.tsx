@@ -11,6 +11,7 @@ interface AuthContextType {
   loading: boolean
   signOut: () => Promise<void>
   supabase: any
+  initialized: boolean
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -19,111 +20,116 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(true)
+  const [initialized, setInitialized] = useState(false)
   const [supabase, setSupabase] = useState<any>(null)
+
+  // Helper function to update user and profile
+  const updateUserAndProfile = async (client: any, session: any) => {
+    try {
+      setUser(session?.user ?? null)
+      
+      if (session?.user) {
+        console.log('AUTH PROVIDER: Fetching user profile')
+        const { data: profileData, error: profileError } = await client
+          .from('user_profiles')
+          .select('*')
+          .eq('id', session.user.id)
+          .single()
+        
+        if (profileError) {
+          console.warn('AUTH PROVIDER: Profile fetch error:', profileError)
+          setProfile(null)
+        } else {
+          console.log('AUTH PROVIDER: Profile loaded')
+          setProfile(profileData)
+        }
+      } else {
+        setProfile(null)
+      }
+    } catch (error) {
+      console.error('AUTH PROVIDER: Error updating user/profile:', error)
+    }
+  }
 
   useEffect(() => {
     console.log('AUTH PROVIDER: useEffect triggered')
+    let mounted = true
+    let subscription: any = null
     
-    // Initialize Supabase client on the client side
-    const initSupabase = () => {
+    // Initialize Supabase client
+    const initAuth = async () => {
       console.log('AUTH PROVIDER: Initializing Supabase client')
       try {
         const client = getSupabaseClient()
-        console.log('AUTH PROVIDER: getSupabaseClient() returned:', !!client)
         if (!client) {
-          console.warn('AUTH PROVIDER: Supabase client could not be initialized - missing environment variables')
-          setLoading(false)
-          return null
-        }
-        console.log('AUTH PROVIDER: Supabase client initialized successfully')
-        setSupabase(client)
-        return client
-      } catch (error) {
-        console.error('AUTH PROVIDER: Failed to initialize Supabase:', error)
-        setLoading(false)
-        return null
-      }
-    }
-
-    const client = initSupabase()
-    if (!client) {
-      console.log('AUTH PROVIDER: No client available, setting loading to false and exiting')
-      setLoading(false)
-      return
-    }
-
-    // Get initial session
-    const getInitialSession = async () => {
-      console.log('AUTH PROVIDER: Getting initial session')
-      try {
-        const { data: { session } } = await client.auth.getSession()
-        console.log('AUTH PROVIDER: Session result:', !!session)
-        setUser(session?.user ?? null)
-        
-        if (session?.user) {
-          console.log('AUTH PROVIDER: User found, fetching profile')
-          // Fetch user profile
-          const { data: profileData } = await client
-            .from('user_profiles')
-            .select('*')
-            .eq('id', session.user.id)
-            .single()
-          
-          console.log('AUTH PROVIDER: Profile data:', !!profileData)
-          setProfile(profileData)
-        }
-        
-        console.log('AUTH PROVIDER: Setting loading to false')
-        setLoading(false)
-      } catch (error) {
-        console.error('AUTH PROVIDER: Error getting initial session:', error)
-        setLoading(false)
-      }
-    }
-
-    getInitialSession()
-
-    // Listen for auth changes
-    console.log('AUTH PROVIDER: Setting up auth state listener')
-    const { data: { subscription } } = client.auth.onAuthStateChange(
-      async (event: any, session: any) => {
-        console.log('AUTH PROVIDER: Auth state changed:', event, !!session)
-        console.log('AUTH PROVIDER: Processing auth state change...')
-        try {
-          setUser(session?.user ?? null)
-          console.log('AUTH PROVIDER: User state updated')
-          
-          if (session?.user) {
-            console.log('AUTH PROVIDER: User exists, fetching profile')
-            // Fetch user profile
-            const { data: profileData } = await client
-              .from('user_profiles')
-              .select('*')
-              .eq('id', session.user.id)
-              .single()
-            
-            console.log('AUTH PROVIDER: Profile fetched:', !!profileData)
-            setProfile(profileData)
-          } else {
-            console.log('AUTH PROVIDER: No user, setting profile to null')
-            setProfile(null)
+          console.warn('AUTH PROVIDER: Supabase client could not be initialized')
+          if (mounted) {
+            setLoading(false)
+            setInitialized(true)
           }
-          
-          // CRITICAL FIX: Always set loading to false after auth state change
-          console.log('AUTH PROVIDER: Setting loading to false after auth state change')
+          return
+        }
+        
+        console.log('AUTH PROVIDER: Supabase client initialized successfully')
+        if (mounted) {
+          setSupabase(client)
+        }
+        
+        // Get initial session
+        console.log('AUTH PROVIDER: Getting initial session')
+        const { data: { session }, error: sessionError } = await client.auth.getSession()
+        
+        if (sessionError) {
+          console.error('AUTH PROVIDER: Session error:', sessionError)
+          if (mounted) {
+            setLoading(false)
+            setInitialized(true)
+          }
+          return
+        }
+        
+        console.log('AUTH PROVIDER: Initial session:', !!session)
+        
+        // Set user and profile
+        if (mounted) {
+          await updateUserAndProfile(client, session)
+        }
+        
+        // Set up auth state listener
+        console.log('AUTH PROVIDER: Setting up auth state listener')
+        const { data: { subscription: authSubscription } } = client.auth.onAuthStateChange(
+          async (event: any, newSession: any) => {
+            console.log('AUTH PROVIDER: Auth state changed:', event)
+            if (mounted) {
+              await updateUserAndProfile(client, newSession)
+            }
+          }
+        )
+        subscription = authSubscription
+        
+        // Mark as initialized and stop loading
+        if (mounted) {
+          setInitialized(true)
           setLoading(false)
-          console.log('AUTH PROVIDER: Loading state set to false - auth processing complete')
-        } catch (error) {
-          console.error('AUTH PROVIDER: Error handling auth state change:', error)
-          console.log('AUTH PROVIDER: Setting loading to false due to error')
+          console.log('AUTH PROVIDER: Initialization complete')
+        }
+      } catch (error) {
+        console.error('AUTH PROVIDER: Failed to initialize:', error)
+        if (mounted) {
           setLoading(false)
+          setInitialized(true)
         }
       }
-    )
+    }
+
+    initAuth()
 
     return () => {
-      console.log('AUTH PROVIDER: Cleaning up auth listener')
-      subscription.unsubscribe()
+      console.log('AUTH PROVIDER: Cleaning up')
+      mounted = false
+      if (subscription) {
+        subscription.unsubscribe()
+      }
     }
   }, [])
 
@@ -136,7 +142,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, profile, loading, signOut, supabase }}>
+    <AuthContext.Provider value={{ user, profile, loading, signOut, supabase, initialized }}>
       {children}
     </AuthContext.Provider>
   )
