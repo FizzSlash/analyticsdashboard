@@ -227,8 +227,8 @@ export class DatabaseService {
         .eq('client_id', clientId)
     ])
 
-    const weeklyData = weeklyResult.data
-    const flowMeta = flowMetaResult.data || []
+    let weeklyData = weeklyResult.data
+    let flowMeta = flowMetaResult.data || []
     const error = weeklyResult.error || flowMetaResult.error
 
     console.log(`📊 DATABASE: Raw query results - weeklyData: ${weeklyData?.length || 0} records, flowMeta: ${flowMeta?.length || 0} records`)
@@ -245,16 +245,42 @@ export class DatabaseService {
       console.log('📊 DATABASE: No weekly flow data found for timeframe, checking all data...')
       
       // Check if there's any data at all
-      const { data: allData } = await supabaseAdmin
+      const { data: allData, error: allDataError } = await supabaseAdmin
         .from('flow_message_metrics')
-        .select('flow_id, week_date, opens, revenue')
+        .select('flow_id, week_date, date_recorded, opens, revenue, client_id')
         .eq('client_id', clientId)
-        .limit(5)
+        .limit(10)
       
       console.log('📊 DATABASE: Sample of all flow_message_metrics data:', allData)
       console.log('📊 DATABASE: Cutoff date used:', cutoffDate.toISOString().split('T')[0])
+      console.log('📊 DATABASE: Client ID being searched:', clientId)
       
-      return []
+      if (!allData || allData.length === 0) {
+        console.log('📊 DATABASE: No flow data exists at all for this client')
+        return []
+      }
+      
+      // If we have data but it's outside the date range, use all available data
+      console.log('📊 DATABASE: Date filtering too restrictive, fetching all available flow data...')
+      const [allWeeklyResult, allFlowMetaResult] = await Promise.all([
+        supabaseAdmin
+          .from('flow_message_metrics')
+          .select('*')
+          .eq('client_id', clientId)
+          .order('week_date', { ascending: false }),
+        supabaseAdmin
+          .from('flow_metrics')
+          .select('DISTINCT flow_id, flow_name, flow_status, trigger_type')
+          .eq('client_id', clientId)
+      ])
+      
+      weeklyData = allWeeklyResult.data
+      flowMeta = allFlowMetaResult.data || []
+      console.log(`📊 DATABASE: Fallback query - weeklyData: ${weeklyData?.length || 0} records, flowMeta: ${flowMeta?.length || 0} records`)
+      
+      if (!weeklyData || weeklyData.length === 0) {
+        return []
+      }
     }
 
     // Create flow metadata lookup
@@ -642,19 +668,27 @@ export class DatabaseService {
   }
 
   static async getTopFlows(clientId: string, metric: 'completion_rate' | 'revenue_per_trigger' | 'revenue' = 'revenue', limit: number = 5): Promise<FlowMetric[]> {
-    const { data, error } = await supabaseAdmin
-      .from('flow_metrics')
-      .select('*')
-      .eq('client_id', clientId)
-      .order(metric, { ascending: false })
-      .limit(limit)
-
-    if (error) {
-      console.error('Error fetching top flows:', error)
+    console.log(`🏆 DATABASE: Getting top ${limit} flows by ${metric}`)
+    
+    // Get all flows using the same aggregation logic as getRecentFlowMetrics
+    const allFlows = await this.getRecentFlowMetrics(clientId, 365) // Use 1 year to get all data
+    
+    if (!allFlows || allFlows.length === 0) {
+      console.log('🏆 DATABASE: No flows found for top flows ranking')
       return []
     }
-
-    return data || []
+    
+    // Sort by the requested metric and return top results
+    const sortedFlows = allFlows.sort((a: any, b: any) => {
+      const aValue = a[metric] || 0
+      const bValue = b[metric] || 0
+      return bValue - aValue
+    }).slice(0, limit)
+    
+    console.log(`🏆 DATABASE: Returning top ${sortedFlows.length} flows by ${metric}:`, 
+      sortedFlows.map((f: any) => ({ name: f.flow_name, value: f[metric] })))
+    
+    return sortedFlows
   }
 
   // NEW METHODS FOR 4-SECTION STRUCTURE
