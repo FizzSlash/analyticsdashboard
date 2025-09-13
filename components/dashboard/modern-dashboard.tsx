@@ -1576,7 +1576,7 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
         // Load emails for this flow if not already loaded
         if (!flowEmails[flowId]) {
           try {
-            const response = await fetch(`/api/flow-emails?flowId=${flowId}&clientSlug=${client?.brand_slug}`)
+            const response = await fetch(`/api/flow-emails?flowId=${flowId}&clientSlug=${client?.brand_slug}&timeframe=${timeframe}`)
             const result = await response.json()
             
             if (response.ok) {

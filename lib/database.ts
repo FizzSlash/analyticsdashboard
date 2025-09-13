@@ -219,6 +219,7 @@ export class DatabaseService {
         .from('flow_message_metrics')
         .select('*')
         .eq('client_id', clientId)
+        .gte('date_recorded', cutoffDate.toISOString().split('T')[0])
         .order('week_date', { ascending: false }),
       supabaseAdmin
         .from('flow_metrics')
@@ -766,5 +767,106 @@ export class DatabaseService {
     }
 
     return data || []
+  }
+
+  // Flow Email Methods
+  static async getFlowEmails(clientId: string, flowId: string, days: number = 30): Promise<any[]> {
+    console.log(`📧 DATABASE: Getting flow emails for flow ${flowId}, ${days} days`)
+    
+    const cutoffDate = new Date()
+    cutoffDate.setDate(cutoffDate.getDate() - days)
+
+    const { data, error } = await supabaseAdmin
+      .from('flow_message_metrics')
+      .select('*')
+      .eq('client_id', clientId)
+      .eq('flow_id', flowId)
+      .gte('date_recorded', cutoffDate.toISOString().split('T')[0])
+      .order('date_recorded', { ascending: false })
+
+    if (error) {
+      console.error('Error fetching flow emails:', error)
+      return []
+    }
+
+    if (!data || data.length === 0) {
+      console.log('📧 DATABASE: No flow emails found, checking for any data...')
+      
+      // Check if there's any data for this flow at all
+      const { data: allData } = await supabaseAdmin
+        .from('flow_message_metrics')
+        .select('message_id, message_name, subject_line, opens, clicks, revenue')
+        .eq('client_id', clientId)
+        .eq('flow_id', flowId)
+        .limit(5)
+      
+      console.log('📧 DATABASE: Sample flow emails data:', allData)
+      return []
+    }
+
+    // Group by message and aggregate weekly data
+    const emailAggregates: { [messageId: string]: any } = {}
+    
+    data.forEach((record: any) => {
+      const messageId = record.message_id
+      
+      if (!emailAggregates[messageId]) {
+        emailAggregates[messageId] = {
+          message_id: messageId,
+          message_name: record.message_name || 'Untitled Email',
+          subject_line: record.subject_line || 'No subject',
+          preview_text: record.preview_text,
+          from_email: record.from_email,
+          opens: 0,
+          opens_unique: 0,
+          clicks: 0,
+          clicks_unique: 0,
+          revenue: 0,
+          conversions: 0,
+          recipients: 0,
+          delivered: 0,
+          bounced: 0,
+          unsubscribes: 0,
+          open_rate: 0,
+          click_rate: 0,
+          conversion_rate: 0,
+          revenue_per_recipient: 0,
+          weekly_records: 0
+        }
+      }
+      
+      const agg = emailAggregates[messageId]
+      agg.opens += parseInt(record.opens) || 0
+      agg.opens_unique += parseInt(record.opens_unique) || 0
+      agg.clicks += parseInt(record.clicks) || 0
+      agg.clicks_unique += parseInt(record.clicks_unique) || 0
+      agg.conversions += parseInt(record.conversions) || 0
+      agg.recipients += parseInt(record.recipients) || 0
+      agg.delivered += parseInt(record.delivered) || 0
+      agg.bounced += parseInt(record.bounced) || 0
+      agg.unsubscribes += parseInt(record.unsubscribes) || 0
+      
+      const revenueValue = parseFloat(record.conversion_value || record.revenue || 0)
+      agg.revenue += revenueValue
+      agg.weekly_records++
+    })
+    
+    // Calculate rates
+    Object.values(emailAggregates).forEach((email: any) => {
+      if (email.recipients > 0) {
+        email.open_rate = email.opens / email.recipients
+        email.click_rate = email.clicks / email.recipients
+        email.conversion_rate = email.conversions / email.recipients
+        email.revenue_per_recipient = email.revenue / email.recipients
+      }
+      
+      // Clean up temporary field
+      delete email.weekly_records
+    })
+
+    const emails = Object.values(emailAggregates)
+    console.log(`📧 DATABASE: Aggregated ${emails.length} unique emails from ${data.length} weekly records`)
+    
+    return emails
   }
 }
