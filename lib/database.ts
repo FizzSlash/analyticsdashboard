@@ -208,10 +208,11 @@ export class DatabaseService {
   }
 
   static async getRecentFlowMetrics(clientId: string, days: number = 30): Promise<FlowMetric[]> {
-    console.log(`📊 DATABASE: Getting flow metrics for ${days} days - aggregating from weekly message data`)
+    console.log(`📊 DATABASE: Getting flow metrics for CLIENT_ID: ${clientId}, ${days} days - aggregating from weekly message data`)
     
     const cutoffDate = new Date()
     cutoffDate.setDate(cutoffDate.getDate() - days)
+    console.log(`📊 DATABASE: Cutoff date: ${cutoffDate.toISOString().split('T')[0]}`)
 
     // Get weekly data from flow_message_metrics and flow metadata
     const [weeklyResult, flowMetaResult] = await Promise.all([
@@ -254,6 +255,13 @@ export class DatabaseService {
       console.log('📊 DATABASE: Sample of all flow_message_metrics data:', allData)
       console.log('📊 DATABASE: Cutoff date used:', cutoffDate.toISOString().split('T')[0])
       console.log('📊 DATABASE: Client ID being searched:', clientId)
+      
+      // Also check what client IDs actually exist in the table
+      const { data: allClientIds } = await supabaseAdmin
+        .from('flow_message_metrics')
+        .select('DISTINCT client_id')
+        .limit(5)
+      console.log('📊 DATABASE: Available client IDs in flow_message_metrics:', allClientIds)
       
       if (!allData || allData.length === 0) {
         console.log('📊 DATABASE: No flow data exists at all for this client')
