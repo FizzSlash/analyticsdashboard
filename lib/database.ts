@@ -480,52 +480,6 @@ export class DatabaseService {
     return Object.values(weeklyTotals)
   }
 
-  // Get emails for a specific flow
-  static async getFlowEmails(clientId: string, flowId: string): Promise<any[]> {
-    const { data, error } = await supabaseAdmin
-      .from('flow_message_metrics')
-      .select('message_id, message_name, subject_line, opens, clicks, open_rate, click_rate, revenue, week_date')
-      .eq('client_id', clientId)
-      .eq('flow_id', flowId)
-      .order('week_date', { ascending: false })
-
-    if (error) {
-      console.error('Error fetching flow emails:', error)
-      return []
-    }
-
-    // Group by message_id and aggregate
-    const emailTotals: { [messageId: string]: any } = {}
-    
-    data?.forEach((record: any) => {
-      if (!emailTotals[record.message_id]) {
-        emailTotals[record.message_id] = {
-          message_id: record.message_id,
-          message_name: record.message_name || 'Untitled Email',
-          subject_line: record.subject_line || 'No subject',
-          opens: 0,
-          clicks: 0,
-          revenue: 0,
-          weeks: 0
-        }
-      }
-      
-      emailTotals[record.message_id].opens += record.opens || 0
-      emailTotals[record.message_id].clicks += record.clicks || 0
-      emailTotals[record.message_id].revenue += parseFloat(record.revenue || 0)
-      emailTotals[record.message_id].weeks++
-    })
-
-    // Calculate rates
-    Object.values(emailTotals).forEach((email: any) => {
-      if (email.opens > 0) {
-        email.open_rate = (email.clicks / email.opens) * 100
-        email.click_rate = (email.clicks / email.opens) * 100
-      }
-    })
-
-    return Object.values(emailTotals)
-  }
 
   // Audience Metrics
   static async getAudienceMetrics(clientId: string, days: number = 30): Promise<AudienceMetric[]> {
