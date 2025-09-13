@@ -15,7 +15,8 @@ import {
   Bar,
   PieChart,
   Pie,
-  Cell
+  Cell,
+  ComposedChart
 } from 'recharts'
 import { 
   BarChart3, 
@@ -53,23 +54,79 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
   const [flowEmails, setFlowEmails] = useState<{ [flowId: string]: any[] }>({})
 
   // Chart data processing functions
-  const getRevenueChartData = (campaigns: any[]) => {
-    const revenueByDate: { [key: string]: number } = {}
+  const getRevenueRecipientsComboData = (campaigns: any[], timeframe: number) => {
+    const revenueRecipientsByPeriod: { [key: string]: { revenue: number, recipients: number } } = {}
     
     campaigns.forEach((campaign: any) => {
       if (campaign.send_date && campaign.revenue) {
-        const date = new Date(campaign.send_date).toLocaleDateString('en-US', { 
-          month: 'short', 
-          day: 'numeric' 
-        })
-        revenueByDate[date] = (revenueByDate[date] || 0) + parseFloat(campaign.revenue)
+        const date = new Date(campaign.send_date)
+        let period: string
+        
+        // Weekly/Monthly aggregation for combo chart
+        if (timeframe <= 90) {
+          // Weekly for shorter timeframes
+          const weekStart = new Date(date)
+          weekStart.setDate(date.getDate() - date.getDay())
+          period = weekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+        } else {
+          // Monthly for longer timeframes
+          period = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+        }
+        
+        if (!revenueRecipientsByPeriod[period]) {
+          revenueRecipientsByPeriod[period] = { revenue: 0, recipients: 0 }
+        }
+        
+        revenueRecipientsByPeriod[period].revenue += campaign.revenue || 0
+        revenueRecipientsByPeriod[period].recipients += campaign.recipients_count || 0
       }
     })
     
-    return Object.entries(revenueByDate)
-      .map(([date, revenue]) => ({ date, revenue }))
-      .sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime())
-      .slice(-30) // Last 30 data points
+    return Object.entries(revenueRecipientsByPeriod)
+      .map(([period, data]) => ({ 
+        period, 
+        revenue: data.revenue,
+        recipients: data.recipients 
+      }))
+      .sort((a: any, b: any) => new Date(a.period).getTime() - new Date(b.period).getTime())
+      .slice(-20) // Last 20 data points
+  }
+
+  const getRevenuePerRecipientData = (campaigns: any[], timeframe: number) => {
+    const rprByPeriod: { [key: string]: { revenue: number, recipients: number } } = {}
+    
+    campaigns.forEach((campaign: any) => {
+      if (campaign.send_date && campaign.revenue && campaign.recipients_count) {
+        const date = new Date(campaign.send_date)
+        let period: string
+        
+        // Weekly/Monthly aggregation for RPR chart
+        if (timeframe <= 90) {
+          // Weekly for shorter timeframes
+          const weekStart = new Date(date)
+          weekStart.setDate(date.getDate() - date.getDay())
+          period = weekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+        } else {
+          // Monthly for longer timeframes
+          period = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+        }
+        
+        if (!rprByPeriod[period]) {
+          rprByPeriod[period] = { revenue: 0, recipients: 0 }
+        }
+        
+        rprByPeriod[period].revenue += campaign.revenue
+        rprByPeriod[period].recipients += campaign.recipients_count
+      }
+    })
+    
+    return Object.entries(rprByPeriod)
+      .map(([period, data]) => ({
+        period,
+        rpr: data.recipients > 0 ? data.revenue / data.recipients : 0
+      }))
+      .sort((a: any, b: any) => new Date(a.period).getTime() - new Date(b.period).getTime())
+      .slice(-20) // Last 20 data points
   }
 
 
@@ -261,30 +318,149 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
       .slice(0, 15)
   }
 
-  const getCampaignsPieChartData = (campaigns: any[]) => {
-    // Group campaigns by status or type for pie chart
-    const statusData = campaigns.reduce((acc: any, campaign: any) => {
-      const status = campaign.campaign_status || 'Unknown'
-      if (!acc[status]) {
-        acc[status] = { 
-          name: status, 
-          value: 0, 
-          revenue: 0, 
-          campaigns: [] 
+  const classifyEmailType = (campaign: any) => {
+    const subject = (campaign.subject_line || '').toLowerCase()
+    const preview = (campaign.preview_text || '').toLowerCase()
+    const text = `${subject} ${preview}`
+    
+    // PROMOTIONAL KEYWORDS (Extensive List)
+    const promotionalKeywords = [
+      // Sales & Discounts
+      'sale', 'off', '%', 'percent', 'discount', 'deal', 'offer', 'save', 'savings',
+      'clearance', 'markdown', 'reduced', 'slash', 'cut', 'drop', 'lower', 'cheap',
+      
+      // Urgency & Scarcity
+      'limited', 'exclusive', 'urgent', 'hurry', 'fast', 'quick', 'rush', 'expire',
+      'ending', 'last', 'final', 'closing', 'deadline', 'today only', 'hours left',
+      'while supplies last', 'limited time', 'limited quantity', 'act now', 'don\'t miss',
+      
+      // Shopping & Commerce
+      'buy', 'shop', 'purchase', 'order', 'cart', 'checkout', 'payment', 'shipping',
+      'delivery', 'store', 'collection', 'catalog', 'browse', 'add to cart',
+      
+      // Product Launch & Promotion
+      'new arrival', 'just in', 'fresh', 'latest', 'launch', 'debut', 'introducing',
+      'featuring', 'spotlight', 'highlight', 'showcase', 'reveal', 'unveil',
+      
+      // Seasonal & Event
+      'black friday', 'cyber monday', 'holiday', 'christmas', 'thanksgiving',
+      'memorial day', 'labor day', 'valentine', 'mother\'s day', 'father\'s day',
+      'back to school', 'summer', 'winter', 'spring', 'fall', 'seasonal',
+      
+      // Free & Bonus
+      'free', 'bonus', 'gift', 'complimentary', 'no cost', 'on us', 'freebie',
+      'sample', 'trial', 'upgrade', 'unlock', 'access', 'premium',
+      
+      // Call to Action
+      'get', 'claim', 'grab', 'snag', 'secure', 'reserve', 'book', 'sign up',
+      'join', 'subscribe', 'download', 'register', 'apply', 'enter', 'win'
+    ]
+    
+    // EDUCATIONAL KEYWORDS (Extensive List)  
+    const educationalKeywords = [
+      // Learning & Knowledge
+      'how to', 'guide', 'tips', 'tutorial', 'learn', 'education', 'knowledge',
+      'advice', 'help', 'support', 'insight', 'wisdom', 'expert', 'master',
+      
+      // Content Types
+      'blog', 'article', 'post', 'story', 'news', 'update', 'newsletter',
+      'digest', 'roundup', 'summary', 'report', 'analysis', 'review',
+      
+      // Questions & Discovery  
+      'what', 'why', 'how', 'when', 'where', 'which', 'discover', 'explore',
+      'understand', 'learn about', 'find out', 'uncover', 'reveal secrets',
+      
+      // Community & Lifestyle
+      'community', 'behind the scenes', 'meet the team', 'our story', 'journey',
+      'lifestyle', 'inspiration', 'motivation', 'wellness', 'mindfulness',
+      
+      // Informational
+      'benefits', 'features', 'comparison', 'versus', 'difference', 'explanation',
+      'breakdown', 'deep dive', 'comprehensive', 'complete', 'ultimate',
+      
+      // Industry & Trends
+      'trend', 'trending', 'industry', 'market', 'future', 'innovation',
+      'research', 'study', 'data', 'statistics', 'insights', 'forecast'
+    ]
+    
+    // Calculate scores with weighting
+    let promotionalScore = 0
+    let educationalScore = 0
+    
+    promotionalKeywords.forEach((keyword: string) => {
+      if (text.includes(keyword)) {
+        // Higher weight for strong promotional indicators
+        if (['%', 'off', 'sale', 'free', 'limited', 'urgent'].includes(keyword)) {
+          promotionalScore += 3
+        } else {
+          promotionalScore += 1
         }
       }
-      acc[status].value += 1
-      acc[status].revenue += campaign.revenue || 0
-      acc[status].campaigns.push(campaign)
-      return acc
-    }, {})
-
-    const colors = ['#60A5FA', '#34D399', '#FBBF24', '#F87171', '#A78BFA', '#FB7185']
+    })
     
-    return Object.values(statusData).map((item: any, index: number) => ({
-      ...item,
-      fill: colors[index % colors.length]
-    }))
+    educationalKeywords.forEach((keyword: string) => {
+      if (text.includes(keyword)) {
+        // Higher weight for strong educational indicators  
+        if (['how to', 'guide', 'tips', 'newsletter', 'blog', 'story'].includes(keyword)) {
+          educationalScore += 3
+        } else {
+          educationalScore += 1
+        }
+      }
+    })
+    
+    // Classification logic
+    if (promotionalScore > educationalScore && promotionalScore >= 2) return 'promotional'
+    if (educationalScore > promotionalScore && educationalScore >= 2) return 'educational'
+    
+    return 'mixed'
+  }
+
+  const getEmailTypeBreakdown = (campaigns: any[]) => {
+    const breakdown = {
+      promotional: { count: 0, revenue: 0, opens: 0, recipients: 0, campaigns: [] as any[] },
+      educational: { count: 0, revenue: 0, opens: 0, recipients: 0, campaigns: [] as any[] },
+      mixed: { count: 0, revenue: 0, opens: 0, recipients: 0, campaigns: [] as any[] }
+    }
+    
+    campaigns.forEach((campaign: any) => {
+      const type = classifyEmailType(campaign)
+      breakdown[type].count++
+      breakdown[type].revenue += campaign.revenue || 0
+      breakdown[type].opens += campaign.opened_count || 0
+      breakdown[type].recipients += campaign.recipients_count || 0
+      breakdown[type].campaigns.push(campaign)
+    })
+    
+    return breakdown
+  }
+
+  const getEmailTypePieData = (campaigns: any[]) => {
+    const breakdown = getEmailTypeBreakdown(campaigns)
+    
+    return [
+      { 
+        name: 'Promotional', 
+        value: breakdown.promotional.count,
+        revenue: breakdown.promotional.revenue,
+        openRate: breakdown.promotional.recipients > 0 ? (breakdown.promotional.opens / breakdown.promotional.recipients * 100) : 0,
+        fill: '#60A5FA' // Blue
+      },
+      { 
+        name: 'Educational', 
+        value: breakdown.educational.count,
+        revenue: breakdown.educational.revenue,
+        openRate: breakdown.educational.recipients > 0 ? (breakdown.educational.opens / breakdown.educational.recipients * 100) : 0,
+        fill: '#34D399' // Green
+      },
+      { 
+        name: 'Mixed/Other', 
+        value: breakdown.mixed.count,
+        revenue: breakdown.mixed.revenue,
+        openRate: breakdown.mixed.recipients > 0 ? (breakdown.mixed.opens / breakdown.mixed.recipients * 100) : 0,
+        fill: '#FBBF24' // Yellow
+      }
+    ].filter(item => item.value > 0) // Only show categories with data
   }
 
   const tabs = [
@@ -726,7 +902,7 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
     // Subject line insights
     const subjectInsights = getSubjectLineInsights(campaigns)
     
-    // Enhanced Send time analysis with click rate and revenue
+    // Simplified Send time analysis - open rate and click rate only
     const sendTimeAnalysis = campaigns
       .filter((c: any) => c.send_date)
       .reduce((acc: any, campaign: any) => {
@@ -737,35 +913,31 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
         const hourKey = `${hour}:00`
         const dayKey = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][dayOfWeek]
         
-        if (!acc.byHour[hourKey]) acc.byHour[hourKey] = { count: 0, totalOpenRate: 0, totalClickRate: 0, totalRevenue: 0 }
-        if (!acc.byDay[dayKey]) acc.byDay[dayKey] = { count: 0, totalOpenRate: 0, totalClickRate: 0, totalRevenue: 0 }
+        if (!acc.byHour[hourKey]) acc.byHour[hourKey] = { count: 0, totalOpenRate: 0, totalClickRate: 0 }
+        if (!acc.byDay[dayKey]) acc.byDay[dayKey] = { count: 0, totalOpenRate: 0, totalClickRate: 0 }
         
         acc.byHour[hourKey].count++
         acc.byHour[hourKey].totalOpenRate += campaign.open_rate || 0
         acc.byHour[hourKey].totalClickRate += campaign.click_rate || 0
-        acc.byHour[hourKey].totalRevenue += campaign.revenue || 0
         
         acc.byDay[dayKey].count++
         acc.byDay[dayKey].totalOpenRate += campaign.open_rate || 0
         acc.byDay[dayKey].totalClickRate += campaign.click_rate || 0
-        acc.byDay[dayKey].totalRevenue += campaign.revenue || 0
         
         return acc
       }, { byHour: {}, byDay: {} })
     
     // Calculate averages for send time analysis
-    Object.keys(sendTimeAnalysis.byHour).forEach(hour => {
+    Object.keys(sendTimeAnalysis.byHour).forEach((hour: string) => {
       const data = sendTimeAnalysis.byHour[hour]
       data.avgOpenRate = data.totalOpenRate / data.count
       data.avgClickRate = data.totalClickRate / data.count
-      data.avgRevenue = data.totalRevenue / data.count
     })
     
-    Object.keys(sendTimeAnalysis.byDay).forEach(day => {
+    Object.keys(sendTimeAnalysis.byDay).forEach((day: string) => {
       const data = sendTimeAnalysis.byDay[day]
       data.avgOpenRate = data.totalOpenRate / data.count
       data.avgClickRate = data.totalClickRate / data.count
-      data.avgRevenue = data.totalRevenue / data.count
     })
     
     const handleSort = (field: string) => {
@@ -837,28 +1009,37 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
 
         {/* Charts Row */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Campaign Revenue Chart */}
+          {/* Campaign Revenue & Recipients Combo Chart */}
           <Card className="bg-white/10 backdrop-blur-md border-white/20">
             <CardHeader>
               <CardTitle className="text-white flex items-center gap-2">
                 <BarChart3 className="w-5 h-5" />
-                Campaign Revenue Over Time
+                Campaign Revenue and Recipients
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="h-64">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={getRevenueChartData(campaigns)}>
+                  <ComposedChart data={getRevenueRecipientsComboData(campaigns, timeframe)}>
                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
                     <XAxis 
-                      dataKey="date" 
+                      dataKey="period" 
                       tick={{ fill: 'rgba(255,255,255,0.7)', fontSize: 12 }}
                       axisLine={{ stroke: 'rgba(255,255,255,0.2)' }}
                     />
                     <YAxis 
+                      yAxisId="revenue"
+                      orientation="left"
                       tick={{ fill: 'rgba(255,255,255,0.7)', fontSize: 12 }}
                       axisLine={{ stroke: 'rgba(255,255,255,0.2)' }}
                       tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
+                    />
+                    <YAxis 
+                      yAxisId="recipients"
+                      orientation="right"
+                      tick={{ fill: 'rgba(255,255,255,0.7)', fontSize: 12 }}
+                      axisLine={{ stroke: 'rgba(255,255,255,0.2)' }}
+                      tickFormatter={(value) => `${(value / 1000).toFixed(0)}k`}
                     />
                     <Tooltip 
                       contentStyle={{
@@ -867,45 +1048,105 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
                         borderRadius: '8px',
                         color: 'white'
                       }}
-                      formatter={(value: number) => [`$${value.toLocaleString()}`, 'Revenue']}
+                      formatter={(value: number, name: string) => [
+                        name === 'revenue' ? `$${value.toLocaleString()}` : `${value.toLocaleString()}`,
+                        name === 'revenue' ? 'Campaign Revenue' : 'Recipients'
+                      ]}
+                    />
+                    <Bar 
+                      yAxisId="revenue"
+                      dataKey="revenue" 
+                      fill="#60A5FA"
+                      fillOpacity={0.8}
+                      radius={[4, 4, 0, 0]}
+                    />
+                    <Line 
+                      yAxisId="recipients"
+                      type="monotone" 
+                      dataKey="recipients" 
+                      stroke="#34D399"
+                      strokeWidth={3}
+                      dot={{ fill: '#34D399', strokeWidth: 2, r: 4 }}
+                      activeDot={{ r: 6, stroke: '#34D399', strokeWidth: 2 }}
+                    />
+                  </ComposedChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Revenue Per Recipient Over Time */}
+          <Card className="bg-white/10 backdrop-blur-md border-white/20">
+            <CardHeader>
+              <CardTitle className="text-white flex items-center gap-2">
+                <DollarSign className="w-5 h-5" />
+                Revenue Per Recipient
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={getRevenuePerRecipientData(campaigns, timeframe)}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+                    <XAxis 
+                      dataKey="period" 
+                      tick={{ fill: 'rgba(255,255,255,0.7)', fontSize: 12 }}
+                      axisLine={{ stroke: 'rgba(255,255,255,0.2)' }}
+                    />
+                    <YAxis 
+                      tick={{ fill: 'rgba(255,255,255,0.7)', fontSize: 12 }}
+                      axisLine={{ stroke: 'rgba(255,255,255,0.2)' }}
+                      tickFormatter={(value) => `$${value.toFixed(2)}`}
+                    />
+                    <Tooltip 
+                      contentStyle={{
+                        backgroundColor: 'rgba(0,0,0,0.8)',
+                        border: '1px solid rgba(255,255,255,0.2)',
+                        borderRadius: '8px',
+                        color: 'white'
+                      }}
+                      formatter={(value: number) => [`$${value.toFixed(2)}`, 'Revenue Per Recipient']}
                     />
                     <Line 
                       type="monotone" 
-                      dataKey="revenue" 
-                      stroke="#60A5FA"
+                      dataKey="rpr" 
+                      stroke="#A78BFA"
                       strokeWidth={3}
-                      dot={{ fill: '#60A5FA', strokeWidth: 2, r: 4 }}
-                      activeDot={{ r: 6, stroke: '#60A5FA', strokeWidth: 2 }}
+                      dot={{ fill: '#A78BFA', strokeWidth: 2, r: 4 }}
+                      activeDot={{ r: 6, stroke: '#A78BFA', strokeWidth: 2 }}
                     />
                   </LineChart>
                 </ResponsiveContainer>
               </div>
             </CardContent>
           </Card>
+        </div>
 
-          {/* Campaigns Distribution Pie Chart */}
+        {/* Analysis Row */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Educational vs Promotional Breakdown */}
           <Card className="bg-white/10 backdrop-blur-md border-white/20">
             <CardHeader>
               <CardTitle className="text-white flex items-center gap-2">
-                <BarChart3 className="w-5 h-5" />
-                Top Sent Campaigns
+                <Eye className="w-5 h-5" />
+                📚 Educational vs Promotional
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="flex">
                 {/* Pie Chart */}
                 <div className="w-1/2">
-                  <ResponsiveContainer width="100%" height={240}>
+                  <ResponsiveContainer width="100%" height={200}>
                     <PieChart>
                       <Pie
-                        data={getCampaignsPieChartData(campaigns).slice(0, 6)}
+                        data={getEmailTypePieData(campaigns)}
                         cx="50%"
                         cy="50%"
-                        innerRadius={40}
-                        outerRadius={80}
+                        innerRadius={30}
+                        outerRadius={70}
                         dataKey="value"
                       >
-                        {getCampaignsPieChartData(campaigns).slice(0, 6).map((entry, index) => (
+                        {getEmailTypePieData(campaigns).map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={entry.fill} />
                         ))}
                       </Pie>
@@ -924,74 +1165,76 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
                   </ResponsiveContainer>
                 </div>
                 
-                {/* Campaign List */}
-                <div className="w-1/2 pl-4">
-                  <div className="space-y-2">
-                    {campaigns
-                      .sort((a: any, b: any) => (b.recipients_count || 0) - (a.recipients_count || 0))
-                      .slice(0, 5)
-                      .map((campaign: any, index: number) => (
-                        <div key={campaign.id} className="flex items-center justify-between py-2 border-b border-white/10 last:border-b-0">
-                          <div className="flex-1">
-                            <p className="text-white font-medium text-sm truncate">
-                              {campaign.campaign_name}
-                            </p>
-                            <p className="text-white/60 text-xs">
-                              {new Date(campaign.send_date).toLocaleDateString()} • {campaign.recipients_count?.toLocaleString()} sent
-                            </p>
-                          </div>
-                          <div className="text-right ml-2">
-                            <p className="text-white font-semibold text-sm">
-                              {((campaign.opened_count || 0) / (campaign.recipients_count || 1) * 100).toFixed(1)}%
-                            </p>
-                            <p className="text-white/60 text-xs">
-                              ${(campaign.revenue || 0).toLocaleString()}
-                            </p>
-                          </div>
+                {/* Analysis Cards */}
+                <div className="w-1/2 pl-4 space-y-3">
+                  {getEmailTypeBreakdown(campaigns) && Object.entries(getEmailTypeBreakdown(campaigns)).map(([type, data]: [string, any]) => {
+                    if (data.count === 0) return null
+                    
+                    const colors = {
+                      promotional: { bg: 'bg-blue-500/20 border-blue-500/30', text: 'text-blue-300' },
+                      educational: { bg: 'bg-green-500/20 border-green-500/30', text: 'text-green-300' },
+                      mixed: { bg: 'bg-yellow-500/20 border-yellow-500/30', text: 'text-yellow-300' }
+                    }
+                    
+                    const icons = {
+                      promotional: '💰',
+                      educational: '📚', 
+                      mixed: '🔄'
+                    }
+                    
+                    const color = colors[type as keyof typeof colors]
+                    const icon = icons[type as keyof typeof icons]
+                    
+                    return (
+                      <div key={type} className={`p-3 rounded-lg border ${color.bg}`}>
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="text-sm">{icon}</span>
+                          <span className={`text-sm font-medium ${color.text} capitalize`}>
+                            {type}
+                          </span>
                         </div>
-                      ))}
-                  </div>
+                        <div className="text-xs text-white/60 space-y-1">
+                          <div>{data.count} campaigns</div>
+                          <div>${data.revenue.toLocaleString()} revenue</div>
+                          <div>{(data.recipients > 0 ? (data.opens / data.recipients * 100) : 0).toFixed(1)}% open rate</div>
+                        </div>
+                      </div>
+                    )
+                  })}
                 </div>
               </div>
             </CardContent>
           </Card>
-        </div>
 
-        {/* Enhanced Send Time Analysis */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
-          {/* Enhanced Send Time Analysis */}
+          {/* Simplified Send Time Performance */}
           <Card className="bg-white/10 backdrop-blur-md border-white/20">
             <CardHeader>
               <CardTitle className="text-white flex items-center gap-2">
                 <Calendar className="w-5 h-5" />
-                📈 Send Time Performance Analysis
+                🕐 Send Time Performance
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-6">
-                {/* Best Performing Days with enhanced data */}
+              <div className="space-y-4">
+                {/* Best Performing Days */}
                 <div>
                   <div className="flex items-center justify-between mb-3">
                     <p className="text-white font-medium text-sm">🗓️ Best Days of the Week</p>
-                    <span className="text-white/60 text-xs">Open Rate • Click Rate • Revenue</span>
+                    <span className="text-white/60 text-xs">Open Rate • Click Rate</span>
                   </div>
-                  <div className="space-y-3">
+                  <div className="space-y-2">
                     {Object.entries(sendTimeAnalysis.byDay)
                       .sort(([,a]: any, [,b]: any) => b.avgOpenRate - a.avgOpenRate)
-                      .slice(0, 7)
+                      .slice(0, 5)
                       .map(([day, data]: any, index: number) => {
                         const isTop = index < 2
-                        const isBottom = index >= 5
                         return (
                           <div key={day} className={`flex items-center justify-between p-3 rounded-lg ${
-                            isTop ? 'bg-green-500/20 border border-green-500/30' :
-                            isBottom ? 'bg-red-500/20 border border-red-500/30' :
-                            'bg-white/5'
+                            isTop ? 'bg-green-500/20 border border-green-500/30' : 'bg-white/5'
                           }`}>
                             <div className="flex items-center gap-3">
                               <span className={`text-sm font-medium ${
-                                isTop ? 'text-green-300' : isBottom ? 'text-red-300' : 'text-white'
+                                isTop ? 'text-green-300' : 'text-white'
                               }`}>
                                 {day}
                               </span>
@@ -1002,7 +1245,7 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
                             <div className="flex items-center gap-4 text-xs">
                               <div className="text-center">
                                 <div className={`font-semibold ${
-                                  isTop ? 'text-green-300' : isBottom ? 'text-red-300' : 'text-white'
+                                  isTop ? 'text-green-300' : 'text-white'
                                 }`}>
                                   {(data.avgOpenRate * 100).toFixed(1)}%
                                 </div>
@@ -1010,19 +1253,11 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
                               </div>
                               <div className="text-center">
                                 <div className={`font-semibold ${
-                                  isTop ? 'text-green-300' : isBottom ? 'text-red-300' : 'text-white'
+                                  isTop ? 'text-green-300' : 'text-white'
                                 }`}>
                                   {((data.avgClickRate || 0) * 100).toFixed(2)}%
                                 </div>
                                 <div className="text-white/50">Click</div>
-                              </div>
-                              <div className="text-center">
-                                <div className={`font-semibold ${
-                                  isTop ? 'text-green-300' : isBottom ? 'text-red-300' : 'text-white'
-                                }`}>
-                                  ${Math.round((data.avgRevenue || 0)).toLocaleString()}
-                                </div>
-                                <div className="text-white/50">Rev</div>
                               </div>
                             </div>
                           </div>
@@ -1031,16 +1266,16 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
                   </div>
                 </div>
 
-                {/* Hour Analysis with better visualization */}
+                {/* Best Hours */}
                 <div className="border-t border-white/20 pt-4">
                   <div className="flex items-center justify-between mb-3">
-                    <p className="text-white font-medium text-sm">🕐 Peak Performance Hours</p>
-                    <span className="text-white/60 text-xs">Top 8 performing hours</span>
+                    <p className="text-white font-medium text-sm">🕐 Peak Hours</p>
+                    <span className="text-white/60 text-xs">Top 6 performing hours</span>
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     {Object.entries(sendTimeAnalysis.byHour)
                       .sort(([,a]: any, [,b]: any) => b.avgOpenRate - a.avgOpenRate)
-                      .slice(0, 8)
+                      .slice(0, 6)
                       .map(([hour, data]: any, index: number) => {
                         const isTop3 = index < 3
                         const hourNum = parseInt(hour.split(':')[0])
@@ -1048,9 +1283,8 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
                         const displayHour = hourNum === 0 ? 12 : hourNum > 12 ? hourNum - 12 : hourNum
                         
                         return (
-                          <div key={hour} className={`flex items-center justify-between p-3 rounded-lg ${
-                            isTop3 ? 'bg-gradient-to-r from-blue-500/20 to-purple-500/20 border border-blue-500/30' :
-                            'bg-white/5'
+                          <div key={hour} className={`flex items-center justify-between p-2 rounded-lg ${
+                            isTop3 ? 'bg-blue-500/20 border border-blue-500/30' : 'bg-white/5'
                           }`}>
                             <div>
                               <div className={`text-sm font-bold ${
@@ -1063,145 +1297,18 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
                               </div>
                             </div>
                             <div className="text-right">
-                              <div className={`text-sm font-semibold ${
+                              <div className={`text-xs font-semibold ${
                                 isTop3 ? 'text-blue-300' : 'text-white'
                               }`}>
                                 {(data.avgOpenRate * 100).toFixed(1)}%
                               </div>
                               <div className="text-white/60 text-xs">
-                                ${Math.round((data.avgRevenue || 0)).toLocaleString()}
+                                {((data.avgClickRate || 0) * 100).toFixed(1)}%
                               </div>
                             </div>
                           </div>
                         )
                       })}
-                  </div>
-                  <div className="mt-3 flex items-center gap-4 text-xs text-white/60">
-                    <span>🔵 Top performers</span>
-                    <span>📊 Revenue per campaign included</span>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Campaign Performance Breakdown */}
-          <Card className="bg-white/10 backdrop-blur-md border-white/20">
-            <CardHeader>
-              <CardTitle className="text-white flex items-center gap-2">
-                <TrendingUp className="w-5 h-5" />
-                📊 Performance Breakdown
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
-                {/* Performance Tiers */}
-                <div>
-                  <p className="text-white font-medium text-sm mb-3">🎯 Campaign Performance Tiers</p>
-                  <div className="space-y-3">
-                    {(() => {
-                      const highPerformers = campaigns.filter((c: any) => (c.open_rate || 0) > 0.4)
-                      const mediumPerformers = campaigns.filter((c: any) => (c.open_rate || 0) > 0.2 && (c.open_rate || 0) <= 0.4)
-                      const lowPerformers = campaigns.filter((c: any) => (c.open_rate || 0) <= 0.2)
-                      
-                      return [
-                        {
-                          label: 'High Performers',
-                          icon: '🔥',
-                          campaigns: highPerformers,
-                          color: 'text-green-300',
-                          bg: 'bg-green-500/20 border-green-500/30'
-                        },
-                        {
-                          label: 'Medium Performers', 
-                          icon: '⚡',
-                          campaigns: mediumPerformers,
-                          color: 'text-yellow-300',
-                          bg: 'bg-yellow-500/20 border-yellow-500/30'
-                        },
-                        {
-                          label: 'Needs Improvement',
-                          icon: '📈',
-                          campaigns: lowPerformers,
-                          color: 'text-red-300',
-                          bg: 'bg-red-500/20 border-red-500/30'
-                        }
-                      ]
-                    })().map(tier => (
-                      <div key={tier.label} className={`flex items-center justify-between p-3 rounded-lg border ${tier.bg}`}>
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm">{tier.icon}</span>
-                          <div>
-                            <span className={`text-sm font-medium ${tier.color}`}>
-                              {tier.label}
-                            </span>
-                            <div className="text-white/60 text-xs">
-                              {tier.campaigns.length} campaigns
-                            </div>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className={`text-sm font-semibold ${tier.color}`}>
-                            {tier.campaigns.length > 0 
-                              ? ((tier.campaigns.reduce((sum: number, c: any) => sum + (c.open_rate || 0), 0) / tier.campaigns.length) * 100).toFixed(1)
-                              : '0.0'
-                            }%
-                          </div>
-                          <div className="text-white/60 text-xs">
-                            ${tier.campaigns.reduce((sum: number, c: any) => sum + (c.revenue || 0), 0).toLocaleString()}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Revenue Insights */}
-                <div className="border-t border-white/20 pt-4">
-                  <p className="text-white font-medium text-sm mb-3">💰 Revenue Insights</p>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="bg-white/5 p-3 rounded-lg">
-                      <div className="text-white/60 text-xs mb-1">Highest Revenue</div>
-                      <div className="text-white font-semibold text-sm">
-                        ${Math.max(...campaigns.map((c: any) => c.revenue || 0)).toLocaleString()}
-                      </div>
-                      <div className="text-white/50 text-xs mt-1">Single campaign</div>
-                    </div>
-                    <div className="bg-white/5 p-3 rounded-lg">
-                      <div className="text-white/60 text-xs mb-1">Avg per Campaign</div>
-                      <div className="text-white font-semibold text-sm">
-                        ${campaigns.length > 0 ? Math.round(totalRevenue / campaigns.length).toLocaleString() : '0'}
-                      </div>
-                      <div className="text-white/50 text-xs mt-1">Revenue average</div>
-                    </div>
-                    <div className="bg-white/5 p-3 rounded-lg">
-                      <div className="text-white/60 text-xs mb-1">Top 10% Generate</div>
-                      <div className="text-white font-semibold text-sm">
-                        ${campaigns
-                          .sort((a: any, b: any) => (b.revenue || 0) - (a.revenue || 0))
-                          .slice(0, Math.max(1, Math.ceil(campaigns.length * 0.1)))
-                          .reduce((sum: number, c: any) => sum + (c.revenue || 0), 0)
-                          .toLocaleString()
-                        }
-                      </div>
-                      <div className="text-white/50 text-xs mt-1">
-                        {((campaigns
-                          .sort((a: any, b: any) => (b.revenue || 0) - (a.revenue || 0))
-                          .slice(0, Math.max(1, Math.ceil(campaigns.length * 0.1)))
-                          .reduce((sum: number, c: any) => sum + (c.revenue || 0), 0) / totalRevenue) * 100).toFixed(0)
-                        }% of total
-                      </div>
-                    </div>
-                    <div className="bg-white/5 p-3 rounded-lg">
-                      <div className="text-white/60 text-xs mb-1">Revenue/Recipient</div>
-                      <div className="text-white font-semibold text-sm">
-                        ${campaigns.length > 0 
-                          ? (totalRevenue / campaigns.reduce((sum: number, c: any) => sum + (c.recipients_count || 0), 0)).toFixed(2)
-                          : '0.00'
-                        }
-                      </div>
-                      <div className="text-white/50 text-xs mt-1">Per recipient</div>
-                    </div>
                   </div>
                 </div>
               </div>
