@@ -387,7 +387,7 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
       const { efficiency } = getConversionEfficiencyData(campaigns)
       return efficiency[category as keyof typeof efficiency]?.campaigns || []
     } else {
-      const aovTiers = getAOVAnalysis(campaigns)
+      const { aovTiers } = getAOVAnalysis(campaigns)
       return aovTiers[category as keyof typeof aovTiers]?.campaigns || []
     }
   }
