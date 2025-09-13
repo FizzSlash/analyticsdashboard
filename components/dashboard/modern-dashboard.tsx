@@ -137,16 +137,16 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
     const weeklyData: { [week: string]: { revenue: number, opens: number } } = {}
     
     // Generate last 8 weeks of data
-      for (let i = 7; i >= 0; i--) {
-        const date = new Date()
-        date.setDate(date.getDate() - (i * 7))
-        const weekKey = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-        
-        weeklyData[weekKey] = {
+    for (let i = 7; i >= 0; i--) {
+      const date = new Date()
+      date.setDate(date.getDate() - (i * 7))
+      const weekKey = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+      
+      weeklyData[weekKey] = {
           revenue: flows.reduce((sum: number, flow: any) => sum + (flow.revenue || 0), 0) / 8, // Distribute evenly for now
           opens: flows.reduce((sum: number, flow: any) => sum + (flow.opens || 0), 0) / 8
-        }
       }
+    }
     
     return Object.entries(weeklyData).map(([week, data]) => ({
       week,
@@ -365,34 +365,6 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
     return efficiency
   }
 
-  const getConversionPieData = (campaigns: any[]) => {
-    const efficiency = getConversionEfficiencyData(campaigns)
-    
-    return [
-      { 
-        name: 'High Converters', 
-        value: efficiency.highConverters.campaigns.length,
-        revenue: efficiency.highConverters.totalRevenue,
-        conversionRate: efficiency.highConverters.totalClicks > 0 ? (efficiency.highConverters.totalOrders / efficiency.highConverters.totalClicks * 100) : 0,
-        fill: '#34D399' // Green
-      },
-      { 
-        name: 'Window Shoppers', 
-        value: efficiency.windowShoppers.campaigns.length,
-        revenue: efficiency.windowShoppers.totalRevenue,
-        conversionRate: efficiency.windowShoppers.totalClicks > 0 ? (efficiency.windowShoppers.totalOrders / efficiency.windowShoppers.totalClicks * 100) : 0,
-        fill: '#FBBF24' // Yellow
-      },
-      { 
-        name: 'Instant Buyers', 
-        value: efficiency.instantBuyers.campaigns.length,
-        revenue: efficiency.instantBuyers.totalRevenue,
-        conversionRate: efficiency.instantBuyers.totalClicks > 0 ? (efficiency.instantBuyers.totalOrders / efficiency.instantBuyers.totalClicks * 100) : 0,
-        fill: '#A78BFA' // Purple
-      }
-    ].filter(item => item.value > 0)
-  }
-
   const getAOVAnalysis = (campaigns: any[]) => {
     const campaignsWithAOV = campaigns.map((campaign: any) => ({
       ...campaign,
@@ -434,34 +406,6 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
     })
     
     return aovTiers
-  }
-
-  const getAOVPieData = (campaigns: any[]) => {
-    const aovTiers = getAOVAnalysis(campaigns)
-    
-    return [
-      { 
-        name: 'Premium AOV', 
-        value: aovTiers.premium.campaigns.length,
-        revenue: aovTiers.premium.totalRevenue,
-        avgAOV: aovTiers.premium.avgAOV,
-        fill: '#A78BFA' // Purple
-      },
-      { 
-        name: 'Standard AOV', 
-        value: aovTiers.standard.campaigns.length,
-        revenue: aovTiers.standard.totalRevenue,
-        avgAOV: aovTiers.standard.avgAOV,
-        fill: '#60A5FA' // Blue
-      },
-      { 
-        name: 'Discount AOV', 
-        value: aovTiers.discount.campaigns.length,
-        revenue: aovTiers.discount.totalRevenue,
-        avgAOV: aovTiers.discount.avgAOV,
-        fill: '#34D399' // Green
-      }
-    ].filter(item => item.value > 0)
   }
 
   const tabs = [
@@ -1161,6 +1105,7 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
                 {/* Category Cards - Clickable */}
                 <div className="grid grid-cols-3 gap-3">
                   {analysisTab === 'conversion' && (() => {
+                    
                     const efficiency = getConversionEfficiencyData(campaigns)
                     
                     const categories = [
@@ -1202,12 +1147,12 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
                           <span className="text-sm font-medium">
                             {category.label}
                           </span>
-                        </div>
+                  </div>
                         <div className="text-xs space-y-1 text-left">
                           <div>{category.data.campaigns.length} campaigns</div>
                           <div>{category.data.avgConversion.toFixed(1)}% conversion</div>
                           <div>${category.data.totalRevenue.toLocaleString()}</div>
-                        </div>
+                    </div>
                       </button>
                     ))
                   })()}
@@ -1254,12 +1199,12 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
                           <span className="text-sm font-medium">
                             {category.label}
                           </span>
-                        </div>
+                  </div>
                         <div className="text-xs space-y-1 text-left">
                           <div>{category.data.campaigns.length} campaigns</div>
                           <div>${category.data.avgAOV.toFixed(2)} avg</div>
                           <div>${category.data.totalRevenue.toLocaleString()}</div>
-                        </div>
+                    </div>
                       </button>
                     ))
                   })()}
@@ -1300,31 +1245,31 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
                             <div className="text-center">
                               <div className="text-white font-semibold text-lg">{totalRecipients.toLocaleString()}</div>
                               <div className="text-white/60 text-xs">Recipients</div>
-                            </div>
+                  </div>
                             <div className="text-white/40">→</div>
                             <div className="text-center">
                               <div className="text-blue-300 font-semibold text-lg">{openRate.toFixed(1)}%</div>
                               <div className="text-white/60 text-xs">Opened</div>
-                            </div>
+                    </div>
                             <div className="text-white/40">→</div>
                             <div className="text-center">
                               <div className="text-yellow-300 font-semibold text-lg">{clickRate.toFixed(1)}%</div>
                               <div className="text-white/60 text-xs">Clicked</div>
-                            </div>
+                  </div>
                             <div className="text-white/40">→</div>
                             <div className="text-center">
                               <div className="text-green-300 font-semibold text-lg">{conversionRate.toFixed(1)}%</div>
                               <div className="text-white/60 text-xs">Converted</div>
-                            </div>
-                          </div>
-                          <div className="text-right">
+                </div>
+                  </div>
+                  <div className="text-right">
                             <div className="text-white font-semibold text-sm">${categoryData.totalRevenue.toLocaleString()}</div>
                             <div className="text-white/60 text-xs">Total Revenue</div>
-                          </div>
-                        </div>
+                    </div>
+                  </div>
                       )
                     })()}
-                  </div>
+                </div>
                 )}
 
                 {/* Scrollable Campaign List */}
@@ -1350,7 +1295,7 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
                       >
                         Close
                       </button>
-                    </div>
+              </div>
                     <div className="space-y-2">
                       {(() => {
                         let categoryData: any
@@ -1374,14 +1319,14 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
                             
                             return (
                               <div key={campaign.id} className="flex items-center justify-between p-3 bg-white/5 rounded-lg hover:bg-white/10 transition-colors">
-                                <div className="flex-1">
+                    <div className="flex-1">
                                   <p className="text-white font-medium text-sm truncate">{campaign.campaign_name}</p>
                                   <p className="text-white/60 text-xs mt-1">{campaign.subject_line}</p>
                                   <p className="text-white/40 text-xs">
                                     {new Date(campaign.send_date).toLocaleDateString()} • {campaign.recipients_count?.toLocaleString()} sent
                                   </p>
-                                </div>
-                                <div className="text-right ml-4">
+                    </div>
+                    <div className="text-right ml-4">
                                   <p className="text-white font-semibold text-sm">${(campaign.revenue || 0).toLocaleString()}</p>
                                   {analysisTab === 'conversion' && (
                                     <p className="text-white/60 text-xs">{clickToOrderRate.toFixed(1)}% conversion</p>
@@ -1390,12 +1335,12 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
                                     <p className="text-white/60 text-xs">${aov.toFixed(2)} AOV</p>
                                   )}
                                   <p className="text-white/40 text-xs">{(campaign.open_rate * 100).toFixed(1)}% OR</p>
-                                </div>
-                              </div>
+                    </div>
+                  </div>
                             )
                           })
                       })()}
-                    </div>
+              </div>
                   </div>
                 )}
             </CardContent>
@@ -1432,18 +1377,18 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
                                 isTop ? 'text-green-300' : 'text-white'
                               }`}>
                                 {day}
-                              </span>
+                            </span>
                               <span className="text-white/60 text-xs">
                                 {data.count} campaigns
                               </span>
-                            </div>
+                          </div>
                             <div className="flex items-center gap-4 text-xs">
                               <div className="text-center">
                                 <div className={`font-semibold ${
                                   isTop ? 'text-green-300' : 'text-white'
                                 }`}>
                                   {(data.avgOpenRate * 100).toFixed(1)}%
-                                </div>
+                        </div>
                                 <div className="text-white/50">Open</div>
                               </div>
                               <div className="text-center">
