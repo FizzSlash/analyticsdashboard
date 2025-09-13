@@ -56,7 +56,7 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
   const getRevenueChartData = (campaigns: any[]) => {
     const revenueByDate: { [key: string]: number } = {}
     
-    campaigns.forEach(campaign => {
+    campaigns.forEach((campaign: any) => {
       if (campaign.send_date && campaign.revenue) {
         const date = new Date(campaign.send_date).toLocaleDateString('en-US', { 
           month: 'short', 
@@ -68,7 +68,7 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
     
     return Object.entries(revenueByDate)
       .map(([date, revenue]) => ({ date, revenue }))
-      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+      .sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime())
       .slice(-30) // Last 30 data points
   }
 
@@ -78,16 +78,16 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
     const weeklyData: { [week: string]: { revenue: number, opens: number } } = {}
     
     // Generate last 8 weeks of data
-    for (let i = 7; i >= 0; i--) {
-      const date = new Date()
-      date.setDate(date.getDate() - (i * 7))
-      const weekKey = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-      
-      weeklyData[weekKey] = {
-        revenue: flows.reduce((sum, flow) => sum + (flow.revenue || 0), 0) / 8, // Distribute evenly for now
-        opens: flows.reduce((sum, flow) => sum + (flow.opens || 0), 0) / 8
+      for (let i = 7; i >= 0; i--) {
+        const date = new Date()
+        date.setDate(date.getDate() - (i * 7))
+        const weekKey = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+        
+        weeklyData[weekKey] = {
+          revenue: flows.reduce((sum: number, flow: any) => sum + (flow.revenue || 0), 0) / 8, // Distribute evenly for now
+          opens: flows.reduce((sum: number, flow: any) => sum + (flow.opens || 0), 0) / 8
+        }
       }
-    }
     
     return Object.entries(weeklyData).map(([week, data]) => ({
       week,
@@ -109,7 +109,7 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
       withBrackets: { count: 0, avgOpenRate: 0, avgClickRate: 0, totalOpens: 0, totalClicks: 0, campaigns: [] as any[] }
     }
 
-    campaigns.forEach(campaign => {
+    campaigns.forEach((campaign: any) => {
       const subject = campaign.subject_line?.toLowerCase() || ''
       const originalSubject = campaign.subject_line || ''
       const openRate = campaign.open_rate || 0
@@ -219,7 +219,7 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
   const getSubjectLineBarChartData = (campaigns: any[], metric: 'open_rate' | 'click_rate' = 'open_rate') => {
     // Group campaigns by subject line and calculate average performance
     const subjectLinePerformance = campaigns
-      .filter(campaign => campaign.subject_line && campaign[metric] > 0)
+      .filter((campaign: any) => campaign.subject_line && campaign[metric] > 0)
       .reduce((acc: any, campaign: any) => {
         const subject = campaign.subject_line
         if (!acc[subject]) {
@@ -257,7 +257,7 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
 
     // Sort by the selected metric and return top 15
     return chartData
-      .sort((a, b) => b[metric] - a[metric])
+      .sort((a: any, b: any) => b[metric] - a[metric])
       .slice(0, 15)
   }
 
@@ -702,7 +702,7 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
     const totalRevenue = campaigns.reduce((sum: number, campaign: any) => sum + (campaign.revenue || 0), 0)
     
     // Sort campaigns
-    const sortedCampaigns = [...campaigns].sort((a, b) => {
+    const sortedCampaigns = [...campaigns].sort((a: any, b: any) => {
       let aVal = a[sortField]
       let bVal = b[sortField]
       
@@ -720,7 +720,7 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
     // Top performing subject lines (by open rate)
     const topSubjectLines = [...campaigns]
       .filter((c: any) => c.open_rate > 0)
-      .sort((a, b) => b.open_rate - a.open_rate)
+      .sort((a: any, b: any) => b.open_rate - a.open_rate)
       .slice(0, 5)
     
     // Subject line insights
@@ -928,7 +928,7 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
                 <div className="w-1/2 pl-4">
                   <div className="space-y-2">
                     {campaigns
-                      .sort((a, b) => (b.recipients_count || 0) - (a.recipients_count || 0))
+                      .sort((a: any, b: any) => (b.recipients_count || 0) - (a.recipients_count || 0))
                       .slice(0, 5)
                       .map((campaign: any, index: number) => (
                         <div key={campaign.id} className="flex items-center justify-between py-2 border-b border-white/10 last:border-b-0">
