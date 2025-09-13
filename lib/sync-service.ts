@@ -1,7 +1,7 @@
 import { KlaviyoAPI, transformCampaignData, transformFlowData, decryptApiKey } from './klaviyo'
 import { DatabaseService } from './database'
-import { Client } from './supabase'
-import { format, subDays } from 'date-fns'
+import { Client, supabaseAdmin } from './supabase'
+import { format, subDays, addDays } from 'date-fns'
 
 export class SyncService {
   private klaviyo: KlaviyoAPI
@@ -79,6 +79,17 @@ export class SyncService {
         this.syncFlows(conversionMetricId), 
         this.syncSegments()
       ])
+      
+      // After flows are synced, sync individual flow messages
+      if (flowsResult.status === 'fulfilled') {
+        this.log(`🔄 SYNC: Starting flow messages sync after flows completed...`)
+        try {
+          await this.syncFlowMessages(conversionMetricId)
+          this.log(`✅ FLOW MESSAGES: Sync completed successfully`)
+        } catch (flowMessageError) {
+          this.log(`❌ FLOW MESSAGES: Sync failed: ${flowMessageError}`)
+        }
+      }
       
       // Log results for each parallel sync
       if (campaignsResult.status === 'fulfilled') {
@@ -358,6 +369,230 @@ export class SyncService {
     } catch (error) {
       this.log(`❌ FLOWS: Error syncing flows: ${error}`)
       throw error
+    }
+  }
+
+  // Sync individual flow message metrics
+  async syncFlowMessages(conversionMetricId: string | null) {
+    this.log('📧 FLOW MESSAGES: Starting flow message sync...')
+    this.log('📋 FLOW MESSAGES: Fetching individual email performance data within flows')
+    
+    try {
+      // Get all flows from database to get flow IDs
+      const { data: flows, error: flowError } = await supabaseAdmin
+        .from('flow_metrics')
+        .select('flow_id, flow_name')
+        .eq('client_id', this.client.id)
+        
+      if (flowError) {
+        throw new Error(`Failed to get flows: ${flowError.message}`)
+      }
+      
+      if (!flows || flows.length === 0) {
+        this.log('⚠️ FLOW MESSAGES: No flows found in database, make sure flows are synced first')
+        return
+      }
+      
+      this.log(`📊 FLOW MESSAGES: Found ${flows.length} flows to process`)
+      
+      let totalMessages = 0
+      
+      // Process each flow
+      for (const flow of flows) {
+        try {
+          this.log(`🔄 FLOW MESSAGES: Processing flow ${flow.flow_name} (${flow.flow_id})`)
+          
+          // Get flow actions (steps/emails in the flow)
+          const actionsResponse = await this.klaviyo.get(`/flows/${flow.flow_id}/flow-actions`)
+          const actions = actionsResponse.data || []
+          
+          this.log(`📧 FLOW MESSAGES: Found ${actions.length} actions in flow ${flow.flow_name}`)
+          
+          // Process each action to get messages
+          for (const action of actions) {
+            if (action.attributes?.action_type === 'email') {
+              try {
+                // Get messages for this action
+                const messagesResponse = await this.klaviyo.getFlowActionMessages(action.id)
+                const messages = messagesResponse.data || []
+                
+                this.log(`📨 FLOW MESSAGES: Found ${messages.length} messages in action ${action.id}`)
+                
+                // Get message performance data for each message
+                for (const message of messages) {
+                  await this.syncFlowMessageMetrics(flow.flow_id, message, conversionMetricId)
+                  totalMessages++
+                }
+              } catch (actionError) {
+                this.log(`❌ FLOW MESSAGES: Error processing action ${action.id}: ${actionError}`)
+              }
+            }
+          }
+        } catch (flowError) {
+          this.log(`❌ FLOW MESSAGES: Error processing flow ${flow.flow_id}: ${flowError}`)
+        }
+      }
+      
+      this.log(`✅ FLOW MESSAGES: Synced ${totalMessages} total flow messages`)
+    } catch (error) {
+      this.log(`❌ FLOW MESSAGES: Error syncing flow messages: ${error}`)
+      throw error
+    }
+  }
+  
+  // Sync individual flow message performance data
+  private async syncFlowMessageMetrics(flowId: string, message: any, conversionMetricId: string | null) {
+    try {
+      const messageId = message.id
+      const messageAttributes = message.attributes
+      
+      this.log(`📈 FLOW MESSAGES: Getting metrics for message ${messageAttributes.name || messageId}`)
+      
+      // Get message performance data for the last 12 weeks (weekly breakdown)
+      const endDate = new Date()
+      const startDate = subDays(endDate, 84) // 12 weeks ago
+      
+      // Get weekly performance data
+      const weeklyData = await this.getFlowMessageWeeklyMetrics(messageId, startDate, endDate, conversionMetricId)
+      
+      // Save each week's data
+      for (const weekData of weeklyData) {
+        const flowMessageData = {
+          client_id: this.client.id,
+          flow_id: flowId,
+          message_id: messageId,
+          message_name: messageAttributes.name || 'Untitled Email',
+          subject_line: messageAttributes.subject || '',
+          preview_text: messageAttributes.preview_text || '',
+          channel: 'Email',
+          from_email: messageAttributes.from_email || '',
+          from_label: messageAttributes.from_label || '',
+          message_created: messageAttributes.created || null,
+          message_updated: messageAttributes.updated || null,
+          ...weekData
+        }
+        
+        await DatabaseService.upsertFlowMessageMetric(flowMessageData)
+      }
+      
+    } catch (error) {
+      this.log(`❌ FLOW MESSAGES: Error syncing message ${message.id}: ${error}`)
+    }
+  }
+  
+  // Get weekly metrics for a flow message
+  private async getFlowMessageWeeklyMetrics(messageId: string, startDate: Date, endDate: Date, conversionMetricId: string | null) {
+    try {
+      // Generate weekly date ranges
+      const weeks = []
+      let currentDate = startDate
+      
+      while (currentDate <= endDate) {
+        const weekStart = format(currentDate, 'yyyy-MM-dd')
+        const weekEnd = format(addDays(currentDate, 6), 'yyyy-MM-dd')
+        weeks.push({ weekStart, weekEnd, weekDate: weekStart })
+        currentDate = addDays(currentDate, 7)
+      }
+      
+      const weeklyMetrics = []
+      
+      // Get metrics for each week
+      for (const week of weeks) {
+        try {
+          // Build the analytics query for this specific message
+          const analyticsPayload = {
+            filter: [
+              "and",
+              ["equals", ["dimension", "MessageID"], [messageId]],
+              ["greater-or-equal", ["dimension", "Date"], [week.weekStart]],
+              ["less-or-equal", ["dimension", "Date"], [week.weekEnd]]
+            ],
+            measurements: [
+              "SumDelivered",
+              "SumOpened", 
+              "SumClicked",
+              "SumRevenue",
+              "SumOrders",
+              "SumBounced",
+              "SumUnsubscribed"
+            ],
+            by: ["MessageID"],
+            return_fields: ["SumDelivered", "SumOpened", "SumClicked", "SumRevenue", "SumOrders", "SumBounced", "SumUnsubscribed"],
+            page_size: 500
+          }
+          
+          const result = await this.klaviyo.post('/analytics/reports', {
+            data: {
+              type: 'analytics-report',
+              attributes: analyticsPayload
+            }
+          })
+          
+          const data = result.data?.attributes?.results?.[0] || {}
+          
+          // Calculate rates
+          const delivered = parseInt(data.SumDelivered) || 0
+          const opened = parseInt(data.SumOpened) || 0
+          const clicked = parseInt(data.SumClicked) || 0
+          const revenue = parseFloat(data.SumRevenue) || 0
+          const orders = parseInt(data.SumOrders) || 0
+          const bounced = parseInt(data.SumBounced) || 0
+          const unsubscribed = parseInt(data.SumUnsubscribed) || 0
+          
+          weeklyMetrics.push({
+            date_recorded: week.weekStart,
+            week_date: week.weekStart,
+            recipients: delivered,
+            delivered: delivered,
+            opens: opened,
+            opens_unique: opened, // Klaviyo provides unique opens by default
+            clicks: clicked,
+            clicks_unique: clicked, // Klaviyo provides unique clicks by default
+            conversions: orders,
+            conversion_value: revenue.toString(),
+            revenue: revenue.toString(),
+            bounced: bounced,
+            unsubscribes: unsubscribed,
+            open_rate: delivered > 0 ? (opened / delivered).toString() : "0",
+            click_rate: delivered > 0 ? (clicked / delivered).toString() : "0",
+            delivery_rate: delivered > 0 ? "1" : "0",
+            bounce_rate: delivered > 0 ? (bounced / delivered).toString() : "0",
+            revenue_per_recipient: delivered > 0 ? (revenue / delivered).toString() : "0",
+            average_order_value: orders > 0 ? (revenue / orders).toString() : "0"
+          })
+          
+        } catch (weekError) {
+          this.log(`⚠️ FLOW MESSAGES: Error getting week ${week.weekStart} for message ${messageId}: ${weekError}`)
+          // Add empty week data to maintain consistency
+          weeklyMetrics.push({
+            date_recorded: week.weekStart,
+            week_date: week.weekStart,
+            recipients: 0,
+            delivered: 0,
+            opens: 0,
+            opens_unique: 0,
+            clicks: 0,
+            clicks_unique: 0,
+            conversions: 0,
+            conversion_value: "0",
+            revenue: "0",
+            bounced: 0,
+            unsubscribes: 0,
+            open_rate: "0",
+            click_rate: "0",
+            delivery_rate: "0",
+            bounce_rate: "0",
+            revenue_per_recipient: "0",
+            average_order_value: "0"
+          })
+        }
+      }
+      
+      return weeklyMetrics
+      
+    } catch (error) {
+      this.log(`❌ FLOW MESSAGES: Error getting weekly metrics for message ${messageId}: ${error}`)
+      return []
     }
   }
 
