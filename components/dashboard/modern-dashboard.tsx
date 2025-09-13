@@ -52,6 +52,7 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc')
   const [expandedFlows, setExpandedFlows] = useState<Set<string>>(new Set())
   const [flowEmails, setFlowEmails] = useState<{ [flowId: string]: any[] }>({})
+  const [analysisTab, setAnalysisTab] = useState<'conversion' | 'aov'>('conversion')
 
   // Chart data processing functions
   const getRevenueRecipientsComboData = (campaigns: any[], timeframe: number) => {
@@ -318,149 +319,138 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
       .slice(0, 15)
   }
 
-  const classifyEmailType = (campaign: any) => {
-    const subject = (campaign.subject_line || '').toLowerCase()
-    const preview = (campaign.preview_text || '').toLowerCase()
-    const text = `${subject} ${preview}`
-    
-    // PROMOTIONAL KEYWORDS (Extensive List)
-    const promotionalKeywords = [
-      // Sales & Discounts
-      'sale', 'off', '%', 'percent', 'discount', 'deal', 'offer', 'save', 'savings',
-      'clearance', 'markdown', 'reduced', 'slash', 'cut', 'drop', 'lower', 'cheap',
-      
-      // Urgency & Scarcity
-      'limited', 'exclusive', 'urgent', 'hurry', 'fast', 'quick', 'rush', 'expire',
-      'ending', 'last', 'final', 'closing', 'deadline', 'today only', 'hours left',
-      'while supplies last', 'limited time', 'limited quantity', 'act now', 'don\'t miss',
-      
-      // Shopping & Commerce
-      'buy', 'shop', 'purchase', 'order', 'cart', 'checkout', 'payment', 'shipping',
-      'delivery', 'store', 'collection', 'catalog', 'browse', 'add to cart',
-      
-      // Product Launch & Promotion
-      'new arrival', 'just in', 'fresh', 'latest', 'launch', 'debut', 'introducing',
-      'featuring', 'spotlight', 'highlight', 'showcase', 'reveal', 'unveil',
-      
-      // Seasonal & Event
-      'black friday', 'cyber monday', 'holiday', 'christmas', 'thanksgiving',
-      'memorial day', 'labor day', 'valentine', 'mother\'s day', 'father\'s day',
-      'back to school', 'summer', 'winter', 'spring', 'fall', 'seasonal',
-      
-      // Free & Bonus
-      'free', 'bonus', 'gift', 'complimentary', 'no cost', 'on us', 'freebie',
-      'sample', 'trial', 'upgrade', 'unlock', 'access', 'premium',
-      
-      // Call to Action
-      'get', 'claim', 'grab', 'snag', 'secure', 'reserve', 'book', 'sign up',
-      'join', 'subscribe', 'download', 'register', 'apply', 'enter', 'win'
-    ]
-    
-    // EDUCATIONAL KEYWORDS (Extensive List)  
-    const educationalKeywords = [
-      // Learning & Knowledge
-      'how to', 'guide', 'tips', 'tutorial', 'learn', 'education', 'knowledge',
-      'advice', 'help', 'support', 'insight', 'wisdom', 'expert', 'master',
-      
-      // Content Types
-      'blog', 'article', 'post', 'story', 'news', 'update', 'newsletter',
-      'digest', 'roundup', 'summary', 'report', 'analysis', 'review',
-      
-      // Questions & Discovery  
-      'what', 'why', 'how', 'when', 'where', 'which', 'discover', 'explore',
-      'understand', 'learn about', 'find out', 'uncover', 'reveal secrets',
-      
-      // Community & Lifestyle
-      'community', 'behind the scenes', 'meet the team', 'our story', 'journey',
-      'lifestyle', 'inspiration', 'motivation', 'wellness', 'mindfulness',
-      
-      // Informational
-      'benefits', 'features', 'comparison', 'versus', 'difference', 'explanation',
-      'breakdown', 'deep dive', 'comprehensive', 'complete', 'ultimate',
-      
-      // Industry & Trends
-      'trend', 'trending', 'industry', 'market', 'future', 'innovation',
-      'research', 'study', 'data', 'statistics', 'insights', 'forecast'
-    ]
-    
-    // Calculate scores with weighting
-    let promotionalScore = 0
-    let educationalScore = 0
-    
-    promotionalKeywords.forEach((keyword: string) => {
-      if (text.includes(keyword)) {
-        // Higher weight for strong promotional indicators
-        if (['%', 'off', 'sale', 'free', 'limited', 'urgent'].includes(keyword)) {
-          promotionalScore += 3
-        } else {
-          promotionalScore += 1
-        }
-      }
-    })
-    
-    educationalKeywords.forEach((keyword: string) => {
-      if (text.includes(keyword)) {
-        // Higher weight for strong educational indicators  
-        if (['how to', 'guide', 'tips', 'newsletter', 'blog', 'story'].includes(keyword)) {
-          educationalScore += 3
-        } else {
-          educationalScore += 1
-        }
-      }
-    })
-    
-    // Classification logic
-    if (promotionalScore > educationalScore && promotionalScore >= 2) return 'promotional'
-    if (educationalScore > promotionalScore && educationalScore >= 2) return 'educational'
-    
-    return 'mixed'
-  }
 
-  const getEmailTypeBreakdown = (campaigns: any[]) => {
-    const breakdown = {
-      promotional: { count: 0, revenue: 0, opens: 0, recipients: 0, campaigns: [] as any[] },
-      educational: { count: 0, revenue: 0, opens: 0, recipients: 0, campaigns: [] as any[] },
-      mixed: { count: 0, revenue: 0, opens: 0, recipients: 0, campaigns: [] as any[] }
+  const getConversionEfficiencyData = (campaigns: any[]) => {
+    const efficiency = {
+      highConverters: { campaigns: [] as any[], totalRevenue: 0, totalClicks: 0, totalOrders: 0 },
+      windowShoppers: { campaigns: [] as any[], totalRevenue: 0, totalClicks: 0, totalOrders: 0 },
+      instantBuyers: { campaigns: [] as any[], totalRevenue: 0, totalClicks: 0, totalOrders: 0 }
     }
     
     campaigns.forEach((campaign: any) => {
-      const type = classifyEmailType(campaign)
-      breakdown[type].count++
-      breakdown[type].revenue += campaign.revenue || 0
-      breakdown[type].opens += campaign.opened_count || 0
-      breakdown[type].recipients += campaign.recipients_count || 0
-      breakdown[type].campaigns.push(campaign)
+      if (campaign.clicked_count > 0 && campaign.orders_count >= 0) {
+        const clickToOrderRate = (campaign.orders_count / campaign.clicked_count) * 100
+        const clickToOpenRate = campaign.click_to_open_rate || 0
+        
+        if (clickToOrderRate > 15) { // 15%+ of clicks convert
+          efficiency.highConverters.campaigns.push(campaign)
+          efficiency.highConverters.totalRevenue += campaign.revenue || 0
+          efficiency.highConverters.totalClicks += campaign.clicked_count || 0
+          efficiency.highConverters.totalOrders += campaign.orders_count || 0
+        } else if (clickToOpenRate > 20 && clickToOrderRate < 5) { // High clicks, low orders
+          efficiency.windowShoppers.campaigns.push(campaign)
+          efficiency.windowShoppers.totalRevenue += campaign.revenue || 0
+          efficiency.windowShoppers.totalClicks += campaign.clicked_count || 0
+          efficiency.windowShoppers.totalOrders += campaign.orders_count || 0
+        } else if (clickToOrderRate > 8 && clickToOpenRate < 15) { // Decent conversion, lower clicks
+          efficiency.instantBuyers.campaigns.push(campaign)
+          efficiency.instantBuyers.totalRevenue += campaign.revenue || 0
+          efficiency.instantBuyers.totalClicks += campaign.clicked_count || 0
+          efficiency.instantBuyers.totalOrders += campaign.orders_count || 0
+        }
+      }
     })
     
-    return breakdown
+    return efficiency
   }
 
-  const getEmailTypePieData = (campaigns: any[]) => {
-    const breakdown = getEmailTypeBreakdown(campaigns)
+  const getConversionPieData = (campaigns: any[]) => {
+    const efficiency = getConversionEfficiencyData(campaigns)
     
     return [
       { 
-        name: 'Promotional', 
-        value: breakdown.promotional.count,
-        revenue: breakdown.promotional.revenue,
-        openRate: breakdown.promotional.recipients > 0 ? (breakdown.promotional.opens / breakdown.promotional.recipients * 100) : 0,
-        fill: '#60A5FA' // Blue
-      },
-      { 
-        name: 'Educational', 
-        value: breakdown.educational.count,
-        revenue: breakdown.educational.revenue,
-        openRate: breakdown.educational.recipients > 0 ? (breakdown.educational.opens / breakdown.educational.recipients * 100) : 0,
+        name: 'High Converters', 
+        value: efficiency.highConverters.campaigns.length,
+        revenue: efficiency.highConverters.totalRevenue,
+        conversionRate: efficiency.highConverters.totalClicks > 0 ? (efficiency.highConverters.totalOrders / efficiency.highConverters.totalClicks * 100) : 0,
         fill: '#34D399' // Green
       },
       { 
-        name: 'Mixed/Other', 
-        value: breakdown.mixed.count,
-        revenue: breakdown.mixed.revenue,
-        openRate: breakdown.mixed.recipients > 0 ? (breakdown.mixed.opens / breakdown.mixed.recipients * 100) : 0,
+        name: 'Window Shoppers', 
+        value: efficiency.windowShoppers.campaigns.length,
+        revenue: efficiency.windowShoppers.totalRevenue,
+        conversionRate: efficiency.windowShoppers.totalClicks > 0 ? (efficiency.windowShoppers.totalOrders / efficiency.windowShoppers.totalClicks * 100) : 0,
         fill: '#FBBF24' // Yellow
+      },
+      { 
+        name: 'Instant Buyers', 
+        value: efficiency.instantBuyers.campaigns.length,
+        revenue: efficiency.instantBuyers.totalRevenue,
+        conversionRate: efficiency.instantBuyers.totalClicks > 0 ? (efficiency.instantBuyers.totalOrders / efficiency.instantBuyers.totalClicks * 100) : 0,
+        fill: '#A78BFA' // Purple
       }
-    ].filter(item => item.value > 0) // Only show categories with data
+    ].filter(item => item.value > 0)
+  }
+
+  const getAOVAnalysis = (campaigns: any[]) => {
+    const campaignsWithAOV = campaigns.map((campaign: any) => ({
+      ...campaign,
+      aov: campaign.orders_count > 0 ? campaign.revenue / campaign.orders_count : 0
+    }))
+    
+    // Calculate overall AOV for benchmarking
+    const totalRevenue = campaigns.reduce((sum: number, c: any) => sum + (c.revenue || 0), 0)
+    const totalOrders = campaigns.reduce((sum: number, c: any) => sum + (c.orders_count || 0), 0)
+    const overallAOV = totalOrders > 0 ? totalRevenue / totalOrders : 0
+    
+    const aovTiers = {
+      premium: { campaigns: [] as any[], totalRevenue: 0, totalOrders: 0, avgAOV: 0 },
+      standard: { campaigns: [] as any[], totalRevenue: 0, totalOrders: 0, avgAOV: 0 },
+      discount: { campaigns: [] as any[], totalRevenue: 0, totalOrders: 0, avgAOV: 0 }
+    }
+    
+    campaignsWithAOV.forEach((campaign: any) => {
+      if (campaign.orders_count > 0) {
+        if (campaign.aov > overallAOV * 1.5) { // 50% above average
+          aovTiers.premium.campaigns.push(campaign)
+          aovTiers.premium.totalRevenue += campaign.revenue || 0
+          aovTiers.premium.totalOrders += campaign.orders_count || 0
+        } else if (campaign.aov >= overallAOV * 0.7) { // Within 30% of average
+          aovTiers.standard.campaigns.push(campaign)
+          aovTiers.standard.totalRevenue += campaign.revenue || 0
+          aovTiers.standard.totalOrders += campaign.orders_count || 0
+        } else { // Below 30% of average
+          aovTiers.discount.campaigns.push(campaign)
+          aovTiers.discount.totalRevenue += campaign.revenue || 0
+          aovTiers.discount.totalOrders += campaign.orders_count || 0
+        }
+      }
+    })
+    
+    // Calculate average AOVs for each tier
+    Object.values(aovTiers).forEach((tier: any) => {
+      tier.avgAOV = tier.totalOrders > 0 ? tier.totalRevenue / tier.totalOrders : 0
+    })
+    
+    return aovTiers
+  }
+
+  const getAOVPieData = (campaigns: any[]) => {
+    const aovTiers = getAOVAnalysis(campaigns)
+    
+    return [
+      { 
+        name: 'Premium AOV', 
+        value: aovTiers.premium.campaigns.length,
+        revenue: aovTiers.premium.totalRevenue,
+        avgAOV: aovTiers.premium.avgAOV,
+        fill: '#A78BFA' // Purple
+      },
+      { 
+        name: 'Standard AOV', 
+        value: aovTiers.standard.campaigns.length,
+        revenue: aovTiers.standard.totalRevenue,
+        avgAOV: aovTiers.standard.avgAOV,
+        fill: '#60A5FA' // Blue
+      },
+      { 
+        name: 'Discount AOV', 
+        value: aovTiers.discount.campaigns.length,
+        revenue: aovTiers.discount.totalRevenue,
+        avgAOV: aovTiers.discount.avgAOV,
+        fill: '#34D399' // Green
+      }
+    ].filter(item => item.value > 0)
   }
 
   const tabs = [
@@ -1124,13 +1114,36 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
 
         {/* Analysis Row */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Educational vs Promotional Breakdown */}
+          {/* Campaign Analysis with Tabs */}
           <Card className="bg-white/10 backdrop-blur-md border-white/20">
             <CardHeader>
               <CardTitle className="text-white flex items-center gap-2">
-                <Eye className="w-5 h-5" />
-                📚 Educational vs Promotional
+                <TrendingUp className="w-5 h-5" />
+                📈 Campaign Analysis
               </CardTitle>
+              {/* Analysis Tabs */}
+              <div className="flex gap-1 mt-2">
+                <button
+                  onClick={() => setAnalysisTab('conversion')}
+                  className={`px-3 py-1 text-xs rounded-md transition-all ${
+                    analysisTab === 'conversion'
+                      ? 'bg-white/20 text-white'
+                      : 'bg-white/5 text-white/60 hover:text-white hover:bg-white/10'
+                  }`}
+                >
+                  Conversion Efficiency
+                </button>
+                <button
+                  onClick={() => setAnalysisTab('aov')}
+                  className={`px-3 py-1 text-xs rounded-md transition-all ${
+                    analysisTab === 'aov'
+                      ? 'bg-white/20 text-white'
+                      : 'bg-white/5 text-white/60 hover:text-white hover:bg-white/10'
+                  }`}
+                >
+                  AOV Insights
+                </button>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="flex">
@@ -1139,14 +1152,14 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
                   <ResponsiveContainer width="100%" height={200}>
                     <PieChart>
                       <Pie
-                        data={getEmailTypePieData(campaigns)}
+                        data={analysisTab === 'conversion' ? getConversionPieData(campaigns) : getAOVPieData(campaigns)}
                         cx="50%"
                         cy="50%"
                         innerRadius={30}
                         outerRadius={70}
                         dataKey="value"
                       >
-                        {getEmailTypePieData(campaigns).map((entry, index) => (
+                        {(analysisTab === 'conversion' ? getConversionPieData(campaigns) : getAOVPieData(campaigns)).map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={entry.fill} />
                         ))}
                       </Pie>
@@ -1167,40 +1180,69 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
                 
                 {/* Analysis Cards */}
                 <div className="w-1/2 pl-4 space-y-3">
-                  {getEmailTypeBreakdown(campaigns) && Object.entries(getEmailTypeBreakdown(campaigns)).map(([type, data]: [string, any]) => {
-                    if (data.count === 0) return null
-                    
-                    const colors = {
-                      promotional: { bg: 'bg-blue-500/20 border-blue-500/30', text: 'text-blue-300' },
-                      educational: { bg: 'bg-green-500/20 border-green-500/30', text: 'text-green-300' },
-                      mixed: { bg: 'bg-yellow-500/20 border-yellow-500/30', text: 'text-yellow-300' }
-                    }
-                    
-                    const icons = {
-                      promotional: '💰',
-                      educational: '📚', 
-                      mixed: '🔄'
-                    }
-                    
-                    const color = colors[type as keyof typeof colors]
-                    const icon = icons[type as keyof typeof icons]
-                    
-                    return (
-                      <div key={type} className={`p-3 rounded-lg border ${color.bg}`}>
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className="text-sm">{icon}</span>
-                          <span className={`text-sm font-medium ${color.text} capitalize`}>
-                            {type}
-                          </span>
+                  {analysisTab === 'conversion' && (() => {
+                    const efficiency = getConversionEfficiencyData(campaigns)
+                    return Object.entries(efficiency).map(([type, data]: [string, any]) => {
+                      if (data.campaigns.length === 0) return null
+                      
+                      const colors = {
+                        highConverters: { bg: 'bg-green-500/20 border-green-500/30', text: 'text-green-300', icon: '🎯' },
+                        windowShoppers: { bg: 'bg-yellow-500/20 border-yellow-500/30', text: 'text-yellow-300', icon: '👀' },
+                        instantBuyers: { bg: 'bg-purple-500/20 border-purple-500/30', text: 'text-purple-300', icon: '⚡' }
+                      }
+                      
+                      const config = colors[type as keyof typeof colors]
+                      const conversionRate = data.totalClicks > 0 ? (data.totalOrders / data.totalClicks * 100) : 0
+                      
+                      return (
+                        <div key={type} className={`p-3 rounded-lg border ${config.bg}`}>
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="text-sm">{config.icon}</span>
+                            <span className={`text-sm font-medium ${config.text}`}>
+                              {type === 'highConverters' ? 'High Converters' : 
+                               type === 'windowShoppers' ? 'Window Shoppers' : 'Instant Buyers'}
+                            </span>
+                          </div>
+                          <div className="text-xs text-white/60 space-y-1">
+                            <div>{data.campaigns.length} campaigns</div>
+                            <div>{conversionRate.toFixed(1)}% click-to-order</div>
+                            <div>${data.totalRevenue.toLocaleString()} revenue</div>
+                          </div>
                         </div>
-                        <div className="text-xs text-white/60 space-y-1">
-                          <div>{data.count} campaigns</div>
-                          <div>${data.revenue.toLocaleString()} revenue</div>
-                          <div>{(data.recipients > 0 ? (data.opens / data.recipients * 100) : 0).toFixed(1)}% open rate</div>
+                      )
+                    })
+                  })()}
+                  
+                  {analysisTab === 'aov' && (() => {
+                    const aovTiers = getAOVAnalysis(campaigns)
+                    return Object.entries(aovTiers).map(([tier, data]: [string, any]) => {
+                      if (data.campaigns.length === 0) return null
+                      
+                      const colors = {
+                        premium: { bg: 'bg-purple-500/20 border-purple-500/30', text: 'text-purple-300', icon: '👑' },
+                        standard: { bg: 'bg-blue-500/20 border-blue-500/30', text: 'text-blue-300', icon: '📊' },
+                        discount: { bg: 'bg-green-500/20 border-green-500/30', text: 'text-green-300', icon: '💡' }
+                      }
+                      
+                      const config = colors[tier as keyof typeof colors]
+                      
+                      return (
+                        <div key={tier} className={`p-3 rounded-lg border ${config.bg}`}>
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="text-sm">{config.icon}</span>
+                            <span className={`text-sm font-medium ${config.text} capitalize`}>
+                              {tier} AOV
+                            </span>
+                          </div>
+                          <div className="text-xs text-white/60 space-y-1">
+                            <div>{data.campaigns.length} campaigns</div>
+                            <div>${data.avgAOV.toFixed(2)} avg order</div>
+                            <div>${data.totalRevenue.toLocaleString()} revenue</div>
+                          </div>
                         </div>
-                      </div>
-                    )
-                  })}
+                      )
+                    })
+                  })()}
                 </div>
               </div>
             </CardContent>
@@ -1392,6 +1434,15 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
                         {getSortIcon('revenue')}
                       </div>
                     </th>
+                    <th 
+                      className="text-right text-white/80 font-medium py-3 cursor-pointer hover:text-white transition-colors"
+                      onClick={() => handleSort('revenue_per_recipient')}
+                    >
+                      <div className="flex items-center justify-end gap-1">
+                        RPR
+                        {getSortIcon('revenue_per_recipient')}
+                      </div>
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1438,6 +1489,14 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
                       </td>
                       <td className="text-right text-white font-semibold text-sm py-4">
                         ${campaign.revenue?.toLocaleString() || '0'}
+                      </td>
+                      <td className="text-right text-white text-sm py-4">
+                        <span className={`${
+                          ((campaign.revenue || 0) / (campaign.recipients_count || 1)) > 0.30 ? 'text-green-300' : 
+                          ((campaign.revenue || 0) / (campaign.recipients_count || 1)) > 0.10 ? 'text-yellow-300' : 'text-red-300'
+                        }`}>
+                          ${((campaign.revenue || 0) / (campaign.recipients_count || 1)).toFixed(2)}
+                        </span>
                       </td>
                     </tr>
                   ))}
