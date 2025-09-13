@@ -830,37 +830,7 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
     return sortDirection === 'asc' ? <ArrowUp className="w-4 h-4" /> : <ArrowDown className="w-4 h-4" />
   }
 
-  const renderCampaignsTab = () => {
-    const campaigns = data?.campaigns || []
-    
-    // Calculate total campaign revenue
-    const totalRevenue = campaigns.reduce((sum: number, campaign: any) => sum + (campaign.revenue || 0), 0)
-    
-    // Sort campaigns
-    const sortedCampaigns = [...campaigns].sort((a: any, b: any) => {
-      let aVal = a[sortField]
-      let bVal = b[sortField]
-      
-      // Handle different data types
-      if (typeof aVal === 'string') aVal = aVal.toLowerCase()
-      if (typeof bVal === 'string') bVal = bVal.toLowerCase()
-      
-      if (sortDirection === 'asc') {
-        return aVal < bVal ? -1 : aVal > bVal ? 1 : 0
-      } else {
-        return aVal > bVal ? -1 : aVal < bVal ? 1 : 0
-      }
-    })
-    
-    // Top performing subject lines (by open rate)
-    const topSubjectLines = [...campaigns]
-      .filter((c: any) => c.open_rate > 0)
-      .sort((a: any, b: any) => b.open_rate - a.open_rate)
-      .slice(0, 5)
-    
-    // Subject line insights
-    const subjectInsights = getSubjectLineInsights(campaigns)
-    
+  const getSendTimeAnalysis = (campaigns: any[]) => {
     // Simplified Send time analysis - open rate and click rate only
     const sendTimeAnalysis = campaigns
       .filter((c: any) => c.send_date)
@@ -898,6 +868,43 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
       data.avgOpenRate = data.totalOpenRate / data.count
       data.avgClickRate = data.totalClickRate / data.count
     })
+    
+    return sendTimeAnalysis
+  }
+
+  const renderCampaignsTab = () => {
+    const campaigns = data?.campaigns || []
+    
+    // Calculate total campaign revenue
+    const totalRevenue = campaigns.reduce((sum: number, campaign: any) => sum + (campaign.revenue || 0), 0)
+    
+    // Sort campaigns
+    const sortedCampaigns = [...campaigns].sort((a: any, b: any) => {
+      let aVal = a[sortField]
+      let bVal = b[sortField]
+      
+      // Handle different data types
+      if (typeof aVal === 'string') aVal = aVal.toLowerCase()
+      if (typeof bVal === 'string') bVal = bVal.toLowerCase()
+      
+      if (sortDirection === 'asc') {
+        return aVal < bVal ? -1 : aVal > bVal ? 1 : 0
+      } else {
+        return aVal > bVal ? -1 : aVal < bVal ? 1 : 0
+      }
+    })
+    
+    // Top performing subject lines (by open rate)
+    const topSubjectLines = [...campaigns]
+      .filter((c: any) => c.open_rate > 0)
+      .sort((a: any, b: any) => b.open_rate - a.open_rate)
+      .slice(0, 5)
+    
+    // Subject line insights
+    const subjectInsights = getSubjectLineInsights(campaigns)
+    
+    // Get send time analysis
+    const sendTimeAnalysis = getSendTimeAnalysis(campaigns)
 
     return (
       <div className="space-y-6">
