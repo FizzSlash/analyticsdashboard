@@ -55,18 +55,18 @@ export function generateDateRange(days: number): string[] {
 export function aggregateMetricsByDate(metrics: any[], dateField: string, valueFields: string[]) {
   const aggregated: { [key: string]: any } = {}
   
-  metrics.forEach(metric => {
+  metrics.forEach((metric: any) => {
     const date = metric[dateField]?.split('T')[0] || metric[dateField]
     if (!date) return
     
     if (!aggregated[date]) {
       aggregated[date] = { date }
-      valueFields.forEach(field => {
+      valueFields.forEach((field: string) => {
         aggregated[date][field] = 0
       })
     }
     
-    valueFields.forEach(field => {
+    valueFields.forEach((field: string) => {
       aggregated[date][field] += metric[field] || 0
     })
   })
@@ -80,12 +80,12 @@ export function calculateAverageMetrics(metrics: any[], fields: string[]) {
   if (metrics.length === 0) return {}
   
   const totals: { [key: string]: number } = {}
-  fields.forEach(field => {
-    totals[field] = metrics.reduce((sum, metric) => sum + (metric[field] || 0), 0)
+  fields.forEach((field: string) => {
+    totals[field] = metrics.reduce((sum: number, metric: any) => sum + (metric[field] || 0), 0)
   })
   
   const averages: { [key: string]: number } = {}
-  fields.forEach(field => {
+  fields.forEach((field: string) => {
     averages[field] = totals[field] / metrics.length
   })
   
