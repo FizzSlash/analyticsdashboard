@@ -11,10 +11,11 @@ import {
   CartesianGrid, 
   Tooltip, 
   ResponsiveContainer,
-  ScatterChart,
-  Scatter,
   BarChart,
-  Bar
+  Bar,
+  PieChart,
+  Pie,
+  Cell
 } from 'recharts'
 import { 
   BarChart3, 
@@ -39,7 +40,7 @@ interface ModernDashboardProps {
   data?: any
 }
 
-type TabType = 'dashboard' | 'campaigns' | 'flows' | 'list-growth' | 'deliverability'
+type TabType = 'dashboard' | 'campaigns' | 'flows' | 'subject-lines' | 'list-growth' | 'deliverability'
 
 export function ModernDashboard({ client, data: initialData }: ModernDashboardProps) {
   const [activeTab, setActiveTab] = useState<TabType>('dashboard')
@@ -71,15 +72,6 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
       .slice(-30) // Last 30 data points
   }
 
-  const getScatterPlotData = (campaigns: any[]) => {
-    return campaigns
-      .filter(campaign => campaign.open_rate > 0 && campaign.click_rate > 0)
-      .map(campaign => ({
-        openRate: parseFloat(campaign.open_rate) * 100,
-        clickRate: parseFloat(campaign.click_rate) * 100,
-        name: campaign.campaign_name?.substring(0, 20) + '...' || 'Campaign'
-      }))
-  }
 
   const getFlowTrendData = (flows: any[]) => {
     // For now, create sample weekly data - will be replaced with real weekly aggregation
@@ -106,55 +98,110 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
 
   const getSubjectLineInsights = (campaigns: any[]) => {
     const insights = {
-      withEmoji: { count: 0, avgOpenRate: 0, totalOpens: 0 },
-      withoutEmoji: { count: 0, avgOpenRate: 0, totalOpens: 0 },
-      shortLines: { count: 0, avgOpenRate: 0, totalOpens: 0 }, // <30 chars
-      longLines: { count: 0, avgOpenRate: 0, totalOpens: 0 },  // >50 chars
-      withPersonalization: { count: 0, avgOpenRate: 0, totalOpens: 0 },
-      withUrgency: { count: 0, avgOpenRate: 0, totalOpens: 0 }
+      withEmoji: { count: 0, avgOpenRate: 0, avgClickRate: 0, totalOpens: 0, totalClicks: 0, campaigns: [] },
+      withoutEmoji: { count: 0, avgOpenRate: 0, avgClickRate: 0, totalOpens: 0, totalClicks: 0, campaigns: [] },
+      shortLines: { count: 0, avgOpenRate: 0, avgClickRate: 0, totalOpens: 0, totalClicks: 0, campaigns: [] }, // <30 chars
+      longLines: { count: 0, avgOpenRate: 0, avgClickRate: 0, totalOpens: 0, totalClicks: 0, campaigns: [] },  // >50 chars
+      withPersonalization: { count: 0, avgOpenRate: 0, avgClickRate: 0, totalOpens: 0, totalClicks: 0, campaigns: [] },
+      withUrgency: { count: 0, avgOpenRate: 0, avgClickRate: 0, totalOpens: 0, totalClicks: 0, campaigns: [] },
+      withNumbers: { count: 0, avgOpenRate: 0, avgClickRate: 0, totalOpens: 0, totalClicks: 0, campaigns: [] },
+      withQuestion: { count: 0, avgOpenRate: 0, avgClickRate: 0, totalOpens: 0, totalClicks: 0, campaigns: [] },
+      withBrackets: { count: 0, avgOpenRate: 0, avgClickRate: 0, totalOpens: 0, totalClicks: 0, campaigns: [] }
     }
 
     campaigns.forEach(campaign => {
       const subject = campaign.subject_line?.toLowerCase() || ''
+      const originalSubject = campaign.subject_line || ''
       const openRate = campaign.open_rate || 0
+      const clickRate = campaign.click_rate || 0
       const opens = campaign.opened_count || 0
+      const clicks = campaign.clicked_count || 0
 
       // Emoji analysis
-      const hasEmoji = /[\uD83C-\uDBFF\uDC00-\uDFFF]|[\u2600-\u27FF]/.test(subject)
+      const hasEmoji = /[\uD83C-\uDBFF\uDC00-\uDFFF]|[\u2600-\u27FF]/.test(originalSubject)
       if (hasEmoji) {
         insights.withEmoji.count++
         insights.withEmoji.avgOpenRate += openRate
+        insights.withEmoji.avgClickRate += clickRate
         insights.withEmoji.totalOpens += opens
+        insights.withEmoji.totalClicks += clicks
+        insights.withEmoji.campaigns.push(campaign)
       } else {
         insights.withoutEmoji.count++
         insights.withoutEmoji.avgOpenRate += openRate
+        insights.withoutEmoji.avgClickRate += clickRate
         insights.withoutEmoji.totalOpens += opens
+        insights.withoutEmoji.totalClicks += clicks
+        insights.withoutEmoji.campaigns.push(campaign)
       }
 
       // Length analysis
-      if (subject.length < 30) {
+      if (originalSubject.length < 30) {
         insights.shortLines.count++
         insights.shortLines.avgOpenRate += openRate
+        insights.shortLines.avgClickRate += clickRate
         insights.shortLines.totalOpens += opens
-      } else if (subject.length > 50) {
+        insights.shortLines.totalClicks += clicks
+        insights.shortLines.campaigns.push(campaign)
+      } else if (originalSubject.length > 50) {
         insights.longLines.count++
         insights.longLines.avgOpenRate += openRate
+        insights.longLines.avgClickRate += clickRate
         insights.longLines.totalOpens += opens
+        insights.longLines.totalClicks += clicks
+        insights.longLines.campaigns.push(campaign)
       }
 
       // Personalization analysis
-      if (subject.includes('hi ') || subject.includes('hello ') || subject.includes('hey ') || subject.includes('[name]')) {
+      if (subject.includes('hi ') || subject.includes('hello ') || subject.includes('hey ') || subject.includes('[name]') || subject.includes('your ')) {
         insights.withPersonalization.count++
         insights.withPersonalization.avgOpenRate += openRate
+        insights.withPersonalization.avgClickRate += clickRate
         insights.withPersonalization.totalOpens += opens
+        insights.withPersonalization.totalClicks += clicks
+        insights.withPersonalization.campaigns.push(campaign)
       }
 
       // Urgency analysis
       if (subject.includes('limited') || subject.includes('urgent') || subject.includes('expires') || 
-          subject.includes('last chance') || subject.includes('ending soon') || subject.includes('hurry')) {
+          subject.includes('last chance') || subject.includes('ending soon') || subject.includes('hurry') ||
+          subject.includes('today only') || subject.includes('don\'t miss')) {
         insights.withUrgency.count++
         insights.withUrgency.avgOpenRate += openRate
+        insights.withUrgency.avgClickRate += clickRate
         insights.withUrgency.totalOpens += opens
+        insights.withUrgency.totalClicks += clicks
+        insights.withUrgency.campaigns.push(campaign)
+      }
+
+      // Numbers analysis
+      if (/\d/.test(originalSubject)) {
+        insights.withNumbers.count++
+        insights.withNumbers.avgOpenRate += openRate
+        insights.withNumbers.avgClickRate += clickRate
+        insights.withNumbers.totalOpens += opens
+        insights.withNumbers.totalClicks += clicks
+        insights.withNumbers.campaigns.push(campaign)
+      }
+
+      // Question analysis
+      if (originalSubject.includes('?')) {
+        insights.withQuestion.count++
+        insights.withQuestion.avgOpenRate += openRate
+        insights.withQuestion.avgClickRate += clickRate
+        insights.withQuestion.totalOpens += opens
+        insights.withQuestion.totalClicks += clicks
+        insights.withQuestion.campaigns.push(campaign)
+      }
+
+      // Brackets/special chars analysis
+      if (originalSubject.includes('[') || originalSubject.includes('(') || originalSubject.includes('{')) {
+        insights.withBrackets.count++
+        insights.withBrackets.avgOpenRate += openRate
+        insights.withBrackets.avgClickRate += clickRate
+        insights.withBrackets.totalOpens += opens
+        insights.withBrackets.totalClicks += clicks
+        insights.withBrackets.campaigns.push(campaign)
       }
     })
 
@@ -162,16 +209,89 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
     Object.values(insights).forEach((insight: any) => {
       if (insight.count > 0) {
         insight.avgOpenRate = (insight.avgOpenRate / insight.count) * 100
+        insight.avgClickRate = (insight.avgClickRate / insight.count) * 100
       }
     })
 
     return insights
   }
 
+  const getSubjectLineBarChartData = (campaigns: any[], metric: 'open_rate' | 'click_rate' = 'open_rate') => {
+    // Group campaigns by subject line and calculate average performance
+    const subjectLinePerformance = campaigns
+      .filter(campaign => campaign.subject_line && campaign[metric] > 0)
+      .reduce((acc: any, campaign: any) => {
+        const subject = campaign.subject_line
+        if (!acc[subject]) {
+          acc[subject] = {
+            subject_line: subject,
+            campaigns: [],
+            total_opens: 0,
+            total_clicks: 0,
+            total_recipients: 0,
+            revenue: 0
+          }
+        }
+        acc[subject].campaigns.push(campaign)
+        acc[subject].total_opens += campaign.opened_count || 0
+        acc[subject].total_clicks += campaign.clicked_count || 0  
+        acc[subject].total_recipients += campaign.recipients_count || 0
+        acc[subject].revenue += campaign.revenue || 0
+        return acc
+      }, {})
+
+    // Calculate averages and format for chart
+    const chartData = Object.values(subjectLinePerformance).map((data: any) => {
+      const avgOpenRate = data.total_recipients > 0 ? (data.total_opens / data.total_recipients) * 100 : 0
+      const avgClickRate = data.total_recipients > 0 ? (data.total_clicks / data.total_recipients) * 100 : 0
+      return {
+        name: data.subject_line.length > 40 ? data.subject_line.substring(0, 37) + '...' : data.subject_line,
+        fullName: data.subject_line,
+        open_rate: avgOpenRate,
+        click_rate: avgClickRate,
+        campaigns_count: data.campaigns.length,
+        total_recipients: data.total_recipients,
+        revenue: data.revenue
+      }
+    })
+
+    // Sort by the selected metric and return top 15
+    return chartData
+      .sort((a, b) => b[metric] - a[metric])
+      .slice(0, 15)
+  }
+
+  const getCampaignsPieChartData = (campaigns: any[]) => {
+    // Group campaigns by status or type for pie chart
+    const statusData = campaigns.reduce((acc: any, campaign: any) => {
+      const status = campaign.campaign_status || 'Unknown'
+      if (!acc[status]) {
+        acc[status] = { 
+          name: status, 
+          value: 0, 
+          revenue: 0, 
+          campaigns: [] 
+        }
+      }
+      acc[status].value += 1
+      acc[status].revenue += campaign.revenue || 0
+      acc[status].campaigns.push(campaign)
+      return acc
+    }, {})
+
+    const colors = ['#60A5FA', '#34D399', '#FBBF24', '#F87171', '#A78BFA', '#FB7185']
+    
+    return Object.values(statusData).map((item: any, index: number) => ({
+      ...item,
+      fill: colors[index % colors.length]
+    }))
+  }
+
   const tabs = [
     { id: 'dashboard', label: 'Overview', icon: BarChart3 },
     { id: 'campaigns', label: 'Campaigns', icon: Mail },
     { id: 'flows', label: 'Flows', icon: Zap },
+    { id: 'subject-lines', label: 'Subject Lines', icon: Eye },
     { id: 'list-growth', label: 'List Growth', icon: Users },
     { id: 'deliverability', label: 'Deliverability', icon: Shield }
   ]
@@ -357,6 +477,224 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
     </div>
   )
 
+  const renderSubjectLinesTab = () => {
+    const campaigns = data?.campaigns || []
+    const subjectInsights = getSubjectLineInsights(campaigns)
+    const openRateData = getSubjectLineBarChartData(campaigns, 'open_rate')
+    const clickRateData = getSubjectLineBarChartData(campaigns, 'click_rate')
+
+    // Smart insights based on data
+    const getSmartInsights = () => {
+      const insights = []
+      
+      if (subjectInsights.withEmoji.avgOpenRate > subjectInsights.withoutEmoji.avgOpenRate) {
+        insights.push(`📧 Subject lines with emojis perform ${(subjectInsights.withEmoji.avgOpenRate - subjectInsights.withoutEmoji.avgOpenRate).toFixed(1)}% better than those without`)
+      }
+      
+      if (subjectInsights.shortLines.avgOpenRate > subjectInsights.longLines.avgOpenRate && subjectInsights.shortLines.count > 0) {
+        insights.push(`📏 Short subject lines (<30 chars) have ${subjectInsights.shortLines.avgOpenRate.toFixed(1)}% open rate vs ${subjectInsights.longLines.avgOpenRate.toFixed(1)}% for longer ones`)
+      }
+      
+      if (subjectInsights.withPersonalization.count > 0) {
+        insights.push(`👤 Personalized subject lines average ${subjectInsights.withPersonalization.avgOpenRate.toFixed(1)}% open rate across ${subjectInsights.withPersonalization.count} campaigns`)
+      }
+      
+      if (subjectInsights.withUrgency.count > 0) {
+        insights.push(`⚡ Urgency-driven subject lines generate ${subjectInsights.withUrgency.avgOpenRate.toFixed(1)}% open rate with ${subjectInsights.withUrgency.avgClickRate.toFixed(1)}% click rate`)
+      }
+
+      return insights.slice(0, 3) // Top 3 insights
+    }
+
+    return (
+      <div className="space-y-6">
+        {/* Header with Smart Insights */}
+        <div className="bg-white/10 backdrop-blur-md border-white/20 rounded-lg p-6">
+          <h2 className="text-white text-xl font-bold mb-4">✨ Smart Subject Line Insights</h2>
+          <div className="space-y-2">
+            {getSmartInsights().map((insight, index) => (
+              <p key={index} className="text-white/90 text-sm flex items-start gap-2">
+                <span className="text-blue-300 font-medium">•</span>
+                {insight}
+              </p>
+            ))}
+          </div>
+        </div>
+
+        {/* Subject Line Performance Charts */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Open Rate Analysis */}
+          <Card className="bg-white/10 backdrop-blur-md border-white/20">
+            <CardHeader>
+              <CardTitle className="text-white flex items-center gap-2">
+                <Eye className="w-5 h-5" />
+                Open Rate Performance
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-80">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={openRateData}
+                    layout="horizontal"
+                    margin={{ top: 5, right: 30, left: 5, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+                    <XAxis 
+                      type="number" 
+                      tick={{ fill: 'rgba(255,255,255,0.7)', fontSize: 11 }}
+                      axisLine={{ stroke: 'rgba(255,255,255,0.2)' }}
+                      domain={[0, 'dataMax + 5']}
+                    />
+                    <YAxis 
+                      type="category" 
+                      dataKey="name"
+                      tick={{ fill: 'rgba(255,255,255,0.7)', fontSize: 10 }}
+                      axisLine={{ stroke: 'rgba(255,255,255,0.2)' }}
+                      width={200}
+                    />
+                    <Tooltip 
+                      contentStyle={{
+                        backgroundColor: 'rgba(0,0,0,0.9)',
+                        border: '1px solid rgba(255,255,255,0.2)',
+                        borderRadius: '8px',
+                        color: 'white'
+                      }}
+                      formatter={(value: number, name: string) => [
+                        `${value.toFixed(1)}%`, 'Open Rate'
+                      ]}
+                      labelFormatter={(label: string, payload: any) => {
+                        const data = payload[0]?.payload
+                        return (
+                          <div>
+                            <div className="font-medium">{data?.fullName}</div>
+                            <div className="text-xs text-gray-300">
+                              {data?.campaigns_count} campaigns • {data?.total_recipients.toLocaleString()} recipients
+                            </div>
+                          </div>
+                        )
+                      }}
+                    />
+                    <Bar 
+                      dataKey="open_rate" 
+                      fill="#60A5FA"
+                      radius={[0, 4, 4, 0]}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Click Rate Analysis */}
+          <Card className="bg-white/10 backdrop-blur-md border-white/20">
+            <CardHeader>
+              <CardTitle className="text-white flex items-center gap-2">
+                <MousePointer className="w-5 h-5" />
+                Click Rate Performance
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-80">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={clickRateData}
+                    layout="horizontal"
+                    margin={{ top: 5, right: 30, left: 5, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+                    <XAxis 
+                      type="number" 
+                      tick={{ fill: 'rgba(255,255,255,0.7)', fontSize: 11 }}
+                      axisLine={{ stroke: 'rgba(255,255,255,0.2)' }}
+                      domain={[0, 'dataMax + 1']}
+                    />
+                    <YAxis 
+                      type="category" 
+                      dataKey="name"
+                      tick={{ fill: 'rgba(255,255,255,0.7)', fontSize: 10 }}
+                      axisLine={{ stroke: 'rgba(255,255,255,0.2)' }}
+                      width={200}
+                    />
+                    <Tooltip 
+                      contentStyle={{
+                        backgroundColor: 'rgba(0,0,0,0.9)',
+                        border: '1px solid rgba(255,255,255,0.2)',
+                        borderRadius: '8px',
+                        color: 'white'
+                      }}
+                      formatter={(value: number) => [`${value.toFixed(2)}%`, 'Click Rate']}
+                      labelFormatter={(label: string, payload: any) => {
+                        const data = payload[0]?.payload
+                        return (
+                          <div>
+                            <div className="font-medium">{data?.fullName}</div>
+                            <div className="text-xs text-gray-300">
+                              Revenue: ${data?.revenue.toLocaleString()} • {data?.campaigns_count} campaigns
+                            </div>
+                          </div>
+                        )
+                      }}
+                    />
+                    <Bar 
+                      dataKey="click_rate" 
+                      fill="#A78BFA"
+                      radius={[0, 4, 4, 0]}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Category Analysis Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {Object.entries(subjectInsights).map(([key, insight]: [string, any]) => {
+            if (insight.count === 0) return null
+            
+            const categoryNames: Record<string, string> = {
+              withEmoji: '📧 With Emojis',
+              withPersonalization: '👤 Personalized',
+              withUrgency: '⚡ Urgency Words',
+              withNumbers: '🔢 With Numbers',
+              withQuestion: '❓ Questions',
+              shortLines: '📏 Short (<30 chars)',
+              withBrackets: '🔲 With Brackets'
+            }
+
+            if (!categoryNames[key]) return null
+
+            return (
+              <Card key={key} className="bg-white/10 backdrop-blur-md border-white/20">
+                <CardContent className="p-4">
+                  <div className="flex justify-between items-center mb-2">
+                    <h3 className="text-white font-medium text-sm">{categoryNames[key]}</h3>
+                    <span className="text-white/60 text-xs">{insight.count} campaigns</span>
+                  </div>
+                  <div className="space-y-1">
+                    <div className="flex justify-between items-center">
+                      <span className="text-white/80 text-xs">Open Rate</span>
+                      <span className="text-green-300 font-semibold text-sm">
+                        {insight.avgOpenRate.toFixed(1)}%
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-white/80 text-xs">Click Rate</span>
+                      <span className="text-purple-300 font-semibold text-sm">
+                        {insight.avgClickRate.toFixed(2)}%
+                      </span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )
+          })}
+        </div>
+      </div>
+    )
+  }
+
   const renderCampaignsTab = () => {
     const campaigns = data?.campaigns || []
     
@@ -388,7 +726,7 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
     // Subject line insights
     const subjectInsights = getSubjectLineInsights(campaigns)
     
-    // Send time analysis
+    // Enhanced Send time analysis with click rate and revenue
     const sendTimeAnalysis = campaigns
       .filter((c: any) => c.send_date)
       .reduce((acc: any, campaign: any) => {
@@ -399,14 +737,18 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
         const hourKey = `${hour}:00`
         const dayKey = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][dayOfWeek]
         
-        if (!acc.byHour[hourKey]) acc.byHour[hourKey] = { count: 0, totalOpenRate: 0 }
-        if (!acc.byDay[dayKey]) acc.byDay[dayKey] = { count: 0, totalOpenRate: 0 }
+        if (!acc.byHour[hourKey]) acc.byHour[hourKey] = { count: 0, totalOpenRate: 0, totalClickRate: 0, totalRevenue: 0 }
+        if (!acc.byDay[dayKey]) acc.byDay[dayKey] = { count: 0, totalOpenRate: 0, totalClickRate: 0, totalRevenue: 0 }
         
         acc.byHour[hourKey].count++
         acc.byHour[hourKey].totalOpenRate += campaign.open_rate || 0
+        acc.byHour[hourKey].totalClickRate += campaign.click_rate || 0
+        acc.byHour[hourKey].totalRevenue += campaign.revenue || 0
         
         acc.byDay[dayKey].count++
         acc.byDay[dayKey].totalOpenRate += campaign.open_rate || 0
+        acc.byDay[dayKey].totalClickRate += campaign.click_rate || 0
+        acc.byDay[dayKey].totalRevenue += campaign.revenue || 0
         
         return acc
       }, { byHour: {}, byDay: {} })
@@ -415,11 +757,15 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
     Object.keys(sendTimeAnalysis.byHour).forEach(hour => {
       const data = sendTimeAnalysis.byHour[hour]
       data.avgOpenRate = data.totalOpenRate / data.count
+      data.avgClickRate = data.totalClickRate / data.count
+      data.avgRevenue = data.totalRevenue / data.count
     })
     
     Object.keys(sendTimeAnalysis.byDay).forEach(day => {
       const data = sendTimeAnalysis.byDay[day]
       data.avgOpenRate = data.totalOpenRate / data.count
+      data.avgClickRate = data.totalClickRate / data.count
+      data.avgRevenue = data.totalRevenue / data.count
     })
     
     const handleSort = (field: string) => {
@@ -537,239 +883,325 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
             </CardContent>
           </Card>
 
-          {/* Open Rate vs Click Rate Scatter Plot */}
+          {/* Campaigns Distribution Pie Chart */}
           <Card className="bg-white/10 backdrop-blur-md border-white/20">
             <CardHeader>
               <CardTitle className="text-white flex items-center gap-2">
-                <Target className="w-5 h-5" />
-                Open Rate vs Click Rate Analysis
+                <BarChart3 className="w-5 h-5" />
+                Top Sent Campaigns
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <ScatterChart data={getScatterPlotData(campaigns)}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                    <XAxis 
-                      type="number"
-                      dataKey="openRate"
-                      name="Open Rate"
-                      unit="%"
-                      tick={{ fill: 'rgba(255,255,255,0.7)', fontSize: 12 }}
-                      axisLine={{ stroke: 'rgba(255,255,255,0.2)' }}
-                      domain={[0, 'dataMax + 5']}
-                    />
-                    <YAxis 
-                      type="number"
-                      dataKey="clickRate"
-                      name="Click Rate"
-                      unit="%"
-                      tick={{ fill: 'rgba(255,255,255,0.7)', fontSize: 12 }}
-                      axisLine={{ stroke: 'rgba(255,255,255,0.2)' }}
-                      domain={[0, 'dataMax + 2']}
-                    />
-                    <Tooltip 
-                      contentStyle={{
-                        backgroundColor: 'rgba(0,0,0,0.8)',
-                        border: '1px solid rgba(255,255,255,0.2)',
-                        borderRadius: '8px',
-                        color: 'white'
-                      }}
-                      formatter={(value: number, name: string) => [
-                        `${value.toFixed(1)}%`, 
-                        name === 'openRate' ? 'Open Rate' : 'Click Rate'
-                      ]}
-                    />
-                    <Scatter 
-                      dataKey="clickRate" 
-                      fill="#A78BFA"
-                      fillOpacity={0.8}
-                      stroke="#A78BFA"
-                      strokeWidth={2}
-                    />
-                  </ScatterChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Analysis Cards Row */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Subject Line Intelligence */}
-          <Card className="bg-white/10 backdrop-blur-md border-white/20">
-            <CardHeader>
-              <CardTitle className="text-white flex items-center gap-2">
-                <Eye className="w-5 h-5" />
-                Subject Line Intelligence
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {/* Emoji Analysis */}
-                <div className="flex justify-between items-center p-3 bg-white/5 rounded-lg">
-                  <div>
-                    <div className="text-white text-sm font-medium">📧 With Emojis</div>
-                    <div className="text-white/60 text-xs">{subjectInsights.withEmoji.count} campaigns</div>
-                  </div>
-                  <div className="text-right">
-                    <div className={`text-sm font-semibold ${
-                      subjectInsights.withEmoji.avgOpenRate > subjectInsights.withoutEmoji.avgOpenRate 
-                        ? 'text-green-300' : 'text-red-300'
-                    }`}>
-                      {subjectInsights.withEmoji.avgOpenRate.toFixed(1)}%
-                    </div>
-                    <div className="text-white/60 text-xs">vs {subjectInsights.withoutEmoji.avgOpenRate.toFixed(1)}% without</div>
-                  </div>
+              <div className="flex">
+                {/* Pie Chart */}
+                <div className="w-1/2">
+                  <ResponsiveContainer width="100%" height={240}>
+                    <PieChart>
+                      <Pie
+                        data={getCampaignsPieChartData(campaigns).slice(0, 6)}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={40}
+                        outerRadius={80}
+                        dataKey="value"
+                      >
+                        {getCampaignsPieChartData(campaigns).slice(0, 6).map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.fill} />
+                        ))}
+                      </Pie>
+                      <Tooltip 
+                        contentStyle={{
+                          backgroundColor: 'rgba(0,0,0,0.9)',
+                          border: '1px solid rgba(255,255,255,0.2)',
+                          borderRadius: '8px',
+                          color: 'white'
+                        }}
+                        formatter={(value: number, name: string, props: any) => [
+                          `${value} campaigns`, props.payload.name
+                        ]}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
                 </div>
-
-                {/* Length Analysis */}
-                <div className="flex justify-between items-center p-3 bg-white/5 rounded-lg">
-                  <div>
-                    <div className="text-white text-sm font-medium">📏 Short Lines</div>
-                    <div className="text-white/60 text-xs">&lt;30 chars • {subjectInsights.shortLines.count} campaigns</div>
-                  </div>
-                  <div className="text-right">
-                    <div className={`text-sm font-semibold ${
-                      subjectInsights.shortLines.avgOpenRate > subjectInsights.longLines.avgOpenRate 
-                        ? 'text-green-300' : 'text-red-300'
-                    }`}>
-                      {subjectInsights.shortLines.avgOpenRate.toFixed(1)}%
-                    </div>
-                    <div className="text-white/60 text-xs">vs {subjectInsights.longLines.avgOpenRate.toFixed(1)}% long</div>
-                  </div>
-                </div>
-
-                {/* Personalization Analysis */}
-                <div className="flex justify-between items-center p-3 bg-white/5 rounded-lg">
-                  <div>
-                    <div className="text-white text-sm font-medium">👤 Personalized</div>
-                    <div className="text-white/60 text-xs">{subjectInsights.withPersonalization.count} campaigns</div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-green-300 text-sm font-semibold">
-                      {subjectInsights.withPersonalization.avgOpenRate.toFixed(1)}%
-                    </div>
-                    <div className="text-white/60 text-xs">open rate</div>
-                  </div>
-                </div>
-
-                {/* Urgency Analysis */}
-                <div className="flex justify-between items-center p-3 bg-white/5 rounded-lg">
-                  <div>
-                    <div className="text-white text-sm font-medium">⚡ Urgency Words</div>
-                    <div className="text-white/60 text-xs">{subjectInsights.withUrgency.count} campaigns</div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-purple-300 text-sm font-semibold">
-                      {subjectInsights.withUrgency.avgOpenRate.toFixed(1)}%
-                    </div>
-                    <div className="text-white/60 text-xs">avg performance</div>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          {/* Top Performing Subject Lines */}
-          <Card className="bg-white/10 backdrop-blur-md border-white/20">
-            <CardHeader>
-              <CardTitle className="text-white flex items-center gap-2">
-                <TrendingUp className="w-5 h-5" />
-                Top Performing Subject Lines
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {topSubjectLines.map((campaign: any, index: number) => (
-                  <div key={campaign.id} className="flex items-center justify-between py-3 border-b border-white/10 last:border-b-0">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className="bg-white/20 text-white text-xs font-bold px-2 py-1 rounded">
-                          #{index + 1}
-                        </span>
-                        <div>
-                          <p className="text-white font-medium text-sm">{campaign.subject_line}</p>
-                          <p className="text-white/60 text-xs">{campaign.campaign_name}</p>
-                          <p className="text-white/40 text-xs mt-1">
-                            👥 {campaign.recipients_count?.toLocaleString()} recipients • 💰 ${campaign.revenue?.toLocaleString() || '0'}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="text-right ml-4">
-                      <p className="text-white font-semibold text-sm">{(campaign.open_rate * 100).toFixed(1)}%</p>
-                      <p className="text-white/60 text-xs">{(campaign.click_rate * 100).toFixed(1)}% CTR</p>
-                      <p className="text-white/40 text-xs">{campaign.opened_count?.toLocaleString()} opens</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Send Time Analysis */}
-          <Card className="bg-white/10 backdrop-blur-md border-white/20">
-            <CardHeader>
-              <CardTitle className="text-white flex items-center gap-2">
-                <Calendar className="w-5 h-5" />
-                Send Time Analysis
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {/* Best Day Analysis */}
-                <div>
-                  <p className="text-white/80 text-sm font-medium mb-2">Best Performing Days</p>
+                
+                {/* Campaign List */}
+                <div className="w-1/2 pl-4">
                   <div className="space-y-2">
-                    {Object.entries(sendTimeAnalysis.byDay)
-                      .sort(([,a]: any, [,b]: any) => b.avgOpenRate - a.avgOpenRate)
-                      .slice(0, 3)
-                      .map(([day, data]: any) => (
-                        <div key={day} className="flex justify-between items-center">
-                          <span className="text-white/70 text-sm">{day}</span>
-                          <div className="text-right">
-                            <span className="text-white font-semibold text-sm">
-                              {(data.avgOpenRate * 100).toFixed(1)}%
-                            </span>
-                            <span className="text-white/60 text-xs ml-2">({data.count} campaigns)</span>
+                    {campaigns
+                      .sort((a, b) => (b.recipients_count || 0) - (a.recipients_count || 0))
+                      .slice(0, 5)
+                      .map((campaign: any, index: number) => (
+                        <div key={campaign.id} className="flex items-center justify-between py-2 border-b border-white/10 last:border-b-0">
+                          <div className="flex-1">
+                            <p className="text-white font-medium text-sm truncate">
+                              {campaign.campaign_name}
+                            </p>
+                            <p className="text-white/60 text-xs">
+                              {new Date(campaign.send_date).toLocaleDateString()} • {campaign.recipients_count?.toLocaleString()} sent
+                            </p>
+                          </div>
+                          <div className="text-right ml-2">
+                            <p className="text-white font-semibold text-sm">
+                              {((campaign.opened_count || 0) / (campaign.recipients_count || 1) * 100).toFixed(1)}%
+                            </p>
+                            <p className="text-white/60 text-xs">
+                              ${(campaign.revenue || 0).toLocaleString()}
+                            </p>
                           </div>
                         </div>
                       ))}
                   </div>
                 </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
-                {/* Complete Hour Analysis - Show ALL times */}
-                <div className="border-t border-white/20 pt-4">
-                  <p className="text-white/80 text-sm font-medium mb-2">Send Time Performance (All Hours)</p>
-                  <div className="grid grid-cols-3 gap-2 max-h-48 overflow-y-auto">
-                    {Object.entries(sendTimeAnalysis.byHour)
+        {/* Enhanced Send Time Analysis */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+          {/* Enhanced Send Time Analysis */}
+          <Card className="bg-white/10 backdrop-blur-md border-white/20">
+            <CardHeader>
+              <CardTitle className="text-white flex items-center gap-2">
+                <Calendar className="w-5 h-5" />
+                📈 Send Time Performance Analysis
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                {/* Best Performing Days with enhanced data */}
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-white font-medium text-sm">🗓️ Best Days of the Week</p>
+                    <span className="text-white/60 text-xs">Open Rate • Click Rate • Revenue</span>
+                  </div>
+                  <div className="space-y-3">
+                    {Object.entries(sendTimeAnalysis.byDay)
                       .sort(([,a]: any, [,b]: any) => b.avgOpenRate - a.avgOpenRate)
-                      .map(([hour, data]: any, index: number) => {
-                        const isTop3 = index < 3
-                        const isBottom3 = index >= Object.keys(sendTimeAnalysis.byHour).length - 3
+                      .slice(0, 7)
+                      .map(([day, data]: any, index: number) => {
+                        const isTop = index < 2
+                        const isBottom = index >= 5
                         return (
-                          <div key={hour} className={`flex justify-between items-center p-2 rounded ${
-                            isTop3 ? 'bg-green-500/20 border border-green-500/30' :
-                            isBottom3 ? 'bg-red-500/20 border border-red-500/30' :
+                          <div key={day} className={`flex items-center justify-between p-3 rounded-lg ${
+                            isTop ? 'bg-green-500/20 border border-green-500/30' :
+                            isBottom ? 'bg-red-500/20 border border-red-500/30' :
                             'bg-white/5'
                           }`}>
-                            <span className="text-white/70 text-xs">{hour}</span>
-                            <div className="text-right">
-                              <span className={`font-semibold text-xs ${
-                                isTop3 ? 'text-green-300' :
-                                isBottom3 ? 'text-red-300' :
-                                'text-white'
+                            <div className="flex items-center gap-3">
+                              <span className={`text-sm font-medium ${
+                                isTop ? 'text-green-300' : isBottom ? 'text-red-300' : 'text-white'
                               }`}>
-                                {(data.avgOpenRate * 100).toFixed(1)}%
+                                {day}
                               </span>
-                              <div className="text-white/40 text-xs">({data.count})</div>
+                              <span className="text-white/60 text-xs">
+                                {data.count} campaigns
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-4 text-xs">
+                              <div className="text-center">
+                                <div className={`font-semibold ${
+                                  isTop ? 'text-green-300' : isBottom ? 'text-red-300' : 'text-white'
+                                }`}>
+                                  {(data.avgOpenRate * 100).toFixed(1)}%
+                                </div>
+                                <div className="text-white/50">Open</div>
+                              </div>
+                              <div className="text-center">
+                                <div className={`font-semibold ${
+                                  isTop ? 'text-green-300' : isBottom ? 'text-red-300' : 'text-white'
+                                }`}>
+                                  {((data.avgClickRate || 0) * 100).toFixed(2)}%
+                                </div>
+                                <div className="text-white/50">Click</div>
+                              </div>
+                              <div className="text-center">
+                                <div className={`font-semibold ${
+                                  isTop ? 'text-green-300' : isBottom ? 'text-red-300' : 'text-white'
+                                }`}>
+                                  ${Math.round((data.avgRevenue || 0)).toLocaleString()}
+                                </div>
+                                <div className="text-white/50">Rev</div>
+                              </div>
                             </div>
                           </div>
                         )
                       })}
                   </div>
-                  <div className="mt-3 text-white/60 text-xs">
-                    🟢 Top performers • 🔴 Underperformers • Compare all send times
+                </div>
+
+                {/* Hour Analysis with better visualization */}
+                <div className="border-t border-white/20 pt-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-white font-medium text-sm">🕐 Peak Performance Hours</p>
+                    <span className="text-white/60 text-xs">Top 8 performing hours</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    {Object.entries(sendTimeAnalysis.byHour)
+                      .sort(([,a]: any, [,b]: any) => b.avgOpenRate - a.avgOpenRate)
+                      .slice(0, 8)
+                      .map(([hour, data]: any, index: number) => {
+                        const isTop3 = index < 3
+                        const hourNum = parseInt(hour.split(':')[0])
+                        const timeOfDay = hourNum < 12 ? 'AM' : 'PM'
+                        const displayHour = hourNum === 0 ? 12 : hourNum > 12 ? hourNum - 12 : hourNum
+                        
+                        return (
+                          <div key={hour} className={`flex items-center justify-between p-3 rounded-lg ${
+                            isTop3 ? 'bg-gradient-to-r from-blue-500/20 to-purple-500/20 border border-blue-500/30' :
+                            'bg-white/5'
+                          }`}>
+                            <div>
+                              <div className={`text-sm font-bold ${
+                                isTop3 ? 'text-blue-300' : 'text-white'
+                              }`}>
+                                {displayHour}:00 {timeOfDay}
+                              </div>
+                              <div className="text-white/60 text-xs">
+                                {data.count} sent
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <div className={`text-sm font-semibold ${
+                                isTop3 ? 'text-blue-300' : 'text-white'
+                              }`}>
+                                {(data.avgOpenRate * 100).toFixed(1)}%
+                              </div>
+                              <div className="text-white/60 text-xs">
+                                ${Math.round((data.avgRevenue || 0)).toLocaleString()}
+                              </div>
+                            </div>
+                          </div>
+                        )
+                      })}
+                  </div>
+                  <div className="mt-3 flex items-center gap-4 text-xs text-white/60">
+                    <span>🔵 Top performers</span>
+                    <span>📊 Revenue per campaign included</span>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Campaign Performance Breakdown */}
+          <Card className="bg-white/10 backdrop-blur-md border-white/20">
+            <CardHeader>
+              <CardTitle className="text-white flex items-center gap-2">
+                <TrendingUp className="w-5 h-5" />
+                📊 Performance Breakdown
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                {/* Performance Tiers */}
+                <div>
+                  <p className="text-white font-medium text-sm mb-3">🎯 Campaign Performance Tiers</p>
+                  <div className="space-y-3">
+                    {(() => {
+                      const highPerformers = campaigns.filter((c: any) => (c.open_rate || 0) > 0.4)
+                      const mediumPerformers = campaigns.filter((c: any) => (c.open_rate || 0) > 0.2 && (c.open_rate || 0) <= 0.4)
+                      const lowPerformers = campaigns.filter((c: any) => (c.open_rate || 0) <= 0.2)
+                      
+                      return [
+                        {
+                          label: 'High Performers',
+                          icon: '🔥',
+                          campaigns: highPerformers,
+                          color: 'text-green-300',
+                          bg: 'bg-green-500/20 border-green-500/30'
+                        },
+                        {
+                          label: 'Medium Performers', 
+                          icon: '⚡',
+                          campaigns: mediumPerformers,
+                          color: 'text-yellow-300',
+                          bg: 'bg-yellow-500/20 border-yellow-500/30'
+                        },
+                        {
+                          label: 'Needs Improvement',
+                          icon: '📈',
+                          campaigns: lowPerformers,
+                          color: 'text-red-300',
+                          bg: 'bg-red-500/20 border-red-500/30'
+                        }
+                      ]
+                    })().map(tier => (
+                      <div key={tier.label} className={`flex items-center justify-between p-3 rounded-lg border ${tier.bg}`}>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm">{tier.icon}</span>
+                          <div>
+                            <span className={`text-sm font-medium ${tier.color}`}>
+                              {tier.label}
+                            </span>
+                            <div className="text-white/60 text-xs">
+                              {tier.campaigns.length} campaigns
+                            </div>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className={`text-sm font-semibold ${tier.color}`}>
+                            {tier.campaigns.length > 0 
+                              ? ((tier.campaigns.reduce((sum: number, c: any) => sum + (c.open_rate || 0), 0) / tier.campaigns.length) * 100).toFixed(1)
+                              : '0.0'
+                            }%
+                          </div>
+                          <div className="text-white/60 text-xs">
+                            ${tier.campaigns.reduce((sum: number, c: any) => sum + (c.revenue || 0), 0).toLocaleString()}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Revenue Insights */}
+                <div className="border-t border-white/20 pt-4">
+                  <p className="text-white font-medium text-sm mb-3">💰 Revenue Insights</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-white/5 p-3 rounded-lg">
+                      <div className="text-white/60 text-xs mb-1">Highest Revenue</div>
+                      <div className="text-white font-semibold text-sm">
+                        ${Math.max(...campaigns.map((c: any) => c.revenue || 0)).toLocaleString()}
+                      </div>
+                      <div className="text-white/50 text-xs mt-1">Single campaign</div>
+                    </div>
+                    <div className="bg-white/5 p-3 rounded-lg">
+                      <div className="text-white/60 text-xs mb-1">Avg per Campaign</div>
+                      <div className="text-white font-semibold text-sm">
+                        ${campaigns.length > 0 ? Math.round(totalRevenue / campaigns.length).toLocaleString() : '0'}
+                      </div>
+                      <div className="text-white/50 text-xs mt-1">Revenue average</div>
+                    </div>
+                    <div className="bg-white/5 p-3 rounded-lg">
+                      <div className="text-white/60 text-xs mb-1">Top 10% Generate</div>
+                      <div className="text-white font-semibold text-sm">
+                        ${campaigns
+                          .sort((a: any, b: any) => (b.revenue || 0) - (a.revenue || 0))
+                          .slice(0, Math.max(1, Math.ceil(campaigns.length * 0.1)))
+                          .reduce((sum: number, c: any) => sum + (c.revenue || 0), 0)
+                          .toLocaleString()
+                        }
+                      </div>
+                      <div className="text-white/50 text-xs mt-1">
+                        {((campaigns
+                          .sort((a: any, b: any) => (b.revenue || 0) - (a.revenue || 0))
+                          .slice(0, Math.max(1, Math.ceil(campaigns.length * 0.1)))
+                          .reduce((sum: number, c: any) => sum + (c.revenue || 0), 0) / totalRevenue) * 100).toFixed(0)
+                        }% of total
+                      </div>
+                    </div>
+                    <div className="bg-white/5 p-3 rounded-lg">
+                      <div className="text-white/60 text-xs mb-1">Revenue/Recipient</div>
+                      <div className="text-white font-semibold text-sm">
+                        ${campaigns.length > 0 
+                          ? (totalRevenue / campaigns.reduce((sum: number, c: any) => sum + (c.recipients_count || 0), 0)).toFixed(2)
+                          : '0.00'
+                        }
+                      </div>
+                      <div className="text-white/50 text-xs mt-1">Per recipient</div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1369,6 +1801,7 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
             {activeTab === 'dashboard' && renderOverviewTab()}
             {activeTab === 'campaigns' && renderCampaignsTab()}
             {activeTab === 'flows' && renderFlowsTab()}
+            {activeTab === 'subject-lines' && renderSubjectLinesTab()}
             {activeTab === 'list-growth' && renderListGrowthTab()}
             {activeTab === 'deliverability' && renderDeliverabilityTab()}
           </>
