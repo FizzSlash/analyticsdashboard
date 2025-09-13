@@ -53,7 +53,6 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
   const [expandedFlows, setExpandedFlows] = useState<Set<string>>(new Set())
   const [flowEmails, setFlowEmails] = useState<{ [flowId: string]: any[] }>({})
   const [analysisTab, setAnalysisTab] = useState<'conversion' | 'aov'>('conversion')
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
 
   // Chart data processing functions
   const getRevenueRecipientsComboData = (campaigns: any[], timeframe: number) => {
@@ -137,16 +136,16 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
     const weeklyData: { [week: string]: { revenue: number, opens: number } } = {}
     
     // Generate last 8 weeks of data
-    for (let i = 7; i >= 0; i--) {
-      const date = new Date()
-      date.setDate(date.getDate() - (i * 7))
-      const weekKey = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-      
-      weeklyData[weekKey] = {
+      for (let i = 7; i >= 0; i--) {
+        const date = new Date()
+        date.setDate(date.getDate() - (i * 7))
+        const weekKey = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+        
+        weeklyData[weekKey] = {
           revenue: flows.reduce((sum: number, flow: any) => sum + (flow.revenue || 0), 0) / 8, // Distribute evenly for now
           opens: flows.reduce((sum: number, flow: any) => sum + (flow.opens || 0), 0) / 8
+        }
       }
-    }
     
     return Object.entries(weeklyData).map(([week, data]) => ({
       week,
@@ -322,47 +321,65 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
 
 
   const getConversionEfficiencyData = (campaigns: any[]) => {
-    // Calculate brand averages for relative thresholds
-    const totalClicks = campaigns.reduce((sum: number, c: any) => sum + (c.clicked_count || 0), 0)
-    const totalOrders = campaigns.reduce((sum: number, c: any) => sum + (c.orders_count || 0), 0)
-    const brandAvgClickToOrder = totalClicks > 0 ? (totalOrders / totalClicks) * 100 : 0
-    
     const efficiency = {
-      highConverters: { campaigns: [] as any[], totalRevenue: 0, totalClicks: 0, totalOrders: 0, avgConversion: 0 },
-      standardConverters: { campaigns: [] as any[], totalRevenue: 0, totalClicks: 0, totalOrders: 0, avgConversion: 0 },
-      needsWork: { campaigns: [] as any[], totalRevenue: 0, totalClicks: 0, totalOrders: 0, avgConversion: 0 }
+      highConverters: { campaigns: [] as any[], totalRevenue: 0, totalClicks: 0, totalOrders: 0 },
+      windowShoppers: { campaigns: [] as any[], totalRevenue: 0, totalClicks: 0, totalOrders: 0 },
+      instantBuyers: { campaigns: [] as any[], totalRevenue: 0, totalClicks: 0, totalOrders: 0 }
     }
     
     campaigns.forEach((campaign: any) => {
       if (campaign.clicked_count > 0 && campaign.orders_count >= 0) {
         const clickToOrderRate = (campaign.orders_count / campaign.clicked_count) * 100
+        const clickToOpenRate = campaign.click_to_open_rate || 0
         
-        // Brand-relative thresholds
-        if (clickToOrderRate > brandAvgClickToOrder * 1.5) { // 150%+ of brand average
+        if (clickToOrderRate > 15) { // 15%+ of clicks convert
           efficiency.highConverters.campaigns.push(campaign)
           efficiency.highConverters.totalRevenue += campaign.revenue || 0
           efficiency.highConverters.totalClicks += campaign.clicked_count || 0
           efficiency.highConverters.totalOrders += campaign.orders_count || 0
-        } else if (clickToOrderRate >= brandAvgClickToOrder * 0.7) { // 70-150% of brand average
-          efficiency.standardConverters.campaigns.push(campaign)
-          efficiency.standardConverters.totalRevenue += campaign.revenue || 0
-          efficiency.standardConverters.totalClicks += campaign.clicked_count || 0
-          efficiency.standardConverters.totalOrders += campaign.orders_count || 0
-        } else { // <70% of brand average
-          efficiency.needsWork.campaigns.push(campaign)
-          efficiency.needsWork.totalRevenue += campaign.revenue || 0
-          efficiency.needsWork.totalClicks += campaign.clicked_count || 0
-          efficiency.needsWork.totalOrders += campaign.orders_count || 0
+        } else if (clickToOpenRate > 20 && clickToOrderRate < 5) { // High clicks, low orders
+          efficiency.windowShoppers.campaigns.push(campaign)
+          efficiency.windowShoppers.totalRevenue += campaign.revenue || 0
+          efficiency.windowShoppers.totalClicks += campaign.clicked_count || 0
+          efficiency.windowShoppers.totalOrders += campaign.orders_count || 0
+        } else if (clickToOrderRate > 8 && clickToOpenRate < 15) { // Decent conversion, lower clicks
+          efficiency.instantBuyers.campaigns.push(campaign)
+          efficiency.instantBuyers.totalRevenue += campaign.revenue || 0
+          efficiency.instantBuyers.totalClicks += campaign.clicked_count || 0
+          efficiency.instantBuyers.totalOrders += campaign.orders_count || 0
         }
       }
     })
     
-    // Calculate averages for each tier
-    Object.values(efficiency).forEach((tier: any) => {
-      tier.avgConversion = tier.totalClicks > 0 ? (tier.totalOrders / tier.totalClicks * 100) : 0
-    })
-    
     return efficiency
+  }
+
+  const getConversionPieData = (campaigns: any[]) => {
+    const efficiency = getConversionEfficiencyData(campaigns)
+    
+    return [
+      { 
+        name: 'High Converters', 
+        value: efficiency.highConverters.campaigns.length,
+        revenue: efficiency.highConverters.totalRevenue,
+        conversionRate: efficiency.highConverters.totalClicks > 0 ? (efficiency.highConverters.totalOrders / efficiency.highConverters.totalClicks * 100) : 0,
+        fill: '#34D399' // Green
+      },
+      { 
+        name: 'Window Shoppers', 
+        value: efficiency.windowShoppers.campaigns.length,
+        revenue: efficiency.windowShoppers.totalRevenue,
+        conversionRate: efficiency.windowShoppers.totalClicks > 0 ? (efficiency.windowShoppers.totalOrders / efficiency.windowShoppers.totalClicks * 100) : 0,
+        fill: '#FBBF24' // Yellow
+      },
+      { 
+        name: 'Instant Buyers', 
+        value: efficiency.instantBuyers.campaigns.length,
+        revenue: efficiency.instantBuyers.totalRevenue,
+        conversionRate: efficiency.instantBuyers.totalClicks > 0 ? (efficiency.instantBuyers.totalOrders / efficiency.instantBuyers.totalClicks * 100) : 0,
+        fill: '#A78BFA' // Purple
+      }
+    ].filter(item => item.value > 0)
   }
 
   const getAOVAnalysis = (campaigns: any[]) => {
@@ -406,6 +423,34 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
     })
     
     return aovTiers
+  }
+
+  const getAOVPieData = (campaigns: any[]) => {
+    const aovTiers = getAOVAnalysis(campaigns)
+    
+    return [
+      { 
+        name: 'Premium AOV', 
+        value: aovTiers.premium.campaigns.length,
+        revenue: aovTiers.premium.totalRevenue,
+        avgAOV: aovTiers.premium.avgAOV,
+        fill: '#A78BFA' // Purple
+      },
+      { 
+        name: 'Standard AOV', 
+        value: aovTiers.standard.campaigns.length,
+        revenue: aovTiers.standard.totalRevenue,
+        avgAOV: aovTiers.standard.avgAOV,
+        fill: '#60A5FA' // Blue
+      },
+      { 
+        name: 'Discount AOV', 
+        value: aovTiers.discount.campaigns.length,
+        revenue: aovTiers.discount.totalRevenue,
+        avgAOV: aovTiers.discount.avgAOV,
+        fill: '#34D399' // Green
+      }
+    ].filter(item => item.value > 0)
   }
 
   const tabs = [
@@ -816,21 +861,37 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
     )
   }
 
-  const handleSort = (field: string) => {
-    if (sortField === field) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')
-    } else {
-      setSortField(field)
-      setSortDirection('desc')
-    }
-  }
-  
-  const getSortIcon = (field: string) => {
-    if (sortField !== field) return null
-    return sortDirection === 'asc' ? <ArrowUp className="w-4 h-4" /> : <ArrowDown className="w-4 h-4" />
-  }
-
-  const getSendTimeAnalysis = (campaigns: any[]) => {
+  const renderCampaignsTab = () => {
+    const campaigns = data?.campaigns || []
+    
+    // Calculate total campaign revenue
+    const totalRevenue = campaigns.reduce((sum: number, campaign: any) => sum + (campaign.revenue || 0), 0)
+    
+    // Sort campaigns
+    const sortedCampaigns = [...campaigns].sort((a: any, b: any) => {
+      let aVal = a[sortField]
+      let bVal = b[sortField]
+      
+      // Handle different data types
+      if (typeof aVal === 'string') aVal = aVal.toLowerCase()
+      if (typeof bVal === 'string') bVal = bVal.toLowerCase()
+      
+      if (sortDirection === 'asc') {
+        return aVal < bVal ? -1 : aVal > bVal ? 1 : 0
+      } else {
+        return aVal > bVal ? -1 : aVal < bVal ? 1 : 0
+      }
+    })
+    
+    // Top performing subject lines (by open rate)
+    const topSubjectLines = [...campaigns]
+      .filter((c: any) => c.open_rate > 0)
+      .sort((a: any, b: any) => b.open_rate - a.open_rate)
+      .slice(0, 5)
+    
+    // Subject line insights
+    const subjectInsights = getSubjectLineInsights(campaigns)
+    
     // Simplified Send time analysis - open rate and click rate only
     const sendTimeAnalysis = campaigns
       .filter((c: any) => c.send_date)
@@ -869,10 +930,20 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
       data.avgClickRate = data.totalClickRate / data.count
     })
     
-    return sendTimeAnalysis
-  }
+    const handleSort = (field: string) => {
+      if (sortField === field) {
+        setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')
+      } else {
+        setSortField(field)
+        setSortDirection('desc')
+      }
+    }
+    
+    const getSortIcon = (field: string) => {
+      if (sortField !== field) return null
+      return sortDirection === 'asc' ? <ArrowUp className="w-4 h-4" /> : <ArrowDown className="w-4 h-4" />
+    }
 
-  const renderCampaignsTab = () => {
     return (
       <div className="space-y-6">
         {/* Campaign Overview Cards */}
@@ -1075,248 +1146,105 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
               </div>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {/* Category Cards - Clickable */}
-                <div className="grid grid-cols-3 gap-3">
-                  {analysisTab === 'conversion' && (() => {
-                    
-                    const efficiency = getConversionEfficiencyData(campaigns)
-                    
-                    const categories = [
-                      { 
-                        key: 'highConverters', 
-                        label: 'High Converters', 
-                        icon: '🎯', 
-                        color: 'from-green-500/20 to-green-600/20 border-green-500/30 text-green-300',
-                        data: efficiency.highConverters 
-                      },
-                      { 
-                        key: 'standardConverters', 
-                        label: 'Standard', 
-                        icon: '📊', 
-                        color: 'from-blue-500/20 to-blue-600/20 border-blue-500/30 text-blue-300',
-                        data: efficiency.standardConverters 
-                      },
-                      { 
-                        key: 'needsWork', 
-                        label: 'Needs Work', 
-                        icon: '🔧', 
-                        color: 'from-red-500/20 to-red-600/20 border-red-500/30 text-red-300',
-                        data: efficiency.needsWork 
-                      }
-                    ]
-                    
-                    return categories.map(category => (
-                      <button
-                        key={category.key}
-                        onClick={() => setSelectedCategory(selectedCategory === category.key ? null : category.key)}
-                        className={`p-4 rounded-lg border bg-gradient-to-br transition-all cursor-pointer hover:scale-105 ${
-                          selectedCategory === category.key 
-                            ? `${category.color} ring-2 ring-white/20` 
-                            : `${category.color} hover:bg-opacity-80`
-                        }`}
+              <div className="flex">
+                {/* Pie Chart */}
+                <div className="w-1/2">
+                  <ResponsiveContainer width="100%" height={200}>
+                    <PieChart>
+                      <Pie
+                        data={analysisTab === 'conversion' ? getConversionPieData(campaigns) : getAOVPieData(campaigns)}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={30}
+                        outerRadius={70}
+                        dataKey="value"
                       >
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className="text-lg">{category.icon}</span>
-                          <span className="text-sm font-medium">
-                            {category.label}
-                          </span>
-                  </div>
-                        <div className="text-xs space-y-1 text-left">
-                          <div>{category.data.campaigns.length} campaigns</div>
-                          <div>{category.data.avgConversion.toFixed(1)}% conversion</div>
-                          <div>${category.data.totalRevenue.toLocaleString()}</div>
-                    </div>
-                      </button>
-                    ))
+                        {(analysisTab === 'conversion' ? getConversionPieData(campaigns) : getAOVPieData(campaigns)).map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.fill} />
+                        ))}
+                      </Pie>
+                      <Tooltip 
+                        contentStyle={{
+                          backgroundColor: 'rgba(0,0,0,0.9)',
+                          border: '1px solid rgba(255,255,255,0.2)',
+                          borderRadius: '8px',
+                          color: 'white'
+                        }}
+                        formatter={(value: number, name: string, props: any) => [
+                          `${value} campaigns`, props.payload.name
+                        ]}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+                
+                {/* Analysis Cards */}
+                <div className="w-1/2 pl-4 space-y-3">
+                  {analysisTab === 'conversion' && (() => {
+                    const efficiency = getConversionEfficiencyData(campaigns)
+                    return Object.entries(efficiency).map(([type, data]: [string, any]) => {
+                      if (data.campaigns.length === 0) return null
+                      
+                      const colors = {
+                        highConverters: { bg: 'bg-green-500/20 border-green-500/30', text: 'text-green-300', icon: '🎯' },
+                        windowShoppers: { bg: 'bg-yellow-500/20 border-yellow-500/30', text: 'text-yellow-300', icon: '👀' },
+                        instantBuyers: { bg: 'bg-purple-500/20 border-purple-500/30', text: 'text-purple-300', icon: '⚡' }
+                      }
+                      
+                      const config = colors[type as keyof typeof colors]
+                      const conversionRate = data.totalClicks > 0 ? (data.totalOrders / data.totalClicks * 100) : 0
+                      
+                      return (
+                        <div key={type} className={`p-3 rounded-lg border ${config.bg}`}>
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="text-sm">{config.icon}</span>
+                            <span className={`text-sm font-medium ${config.text}`}>
+                              {type === 'highConverters' ? 'High Converters' : 
+                               type === 'windowShoppers' ? 'Window Shoppers' : 'Instant Buyers'}
+                            </span>
+                          </div>
+                          <div className="text-xs text-white/60 space-y-1">
+                            <div>{data.campaigns.length} campaigns</div>
+                            <div>{conversionRate.toFixed(1)}% click-to-order</div>
+                            <div>${data.totalRevenue.toLocaleString()} revenue</div>
+                          </div>
+                        </div>
+                      )
+                    })
                   })()}
                   
                   {analysisTab === 'aov' && (() => {
                     const aovTiers = getAOVAnalysis(campaigns)
-                    
-                    const categories = [
-                      { 
-                        key: 'premium', 
-                        label: 'Premium AOV', 
-                        icon: '👑', 
-                        color: 'from-purple-500/20 to-purple-600/20 border-purple-500/30 text-purple-300',
-                        data: aovTiers.premium 
-                      },
-                      { 
-                        key: 'standard', 
-                        label: 'Standard AOV', 
-                        icon: '📊', 
-                        color: 'from-blue-500/20 to-blue-600/20 border-blue-500/30 text-blue-300',
-                        data: aovTiers.standard 
-                      },
-                      { 
-                        key: 'discount', 
-                        label: 'Discount AOV', 
-                        icon: '💡', 
-                        color: 'from-green-500/20 to-green-600/20 border-green-500/30 text-green-300',
-                        data: aovTiers.discount 
-                      }
-                    ]
-                    
-                    return categories.map(category => (
-                      <button
-                        key={category.key}
-                        onClick={() => setSelectedCategory(selectedCategory === category.key ? null : category.key)}
-                        className={`p-4 rounded-lg border bg-gradient-to-br transition-all cursor-pointer hover:scale-105 ${
-                          selectedCategory === category.key 
-                            ? `${category.color} ring-2 ring-white/20` 
-                            : `${category.color} hover:bg-opacity-80`
-                        }`}
-                      >
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className="text-lg">{category.icon}</span>
-                          <span className="text-sm font-medium">
-                            {category.label}
-                          </span>
-                  </div>
-                        <div className="text-xs space-y-1 text-left">
-                          <div>{category.data.campaigns.length} campaigns</div>
-                          <div>${category.data.avgAOV.toFixed(2)} avg</div>
-                          <div>${category.data.totalRevenue.toLocaleString()}</div>
-                    </div>
-                      </button>
-                    ))
-                  })()}
-                </div>
-
-                {/* Conversion Funnel (when category selected) */}
-                {selectedCategory && (
-                  <div className="bg-white/5 rounded-lg p-4">
-                    <h4 className="text-white font-medium text-sm mb-3">🔄 Conversion Funnel</h4>
-                    {(() => {
-                      let categoryData: any
-                      let filteredCampaigns: any[]
+                    return Object.entries(aovTiers).map(([tier, data]: [string, any]) => {
+                      if (data.campaigns.length === 0) return null
                       
-                      if (analysisTab === 'conversion') {
-                        const efficiency = getConversionEfficiencyData(campaigns)
-                        categoryData = efficiency[selectedCategory as keyof typeof efficiency]
-                        filteredCampaigns = categoryData?.campaigns || []
-                      } else {
-                        const aovTiers = getAOVAnalysis(campaigns)
-                        categoryData = aovTiers[selectedCategory as keyof typeof aovTiers]
-                        filteredCampaigns = categoryData?.campaigns || []
+                      const colors = {
+                        premium: { bg: 'bg-purple-500/20 border-purple-500/30', text: 'text-purple-300', icon: '👑' },
+                        standard: { bg: 'bg-blue-500/20 border-blue-500/30', text: 'text-blue-300', icon: '📊' },
+                        discount: { bg: 'bg-green-500/20 border-green-500/30', text: 'text-green-300', icon: '💡' }
                       }
                       
-                      if (!filteredCampaigns.length) return null
-                      
-                      const totalRecipients = filteredCampaigns.reduce((sum: number, c: any) => sum + (c.recipients_count || 0), 0)
-                      const totalOpened = filteredCampaigns.reduce((sum: number, c: any) => sum + (c.opened_count || 0), 0)
-                      const totalClicked = filteredCampaigns.reduce((sum: number, c: any) => sum + (c.clicked_count || 0), 0)
-                      const totalOrders = filteredCampaigns.reduce((sum: number, c: any) => sum + (c.orders_count || 0), 0)
-                      
-                      const openRate = totalRecipients > 0 ? (totalOpened / totalRecipients * 100) : 0
-                      const clickRate = totalOpened > 0 ? (totalClicked / totalOpened * 100) : 0
-                      const conversionRate = totalClicked > 0 ? (totalOrders / totalClicked * 100) : 0
+                      const config = colors[tier as keyof typeof colors]
                       
                       return (
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-4">
-                            <div className="text-center">
-                              <div className="text-white font-semibold text-lg">{totalRecipients.toLocaleString()}</div>
-                              <div className="text-white/60 text-xs">Recipients</div>
-                  </div>
-                            <div className="text-white/40">→</div>
-                            <div className="text-center">
-                              <div className="text-blue-300 font-semibold text-lg">{openRate.toFixed(1)}%</div>
-                              <div className="text-white/60 text-xs">Opened</div>
-                    </div>
-                            <div className="text-white/40">→</div>
-                            <div className="text-center">
-                              <div className="text-yellow-300 font-semibold text-lg">{clickRate.toFixed(1)}%</div>
-                              <div className="text-white/60 text-xs">Clicked</div>
-                  </div>
-                            <div className="text-white/40">→</div>
-                            <div className="text-center">
-                              <div className="text-green-300 font-semibold text-lg">{conversionRate.toFixed(1)}%</div>
-                              <div className="text-white/60 text-xs">Converted</div>
-                </div>
-                  </div>
-                  <div className="text-right">
-                            <div className="text-white font-semibold text-sm">${categoryData.totalRevenue.toLocaleString()}</div>
-                            <div className="text-white/60 text-xs">Total Revenue</div>
-                    </div>
-                  </div>
+                        <div key={tier} className={`p-3 rounded-lg border ${config.bg}`}>
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="text-sm">{config.icon}</span>
+                            <span className={`text-sm font-medium ${config.text} capitalize`}>
+                              {tier} AOV
+                            </span>
+                          </div>
+                          <div className="text-xs text-white/60 space-y-1">
+                            <div>{data.campaigns.length} campaigns</div>
+                            <div>${data.avgAOV.toFixed(2)} avg order</div>
+                            <div>${data.totalRevenue.toLocaleString()} revenue</div>
+                          </div>
+                        </div>
                       )
-                    })()}
+                    })
+                  })()}
                 </div>
-                )}
-
-                {/* Scrollable Campaign List */}
-                {selectedCategory && (
-                  <div className="max-h-80 overflow-y-auto bg-white/5 rounded-lg p-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <h4 className="text-white font-medium text-sm">
-                        {(() => {
-                          const categoryLabels = {
-                            highConverters: 'High Converter',
-                            standardConverters: 'Standard', 
-                            needsWork: 'Needs Work',
-                            premium: 'Premium AOV',
-                            standard: 'Standard AOV',
-                            discount: 'Discount AOV'
-                          }
-                          return categoryLabels[selectedCategory as keyof typeof categoryLabels]
-                        })()} Campaigns
-                      </h4>
-                      <button
-                        onClick={() => setSelectedCategory(null)}
-                        className="text-white/60 hover:text-white text-xs px-2 py-1 rounded bg-white/10 hover:bg-white/20"
-                      >
-                        Close
-                      </button>
               </div>
-                    <div className="space-y-2">
-                      {(() => {
-                        let categoryData: any
-                        let filteredCampaigns: any[]
-                        
-                        if (analysisTab === 'conversion') {
-                          const efficiency = getConversionEfficiencyData(campaigns)
-                          categoryData = efficiency[selectedCategory as keyof typeof efficiency]
-                          filteredCampaigns = categoryData?.campaigns || []
-                        } else {
-                          const aovTiers = getAOVAnalysis(campaigns)
-                          categoryData = aovTiers[selectedCategory as keyof typeof aovTiers]
-                          filteredCampaigns = categoryData?.campaigns || []
-                        }
-                        
-                        return filteredCampaigns
-                          .sort((a: any, b: any) => (b.revenue || 0) - (a.revenue || 0))
-                          .map((campaign: any) => {
-                            const clickToOrderRate = campaign.clicked_count > 0 ? (campaign.orders_count / campaign.clicked_count * 100) : 0
-                            const aov = campaign.orders_count > 0 ? campaign.revenue / campaign.orders_count : 0
-                            
-                            return (
-                              <div key={campaign.id} className="flex items-center justify-between p-3 bg-white/5 rounded-lg hover:bg-white/10 transition-colors">
-                    <div className="flex-1">
-                                  <p className="text-white font-medium text-sm truncate">{campaign.campaign_name}</p>
-                                  <p className="text-white/60 text-xs mt-1">{campaign.subject_line}</p>
-                                  <p className="text-white/40 text-xs">
-                                    {new Date(campaign.send_date).toLocaleDateString()} • {campaign.recipients_count?.toLocaleString()} sent
-                                  </p>
-                    </div>
-                    <div className="text-right ml-4">
-                                  <p className="text-white font-semibold text-sm">${(campaign.revenue || 0).toLocaleString()}</p>
-                                  {analysisTab === 'conversion' && (
-                                    <p className="text-white/60 text-xs">{clickToOrderRate.toFixed(1)}% conversion</p>
-                                  )}
-                                  {analysisTab === 'aov' && (
-                                    <p className="text-white/60 text-xs">${aov.toFixed(2)} AOV</p>
-                                  )}
-                                  <p className="text-white/40 text-xs">{(campaign.open_rate * 100).toFixed(1)}% OR</p>
-                    </div>
-                  </div>
-                            )
-                          })
-                      })()}
-              </div>
-                  </div>
-                )}
             </CardContent>
           </Card>
 
@@ -1351,18 +1279,18 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
                                 isTop ? 'text-green-300' : 'text-white'
                               }`}>
                                 {day}
-                            </span>
+                              </span>
                               <span className="text-white/60 text-xs">
                                 {data.count} campaigns
                               </span>
-                          </div>
+                            </div>
                             <div className="flex items-center gap-4 text-xs">
                               <div className="text-center">
                                 <div className={`font-semibold ${
                                   isTop ? 'text-green-300' : 'text-white'
                                 }`}>
                                   {(data.avgOpenRate * 100).toFixed(1)}%
-                        </div>
+                                </div>
                                 <div className="text-white/50">Open</div>
                               </div>
                               <div className="text-center">
