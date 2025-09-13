@@ -816,6 +816,20 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
     )
   }
 
+  const handleSort = (field: string) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortField(field)
+      setSortDirection('desc')
+    }
+  }
+  
+  const getSortIcon = (field: string) => {
+    if (sortField !== field) return null
+    return sortDirection === 'asc' ? <ArrowUp className="w-4 h-4" /> : <ArrowDown className="w-4 h-4" />
+  }
+
   const renderCampaignsTab = () => {
     const campaigns = data?.campaigns || []
     
@@ -884,20 +898,6 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
       data.avgOpenRate = data.totalOpenRate / data.count
       data.avgClickRate = data.totalClickRate / data.count
     })
-    
-    const handleSort = (field: string) => {
-      if (sortField === field) {
-        setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')
-      } else {
-        setSortField(field)
-        setSortDirection('desc')
-      }
-    }
-    
-    const getSortIcon = (field: string) => {
-      if (sortField !== field) return null
-      return sortDirection === 'asc' ? <ArrowUp className="w-4 h-4" /> : <ArrowDown className="w-4 h-4" />
-    }
 
     return (
       <div className="space-y-6">
