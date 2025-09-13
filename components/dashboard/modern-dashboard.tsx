@@ -98,15 +98,15 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
 
   const getSubjectLineInsights = (campaigns: any[]) => {
     const insights = {
-      withEmoji: { count: 0, avgOpenRate: 0, avgClickRate: 0, totalOpens: 0, totalClicks: 0, campaigns: [] },
-      withoutEmoji: { count: 0, avgOpenRate: 0, avgClickRate: 0, totalOpens: 0, totalClicks: 0, campaigns: [] },
-      shortLines: { count: 0, avgOpenRate: 0, avgClickRate: 0, totalOpens: 0, totalClicks: 0, campaigns: [] }, // <30 chars
-      longLines: { count: 0, avgOpenRate: 0, avgClickRate: 0, totalOpens: 0, totalClicks: 0, campaigns: [] },  // >50 chars
-      withPersonalization: { count: 0, avgOpenRate: 0, avgClickRate: 0, totalOpens: 0, totalClicks: 0, campaigns: [] },
-      withUrgency: { count: 0, avgOpenRate: 0, avgClickRate: 0, totalOpens: 0, totalClicks: 0, campaigns: [] },
-      withNumbers: { count: 0, avgOpenRate: 0, avgClickRate: 0, totalOpens: 0, totalClicks: 0, campaigns: [] },
-      withQuestion: { count: 0, avgOpenRate: 0, avgClickRate: 0, totalOpens: 0, totalClicks: 0, campaigns: [] },
-      withBrackets: { count: 0, avgOpenRate: 0, avgClickRate: 0, totalOpens: 0, totalClicks: 0, campaigns: [] }
+      withEmoji: { count: 0, avgOpenRate: 0, avgClickRate: 0, totalOpens: 0, totalClicks: 0, campaigns: [] as any[] },
+      withoutEmoji: { count: 0, avgOpenRate: 0, avgClickRate: 0, totalOpens: 0, totalClicks: 0, campaigns: [] as any[] },
+      shortLines: { count: 0, avgOpenRate: 0, avgClickRate: 0, totalOpens: 0, totalClicks: 0, campaigns: [] as any[] }, // <30 chars
+      longLines: { count: 0, avgOpenRate: 0, avgClickRate: 0, totalOpens: 0, totalClicks: 0, campaigns: [] as any[] },  // >50 chars
+      withPersonalization: { count: 0, avgOpenRate: 0, avgClickRate: 0, totalOpens: 0, totalClicks: 0, campaigns: [] as any[] },
+      withUrgency: { count: 0, avgOpenRate: 0, avgClickRate: 0, totalOpens: 0, totalClicks: 0, campaigns: [] as any[] },
+      withNumbers: { count: 0, avgOpenRate: 0, avgClickRate: 0, totalOpens: 0, totalClicks: 0, campaigns: [] as any[] },
+      withQuestion: { count: 0, avgOpenRate: 0, avgClickRate: 0, totalOpens: 0, totalClicks: 0, campaigns: [] as any[] },
+      withBrackets: { count: 0, avgOpenRate: 0, avgClickRate: 0, totalOpens: 0, totalClicks: 0, campaigns: [] as any[] }
     }
 
     campaigns.forEach(campaign => {
