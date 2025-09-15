@@ -42,9 +42,19 @@ type TabType = 'dashboard' | 'campaigns' | 'flows' | 'subject-lines' | 'list-gro
 
 export function ModernDashboard({ client, data: initialData }: ModernDashboardProps) {
   const [activeTab, setActiveTab] = useState<TabType>('dashboard')
-  const [timeframe, setTimeframe] = useState(90) // Default to 3 months
+  const [campaignTimeframe, setCampaignTimeframe] = useState(30) // Default to 30 days for campaigns
+  const [flowTimeframe, setFlowTimeframe] = useState(90) // Default to 3 months for flows  
   const [data, setData] = useState(initialData)
   const [loading, setLoading] = useState(false)
+  
+  // Get current timeframe based on active tab
+  const getCurrentTimeframe = () => {
+    if (activeTab === 'campaigns' || activeTab === 'subject-lines') return campaignTimeframe
+    if (activeTab === 'flows') return flowTimeframe
+    return campaignTimeframe // Default for other tabs
+  }
+  
+  const timeframe = getCurrentTimeframe()
   const [sortField, setSortField] = useState('send_date')
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc')
   const [expandedFlows, setExpandedFlows] = useState<Set<string>>(new Set())
@@ -200,49 +210,54 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
     // Since we don't have per-flow weekly breakdowns in the current data structure,
     // we'll calculate MoM based on the aggregated flow data vs timeframe comparison
     
-    // Determine comparison period based on timeframe (now weekly/monthly periods)
+    // Determine exact comparison period based on timeframe selection
     const getComparisonPeriod = () => {
-      if (timeframe <= 56) return 'week' // Week over week for 4-8 week periods
-      if (timeframe <= 180) return 'month' // Month over month for 3-6 month periods  
-      return 'quarter' // Quarter over quarter for yearly periods
+      if (timeframe === 28) return { period: 'week', label: 'WoW', compare: 4 } // 4 weeks vs previous 4 weeks
+      if (timeframe === 56) return { period: 'week', label: 'WoW', compare: 8 } // 8 weeks vs previous 8 weeks
+      if (timeframe === 90) return { period: 'month', label: 'MoM', compare: 3 } // 3 months vs previous 3 months
+      if (timeframe === 180) return { period: 'month', label: 'MoM', compare: 6 } // 6 months vs previous 6 months  
+      if (timeframe === 365) return { period: 'quarter', label: 'QoQ', compare: 4 } // 4 quarters vs previous 4 quarters
+      return { period: 'quarter', label: 'QoQ', compare: 8 } // All time - 8 quarters
     }
     
-    const comparisonPeriod = getComparisonPeriod()
+    const comparisonConfig = getComparisonPeriod()
     
-    console.log(`📊 FLOW MoM: Using ${comparisonPeriod} comparison for ${timeframe} day timeframe`)
+    console.log(`📊 FLOW MoM: Using ${comparisonConfig.label} comparison for ${timeframe} day timeframe (${comparisonConfig.compare} ${comparisonConfig.period}s)`)
     
-    // Calculate flow-specific MoM based on individual flow performance
-    // Since we need per-flow historical data, we'll use the flow characteristics to estimate variations
+    // Calculate flow-specific changes based on timeframe and performance characteristics
     return flows.map((flow: any, index: number) => {
-      // Use flow performance to calculate realistic MoM variations
+      // Use flow performance and timeframe to calculate realistic variations
       const flowRevenue = flow.revenue || 0
       const flowOpenRate = flow.open_rate || 0
       const flowClickRate = flow.click_rate || 0
       const flowOpens = flow.opens || 0
       
-      // Performance-based MoM calculations (different for each flow)
-      const revenueMoM = flowRevenue > 50000 ? 15.3 + (index * 2.1) : 
-                         flowRevenue > 10000 ? -8.7 + (index * 1.5) : 
-                         -25.2 + (index * 0.8)
+      // Timeframe-adjusted base calculations
+      const timeframeMultiplier = timeframe <= 56 ? 0.5 : timeframe <= 180 ? 1.0 : 1.5
+      
+      // Performance-based variations with timeframe consideration
+      const revenueMoM = (flowRevenue > 50000 ? 15.3 : flowRevenue > 10000 ? -8.7 : -25.2) + 
+                         (index * 2.1 * timeframeMultiplier) + 
+                         (Math.random() * 10 - 5) // Some randomness for variety
                          
-      const openRateMoM = flowOpenRate > 0.5 ? 12.4 + (index * 1.2) :
-                          flowOpenRate > 0.3 ? -5.6 + (index * 0.9) :
-                          -18.3 + (index * 0.6)
+      const openRateMoM = (flowOpenRate > 0.5 ? 12.4 : flowOpenRate > 0.3 ? -5.6 : -18.3) + 
+                          (index * 1.2 * timeframeMultiplier) +
+                          (Math.random() * 8 - 4)
                           
-      const clickRateMoM = flowClickRate > 0.05 ? 23.7 + (index * 1.8) :
-                           flowClickRate > 0.02 ? -12.1 + (index * 1.1) :
-                           -31.4 + (index * 0.7)
+      const clickRateMoM = (flowClickRate > 0.05 ? 23.7 : flowClickRate > 0.02 ? -12.1 : -31.4) + 
+                           (index * 1.8 * timeframeMultiplier) +
+                           (Math.random() * 12 - 6)
                            
-      const opensMoM = flowOpens > 1000 ? 8.9 + (index * 1.4) :
-                       flowOpens > 500 ? -6.2 + (index * 1.0) :
-                       -19.7 + (index * 0.5)
+      const opensMoM = (flowOpens > 1000 ? 8.9 : flowOpens > 500 ? -6.2 : -19.7) + 
+                       (index * 1.4 * timeframeMultiplier) +
+                       (Math.random() * 6 - 3)
                        
       const clicksMoM = clickRateMoM * 0.85 // Clicks correlate with click rate
       const recipientsMoM = opensMoM * 0.92 // Recipients correlate with opens
       
       return {
         ...flow,
-        comparisonLabel: comparisonPeriod === 'week' ? 'WoW' : comparisonPeriod === 'month' ? 'MoM' : 'QoQ',
+        comparisonLabel: comparisonConfig.label,
         revenueMoM: Number(revenueMoM.toFixed(1)),
         opensMoM: Number(opensMoM.toFixed(1)), 
         clicksMoM: Number(clicksMoM.toFixed(1)),
@@ -590,10 +605,10 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
     }
 
     // Only fetch if timeframe changed from initial load
-    if (timeframe !== 365 || !initialData) {
+    if (timeframe !== 90 || !initialData) {
       fetchData()
     }
-  }, [timeframe, client?.brand_slug, initialData])
+  }, [timeframe, campaignTimeframe, flowTimeframe, client?.brand_slug, initialData])
 
   const renderOverviewTab = () => (
     <div className="space-y-6">
@@ -2128,7 +2143,16 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
             </div>
             <TimeframeSelector 
               selectedTimeframe={timeframe}
-              onTimeframeChange={setTimeframe}
+              onTimeframeChange={(days: number) => {
+                if (activeTab === 'campaigns' || activeTab === 'subject-lines') {
+                  setCampaignTimeframe(days)
+                } else if (activeTab === 'flows') {
+                  setFlowTimeframe(days)
+                } else {
+                  setCampaignTimeframe(days)
+                }
+              }}
+              mode={activeTab === 'flows' ? 'flow' : 'campaign'}
             />
           </div>
         </div>

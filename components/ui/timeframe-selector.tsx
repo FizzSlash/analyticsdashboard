@@ -7,9 +7,19 @@ interface TimeframeSelectorProps {
   selectedTimeframe: number
   onTimeframeChange: (days: number) => void
   className?: string
+  mode?: 'campaign' | 'flow'
 }
 
-const timeframeOptions = [
+const campaignTimeframeOptions = [
+  { label: 'Last 7 days', value: 7 },
+  { label: 'Last 30 days', value: 30 },
+  { label: 'Last 60 days', value: 60 },
+  { label: 'Last 90 days', value: 90 },
+  { label: 'Last 180 days', value: 180 },
+  { label: 'Last 365 days', value: 365 }
+]
+
+const flowTimeframeOptions = [
   { label: 'Last 4 weeks', value: 28 },
   { label: 'Last 8 weeks', value: 56 },
   { label: 'Last 3 months', value: 90 },
@@ -18,9 +28,11 @@ const timeframeOptions = [
   { label: 'All time', value: 9999 }
 ]
 
-export function TimeframeSelector({ selectedTimeframe, onTimeframeChange, className }: TimeframeSelectorProps) {
+export function TimeframeSelector({ selectedTimeframe, onTimeframeChange, className, mode = 'campaign' }: TimeframeSelectorProps) {
   const [isOpen, setIsOpen] = useState(false)
   
+  // Get options based on mode
+  const timeframeOptions = mode === 'flow' ? flowTimeframeOptions : campaignTimeframeOptions
   const selectedOption = timeframeOptions.find(option => option.value === selectedTimeframe) || timeframeOptions[1]
 
   return (
@@ -38,12 +50,12 @@ export function TimeframeSelector({ selectedTimeframe, onTimeframeChange, classN
         <>
           {/* Backdrop */}
           <div 
-            className="fixed inset-0 z-[100]" 
+            className="fixed inset-0 z-[9998]" 
             onClick={() => setIsOpen(false)}
           />
           
           {/* Dropdown */}
-          <div className="absolute top-full left-0 mt-2 w-48 bg-white/10 backdrop-blur-md border border-white/20 rounded-lg shadow-xl z-[110]">
+          <div className="absolute top-full left-0 mt-2 w-48 bg-gray-900/98 border border-white/30 rounded-lg shadow-2xl z-[9999]" style={{zIndex: 99999}}>
             <div className="py-2">
               {timeframeOptions.map((option) => (
                 <button
