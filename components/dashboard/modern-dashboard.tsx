@@ -254,9 +254,12 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
   }
 
   const getEmailSequenceForFlow = (flowId: string, emails: any[]) => {
-    // Sort emails by message_created timestamp to determine sequence
+    // Emails are already filtered for this flow by the API call
+    // Just sort by message_created timestamp to determine sequence
+    console.log(`📧 SEQUENCE: Processing ${emails.length} emails for flow ${flowId}`)
+    console.log(`📧 SEQUENCE: Email sample:`, emails[0])
+    
     return emails
-      .filter((email: any) => email.flow_id === flowId)
       .sort((a: any, b: any) => 
         new Date(a.message_created).getTime() - new Date(b.message_created).getTime()
       )
@@ -264,7 +267,7 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
         ...email,
         sequence_position: index + 1,
         sequence_label: `Email #${index + 1}`
-    }))
+      }))
   }
 
   const getSubjectLineInsights = (campaigns: any[]) => {

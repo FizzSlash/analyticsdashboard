@@ -38,12 +38,12 @@ export function TimeframeSelector({ selectedTimeframe, onTimeframeChange, classN
         <>
           {/* Backdrop */}
           <div 
-            className="fixed inset-0 z-40" 
+            className="fixed inset-0 z-[100]" 
             onClick={() => setIsOpen(false)}
           />
           
           {/* Dropdown */}
-          <div className="absolute top-full left-0 mt-2 w-48 bg-white/10 backdrop-blur-md border border-white/20 rounded-lg shadow-xl z-50">
+          <div className="absolute top-full left-0 mt-2 w-48 bg-white/10 backdrop-blur-md border border-white/20 rounded-lg shadow-xl z-[110]">
             <div className="py-2">
               {timeframeOptions.map((option) => (
                 <button
