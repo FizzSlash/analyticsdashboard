@@ -152,6 +152,119 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
     }))
   }
 
+  const getFlowRevenueRecipientsComboData = (flows: any[], timeframe: number) => {
+    // Get weekly flow data for ComposedChart (like campaigns)
+    const weeklyFlowData = data?.flowWeeklyTrends || []
+    
+    // Use timeframe to determine aggregation (weekly vs monthly)
+    const useMonthly = timeframe > 90
+    
+    if (useMonthly) {
+      // Monthly aggregation for longer timeframes
+      const monthlyData: { [month: string]: any } = {}
+      
+      weeklyFlowData.forEach((week: any) => {
+        const date = new Date(week.week + ', 2025')
+        const monthKey = date.toLocaleDateString('en-US', { year: 'numeric', month: 'short' })
+        
+        if (!monthlyData[monthKey]) {
+          monthlyData[monthKey] = {
+            period: monthKey,
+            revenue: 0,
+            recipients: 0,
+            clicks: 0
+          }
+        }
+        
+        monthlyData[monthKey].revenue += week.revenue || 0
+        monthlyData[monthKey].recipients += week.opens || 0 // Use opens as recipients proxy
+        monthlyData[monthKey].clicks += week.clicks || 0
+      })
+      
+      return Object.values(monthlyData).sort((a: any, b: any) => 
+        new Date(a.period).getTime() - new Date(b.period).getTime()
+      )
+    } else {
+      // Weekly data for shorter timeframes
+      return weeklyFlowData.map((week: any) => ({
+        period: week.week,
+        revenue: week.revenue || 0,
+        recipients: week.opens || 0, // Use opens as proxy for reach
+        clicks: week.clicks || 0
+      }))
+    }
+  }
+
+  const getFlowRecapWithMoM = (flows: any[]) => {
+    // Calculate Month-over-Month changes for each flow using weekly trends
+    const weeklyFlowData = data?.flowWeeklyTrends || []
+    
+    // Group weekly data by month for MoM calculations
+    const monthlyData: { [month: string]: any } = {}
+    weeklyFlowData.forEach((week: any) => {
+      const date = new Date(week.week + ', 2025')
+      const monthKey = date.toLocaleDateString('en-US', { year: 'numeric', month: '2-digit' })
+      
+      if (!monthlyData[monthKey]) {
+        monthlyData[monthKey] = {
+          revenue: 0,
+          opens: 0,
+          clicks: 0,
+          recipients: 0
+        }
+      }
+      
+      monthlyData[monthKey].revenue += week.revenue || 0
+      monthlyData[monthKey].opens += week.opens || 0
+      monthlyData[monthKey].clicks += week.clicks || 0
+      monthlyData[monthKey].recipients += week.opens || 0
+    })
+
+    const sortedMonths = Object.keys(monthlyData).sort()
+    const currentMonth = sortedMonths[sortedMonths.length - 1]
+    const previousMonth = sortedMonths[sortedMonths.length - 2]
+    
+    const current = monthlyData[currentMonth] || {}
+    const previous = monthlyData[previousMonth] || {}
+
+    // Calculate MoM percentages
+    const calculateMoM = (currentVal: number, previousVal: number) => {
+      if (previousVal === 0) return currentVal > 0 ? 100 : 0
+      return ((currentVal - previousVal) / previousVal) * 100
+    }
+
+    // Create flow recap data with MoM calculations
+    return flows.map((flow: any) => ({
+      ...flow,
+      revenueMoM: calculateMoM(current.revenue, previous.revenue),
+      opensMoM: calculateMoM(current.opens, previous.opens), 
+      clicksMoM: calculateMoM(current.clicks, previous.clicks),
+      recipientsMoM: calculateMoM(current.recipients, previous.recipients),
+      openRateMoM: calculateMoM(
+        current.opens > 0 ? (current.opens / current.recipients) * 100 : 0,
+        previous.opens > 0 ? (previous.opens / previous.recipients) * 100 : 0
+      ),
+      clickRateMoM: calculateMoM(
+        current.opens > 0 ? (current.clicks / current.opens) * 100 : 0,
+        previous.opens > 0 ? (previous.clicks / previous.opens) * 100 : 0
+      )
+    }))
+  }
+
+  const getEmailSequenceForFlow = (flowId: string, emails: any[]) => {
+    // Sort emails by message_created timestamp to determine sequence
+    return emails
+      .filter((email: any) => email.flow_id === flowId)
+      .sort((a: any, b: any) => 
+        new Date(a.message_created).getTime() - new Date(b.message_created).getTime()
+      )
+      .map((email: any, index: number) => ({
+        ...email,
+        sequence_position: index + 1,
+        sequence_label: `Email #${index + 1}`
+      }))
+  }
+
   const getSubjectLineInsights = (campaigns: any[]) => {
     const insights = {
       withEmoji: { count: 0, avgOpenRate: 0, avgClickRate: 0, totalOpens: 0, totalClicks: 0, campaigns: [] as any[] },
@@ -1664,12 +1777,78 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
 
         {/* Charts Row */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* 1. Flow Performance Over Time */}
+          {/* 1. Flow Revenue & Recipients Combo Chart */}
           <Card className="bg-white/10 backdrop-blur-md border-white/20">
             <CardHeader>
               <CardTitle className="text-white flex items-center gap-2">
                 <BarChart3 className="w-5 h-5" />
-                Flow Performance Over Time
+                Flow Revenue and Recipients
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <ComposedChart data={getFlowRevenueRecipientsComboData(flows, timeframe)}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+                    <XAxis 
+                      dataKey="period" 
+                      tick={{ fill: 'rgba(255,255,255,0.7)', fontSize: 12 }}
+                      axisLine={{ stroke: 'rgba(255,255,255,0.2)' }}
+                    />
+                    <YAxis 
+                      yAxisId="revenue"
+                      orientation="left"
+                      tick={{ fill: 'rgba(255,255,255,0.7)', fontSize: 12 }}
+                      axisLine={{ stroke: 'rgba(255,255,255,0.2)' }}
+                      tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
+                    />
+                    <YAxis 
+                      yAxisId="recipients"
+                      orientation="right"
+                      tick={{ fill: 'rgba(255,255,255,0.7)', fontSize: 12 }}
+                      axisLine={{ stroke: 'rgba(255,255,255,0.2)' }}
+                      tickFormatter={(value) => `${(value / 1000).toFixed(0)}k`}
+                    />
+                    <Tooltip 
+                      contentStyle={{
+                        backgroundColor: 'rgba(0,0,0,0.8)',
+                        border: '1px solid rgba(255,255,255,0.2)',
+                        borderRadius: '8px',
+                        color: 'white'
+                      }}
+                      formatter={(value: number, name: string) => [
+                        name === 'revenue' ? `$${value.toLocaleString()}` : `${value.toLocaleString()}`,
+                        name === 'revenue' ? 'Flow Revenue' : 'Recipients'
+                      ]}
+                    />
+                    <Bar 
+                      yAxisId="revenue"
+                      dataKey="revenue" 
+                      fill="#A78BFA"
+                      fillOpacity={0.8}
+                      radius={[4, 4, 0, 0]}
+                    />
+                    <Line 
+                      yAxisId="recipients"
+                      type="monotone" 
+                      dataKey="recipients" 
+                      stroke="#34D399"
+                      strokeWidth={3}
+                      dot={{ fill: '#34D399', strokeWidth: 2, r: 4 }}
+                      activeDot={{ r: 6, stroke: '#34D399', strokeWidth: 2 }}
+                    />
+                  </ComposedChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* 2. Flow Revenue Per Recipient Over Time */}
+          <Card className="bg-white/10 backdrop-blur-md border-white/20">
+            <CardHeader>
+              <CardTitle className="text-white flex items-center gap-2">
+                <DollarSign className="w-5 h-5" />
+                Flow Revenue Per Recipient
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -1685,7 +1864,7 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
                     <YAxis 
                       tick={{ fill: 'rgba(255,255,255,0.7)', fontSize: 12 }}
                       axisLine={{ stroke: 'rgba(255,255,255,0.2)' }}
-                      tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
+                      tickFormatter={(value) => `$${value.toFixed(2)}`}
                     />
                     <Tooltip 
                       contentStyle={{
@@ -1694,6 +1873,7 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
                         borderRadius: '8px',
                         color: 'white'
                       }}
+                      formatter={(value: number) => [`$${value.toFixed(2)}`, 'Revenue Per Recipient']}
                     />
                     <Line 
                       type="monotone" 
@@ -1701,61 +1881,9 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
                       stroke="#A78BFA"
                       strokeWidth={3}
                       dot={{ fill: '#A78BFA', strokeWidth: 2, r: 4 }}
-                    />
-                    <Line 
-                      type="monotone" 
-                      dataKey="opens" 
-                      stroke="#60A5FA"
-                      strokeWidth={2}
-                      dot={{ fill: '#60A5FA', strokeWidth: 2, r: 3 }}
+                      activeDot={{ r: 6, stroke: '#A78BFA', strokeWidth: 2 }}
                     />
                   </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* 2. Flow Revenue Comparison */}
-          <Card className="bg-white/10 backdrop-blur-md border-white/20">
-            <CardHeader>
-              <CardTitle className="text-white flex items-center gap-2">
-                <BarChart3 className="w-5 h-5" />
-                Flow Revenue Comparison
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={flowRevenueData.slice(0, 8)}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                    <XAxis 
-                      dataKey="name" 
-                      tick={{ fill: 'rgba(255,255,255,0.7)', fontSize: 11 }}
-                      axisLine={{ stroke: 'rgba(255,255,255,0.2)' }}
-                      angle={-45}
-                      textAnchor="end"
-                      height={80}
-                    />
-                    <YAxis 
-                      tick={{ fill: 'rgba(255,255,255,0.7)', fontSize: 12 }}
-                      axisLine={{ stroke: 'rgba(255,255,255,0.2)' }}
-                      tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
-                    />
-                    <Tooltip 
-                      contentStyle={{
-                        backgroundColor: 'rgba(0,0,0,0.8)',
-                        border: '1px solid rgba(255,255,255,0.2)',
-                        borderRadius: '8px',
-                        color: 'white'
-                      }}
-                      formatter={(value: number) => [`$${value.toLocaleString()}`, 'Revenue']}
-                    />
-                    <Bar 
-                      dataKey="revenue" 
-                      fill="#A78BFA"
-                      radius={[4, 4, 0, 0]}
-                    />
-                  </BarChart>
                 </ResponsiveContainer>
               </div>
             </CardContent>
@@ -1767,7 +1895,7 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
           <CardHeader>
             <CardTitle className="text-white flex items-center gap-2">
               <Activity className="w-5 h-5" />
-              Flow Performance Table
+              Flow Recap
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -1805,15 +1933,10 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
                              <div>
                                <div className="font-medium">{flow.flow_name || 'Untitled Flow'}</div>
                                <div className="text-white/60 text-xs flex items-center gap-2">
-                                 <span>{flow.trigger_type || 'Unknown trigger'}</span>
-                                 <span className={`px-2 py-0.5 rounded-full text-xs ${
-                                   (flow.open_rate * 100) > 50 ? 'bg-green-500/20 text-green-300' :
-                                   (flow.open_rate * 100) > 25 ? 'bg-yellow-500/20 text-yellow-300' : 
-                                   'bg-red-500/20 text-red-300'
-                                 }`}>
-                                   {(flow.open_rate * 100) > 50 ? '🟢 Excellent' :
-                                    (flow.open_rate * 100) > 25 ? '🟡 Good' : '🔴 Needs Attention'}
-                                 </span>
+                                <span>{flow.trigger_type || 'Unknown trigger'}</span>
+                                <span className="text-white/60 text-xs">
+                                  Open Rate: {(flow.open_rate * 100).toFixed(1)}%
+                                </span>
                                </div>
                              </div>
                            </div>
