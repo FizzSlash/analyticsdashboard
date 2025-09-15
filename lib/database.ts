@@ -220,7 +220,7 @@ export class DatabaseService {
         .from('flow_message_metrics')
         .select('*')
         .eq('client_id', clientId)
-        .gte('date_recorded', cutoffDate.toISOString().split('T')[0])
+        .gte('week_date', cutoffDate.toISOString().split('T')[0])
         .order('week_date', { ascending: false }),
       supabaseAdmin
         .from('flow_metrics')
@@ -777,8 +777,8 @@ export class DatabaseService {
       .select('*')
       .eq('client_id', clientId)
       .eq('flow_id', flowId)
-      .gte('date_recorded', cutoffDate.toISOString().split('T')[0])
-      .order('date_recorded', { ascending: false })
+      .gte('week_date', cutoffDate.toISOString().split('T')[0])
+      .order('week_date', { ascending: false })
 
     if (error) {
       console.error('Error fetching flow emails:', error)
