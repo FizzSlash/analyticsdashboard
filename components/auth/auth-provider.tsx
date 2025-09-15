@@ -1,4 +1,4 @@
-'use client'
+Zxdfghjk=`1  ['use client'
 
 import { createContext, useContext, useEffect, useState } from 'react'
 import type { User } from '@supabase/supabase-js'
@@ -77,18 +77,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         
         // Get initial session
         console.log('AUTH PROVIDER: Getting initial session')
-        const { data: { session }, error: sessionError } = await client.auth.getSession()
-        
-        if (sessionError) {
-          console.error('AUTH PROVIDER: Session error:', sessionError)
-          if (mounted) {
-            setLoading(false)
-            setInitialized(true)
+        let session = null
+        try {
+          const sessionResponse = await Promise.race([
+            client.auth.getSession(),
+            new Promise((_, reject) => 
+              setTimeout(() => reject(new Error('Session timeout after 5 seconds')), 5000)
+            )
+          ])
+          
+          const { data: sessionData, error: sessionError } = sessionResponse as any
+          session = sessionData?.session
+          
+          if (sessionError) {
+            console.error('AUTH PROVIDER: Session error:', sessionError)
+            if (mounted) {
+              setLoading(false)
+              setInitialized(true)
+            }
+            return
           }
-          return
+          
+          console.log('AUTH PROVIDER: Initial session:', !!session)
+          console.log('AUTH PROVIDER: Session details:', session?.user?.email || 'No user')
+        } catch (error) {
+          console.error('AUTH PROVIDER: Session call failed or timed out:', error)
+          // Continue with null session - don't return, let the app load
+          session = null
         }
-        
-        console.log('AUTH PROVIDER: Initial session:', !!session)
         
         // Set user and profile
         if (mounted) {
