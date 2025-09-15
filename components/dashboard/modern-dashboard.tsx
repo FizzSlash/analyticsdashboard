@@ -196,17 +196,37 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
   }
 
   const getFlowRecapWithMoM = (flows: any[]) => {
-    // Calculate Month-over-Month changes for each flow using weekly trends
+    // Dynamic comparison period based on timeframe
     const weeklyFlowData = data?.flowWeeklyTrends || []
     
-    // Group weekly data by month for MoM calculations
-    const monthlyData: { [month: string]: any } = {}
+    // Determine comparison period based on timeframe
+    const getComparisonPeriod = () => {
+      if (timeframe <= 30) return 'week' // Week over week for short timeframes
+      if (timeframe <= 90) return 'month' // Month over month for medium timeframes  
+      return 'quarter' // Quarter over quarter for long timeframes
+    }
+    
+    const comparisonPeriod = getComparisonPeriod()
+    
+    // Group data by the appropriate period
+    const periodData: { [period: string]: any } = {}
+    
     weeklyFlowData.forEach((week: any) => {
+      let periodKey: string
       const date = new Date(week.week + ', 2025')
-      const monthKey = date.toLocaleDateString('en-US', { year: 'numeric', month: '2-digit' })
       
-      if (!monthlyData[monthKey]) {
-        monthlyData[monthKey] = {
+      if (comparisonPeriod === 'week') {
+        periodKey = week.week // Use week directly
+      } else if (comparisonPeriod === 'month') {
+        periodKey = date.toLocaleDateString('en-US', { year: 'numeric', month: '2-digit' })
+      } else {
+        // Quarter  
+        const quarter = Math.floor(date.getMonth() / 3) + 1
+        periodKey = `${date.getFullYear()}-Q${quarter}`
+      }
+      
+      if (!periodData[periodKey]) {
+        periodData[periodKey] = {
           revenue: 0,
           opens: 0,
           clicks: 0,
@@ -214,37 +234,43 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
         }
       }
       
-      monthlyData[monthKey].revenue += week.revenue || 0
-      monthlyData[monthKey].opens += week.opens || 0
-      monthlyData[monthKey].clicks += week.clicks || 0
-      monthlyData[monthKey].recipients += week.opens || 0
+      periodData[periodKey].revenue += week.revenue || 0
+      periodData[periodKey].opens += week.opens || 0
+      periodData[periodKey].clicks += week.clicks || 0
+      periodData[periodKey].recipients += week.opens || 0
     })
 
-    const sortedMonths = Object.keys(monthlyData).sort()
-    const currentMonth = sortedMonths[sortedMonths.length - 1]
-    const previousMonth = sortedMonths[sortedMonths.length - 2]
+    const sortedPeriods = Object.keys(periodData).sort()
+    const currentPeriod = sortedPeriods[sortedPeriods.length - 1]
+    const previousPeriod = sortedPeriods[sortedPeriods.length - 2]
     
-    const current = monthlyData[currentMonth] || {}
-    const previous = monthlyData[previousMonth] || {}
+    const current = periodData[currentPeriod] || {}
+    const previous = periodData[previousPeriod] || {}
 
-    // Calculate MoM percentages
-    const calculateMoM = (currentVal: number, previousVal: number) => {
+    // Calculate period-over-period percentages
+    const calculatePeriodChange = (currentVal: number, previousVal: number) => {
       if (previousVal === 0) return currentVal > 0 ? 100 : 0
       return ((currentVal - previousVal) / previousVal) * 100
     }
 
-    // Create flow recap data with MoM calculations
+    console.log(`📊 FLOW MoM: Using ${comparisonPeriod} comparison for ${timeframe} day timeframe`)
+    console.log(`📊 FLOW MoM: Current period: ${currentPeriod}, Previous: ${previousPeriod}`)
+    console.log(`📊 FLOW MoM: Current data:`, current)
+    console.log(`📊 FLOW MoM: Previous data:`, previous)
+
+    // Create flow recap data with dynamic period-over-period calculations
     return flows.map((flow: any) => ({
       ...flow,
-      revenueMoM: calculateMoM(current.revenue, previous.revenue),
-      opensMoM: calculateMoM(current.opens, previous.opens), 
-      clicksMoM: calculateMoM(current.clicks, previous.clicks),
-      recipientsMoM: calculateMoM(current.recipients, previous.recipients),
-      openRateMoM: calculateMoM(
+      comparisonLabel: comparisonPeriod === 'week' ? 'WoW' : comparisonPeriod === 'month' ? 'MoM' : 'QoQ',
+      revenueMoM: calculatePeriodChange(current.revenue, previous.revenue),
+      opensMoM: calculatePeriodChange(current.opens, previous.opens), 
+      clicksMoM: calculatePeriodChange(current.clicks, previous.clicks),
+      recipientsMoM: calculatePeriodChange(current.recipients, previous.recipients),
+      openRateMoM: calculatePeriodChange(
         current.opens > 0 ? (current.opens / current.recipients) * 100 : 0,
         previous.opens > 0 ? (previous.opens / previous.recipients) * 100 : 0
       ),
-      clickRateMoM: calculateMoM(
+      clickRateMoM: calculatePeriodChange(
         current.opens > 0 ? (current.clicks / current.opens) * 100 : 0,
         previous.opens > 0 ? (previous.clicks / previous.opens) * 100 : 0
       )
@@ -1679,6 +1705,14 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
     // Calculate total flow revenue
     const totalFlowRevenue = flows.reduce((sum: number, flow: any) => sum + (flow.revenue || 0), 0)
     
+    // Get dynamic comparison label for table headers
+    const getComparisonLabel = () => {
+      if (timeframe <= 30) return 'WoW' // Week over Week
+      if (timeframe <= 90) return 'MoM' // Month over Month  
+      return 'QoQ' // Quarter over Quarter
+    }
+    const comparisonLabel = getComparisonLabel()
+    
     const toggleFlowExpansion = async (flowId: string) => {
       const newExpanded = new Set(expandedFlows)
       if (newExpanded.has(flowId)) {
@@ -1697,7 +1731,9 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
                 ...prev,
                 [flowId]: result.emails || []
               }))
-              console.log(`📧 FRONTEND: Loaded ${result.count} emails for flow ${flowId}`)
+              console.log(`📧 FRONTEND: Loaded ${result.emails?.length || 0} emails for flow ${flowId}:`, result.emails)
+            } else {
+              console.error('📧 FRONTEND: Flow emails API error:', result)
             }
           } catch (error) {
             console.error('Error loading flow emails:', error)
@@ -1905,17 +1941,17 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
                   <tr className="border-b border-white/20">
                     <th className="text-left text-white/80 font-medium py-3 px-1 min-w-[200px]">Flows</th>
                     <th className="text-right text-white/80 font-medium py-3 px-1 min-w-[100px]">Revenue</th>
-                    <th className="text-right text-blue-300 font-medium py-3 px-1 min-w-[80px]">Revenue MoM<br/>% Change</th>
+                    <th className="text-right text-blue-300 font-medium py-3 px-1 min-w-[80px]">Revenue {comparisonLabel}<br/>% Change</th>
                     <th className="text-right text-white/80 font-medium py-3 px-1 min-w-[80px]">Open Rate</th>
-                    <th className="text-right text-blue-300 font-medium py-3 px-1 min-w-[80px]">Open Rate MoM<br/>% Change</th>
+                    <th className="text-right text-blue-300 font-medium py-3 px-1 min-w-[80px]">Open Rate {comparisonLabel}<br/>% Change</th>
                     <th className="text-right text-white/80 font-medium py-3 px-1 min-w-[80px]">Click Rate</th>
-                    <th className="text-right text-blue-300 font-medium py-3 px-1 min-w-[80px]">Click Rate MoM<br/>% Change</th>
+                    <th className="text-right text-blue-300 font-medium py-3 px-1 min-w-[80px]">Click Rate {comparisonLabel}<br/>% Change</th>
                     <th className="text-right text-white/80 font-medium py-3 px-1 min-w-[80px]">Recipients</th>
-                    <th className="text-right text-blue-300 font-medium py-3 px-1 min-w-[80px]">Recipients MoM<br/>% Change</th>
+                    <th className="text-right text-blue-300 font-medium py-3 px-1 min-w-[80px]">Recipients {comparisonLabel}<br/>% Change</th>
                     <th className="text-right text-white/80 font-medium py-3 px-1 min-w-[80px]">Opens</th>
-                    <th className="text-right text-blue-300 font-medium py-3 px-1 min-w-[80px]">Opens MoM<br/>% Change</th>
+                    <th className="text-right text-blue-300 font-medium py-3 px-1 min-w-[80px]">Opens {comparisonLabel}<br/>% Change</th>
                     <th className="text-right text-white/80 font-medium py-3 px-1 min-w-[80px]">Clicks</th>
-                    <th className="text-right text-blue-300 font-medium py-3 px-1 min-w-[80px]">Clicks MoM<br/>% Change</th>
+                    <th className="text-right text-blue-300 font-medium py-3 px-1 min-w-[80px]">Clicks {comparisonLabel}<br/>% Change</th>
                   </tr>
                 </thead>
                 <tbody>
