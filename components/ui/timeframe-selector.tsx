@@ -64,34 +64,47 @@ export function TimeframeSelector({ selectedTimeframe, onTimeframeChange, classN
   }, [isOpen])
 
   const dropdown = isOpen ? createPortal(
-    <div 
-      className="w-48 bg-gray-900/98 border border-white/30 rounded-lg shadow-2xl"
-      style={{
-        position: 'fixed',
-        top: dropdownPosition.top,
-        left: dropdownPosition.left,
-        zIndex: 999999
-      }}
-    >
-      <div className="py-2">
-        {timeframeOptions.map((option) => (
-          <button
-            key={option.value}
-            onClick={() => {
-              onTimeframeChange(option.value)
-              setIsOpen(false)
-            }}
-            className={`w-full text-left px-4 py-2 text-sm hover:bg-white/20 transition-colors ${
-              option.value === selectedTimeframe 
-                ? 'bg-white/20 text-white font-medium' 
-                : 'text-white/80'
-            }`}
-          >
-            {option.label}
-          </button>
-        ))}
+    <>
+      {/* Full screen backdrop */}
+      <div 
+        className="fixed inset-0 bg-black/20"
+        style={{ zIndex: 999998 }}
+        onClick={() => setIsOpen(false)}
+      />
+      
+      {/* Dropdown */}
+      <div 
+        className="w-48 bg-slate-900 border border-slate-600 rounded-lg shadow-2xl"
+        style={{
+          position: 'fixed',
+          top: dropdownPosition.top,
+          left: dropdownPosition.left,
+          zIndex: 999999
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="py-2">
+          {timeframeOptions.map((option) => (
+            <button
+              key={option.value}
+              onClick={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                onTimeframeChange(option.value)
+                setIsOpen(false)
+              }}
+              className={`w-full text-left px-4 py-2 text-sm hover:bg-slate-800 transition-colors cursor-pointer ${
+                option.value === selectedTimeframe 
+                  ? 'bg-slate-800 text-white font-medium' 
+                  : 'text-slate-200'
+              }`}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
       </div>
-    </div>,
+    </>,
     document.body
   ) : null
 
