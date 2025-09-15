@@ -224,7 +224,7 @@ export class DatabaseService {
         .order('week_date', { ascending: false }),
       supabaseAdmin
         .from('flow_metrics')
-        .select('DISTINCT flow_id, flow_name, flow_status, trigger_type')
+        .select('flow_id, flow_name, flow_status, trigger_type')
         .eq('client_id', clientId)
     ])
 
@@ -278,7 +278,7 @@ export class DatabaseService {
           .order('week_date', { ascending: false }),
         supabaseAdmin
           .from('flow_metrics')
-          .select('DISTINCT flow_id, flow_name, flow_status, trigger_type')
+          .select('flow_id, flow_name, flow_status, trigger_type')
           .eq('client_id', clientId)
       ])
       
