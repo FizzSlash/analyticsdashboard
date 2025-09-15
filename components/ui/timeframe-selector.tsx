@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { Calendar, ChevronDown } from 'lucide-react'
 
 interface TimeframeSelectorProps {
@@ -30,14 +31,74 @@ const flowTimeframeOptions = [
 
 export function TimeframeSelector({ selectedTimeframe, onTimeframeChange, className, mode = 'campaign' }: TimeframeSelectorProps) {
   const [isOpen, setIsOpen] = useState(false)
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 })
+  const buttonRef = useRef<HTMLButtonElement>(null)
   
   // Get options based on mode
   const timeframeOptions = mode === 'flow' ? flowTimeframeOptions : campaignTimeframeOptions
   const selectedOption = timeframeOptions.find(option => option.value === selectedTimeframe) || timeframeOptions[1]
 
+  // Calculate dropdown position when opening
+  useEffect(() => {
+    if (isOpen && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect()
+      setDropdownPosition({
+        top: rect.bottom + 8,
+        left: rect.left
+      })
+    }
+  }, [isOpen])
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (buttonRef.current && !buttonRef.current.contains(event.target as Node)) {
+        setIsOpen(false)
+      }
+    }
+
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside)
+      return () => document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [isOpen])
+
+  const dropdown = isOpen ? createPortal(
+    <div 
+      className="w-48 bg-gray-900/98 border border-white/30 rounded-lg shadow-2xl"
+      style={{
+        position: 'fixed',
+        top: dropdownPosition.top,
+        left: dropdownPosition.left,
+        zIndex: 999999
+      }}
+    >
+      <div className="py-2">
+        {timeframeOptions.map((option) => (
+          <button
+            key={option.value}
+            onClick={() => {
+              onTimeframeChange(option.value)
+              setIsOpen(false)
+            }}
+            className={`w-full text-left px-4 py-2 text-sm hover:bg-white/20 transition-colors ${
+              option.value === selectedTimeframe 
+                ? 'bg-white/20 text-white font-medium' 
+                : 'text-white/80'
+            }`}
+          >
+            {option.label}
+          </button>
+        ))}
+      </div>
+    </div>,
+    document.body
+  ) : null
+
   return (
     <div className={`relative ${className}`}>
       <button
+        ref={buttonRef}
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-md border border-white/20 rounded-lg hover:bg-white/20 transition-all duration-200 text-white"
       >
@@ -46,37 +107,7 @@ export function TimeframeSelector({ selectedTimeframe, onTimeframeChange, classN
         <ChevronDown className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
       </button>
 
-      {isOpen && (
-        <>
-          {/* Backdrop */}
-          <div 
-            className="fixed inset-0 z-[9998]" 
-            onClick={() => setIsOpen(false)}
-          />
-          
-          {/* Dropdown */}
-          <div className="absolute top-full left-0 mt-2 w-48 bg-gray-900/98 border border-white/30 rounded-lg shadow-2xl z-[9999]" style={{zIndex: 99999}}>
-            <div className="py-2">
-              {timeframeOptions.map((option) => (
-                <button
-                  key={option.value}
-                  onClick={() => {
-                    onTimeframeChange(option.value)
-                    setIsOpen(false)
-                  }}
-                  className={`w-full text-left px-4 py-2 text-sm hover:bg-white/20 transition-colors ${
-                    option.value === selectedTimeframe 
-                      ? 'bg-white/20 text-white font-medium' 
-                      : 'text-white/80'
-                  }`}
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
-          </div>
-        </>
-      )}
+      {dropdown}
     </div>
   )
 } 
