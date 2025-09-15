@@ -46,6 +46,7 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
   const [flowTimeframe, setFlowTimeframe] = useState(90) // Default to 3 months for flows  
   const [data, setData] = useState(initialData)
   const [loading, setLoading] = useState(false)
+  const [initialTimeframe] = useState(365) // Track the initial timeframe (365 from client page)
   
   // Get current timeframe based on active tab
   const getCurrentTimeframe = () => {
@@ -632,11 +633,11 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
       }
     }
 
-    // Only fetch if timeframe changed from initial load
-    if (timeframe !== 90 || !initialData) {
+    // Always fetch when timeframe changes from initial load
+    if (!initialData || timeframe !== initialTimeframe) {
       fetchData()
     }
-  }, [timeframe, campaignTimeframe, flowTimeframe, client?.brand_slug, initialData])
+  }, [timeframe, campaignTimeframe, flowTimeframe, client?.brand_slug, initialData, initialTimeframe])
 
   const renderOverviewTab = () => (
     <div className="space-y-6">
