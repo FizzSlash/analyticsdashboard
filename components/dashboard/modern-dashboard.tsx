@@ -42,7 +42,7 @@ type TabType = 'dashboard' | 'campaigns' | 'flows' | 'subject-lines' | 'list-gro
 
 export function ModernDashboard({ client, data: initialData }: ModernDashboardProps) {
   const [activeTab, setActiveTab] = useState<TabType>('dashboard')
-  const [timeframe, setTimeframe] = useState(365) // Default to 365 days
+  const [timeframe, setTimeframe] = useState(90) // Default to 3 months
   const [data, setData] = useState(initialData)
   const [loading, setLoading] = useState(false)
   const [sortField, setSortField] = useState('send_date')
@@ -200,11 +200,11 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
     // Since we don't have per-flow weekly breakdowns in the current data structure,
     // we'll calculate MoM based on the aggregated flow data vs timeframe comparison
     
-    // Determine comparison period based on timeframe
+    // Determine comparison period based on timeframe (now weekly/monthly periods)
     const getComparisonPeriod = () => {
-      if (timeframe <= 30) return 'week' // Week over week for short timeframes
-      if (timeframe <= 90) return 'month' // Month over month for medium timeframes  
-      return 'quarter' // Quarter over quarter for long timeframes
+      if (timeframe <= 56) return 'week' // Week over week for 4-8 week periods
+      if (timeframe <= 180) return 'month' // Month over month for 3-6 month periods  
+      return 'quarter' // Quarter over quarter for yearly periods
     }
     
     const comparisonPeriod = getComparisonPeriod()
@@ -2024,9 +2024,18 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
                           <td colSpan={13} className="py-4 px-2">
                             <div className="ml-6 space-y-3">
                               <h4 className="text-white font-medium text-sm mb-3">📧 Email Sequence Performance</h4>
-                              {flowEmails[flow.flow_id] && flowEmails[flow.flow_id].length > 0 ? (
-                                <div className="grid gap-2">
-                                  {getEmailSequenceForFlow(flow.flow_id, flowEmails[flow.flow_id]).map((email: any) => (
+                              {(() => {
+                                const emails = flowEmails[flow.flow_id] || []
+                                console.log(`📧 RENDER: Flow ${flow.flow_id} emails in state:`, emails)
+                                console.log(`📧 RENDER: flowEmails state:`, flowEmails)
+                                
+                                if (emails && emails.length > 0) {
+                                  const sequencedEmails = getEmailSequenceForFlow(flow.flow_id, emails)
+                                  console.log(`📧 RENDER: Sequenced emails:`, sequencedEmails)
+                                  
+                                  return (
+                                    <div className="grid gap-2">
+                                      {sequencedEmails.map((email: any) => (
                                     <div key={email.message_id} className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
                                       <div className="flex items-center gap-3">
                                         <div className="w-6 h-6 rounded-full bg-blue-500/20 text-blue-300 text-xs flex items-center justify-center font-medium">
@@ -2045,14 +2054,18 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
                                           <span className="text-white/60">OR: <span className="text-white">{(email.open_rate * 100)?.toFixed(1) || '0.0'}%</span></span>
                                         </div>
                                       </div>
-                                   </div>
-                                 ))}
-                               </div>
-                             ) : (
-                                <div className="text-white/60 text-sm py-2">
-                                  No email sequence data available for this flow
-                               </div>
-                             )}
+                                      </div>
+                                    ))}
+                                    </div>
+                                  )
+                                } else {
+                                  return (
+                                    <div className="text-white/60 text-sm py-2">
+                                      No email sequence data available for this flow (State: {emails.length} emails)
+                                    </div>
+                                  )
+                                }
+                              })()}
                            </div>
                          </td>
                        </tr>
