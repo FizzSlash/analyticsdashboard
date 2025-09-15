@@ -1,4 +1,4 @@
-Zxdfghjk=`1  ['use client'
+'use client'
 
 import { createContext, useContext, useEffect, useState } from 'react'
 import type { User } from '@supabase/supabase-js'
