@@ -269,19 +269,47 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
   }
 
   const getEmailSequenceForFlow = (flowId: string, emails: any[]) => {
-    // Emails are already filtered for this flow by the API call
-    // Just sort by message_created timestamp to determine sequence
+    // Extract sequence numbers from email names and sort by them
     console.log(`📧 SEQUENCE: Processing ${emails.length} emails for flow ${flowId}`)
     console.log(`📧 SEQUENCE: Email sample:`, emails[0])
     
+    const extractSequenceNumber = (email: any) => {
+      const messageName = email.message_name || ''
+      const subjectLine = email.subject_line || ''
+      
+      // Look for patterns like "Email #1", "Email #2", etc. in message_name
+      const nameMatch = messageName.match(/Email #(\d+)/i)
+      if (nameMatch) return parseInt(nameMatch[1])
+      
+      // Look for patterns in subject line as fallback
+      const subjectMatch = subjectLine.match(/#(\d+)/i)
+      if (subjectMatch) return parseInt(subjectMatch[1])
+      
+      // Look for other number patterns like "1.", "2.", etc.
+      const numberMatch = messageName.match(/(\d+)\./i)
+      if (numberMatch) return parseInt(numberMatch[1])
+      
+      // If no number found, use 999 to put it at the end
+      return 999
+    }
+    
     return emails
-      .sort((a: any, b: any) => 
-        new Date(a.message_created).getTime() - new Date(b.message_created).getTime()
-      )
+      .map((email: any) => ({
+        ...email,
+        extracted_sequence: extractSequenceNumber(email)
+      }))
+      .sort((a: any, b: any) => {
+        // First sort by extracted sequence number
+        if (a.extracted_sequence !== b.extracted_sequence) {
+          return a.extracted_sequence - b.extracted_sequence
+        }
+        // Fallback to message_created if sequence numbers are the same
+        return new Date(a.message_created).getTime() - new Date(b.message_created).getTime()
+      })
       .map((email: any, index: number) => ({
         ...email,
-        sequence_position: index + 1,
-        sequence_label: `Email #${index + 1}`
+        sequence_position: email.extracted_sequence !== 999 ? email.extracted_sequence : index + 1,
+        sequence_label: email.extracted_sequence !== 999 ? `Email #${email.extracted_sequence}` : `Email #${index + 1}`
       }))
   }
 
