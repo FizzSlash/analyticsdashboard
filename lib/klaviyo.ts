@@ -383,10 +383,11 @@ export class KlaviyoAPI {
 
   // REVENUE ATTRIBUTION BY CHANNEL METHODS
   
-  // Query Revenue Attribution by Email Channel
+  // Query Revenue Attribution by Channel - Get all and filter client-side
   async queryRevenueByChannel(metricId: string, channel: 'EMAIL' | 'SMS', startDate: string, endDate: string) {
     console.log(`💰 REVENUE: Querying ${channel} revenue attribution from ${startDate} to ${endDate}`)
     
+    // First, get ALL revenue data (no channel filter) to see what's available
     return this.makeRequest('/metric-aggregates', {
       method: 'POST',
       body: JSON.stringify({
@@ -398,10 +399,9 @@ export class KlaviyoAPI {
             interval: 'day', // This handles time grouping
             filter: [
               `greater-or-equal(datetime,${startDate})`,
-              `less-than(datetime,${endDate})`,
-              `equals($attribution.Channel,${channel})`
+              `less-than(datetime,${endDate})`
             ],
-            // Remove 'by' parameter - not needed for time-based aggregation
+            // Get all revenue data, we'll filter by channel in processing
             page_size: 500,
             timezone: 'UTC'
           }

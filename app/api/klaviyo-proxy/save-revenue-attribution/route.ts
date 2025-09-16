@@ -64,18 +64,18 @@ export async function POST(request: NextRequest) {
 
     console.log('📅 Fetching revenue data for date range:', { actualStartDate, actualEndDate })
 
-    // Fetch all revenue data
-    const [emailData, smsData, totalData] = await Promise.all([
-      klaviyo.queryRevenueByChannel(placedOrderMetric.id, 'EMAIL', actualStartDate, actualEndDate),
-      klaviyo.queryRevenueByChannel(placedOrderMetric.id, 'SMS', actualStartDate, actualEndDate),
-      klaviyo.queryTotalRevenue(placedOrderMetric.id, actualStartDate, actualEndDate)
-    ])
+    // Fetch ALL revenue data once (no channel filtering)
+    const allRevenueData = await klaviyo.queryTotalRevenue(placedOrderMetric.id, actualStartDate, actualEndDate)
 
     console.log('📊 Raw data received:', {
-      email: emailData?.length || 0,
-      sms: smsData?.length || 0, 
-      total: totalData?.length || 0
+      total: allRevenueData?.data?.length || 0,
+      sampleRecord: allRevenueData?.data?.[0]
     })
+    
+    // For now, treat all revenue as total revenue (we'll enhance channel detection later)
+    const totalData = allRevenueData?.data || []
+    const emailData = [] // Will implement channel detection after seeing data structure
+    const smsData = []   // Will implement channel detection after seeing data structure
 
     // Process and aggregate data by date
     const dateMap = new Map()
