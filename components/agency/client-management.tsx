@@ -464,11 +464,16 @@ ${campaignDetails.slice(0, 3).map((c: any, i: number) =>
         name.toLowerCase().includes('subscrib') || name.toLowerCase().includes('form')
       ))
       
-      // Step 2: Query metric aggregates for last 12 months
+      // Step 2: Query metric aggregates for last 365 days with daily data
       setSuccess('Step 2/3: Getting subscription growth data...')
       console.log('📈 FRONTEND: Querying metric aggregates')
       
-      const timeframe = ["2023-01-01T00:00:00Z", "2024-12-31T23:59:59Z"] // Last 12+ months
+      // Date range: last 365 days with daily intervals
+      const endDate = new Date().toISOString()
+      const startDate = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString()
+      
+      console.log(`📅 FRONTEND: Date range: ${startDate} to ${endDate}`)
+      
       const subscriptionMetrics = [
         'Subscribed to Email Marketing',
         'Unsubscribed from Email Marketing',
@@ -492,8 +497,9 @@ ${campaignDetails.slice(0, 3).map((c: any, i: number) =>
               body: JSON.stringify({
                 clientSlug: client.brand_slug,
                 metricId: metricLookup[metricName],
-                interval: 'week',
-                timeframe: timeframe
+                interval: 'day', // Daily data for 365 days
+                startDate: startDate,
+                endDate: endDate
               })
             })
           )
@@ -525,7 +531,7 @@ ${campaignDetails.slice(0, 3).map((c: any, i: number) =>
         body: JSON.stringify({
           clientSlug: client.brand_slug,
           growthData: growthData,
-          interval: 'week'
+          interval: 'day'
         })
       })
       

@@ -5,13 +5,14 @@ import { KlaviyoAPI, decryptApiKey } from '@/lib/klaviyo'
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { clientSlug, metricId, interval, timeframe } = body
+    const { clientSlug, metricId, interval, startDate, endDate } = body
     
     if (!clientSlug || !metricId) {
       return NextResponse.json({ error: 'Client slug and metric ID required' }, { status: 400 })
     }
 
     console.log(`📊 METRIC AGGREGATES PROXY: Request for client ${clientSlug}, metric ${metricId}`)
+    console.log(`📅 METRIC AGGREGATES PROXY: Date range: ${startDate} to ${endDate}`)
 
     // Get client and decrypt API key
     const client = await DatabaseService.getClientBySlug(clientSlug)
@@ -22,11 +23,12 @@ export async function POST(request: NextRequest) {
     const decryptedKey = decryptApiKey(client.klaviyo_api_key)
     const klaviyo = new KlaviyoAPI(decryptedKey)
 
-    // Call Klaviyo metric aggregates API
+    // Call Klaviyo metric aggregates API with corrected parameters
     const aggregateData = await klaviyo.queryMetricAggregates(
       metricId, 
-      interval || 'week', 
-      timeframe
+      interval || 'day', 
+      startDate,
+      endDate
     )
     
     console.log(`✅ METRIC AGGREGATES PROXY: Successfully retrieved aggregate data`)
@@ -37,7 +39,8 @@ export async function POST(request: NextRequest) {
       data: aggregateData,
       client: client.brand_name,
       metricId,
-      interval: interval || 'week'
+      interval: interval || 'day',
+      dateRange: { startDate, endDate }
     })
 
   } catch (error: any) {

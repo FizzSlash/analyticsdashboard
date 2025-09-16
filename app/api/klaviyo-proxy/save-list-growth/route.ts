@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
         const listGrowthMetric = {
           client_id: client.id,
           date_recorded: dataPoint.date,
-          interval_type: interval || 'week',
+          interval_type: interval || 'day',
           
           // Email metrics
           email_subscriptions: dataPoint.email_subscriptions || 0,
@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
       saved: savedCount,
       errors: errorCount,
       errorDetails: errors.length > 0 ? errors : undefined,
-      interval: interval || 'week'
+      interval: interval || 'day'
     })
 
   } catch (error: any) {

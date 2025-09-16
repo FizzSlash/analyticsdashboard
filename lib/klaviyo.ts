@@ -190,9 +190,18 @@ export class KlaviyoAPI {
     return this.makeRequest(endpoint)
   }
 
-  // Query Metric Aggregates - For subscription growth tracking
-  async queryMetricAggregates(metricId: string, interval: string = 'week', timeframe: any) {
+  // Query Metric Aggregates - For subscription growth tracking (FIXED API FORMAT)
+  async queryMetricAggregates(metricId: string, interval: string = 'day', startDate?: string, endDate?: string) {
     console.log(`📈 METRIC AGGREGATES API: Querying metric ${metricId} with ${interval} interval`)
+    
+    // Default to last 365 days if no dates provided
+    const defaultEndDate = new Date().toISOString()
+    const defaultStartDate = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString()
+    
+    const actualStartDate = startDate || defaultStartDate
+    const actualEndDate = endDate || defaultEndDate
+    
+    console.log(`📅 METRIC AGGREGATES: Date range: ${actualStartDate} to ${actualEndDate}`)
     
     try {
       const requestBody = {
@@ -202,7 +211,11 @@ export class KlaviyoAPI {
             metric_id: metricId,
             measurements: ['count'],
             interval: interval, // 'day', 'week', 'month'
-            timeframe: timeframe,
+            filter: [
+              `greater-or-equal(datetime,${actualStartDate})`,
+              `less-than(datetime,${actualEndDate})`
+            ],
+            page_size: 500,
             timezone: 'UTC'
           }
         }
@@ -811,9 +824,18 @@ export class KlaviyoAPI {
   }
 
 
-  // Helper method to get subscription growth data for multiple metrics
-  async getSubscriptionGrowthData(timeframe: any, interval: string = 'week') {
-    console.log(`🔄 SUBSCRIPTION GROWTH: Getting growth data for timeframe with ${interval} interval`)
+  // Helper method to get subscription growth data for multiple metrics (FIXED)
+  async getSubscriptionGrowthData(startDate?: string, endDate?: string, interval: string = 'day') {
+    console.log(`🔄 SUBSCRIPTION GROWTH: Getting growth data with ${interval} interval`)
+    
+    // Default to last 365 days if no dates provided
+    const defaultEndDate = new Date().toISOString()
+    const defaultStartDate = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString()
+    
+    const actualStartDate = startDate || defaultStartDate
+    const actualEndDate = endDate || defaultEndDate
+    
+    console.log(`📅 SUBSCRIPTION GROWTH: Date range: ${actualStartDate} to ${actualEndDate}`)
     
     try {
       // First get all metrics to find the right IDs (using existing method)
@@ -847,7 +869,7 @@ export class KlaviyoAPI {
       
       for (const metricName of subscriptionMetrics) {
         if (metricLookup[metricName]) {
-          queries.push(this.queryMetricAggregates(metricLookup[metricName], interval, timeframe))
+          queries.push(this.queryMetricAggregates(metricLookup[metricName], interval, actualStartDate, actualEndDate))
           validMetrics.push(metricName)
         } else {
           console.log(`⚠️ SUBSCRIPTION GROWTH: Metric "${metricName}" not found in account`)
