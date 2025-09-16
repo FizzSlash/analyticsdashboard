@@ -52,9 +52,15 @@ export async function POST(request: NextRequest) {
           // Special subscriptions
           back_in_stock_subscriptions: dataPoint.back_in_stock_subscriptions || 0,
           
-          // Calculated rates
-          growth_rate: dataPoint.growth_rate || 0,
-          churn_rate: dataPoint.churn_rate || 0,
+        // Calculated aggregate totals
+        total_new_subscriptions: (dataPoint.email_subscriptions || 0) + (dataPoint.sms_subscriptions || 0) + (dataPoint.list_subscriptions || 0),
+        total_unsubscriptions: (dataPoint.email_unsubscribes || 0) + (dataPoint.sms_unsubscribes || 0) + (dataPoint.list_unsubscribes || 0),
+        overall_net_growth: ((dataPoint.email_subscriptions || 0) + (dataPoint.sms_subscriptions || 0) + (dataPoint.list_subscriptions || 0)) - 
+                           ((dataPoint.email_unsubscribes || 0) + (dataPoint.sms_unsubscribes || 0) + (dataPoint.list_unsubscribes || 0)),
+        
+        // Calculated rates
+        growth_rate: dataPoint.growth_rate || 0,
+        churn_rate: dataPoint.churn_rate || 0,
           
           // Metadata
           metric_source: 'query_metric_aggregates',

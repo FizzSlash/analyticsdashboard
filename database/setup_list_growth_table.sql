@@ -37,10 +37,10 @@ CREATE TABLE list_growth_metrics (
     -- Back in stock and other special subscriptions
     back_in_stock_subscriptions INTEGER DEFAULT 0,
     
-    -- Calculated aggregate fields
-    total_new_subscriptions INTEGER GENERATED ALWAYS AS (email_subscriptions + sms_subscriptions + list_subscriptions) STORED,
-    total_unsubscriptions INTEGER GENERATED ALWAYS AS (email_unsubscribes + sms_unsubscribes + list_unsubscribes) STORED,
-    overall_net_growth INTEGER GENERATED ALWAYS AS (total_new_subscriptions - total_unsubscriptions) STORED,
+    -- Calculated aggregate fields (computed by application, not generated columns)
+    total_new_subscriptions INTEGER DEFAULT 0,
+    total_unsubscriptions INTEGER DEFAULT 0,
+    overall_net_growth INTEGER DEFAULT 0,
     
     -- Growth rate calculations (will be updated by application)
     growth_rate NUMERIC(5,4) DEFAULT 0,
