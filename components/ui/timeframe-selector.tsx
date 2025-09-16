@@ -49,10 +49,20 @@ export function TimeframeSelector({ selectedTimeframe, onTimeframeChange, classN
     }
   }, [isOpen])
 
+  // Debug when isOpen state changes
+  useEffect(() => {
+    console.log(`🔄 TimeframeSelector isOpen changed to: ${isOpen}`)
+    if (isOpen) {
+      console.log(`📍 Dropdown position:`, dropdownPosition)
+      console.log(`📋 Available options:`, timeframeOptions.length, timeframeOptions.map(o => o.label))
+    }
+  }, [isOpen, dropdownPosition, timeframeOptions])
+
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (buttonRef.current && !buttonRef.current.contains(event.target as Node)) {
+        console.log(`👆 Clicked outside TimeframeSelector - closing`)
         setIsOpen(false)
       }
     }
@@ -69,7 +79,10 @@ export function TimeframeSelector({ selectedTimeframe, onTimeframeChange, classN
       <div 
         className="fixed inset-0 bg-black/20"
         style={{ zIndex: 999998 }}
-        onClick={() => setIsOpen(false)}
+        onClick={() => {
+          console.log(`🖱️ TimeframeSelector backdrop clicked - closing dropdown`)
+          setIsOpen(false)
+        }}
       />
       
       {/* Dropdown */}
@@ -81,15 +94,20 @@ export function TimeframeSelector({ selectedTimeframe, onTimeframeChange, classN
           left: dropdownPosition.left,
           zIndex: 999999
         }}
-        onClick={(e) => e.stopPropagation()}
+        onClick={(e) => {
+          console.log(`📋 TimeframeSelector dropdown clicked (should not close)`)
+          e.stopPropagation()
+        }}
       >
         <div className="py-2">
           {timeframeOptions.map((option) => (
             <button
               key={option.value}
               onClick={(e) => {
+                console.log(`🎯 TimeframeSelector option clicked: ${option.value} (${option.label})`)
                 e.preventDefault()
                 e.stopPropagation()
+                console.log(`📞 Calling onTimeframeChange with: ${option.value}`)
                 onTimeframeChange(option.value)
                 setIsOpen(false)
               }}
@@ -112,7 +130,10 @@ export function TimeframeSelector({ selectedTimeframe, onTimeframeChange, classN
     <div className={`relative ${className}`}>
       <button
         ref={buttonRef}
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={() => {
+          console.log(`🔘 TimeframeSelector button clicked - isOpen: ${isOpen} → ${!isOpen}`)
+          setIsOpen(!isOpen)
+        }}
         className="flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-md border border-white/20 rounded-lg hover:bg-white/20 transition-all duration-200 text-white"
       >
         <Calendar className="w-4 h-4" />
