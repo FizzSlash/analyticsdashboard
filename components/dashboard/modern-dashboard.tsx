@@ -644,80 +644,10 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
     }
   }, [timeframe, campaignTimeframe, flowTimeframe, client?.brand_slug, initialData, initialTimeframe])
 
-  const renderOverviewTab = () => {
-    const attribution = data?.revenueAttributionSummary || {}
-    
-    return (
-      <div className="space-y-6">
-        {/* Revenue Attribution Cards - NEW! */}
-        {attribution.total_store_revenue > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <Card className="bg-white/10 backdrop-blur-md border-white/20">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-white/60 text-sm font-medium">Total Store Revenue</p>
-                    <p className="text-2xl font-bold text-white mt-1">${(attribution.total_store_revenue || 0).toLocaleString()}</p>
-                    <p className="text-white/60 text-xs mt-1">all channels</p>
-                  </div>
-                  <div className="bg-white/10 p-3 rounded-lg">
-                    <DollarSign className="w-6 h-6 text-white" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card className="bg-white/10 backdrop-blur-md border-white/20">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-white/60 text-sm font-medium">Email Attribution</p>
-                    <p className="text-2xl font-bold text-white mt-1">{(attribution.email_attribution_percentage || 0).toFixed(1)}%</p>
-                    <p className="text-white/60 text-xs mt-1">${(attribution.total_email_revenue || 0).toLocaleString()} revenue</p>
-                  </div>
-                  <div className="bg-white/10 p-3 rounded-lg">
-                    <Mail className="w-6 h-6 text-white" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card className="bg-white/10 backdrop-blur-md border-white/20">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-white/60 text-sm font-medium">Email AOV</p>
-                    <p className="text-2xl font-bold text-white mt-1">${(attribution.email_average_order_value || 0).toFixed(0)}</p>
-                    <div className="flex items-center gap-2 mt-1">
-                      <span className="text-white/60 text-xs">vs ${(attribution.store_average_order_value || 0).toFixed(0)} store avg</span>
-                    </div>
-                  </div>
-                  <div className="bg-white/10 p-3 rounded-lg">
-                    <Target className="w-6 h-6 text-white" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card className="bg-white/10 backdrop-blur-md border-white/20">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-white/60 text-sm font-medium">Email Conversion Rate</p>
-                    <p className="text-2xl font-bold text-white mt-1">{((attribution.email_conversion_rate || 0) * 100).toFixed(1)}%</p>
-                    <p className="text-white/60 text-xs mt-1">email to purchase</p>
-                  </div>
-                  <div className="bg-white/10 p-3 rounded-lg">
-                    <Activity className="w-6 h-6 text-white" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        )}
-
-        {/* Key Metrics Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+  const renderOverviewTab = () => (
+    <div className="space-y-6">
+      {/* Key Metrics Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <MetricCard
           title="Total Revenue"
           value={`$${(data?.summary?.revenue?.total_revenue || 0).toLocaleString()}`}
@@ -760,23 +690,44 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
           <CardContent>
             <div className="space-y-4">
               <div className="flex justify-between items-center">
-                <span className="text-white/80">Campaign Revenue</span>
-                <span className="text-white font-semibold">
-                  ${(data?.summary?.revenue?.campaign_revenue || 0).toLocaleString()}
-                </span>
+                <span className="text-white/80">📧 Email Revenue</span>
+                <div className="text-right">
+                  <span className="text-white font-semibold">
+                    ${(data?.revenueAttributionSummary?.total_email_revenue || 0).toLocaleString()}
+                  </span>
+                  <div className="text-xs text-white/60">
+                    {(data?.revenueAttributionSummary?.avg_email_percentage || 0).toFixed(1)}% of total
+                  </div>
+                </div>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-white/80">Flow Revenue</span>
-                <span className="text-white font-semibold">
-                  ${(data?.summary?.revenue?.flow_revenue || 0).toLocaleString()}
-                </span>
+                <span className="text-white/80">📱 SMS Revenue</span>
+                <div className="text-right">
+                  <span className="text-white font-semibold">
+                    ${(data?.revenueAttributionSummary?.total_sms_revenue || 0).toLocaleString()}
+                  </span>
+                  <div className="text-xs text-white/60">
+                    {(data?.revenueAttributionSummary?.avg_sms_percentage || 0).toFixed(1)}% of total
+                  </div>
+                </div>
               </div>
               <div className="flex justify-between items-center border-t border-white/20 pt-4">
-                <span className="text-white font-medium">Total Orders</span>
-                <span className="text-white font-bold">
-                  {(data?.summary?.revenue?.total_orders || 0).toLocaleString()}
+                <span className="text-white font-medium">💰 Total Store Revenue</span>
+                <span className="text-white font-bold text-lg">
+                  ${(data?.revenueAttributionSummary?.total_revenue || 0).toLocaleString()}
                 </span>
               </div>
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-white/70">Total Orders</span>
+                <span className="text-white/90">
+                  {(data?.revenueAttributionSummary?.total_orders || 0).toLocaleString()}
+                </span>
+              </div>
+              {data?.revenueAttributionSummary?.days_with_data > 0 && (
+                <div className="text-xs text-white/50 text-center pt-2 border-t border-white/10">
+                  Data from {data.revenueAttributionSummary.days_with_data} days
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -2718,4 +2669,4 @@ function MetricCard({ title, value, change, icon: Icon, trend }: MetricCardProps
       </CardContent>
     </Card>
   )
-}
+} 

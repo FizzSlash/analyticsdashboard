@@ -650,237 +650,39 @@ ${campaignDetails.slice(0, 3).map((c: any, i: number) =>
     setSuccess('')
     
     try {
-      console.log('💰 REVENUE ATTRIBUTION SYNC: Starting comprehensive attribution sync for:', client.brand_slug)
+      console.log('💰 REVENUE ATTRIBUTION SYNC: Starting revenue attribution sync for:', client.brand_slug)
       
-      // Step 1: Get all available metrics to find Placed Order
-      setSuccess('Step 1/4: Getting conversion metrics...')
-      console.log('📡 FRONTEND: Calling metrics proxy API')
+      setSuccess('Syncing revenue attribution data...')
       
-      const metricsResponse = await fetch(`/api/klaviyo-proxy/metrics?clientSlug=${client.brand_slug}`)
-      if (!metricsResponse.ok) {
-        throw new Error(`Metrics API failed: ${metricsResponse.status}`)
-      }
-      
-      const metricsResult = await metricsResponse.json()
-      console.log('📊 FRONTEND: Available metrics:', metricsResult.data?.data?.length || 0)
-      
-      // Find Placed Order metric for conversion tracking
-      const placedOrderMetric = metricsResult.data?.data?.find((m: any) => 
-        m.attributes?.name === 'Placed Order'
-      )
-      if (!placedOrderMetric) {
-        throw new Error('Placed Order metric not found - cannot calculate revenue attribution')
-      }
-      
-      const conversionMetricId = placedOrderMetric.id
-      console.log('🎯 FRONTEND: Found Placed Order metric ID:', conversionMetricId)
-      
-      // Step 2: Get total store revenue via metric aggregates
-      setSuccess('Step 2/4: Getting total store revenue...')
-      console.log('🏪 FRONTEND: Querying total store revenue')
-      
-      const endDate = new Date().toISOString()
-      const startDate = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString()
-      
-      const storeRevenueResponse = await fetch('/api/klaviyo-proxy/metric-aggregates', {
+      // Call the save revenue attribution API
+      const response = await fetch('/api/klaviyo-proxy/save-revenue-attribution', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({
-          clientSlug: client.brand_slug,
-          metricId: conversionMetricId,
-          interval: 'month',
-          startDate: startDate,
-          endDate: endDate
-        })
-      })
-      
-      if (!storeRevenueResponse.ok) {
-        const errorData = await storeRevenueResponse.json()
-        throw new Error(`Store revenue query failed: ${errorData.message}`)
-      }
-      
-      const storeRevenueResult = await storeRevenueResponse.json()
-      console.log('🏪 FRONTEND: Total store revenue data retrieved')
-      
-      // Step 3: Get email attribution data (campaigns + flows)
-      setSuccess('Step 3/4: Getting email attribution data...')
-      console.log('📧 FRONTEND: Querying email attribution')
-      
-      const timeframe = {"key": "last_12_months"}
-      
-      const [campaignAttributionResponse, flowAttributionResponse] = await Promise.all([
-        fetch('/api/klaviyo-proxy/campaign-values-reports', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            clientSlug: client.brand_slug,
-            conversionMetricId: conversionMetricId,
-            timeframe: timeframe
-          })
+          klaviyoApiKey: client.klaviyo_api_key,
+          clientId: client.id,
+          timeframe: 'last-30-days'
         }),
-        fetch('/api/klaviyo-proxy/flow-values-reports', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            clientSlug: client.brand_slug,
-            conversionMetricId: conversionMetricId,
-            timeframe: timeframe
-          })
-        })
-      ])
-      
-      if (!campaignAttributionResponse.ok || !flowAttributionResponse.ok) {
-        const campaignError = !campaignAttributionResponse.ok ? await campaignAttributionResponse.json() : null
-        const flowError = !flowAttributionResponse.ok ? await flowAttributionResponse.json() : null
-        throw new Error(`Attribution queries failed: Campaign: ${campaignError?.message || 'OK'}, Flow: ${flowError?.message || 'OK'}`)
-      }
-      
-      const [campaignAttributionResult, flowAttributionResult] = await Promise.all([
-        campaignAttributionResponse.json(),
-        flowAttributionResponse.json()
-      ])
-      
-      console.log('📧 FRONTEND: Email attribution data retrieved')
-      
-      // Step 4: Transform and save attribution data
-      setSuccess('Step 4/4: Calculating attribution and saving...')
-      console.log('💾 FRONTEND: Transforming attribution data')
-      
-      // Transform API data into database format
-      const attributionData = transformRevenueAttributionData(
-        storeRevenueResult,
-        campaignAttributionResult,
-        flowAttributionResult
-      )
-      console.log('💰 FRONTEND: Transformed attribution data points:', attributionData.length)
-      
-      // Save to database
-      const saveResponse = await fetch('/api/klaviyo-proxy/save-revenue-attribution', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          clientSlug: client.brand_slug,
-          attributionData: attributionData,
-          interval: 'month'
-        })
       })
-      
-      if (!saveResponse.ok) {
-        const errorData = await saveResponse.json()
-        throw new Error(`Save revenue attribution failed: ${errorData.message}`)
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.details || errorData.error || `HTTP ${response.status}`)
       }
+
+      const result = await response.json()
+      console.log('✅ REVENUE ATTRIBUTION SYNC: Success:', result)
       
-      const saveResult = await saveResponse.json()
-      console.log('✅ FRONTEND: Revenue attribution sync completed:', saveResult)
+      setSuccess(`Successfully synced ${result.savedCount || 'revenue attribution'} records! 💰`)
       
-      setSuccess(`✅ Revenue Attribution Sync Complete! Saved ${saveResult.saved} data points.`)
-      
-    } catch (error: any) {
-      console.error('❌ FRONTEND: Revenue attribution sync failed:', error)
-      setError(`Revenue attribution sync failed: ${error.message}`)
+    } catch (error) {
+      console.error('❌ REVENUE ATTRIBUTION SYNC: Error:', error)
+      setError(`Revenue attribution sync failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
     } finally {
       setLoading(false)
     }
-  }
-
-  // Helper function to transform revenue attribution data
-  const transformRevenueAttributionData = (storeRevenueResult: any, campaignResult: any, flowResult: any) => {
-    console.log('🔄 TRANSFORM: Processing revenue attribution data')
-    
-    if (!storeRevenueResult.success || !campaignResult.success || !flowResult.success) {
-      console.log('⚠️ TRANSFORM: Some attribution results failed')
-      return []
-    }
-    
-    // Get monthly data from store revenue (metric aggregates)
-    const storeData = storeRevenueResult.data?.data?.attributes?.data?.[0]
-    const months = storeRevenueResult.data?.data?.attributes?.dates || []
-    
-    if (!months.length || !storeData) {
-      console.log('⚠️ TRANSFORM: No store revenue data found')
-      return []
-    }
-    
-    // Get email attribution totals from values reports
-    const campaignAttribution = campaignResult.data?.data?.attributes || {}
-    const flowAttribution = flowResult.data?.data?.attributes || {}
-    
-    console.log(`📊 TRANSFORM: Processing ${months.length} months of data`)
-    console.log(`📧 TRANSFORM: Campaign attribution:`, campaignAttribution)
-    console.log(`📧 TRANSFORM: Flow attribution:`, flowAttribution)
-    
-    // Create data point for each month
-    const attributionData = months.map((date: string, index: number) => {
-      const monthlyStoreRevenue = storeData.measurements?.value?.[index] || 0
-      const monthlyStoreOrders = storeData.measurements?.count?.[index] || 0
-      
-      // Email attribution (totals distributed across months)
-      const emailCampaignRevenue = (campaignAttribution.revenue || 0) / months.length
-      const emailFlowRevenue = (flowAttribution.revenue || 0) / months.length
-      const totalEmailRevenue = emailCampaignRevenue + emailFlowRevenue
-      
-      const emailCampaignOrders = Math.round((campaignAttribution.orders_count || 0) / months.length)
-      const emailFlowOrders = Math.round((flowAttribution.orders_count || 0) / months.length)
-      
-      // Calculate attribution percentages
-      const emailAttributionPercentage = monthlyStoreRevenue > 0 ? 
-        (totalEmailRevenue / monthlyStoreRevenue) * 100 : 0
-      const unattributedRevenue = monthlyStoreRevenue - totalEmailRevenue
-      const unattributedPercentage = monthlyStoreRevenue > 0 ? 
-        (unattributedRevenue / monthlyStoreRevenue) * 100 : 0
-      
-      // Calculate performance metrics
-      const emailRecipients = (campaignAttribution.recipients || 0) + (flowAttribution.recipients || 0)
-      const emailConversionRate = emailRecipients > 0 ? 
-        ((emailCampaignOrders + emailFlowOrders) / emailRecipients) : 0
-      
-      const dataPoint = {
-        date: date,
-        total_store_revenue: monthlyStoreRevenue,
-        total_store_orders: monthlyStoreOrders,
-        
-        // Email attribution
-        email_campaign_revenue: emailCampaignRevenue,
-        email_campaign_orders: emailCampaignOrders,
-        email_campaign_recipients: Math.round((campaignAttribution.recipients || 0) / months.length),
-        email_flow_revenue: emailFlowRevenue,
-        email_flow_orders: emailFlowOrders,
-        email_flow_recipients: Math.round((flowAttribution.recipients || 0) / months.length),
-        
-        // SMS attribution (placeholder for future)
-        sms_campaign_revenue: 0,
-        sms_campaign_orders: 0,
-        sms_campaign_recipients: 0,
-        sms_flow_revenue: 0,
-        sms_flow_orders: 0,
-        sms_flow_recipients: 0,
-        
-        // Calculated percentages
-        email_attribution_percentage: emailAttributionPercentage,
-        sms_attribution_percentage: 0,
-        unattributed_revenue: unattributedRevenue,
-        unattributed_percentage: unattributedPercentage,
-        
-        // Performance metrics
-        email_revenue_per_recipient: emailRecipients > 0 ? totalEmailRevenue / emailRecipients : 0,
-        sms_revenue_per_recipient: 0,
-        email_conversion_rate: emailConversionRate,
-        sms_conversion_rate: 0,
-        
-        // Average order values
-        email_average_order_value: (emailCampaignOrders + emailFlowOrders) > 0 ? 
-          totalEmailRevenue / (emailCampaignOrders + emailFlowOrders) : 0,
-        sms_average_order_value: 0,
-        store_average_order_value: monthlyStoreOrders > 0 ? monthlyStoreRevenue / monthlyStoreOrders : 0
-      }
-      
-      return dataPoint
-    })
-    
-    console.log(`✅ TRANSFORM: Created ${attributionData.length} attribution data points`)
-    console.log('📊 TRANSFORM: Sample attribution data:', attributionData[0])
-    
-    return attributionData
   }
 
   const triggerFlowSync = async (client: Client) => {

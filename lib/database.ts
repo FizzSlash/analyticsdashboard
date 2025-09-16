@@ -598,6 +598,135 @@ export class DatabaseService {
     }
   }
 
+  // REVENUE ATTRIBUTION METRICS METHODS (New Table)
+  static async upsertRevenueAttributionMetric(metric: {
+    client_id: string;
+    date: string;
+    email_revenue: number;
+    sms_revenue: number;
+    total_revenue: number;
+    email_orders: number;
+    sms_orders: number;
+    total_orders: number;
+    email_percentage: number;
+    sms_percentage: number;
+  }): Promise<void> {
+    const { error } = await supabaseAdmin
+      .from('revenue_attribution_metrics')
+      .upsert(metric, {
+        onConflict: 'client_id,date',
+        ignoreDuplicates: false
+      })
+
+    if (error) {
+      console.error('Error upserting revenue attribution metric:', error)
+      throw error
+    }
+  }
+
+  static async getRevenueAttributionMetrics(clientId: string, days: number = 30): Promise<any[]> {
+    const startDate = new Date()
+    startDate.setDate(startDate.getDate() - days)
+
+    const { data, error } = await supabaseAdmin
+      .from('revenue_attribution_metrics')
+      .select('*')
+      .eq('client_id', clientId)
+      .gte('date', startDate.toISOString().split('T')[0])
+      .order('date', { ascending: false })
+
+    if (error) {
+      console.error('Error fetching revenue attribution metrics:', error)
+      return []
+    }
+
+    return data || []
+  }
+
+  static async getRevenueAttributionSummary(clientId: string, days: number = 30): Promise<{
+    total_email_revenue: number;
+    total_sms_revenue: number;
+    total_revenue: number;
+    total_email_orders: number;
+    total_sms_orders: number;
+    total_orders: number;
+    avg_email_percentage: number;
+    avg_sms_percentage: number;
+    days_with_data: number;
+  }> {
+    const startDate = new Date()
+    startDate.setDate(startDate.getDate() - days)
+
+    const { data, error } = await supabaseAdmin
+      .from('revenue_attribution_metrics')
+      .select('*')
+      .eq('client_id', clientId)
+      .gte('date', startDate.toISOString().split('T')[0])
+
+    if (error) {
+      console.error('Error fetching revenue attribution summary:', error)
+      return {
+        total_email_revenue: 0,
+        total_sms_revenue: 0,
+        total_revenue: 0,
+        total_email_orders: 0,
+        total_sms_orders: 0,
+        total_orders: 0,
+        avg_email_percentage: 0,
+        avg_sms_percentage: 0,
+        days_with_data: 0
+      }
+    }
+
+    const metrics = data || []
+    
+    if (metrics.length === 0) {
+      return {
+        total_email_revenue: 0,
+        total_sms_revenue: 0,
+        total_revenue: 0,
+        total_email_orders: 0,
+        total_sms_orders: 0,
+        total_orders: 0,
+        avg_email_percentage: 0,
+        avg_sms_percentage: 0,
+        days_with_data: 0
+      }
+    }
+
+    const totals = metrics.reduce((acc, metric) => ({
+      email_revenue: acc.email_revenue + Number(metric.email_revenue || 0),
+      sms_revenue: acc.sms_revenue + Number(metric.sms_revenue || 0),
+      total_revenue: acc.total_revenue + Number(metric.total_revenue || 0),
+      email_orders: acc.email_orders + Number(metric.email_orders || 0),
+      sms_orders: acc.sms_orders + Number(metric.sms_orders || 0),
+      total_orders: acc.total_orders + Number(metric.total_orders || 0),
+      email_percentage_sum: acc.email_percentage_sum + Number(metric.email_percentage || 0),
+      sms_percentage_sum: acc.sms_percentage_sum + Number(metric.sms_percentage || 0)
+    }), {
+      email_revenue: 0,
+      sms_revenue: 0,
+      total_revenue: 0,
+      email_orders: 0,
+      sms_orders: 0,
+      total_orders: 0,
+      email_percentage_sum: 0,
+      sms_percentage_sum: 0
+    })
+
+    return {
+      total_email_revenue: totals.email_revenue,
+      total_sms_revenue: totals.sms_revenue,
+      total_revenue: totals.total_revenue,
+      total_email_orders: totals.email_orders,
+      total_sms_orders: totals.sms_orders,
+      total_orders: totals.total_orders,
+      avg_email_percentage: metrics.length > 0 ? totals.email_percentage_sum / metrics.length : 0,
+      avg_sms_percentage: metrics.length > 0 ? totals.sms_percentage_sum / metrics.length : 0,
+      days_with_data: metrics.length
+    }
+  }
+
   // Dashboard Summary Data
   static async getDashboardSummary(clientId: string, days: number = 30) {
     const [campaigns, flows, audience, revenue] = await Promise.all([
@@ -984,80 +1113,6 @@ export class DatabaseService {
         start: trends[0]?.date_recorded,
         end: trends[trends.length - 1]?.date_recorded
       }
-    }
-  }
-
-  // ===== REVENUE ATTRIBUTION METRICS METHODS =====
-
-  static async upsertRevenueAttributionMetric(metric: Omit<any, 'id' | 'created_at'>): Promise<void> {
-    const { error } = await supabaseAdmin
-      .from('revenue_attribution_metrics')
-      .upsert(metric, {
-        onConflict: 'client_id,date_recorded,interval_type'
-      })
-
-    if (error) {
-      console.error('Error upserting revenue attribution metric:', error)
-      throw error
-    }
-  }
-
-  static async getRevenueAttributionMetrics(clientId: string, days: number = 30): Promise<any[]> {
-    console.log(`💰 DATABASE: Getting revenue attribution metrics for CLIENT_ID: ${clientId}, ${days} days`)
-    
-    const cutoffDate = new Date()
-    cutoffDate.setDate(cutoffDate.getDate() - days)
-
-    const { data, error } = await supabaseAdmin
-      .from('revenue_attribution_metrics')
-      .select('*')
-      .eq('client_id', clientId)
-      .gte('date_recorded', cutoffDate.toISOString().split('T')[0])
-      .order('date_recorded', { ascending: false })
-
-    if (error) {
-      console.error('Error fetching revenue attribution metrics:', error)
-      throw error
-    }
-
-    console.log(`💰 DATABASE: Found ${data?.length || 0} revenue attribution data points`)
-    return data || []
-  }
-
-  static async getRevenueAttributionSummary(clientId: string, days: number = 30): Promise<any> {
-    console.log(`📊 DATABASE: Getting revenue attribution summary for CLIENT_ID: ${clientId}, ${days} days`)
-    
-    const metrics = await this.getRevenueAttributionMetrics(clientId, days)
-    
-    if (!metrics || metrics.length === 0) {
-      return {
-        total_store_revenue: 0,
-        total_email_revenue: 0,
-        total_sms_revenue: 0,
-        email_attribution_percentage: 0,
-        sms_attribution_percentage: 0,
-        unattributed_percentage: 0,
-        email_conversion_rate: 0,
-        store_average_order_value: 0
-      }
-    }
-
-    // Calculate totals from recent data
-    const latest = metrics[0] // Most recent data point
-    
-    return {
-      total_store_revenue: latest.total_store_revenue || 0,
-      total_email_revenue: latest.total_email_revenue || 0,
-      total_sms_revenue: latest.total_sms_revenue || 0,
-      email_attribution_percentage: latest.email_attribution_percentage || 0,
-      sms_attribution_percentage: latest.sms_attribution_percentage || 0,
-      unattributed_percentage: latest.unattributed_percentage || 0,
-      email_conversion_rate: latest.email_conversion_rate || 0,
-      sms_conversion_rate: latest.sms_conversion_rate || 0,
-      store_average_order_value: latest.store_average_order_value || 0,
-      email_average_order_value: latest.email_average_order_value || 0,
-      sms_average_order_value: latest.sms_average_order_value || 0,
-      last_updated: latest.date_recorded
     }
   }
 }

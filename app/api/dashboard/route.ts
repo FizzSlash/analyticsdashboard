@@ -50,8 +50,6 @@ export async function GET(request: NextRequest) {
 
     console.log(`DASHBOARD API: Fetched ${campaigns.length} campaigns, ${flows.length} flows for ${timeframe} days`)
     console.log(`DASHBOARD API: List growth data points: ${listGrowthMetrics.length}`)
-    console.log(`DASHBOARD API: Revenue attribution data points: ${revenueAttributionMetrics.length}`)
-    console.log(`DASHBOARD API: Revenue attribution summary:`, revenueAttributionSummary)
     console.log(`DASHBOARD API: Flow data sample:`, flows.slice(0, 1))
     console.log(`DASHBOARD API: Flow revenue check:`, flows.map(f => ({ id: f.flow_id, name: f.flow_name, revenue: f.revenue })).slice(0, 3))
 

@@ -1,111 +1,180 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { KlaviyoAPI } from '@/lib/klaviyo'
 import { DatabaseService } from '@/lib/database'
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    const { clientSlug, attributionData, interval } = body
+    console.log('💾 Save Revenue Attribution API called')
     
-    if (!clientSlug || !attributionData) {
+    const body = await request.json()
+    const { 
+      klaviyoApiKey, 
+      clientId, 
+      timeframe = 'last-30-days',
+      startDate, 
+      endDate 
+    } = body
+
+    if (!klaviyoApiKey || !clientId) {
+      console.error('❌ Missing required parameters')
       return NextResponse.json({ 
-        error: 'Client slug and attribution data required' 
+        error: 'Klaviyo API key and client ID are required' 
       }, { status: 400 })
     }
 
-    console.log(`💾 SAVE REVENUE ATTRIBUTION: Saving attribution data for client ${clientSlug}`)
-    console.log(`💾 SAVE REVENUE ATTRIBUTION: Data points to save: ${attributionData.length}`)
-
-    // Get client
-    const client = await DatabaseService.getClientBySlug(clientSlug)
-    if (!client) {
-      return NextResponse.json({ error: 'Client not found' }, { status: 404 })
+    const klaviyo = new KlaviyoAPI(klaviyoApiKey)
+    const db = new DatabaseService()
+    
+    // Get the "Placed Order" metric ID
+    const metrics = await klaviyo.getMetrics()
+    const placedOrderMetric = metrics.find((m: any) => m.name === 'Placed Order')
+    
+    if (!placedOrderMetric) {
+      console.error('❌ Placed Order metric not found')
+      return NextResponse.json({ error: 'Placed Order metric not found' }, { status: 404 })
     }
 
-    let savedCount = 0
-    let errorCount = 0
-    const errors = []
-
-    // Save each data point
-    for (const dataPoint of attributionData) {
-      try {
-        const revenueAttributionMetric = {
-          client_id: client.id,
-          date_recorded: dataPoint.date,
-          interval_type: interval || 'month',
-          
-          // Total store metrics
-          total_store_revenue: dataPoint.total_store_revenue || 0,
-          total_store_orders: dataPoint.total_store_orders || 0,
-          
-          // Email campaign attribution
-          email_campaign_revenue: dataPoint.email_campaign_revenue || 0,
-          email_campaign_orders: dataPoint.email_campaign_orders || 0,
-          email_campaign_recipients: dataPoint.email_campaign_recipients || 0,
-          
-          // Email flow attribution
-          email_flow_revenue: dataPoint.email_flow_revenue || 0,
-          email_flow_orders: dataPoint.email_flow_orders || 0,
-          email_flow_recipients: dataPoint.email_flow_recipients || 0,
-          
-          // SMS attribution (future enhancement)
-          sms_campaign_revenue: dataPoint.sms_campaign_revenue || 0,
-          sms_campaign_orders: dataPoint.sms_campaign_orders || 0,
-          sms_campaign_recipients: dataPoint.sms_campaign_recipients || 0,
-          sms_flow_revenue: dataPoint.sms_flow_revenue || 0,
-          sms_flow_orders: dataPoint.sms_flow_orders || 0,
-          sms_flow_recipients: dataPoint.sms_flow_recipients || 0,
-          
-          // Calculated percentages
-          email_attribution_percentage: dataPoint.email_attribution_percentage || 0,
-          sms_attribution_percentage: dataPoint.sms_attribution_percentage || 0,
-          unattributed_revenue: dataPoint.unattributed_revenue || 0,
-          unattributed_percentage: dataPoint.unattributed_percentage || 0,
-          
-          // Performance metrics
-          email_revenue_per_recipient: dataPoint.email_revenue_per_recipient || 0,
-          sms_revenue_per_recipient: dataPoint.sms_revenue_per_recipient || 0,
-          email_conversion_rate: dataPoint.email_conversion_rate || 0,
-          sms_conversion_rate: dataPoint.sms_conversion_rate || 0,
-          
-          // Average order values
-          email_average_order_value: dataPoint.email_average_order_value || 0,
-          sms_average_order_value: dataPoint.sms_average_order_value || 0,
-          store_average_order_value: dataPoint.store_average_order_value || 0,
-          
-          // Metadata
-          metric_source: 'values_reports',
-          sync_timestamp: new Date().toISOString()
-        }
-        
-        await DatabaseService.upsertRevenueAttributionMetric(revenueAttributionMetric)
-        savedCount++
-        
-      } catch (error: any) {
-        errorCount++
-        errors.push({
-          date: dataPoint.date,
-          error: error.message
-        })
-        console.error(`❌ SAVE REVENUE ATTRIBUTION: Error saving data point for ${dataPoint.date}:`, error.message)
-      }
+    // Determine date range
+    let actualStartDate, actualEndDate
+    if (startDate && endDate) {
+      actualStartDate = startDate
+      actualEndDate = endDate
+    } else {
+      const now = new Date()
+      const thirtyDaysAgo = new Date(now.getTime() - (30 * 24 * 60 * 60 * 1000))
+      actualStartDate = thirtyDaysAgo.toISOString().split('T')[0] + 'T00:00:00Z'
+      actualEndDate = now.toISOString().split('T')[0] + 'T23:59:59Z'
     }
 
-    console.log(`✅ SAVE REVENUE ATTRIBUTION: Saved ${savedCount} data points, ${errorCount} errors`)
+    console.log('📅 Fetching revenue data for date range:', { actualStartDate, actualEndDate })
 
-    return NextResponse.json({
-      success: true,
-      client: client.brand_name,
-      saved: savedCount,
-      errors: errorCount,
-      errorDetails: errors.length > 0 ? errors : undefined,
-      interval: interval || 'month'
+    // Fetch all revenue data
+    const [emailData, smsData, totalData] = await Promise.all([
+      klaviyo.queryRevenueByChannel(placedOrderMetric.id, 'EMAIL', actualStartDate, actualEndDate),
+      klaviyo.queryRevenueByChannel(placedOrderMetric.id, 'SMS', actualStartDate, actualEndDate),
+      klaviyo.queryTotalRevenue(placedOrderMetric.id, actualStartDate, actualEndDate)
+    ])
+
+    console.log('📊 Raw data received:', {
+      email: emailData?.length || 0,
+      sms: smsData?.length || 0, 
+      total: totalData?.length || 0
     })
 
-  } catch (error: any) {
-    console.error('❌ SAVE REVENUE ATTRIBUTION: Critical error:', error)
-    return NextResponse.json({
+    // Process and aggregate data by date
+    const dateMap = new Map()
+
+    // Process email data
+    if (emailData && Array.isArray(emailData)) {
+      emailData.forEach((item: any) => {
+        const date = item.date || item.dimensions?.date
+        if (date) {
+          const key = date.split('T')[0] // Get YYYY-MM-DD
+          if (!dateMap.has(key)) {
+            dateMap.set(key, {
+              date: key,
+              email_revenue: 0,
+              email_orders: 0,
+              sms_revenue: 0,
+              sms_orders: 0,
+              total_revenue: 0,
+              total_orders: 0
+            })
+          }
+          const entry = dateMap.get(key)
+          entry.email_revenue += (item.measurements?.sum_value || 0) / 100 // Convert cents to dollars
+          entry.email_orders += item.measurements?.count || 0
+        }
+      })
+    }
+
+    // Process SMS data
+    if (smsData && Array.isArray(smsData)) {
+      smsData.forEach((item: any) => {
+        const date = item.date || item.dimensions?.date
+        if (date) {
+          const key = date.split('T')[0]
+          if (!dateMap.has(key)) {
+            dateMap.set(key, {
+              date: key,
+              email_revenue: 0,
+              email_orders: 0,
+              sms_revenue: 0,
+              sms_orders: 0,
+              total_revenue: 0,
+              total_orders: 0
+            })
+          }
+          const entry = dateMap.get(key)
+          entry.sms_revenue += (item.measurements?.sum_value || 0) / 100 // Convert cents to dollars
+          entry.sms_orders += item.measurements?.count || 0
+        }
+      })
+    }
+
+    // Process total data
+    if (totalData && Array.isArray(totalData)) {
+      totalData.forEach((item: any) => {
+        const date = item.date || item.dimensions?.date
+        if (date) {
+          const key = date.split('T')[0]
+          if (!dateMap.has(key)) {
+            dateMap.set(key, {
+              date: key,
+              email_revenue: 0,
+              email_orders: 0,
+              sms_revenue: 0,
+              sms_orders: 0,
+              total_revenue: 0,
+              total_orders: 0
+            })
+          }
+          const entry = dateMap.get(key)
+          entry.total_revenue += (item.measurements?.sum_value || 0) / 100 // Convert cents to dollars
+          entry.total_orders += item.measurements?.count || 0
+        }
+      })
+    }
+
+    // Save to database
+    let savedCount = 0
+    for (const [date, data] of dateMap) {
+      // Calculate percentages
+      const email_percentage = data.total_revenue > 0 ? 
+        Math.round((data.email_revenue / data.total_revenue) * 10000) / 100 : 0
+      const sms_percentage = data.total_revenue > 0 ?
+        Math.round((data.sms_revenue / data.total_revenue) * 10000) / 100 : 0
+
+      await db.upsertRevenueAttributionMetric({
+        client_id: clientId,
+        date,
+        email_revenue: data.email_revenue,
+        sms_revenue: data.sms_revenue,
+        total_revenue: data.total_revenue,
+        email_orders: data.email_orders,
+        sms_orders: data.sms_orders, 
+        total_orders: data.total_orders,
+        email_percentage,
+        sms_percentage
+      })
+      
+      savedCount++
+    }
+
+    console.log(`✅ Successfully saved ${savedCount} revenue attribution records for client ${clientId}`)
+    
+    return NextResponse.json({ 
+      success: true,
+      message: `Successfully synced ${savedCount} days of revenue attribution data`,
+      savedCount,
+      dateRange: { startDate: actualStartDate, endDate: actualEndDate }
+    })
+
+  } catch (error) {
+    console.error('❌ Save Revenue Attribution API error:', error)
+    return NextResponse.json({ 
       error: 'Failed to save revenue attribution data',
-      message: error.message
+      details: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 })
   }
 }
