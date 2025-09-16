@@ -209,7 +209,7 @@ export async function POST(request: NextRequest) {
       savedCount++
     }
 
-    console.log(`✅ Successfully saved ${savedCount} revenue attribution records for client ${client.brand_slug}`)
+    console.log(`✅ Successfully saved ${savedCount} revenue attribution records for client ${client!.brand_slug}`)
     
     return NextResponse.json({ 
       success: true,
