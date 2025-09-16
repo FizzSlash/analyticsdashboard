@@ -57,9 +57,10 @@ export async function POST(request: NextRequest) {
       actualEndDate = endDate
     } else {
       const now = new Date()
-      const threeHundredSixtyFiveDaysAgo = new Date(now.getTime() - (365 * 24 * 60 * 60 * 1000))
-      actualStartDate = threeHundredSixtyFiveDaysAgo.toISOString().split('T')[0] + 'T00:00:00Z'
-      actualEndDate = now.toISOString().split('T')[0] + 'T23:59:59Z'
+      // Use exactly 364 days to stay under 1 year limit
+      const threeSixtyFourDaysAgo = new Date(now.getTime() - (364 * 24 * 60 * 60 * 1000))
+      actualStartDate = threeSixtyFourDaysAgo.toISOString().split('T')[0] + 'T00:00:00Z'
+      actualEndDate = now.toISOString().split('T')[0] + 'T00:00:00Z' // Same time to avoid overflow
     }
 
     console.log('📅 Fetching revenue data for date range:', { actualStartDate, actualEndDate })
