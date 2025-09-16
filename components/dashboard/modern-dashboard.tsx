@@ -905,17 +905,6 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
         return aVal > bVal ? -1 : aVal < bVal ? 1 : 0
       }
     })
-      
-      // Handle different data types
-      if (typeof aVal === 'string') aVal = aVal.toLowerCase()
-      if (typeof bVal === 'string') bVal = bVal.toLowerCase()
-      
-      if (sortDirection === 'asc') {
-        return aVal < bVal ? -1 : aVal > bVal ? 1 : 0
-      } else {
-        return aVal > bVal ? -1 : aVal < bVal ? 1 : 0
-      }
-    })
     
     // Top performing subject lines (by open rate)
     const topSubjectLines = [...campaigns]
