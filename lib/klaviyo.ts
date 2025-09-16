@@ -395,13 +395,13 @@ export class KlaviyoAPI {
           attributes: {
             metric_id: metricId,
             measurements: ['count', 'sum_value'], // count = orders, sum_value = revenue in cents
-            interval: 'day',
+            interval: 'day', // This handles time grouping
             filter: [
               `greater-or-equal(datetime,${startDate})`,
               `less-than(datetime,${endDate})`,
               `equals($attribution.Channel,${channel})`
             ],
-            by: ['date'], // Group by date
+            // Remove 'by' parameter - not needed for time-based aggregation
             page_size: 500,
             timezone: 'UTC'
           }
@@ -422,12 +422,12 @@ export class KlaviyoAPI {
           attributes: {
             metric_id: metricId,
             measurements: ['count', 'sum_value'], // count = orders, sum_value = revenue in cents
-            interval: 'day',
+            interval: 'day', // This handles time grouping
             filter: [
               `greater-or-equal(datetime,${startDate})`,
               `less-than(datetime,${endDate})`
             ],
-            by: ['date'], // Group by date
+            // Remove 'by' parameter - not needed for time-based aggregation
             page_size: 500,
             timezone: 'UTC'
           }
