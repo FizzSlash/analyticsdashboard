@@ -809,50 +809,47 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
     
     return (
       <div className="space-y-6">
-        {/* Subject Line Insights Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {[
-            {
-              title: 'With Emojis 📧',
-              count: subjectInsights.withEmoji.count,
-              avgOpenRate: subjectInsights.withEmoji.avgOpenRate,
-              color: 'from-yellow-400 to-orange-500'
-            },
-            {
-              title: 'Personalized 👤',
-              count: subjectInsights.withPersonalization.count,
-              avgOpenRate: subjectInsights.withPersonalization.avgOpenRate,
-              color: 'from-blue-400 to-blue-600'
-            },
-            {
-              title: 'Short (<30 chars) 📏',
-              count: subjectInsights.shortLines.count,
-              avgOpenRate: subjectInsights.shortLines.avgOpenRate,
-              color: 'from-green-400 to-green-600'
-            },
-            {
-              title: 'With Urgency ⚡',
-              count: subjectInsights.withUrgency.count,
-              avgOpenRate: subjectInsights.withUrgency.avgOpenRate,
-              color: 'from-red-400 to-red-600'
-            }
-          ].map((insight, index) => (
-            <Card key={index} className="bg-white/10 backdrop-blur-md border-white/20">
-              <CardContent className="p-4">
-                <div className={`w-full h-12 bg-gradient-to-br ${insight.color} rounded-lg mb-3 flex items-center justify-center`}>
-                  <span className="text-white font-bold text-lg">{insight.count}</span>
-                </div>
-                <h3 className="text-white font-medium text-xs mb-2">{insight.title}</h3>
-                <div className="text-center">
-                  <span className="text-white font-semibold text-sm">
-                    {insight.avgOpenRate.toFixed(1)}%
-                  </span>
-                  <p className="text-white/60 text-xs">avg open rate</p>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        {/* Smart Subject Line Insights */}
+        <Card className="bg-white/10 backdrop-blur-md border-white/20">
+          <CardHeader>
+            <CardTitle className="text-white flex items-center gap-2">
+              <Eye className="w-5 h-5" />
+              ✨ Smart Subject Line Insights
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {(() => {
+                const insights = []
+                
+                if (subjectInsights.withEmoji.avgOpenRate > subjectInsights.withoutEmoji.avgOpenRate) {
+                  insights.push(`📧 Subject lines with emojis perform ${(subjectInsights.withEmoji.avgOpenRate - subjectInsights.withoutEmoji.avgOpenRate).toFixed(1)}% better than those without`)
+                }
+                
+                if (subjectInsights.shortLines.avgOpenRate > subjectInsights.longLines.avgOpenRate && subjectInsights.shortLines.count > 0) {
+                  insights.push(`📏 Short subject lines (<30 chars) have ${subjectInsights.shortLines.avgOpenRate.toFixed(1)}% open rate vs ${subjectInsights.longLines.avgOpenRate.toFixed(1)}% for longer ones`)
+                }
+                
+                if (subjectInsights.withPersonalization.count > 0) {
+                  insights.push(`👤 Personalized subject lines average ${subjectInsights.withPersonalization.avgOpenRate.toFixed(1)}% open rate across ${subjectInsights.withPersonalization.count} campaigns`)
+                }
+                
+                if (subjectInsights.withUrgency.count > 0) {
+                  insights.push(`⚡ Urgency-driven subject lines generate ${subjectInsights.withUrgency.avgOpenRate.toFixed(1)}% open rate with ${subjectInsights.withUrgency.avgClickRate.toFixed(1)}% click rate`)
+                }
+                
+                return insights.length > 0 ? insights.slice(0, 3).map((insight, index) => (
+                  <p key={index} className="text-white/90 text-sm flex items-start gap-2">
+                    <span className="text-blue-300 font-medium">•</span>
+                    {insight}
+                  </p>
+                )) : (
+                  <p className="text-white/60 text-sm">Not enough data for smart insights yet. Try syncing more campaigns!</p>
+                )
+              })()}
+            </div>
+          </CardContent>
+        </Card>
 
         {/* All Campaigns List - Compact & Scrollable */}
         <Card className="bg-white/10 backdrop-blur-md border-white/20">
@@ -2337,31 +2334,8 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
 
     return (
       <div className="space-y-6">
-        {/* Deliverability Overview Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <Card className="bg-white/10 backdrop-blur-md border-white/20">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-white/60 text-sm font-medium">Delivery Rate</p>
-                  <p className="text-2xl font-bold text-white mt-1">{metrics.deliveryRate.toFixed(1)}%</p>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className={`text-xs ${
-                      metrics.deliveryRate >= 95 ? 'text-green-300' :
-                      metrics.deliveryRate >= 90 ? 'text-yellow-300' : 'text-red-300'
-                    }`}>
-                      {metrics.deliveryRate >= 95 ? '✅ Excellent' :
-                       metrics.deliveryRate >= 90 ? '⚠️ Good' : '🚨 Poor'}
-                    </span>
-                  </div>
-                </div>
-                <div className="bg-white/10 p-3 rounded-lg">
-                  <Shield className="w-6 h-6 text-white" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
+        {/* Simplified Deliverability Overview */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <Card className="bg-white/10 backdrop-blur-md border-white/20">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
@@ -2493,92 +2467,50 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
           </CardContent>
         </Card>
 
-        {/* Overall Email Health Summary */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card className="bg-white/10 backdrop-blur-md border-white/20">
-            <CardHeader>
-              <CardTitle className="text-white flex items-center gap-2">
-                <Activity className="w-5 h-5" />
-                Email Health Summary
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="text-center">
-                  <div className={`text-4xl font-bold mb-2 ${
-                    metrics.reputationScore >= 80 ? 'text-green-300' :
-                    metrics.reputationScore >= 60 ? 'text-yellow-300' : 'text-red-300'
-                  }`}>
-                    {metrics.reputationScore.toFixed(0)}
-                  </div>
-                  <p className="text-white/80 text-sm font-medium">Overall Reputation Score</p>
-                  <p className="text-white/60 text-xs mt-1">
-                    Based on {metrics.totalSent.toLocaleString()} emails sent
-                  </p>
+        {/* Email Health Summary - Simplified */}
+        <Card className="bg-white/10 backdrop-blur-md border-white/20">
+          <CardHeader>
+            <CardTitle className="text-white flex items-center gap-2">
+              <Activity className="w-5 h-5" />
+              Email Health Summary
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="text-center">
+                <div className={`text-4xl font-bold mb-2 ${
+                  metrics.reputationScore >= 80 ? 'text-green-300' :
+                  metrics.reputationScore >= 60 ? 'text-yellow-300' : 'text-red-300'
+                }`}>
+                  {metrics.reputationScore.toFixed(0)}
                 </div>
-                
-                <div className="space-y-2 pt-4 border-t border-white/20">
-                  <div className="flex justify-between items-center">
-                    <span className="text-white/60 text-xs">Successfully Delivered</span>
-                    <span className="text-white text-sm">{metrics.totalDelivered.toLocaleString()}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-white/60 text-xs">Bounced</span>
-                    <span className="text-white text-sm">{metrics.totalBounced.toLocaleString()}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-white/60 text-xs">Spam Complaints</span>
-                    <span className="text-white text-sm">{metrics.totalSpam.toLocaleString()}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-white/60 text-xs">Unsubscribed</span>
-                    <span className="text-white text-sm">{metrics.totalUnsubscribed.toLocaleString()}</span>
-                  </div>
+                <p className="text-white/80 text-sm font-medium">Overall Reputation Score</p>
+                <p className="text-white/60 text-xs mt-1">
+                  Based on {metrics.totalSent.toLocaleString()} emails sent
+                </p>
+              </div>
+              
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-white/60 text-sm">Successfully Delivered</span>
+                  <span className="text-white font-medium">{metrics.totalDelivered.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-white/60 text-sm">Bounced</span>
+                  <span className="text-white font-medium">{metrics.totalBounced.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-white/60 text-sm">Spam Complaints</span>
+                  <span className="text-white font-medium">{metrics.totalSpam.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-white/60 text-sm">Unsubscribed</span>
+                  <span className="text-white font-medium">{metrics.totalUnsubscribed.toLocaleString()}</span>
                 </div>
               </div>
-            </CardContent>
-          </Card>
-          
-          <Card className="bg-white/10 backdrop-blur-md border-white/20">
-            <CardHeader>
-              <CardTitle className="text-white flex items-center gap-2">
-                <BarChart3 className="w-5 h-5" />
-                Campaign vs Flow Performance
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="flex justify-between items-center p-3 bg-white/5 rounded-lg">
-                  <span className="text-white/80">Campaign Delivery Rate</span>
-                  <span className="text-white font-bold">
-                    {campaigns.length > 0 ? 
-                      ((campaigns.reduce((sum: number, c: any) => sum + (c.delivered_count || 0), 0) / 
-                        campaigns.reduce((sum: number, c: any) => sum + (c.recipients_count || 0), 0)) * 100).toFixed(1)
-                      : '0'}%
-                  </span>
-                </div>
-                <div className="flex justify-between items-center p-3 bg-white/5 rounded-lg">
-                  <span className="text-white/80">Flow Delivery Rate</span>
-                  <span className="text-white font-bold">
-                    {flows.length > 0 && flows.some((f: any) => f.recipients > 0) ? 
-                      ((flows.reduce((sum: number, f: any) => sum + (f.deliveries || 0), 0) / 
-                        flows.reduce((sum: number, f: any) => sum + (f.recipients || 0), 0)) * 100).toFixed(1)
-                      : 'N/A'}%
-                  </span>
-                </div>
-                <div className="flex justify-between items-center p-3 bg-white/5 rounded-lg">
-                  <span className="text-white/80">Combined Bounce Rate</span>
-                  <span className={`font-bold ${
-                    metrics.bounceRate <= 2 ? 'text-green-300' :
-                    metrics.bounceRate <= 5 ? 'text-yellow-300' : 'text-red-300'
-                  }`}>
-                    {metrics.bounceRate.toFixed(1)}%
-                  </span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     )
   }
