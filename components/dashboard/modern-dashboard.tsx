@@ -2508,8 +2508,8 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
                   <span className="text-white/80">Campaign Delivery Rate</span>
                   <span className="text-white font-bold">
                     {campaigns.length > 0 ? 
-                      ((campaigns.reduce((sum, c) => sum + (c.delivered_count || 0), 0) / 
-                        campaigns.reduce((sum, c) => sum + (c.recipients_count || 0), 0)) * 100).toFixed(1)
+                      ((campaigns.reduce((sum: number, c: any) => sum + (c.delivered_count || 0), 0) / 
+                        campaigns.reduce((sum: number, c: any) => sum + (c.recipients_count || 0), 0)) * 100).toFixed(1)
                       : '0'}%
                   </span>
                 </div>
@@ -2517,7 +2517,7 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
                   <span className="text-white/80">Flow Delivery Rate</span>
                   <span className="text-white font-bold">
                     {flows.length > 0 ? 
-                      (flows.reduce((sum, f) => sum + (f.delivery_rate || 0), 0) / flows.length).toFixed(1)
+                      (flows.reduce((sum: number, f: any) => sum + (f.delivery_rate || 0), 0) / flows.length).toFixed(1)
                       : '0'}%
                   </span>
                 </div>
