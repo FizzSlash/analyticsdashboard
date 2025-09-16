@@ -800,83 +800,125 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
 
   const renderSubjectLinesTab = () => {
     const campaigns = data?.campaigns || []
+    const subjectInsights = getSubjectLineInsights(campaigns)
     
-    // Sort campaigns by open rate (best performing first)
-    const topCampaigns = [...campaigns]
-      .filter((c: any) => c.subject_line && c.open_rate > 0)
+    // Sort ALL campaigns by open rate (not just filtered ones)
+    const allCampaigns = [...campaigns]
+      .filter((c: any) => c.subject_line)
       .sort((a: any, b: any) => (b.open_rate || 0) - (a.open_rate || 0))
     
     return (
       <div className="space-y-6">
-        {/* Top Performing Subject Lines - Simple Scrollable List */}
+        {/* Subject Line Insights Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[
+            {
+              title: 'With Emojis 📧',
+              count: subjectInsights.withEmoji.count,
+              avgOpenRate: subjectInsights.withEmoji.avgOpenRate,
+              color: 'from-yellow-400 to-orange-500'
+            },
+            {
+              title: 'Personalized 👤',
+              count: subjectInsights.withPersonalization.count,
+              avgOpenRate: subjectInsights.withPersonalization.avgOpenRate,
+              color: 'from-blue-400 to-blue-600'
+            },
+            {
+              title: 'Short (<30 chars) 📏',
+              count: subjectInsights.shortLines.count,
+              avgOpenRate: subjectInsights.shortLines.avgOpenRate,
+              color: 'from-green-400 to-green-600'
+            },
+            {
+              title: 'With Urgency ⚡',
+              count: subjectInsights.withUrgency.count,
+              avgOpenRate: subjectInsights.withUrgency.avgOpenRate,
+              color: 'from-red-400 to-red-600'
+            }
+          ].map((insight, index) => (
+            <Card key={index} className="bg-white/10 backdrop-blur-md border-white/20">
+              <CardContent className="p-4">
+                <div className={`w-full h-12 bg-gradient-to-br ${insight.color} rounded-lg mb-3 flex items-center justify-center`}>
+                  <span className="text-white font-bold text-lg">{insight.count}</span>
+                </div>
+                <h3 className="text-white font-medium text-xs mb-2">{insight.title}</h3>
+                <div className="text-center">
+                  <span className="text-white font-semibold text-sm">
+                    {insight.avgOpenRate.toFixed(1)}%
+                  </span>
+                  <p className="text-white/60 text-xs">avg open rate</p>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {/* All Campaigns List - Compact & Scrollable */}
         <Card className="bg-white/10 backdrop-blur-md border-white/20">
           <CardHeader>
             <CardTitle className="text-white flex items-center gap-2">
               <Eye className="w-5 h-5" />
-              Top Subject Lines ({topCampaigns.length} campaigns)
+              All Campaigns by Open Rate ({allCampaigns.length} total)
             </CardTitle>
-            <p className="text-white/60 text-sm mt-1">Ranked by open rate performance</p>
           </CardHeader>
           <CardContent>
-            <div className="max-h-96 overflow-y-auto space-y-3">
-              {topCampaigns.length > 0 ? (
-                topCampaigns.map((campaign: any, index: number) => (
-                  <div 
-                    key={campaign.campaign_id} 
-                    className="p-4 bg-white/5 rounded-lg hover:bg-white/10 transition-colors"
-                  >
-                    <div className="flex justify-between items-start">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-3 mb-2">
-                          <div className="w-8 h-8 rounded-full bg-blue-500/20 text-blue-300 text-sm font-bold flex items-center justify-center">
-                            #{index + 1}
-                          </div>
-                          <div className="flex-1">
-                            <h3 className="text-white font-medium text-sm truncate">
-                              {campaign.subject_line || 'No Subject Line'}
-                            </h3>
-                            <p className="text-white/60 text-xs">
-                              {campaign.campaign_name || `Campaign ${campaign.campaign_id}`}
-                            </p>
-                          </div>
+            <div className="max-h-96 overflow-y-auto">
+              <div className="space-y-1">
+                {allCampaigns.length > 0 ? (
+                  allCampaigns.map((campaign: any, index: number) => (
+                    <div 
+                      key={campaign.campaign_id} 
+                      className="p-2 bg-white/5 rounded hover:bg-white/10 transition-colors flex items-center justify-between"
+                    >
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        <div className="w-6 h-6 rounded bg-blue-500/20 text-blue-300 text-xs font-bold flex items-center justify-center flex-shrink-0">
+                          {index + 1}
                         </div>
-                        <div className="ml-11 text-xs text-white/60">
-                          📅 {campaign.send_date ? new Date(campaign.send_date).toLocaleDateString() : 'No date'} 
-                          • 👥 {(campaign.recipients_count || 0).toLocaleString()} recipients
-                          • 💰 ${(campaign.revenue || 0).toLocaleString()}
+                        <div className="flex-1 min-w-0">
+                          <h4 className="text-white text-sm font-medium truncate">
+                            {campaign.subject_line || 'No Subject Line'}
+                          </h4>
+                          <p className="text-white/50 text-xs truncate">
+                            {campaign.campaign_name || `Campaign ${campaign.campaign_id}`}
+                          </p>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2">
-                            <span className="text-white/60 text-xs">Open:</span>
-                            <span className={`text-sm font-bold ${
-                              (campaign.open_rate || 0) >= 0.25 ? 'text-green-300' :
-                              (campaign.open_rate || 0) >= 0.15 ? 'text-yellow-300' : 'text-red-300'
-                            }`}>
-                              {((campaign.open_rate || 0) * 100).toFixed(1)}%
-                            </span>
+                      <div className="flex items-center gap-4 text-xs">
+                        <div className="text-right">
+                          <div className={`font-bold ${
+                            (campaign.open_rate || 0) >= 0.25 ? 'text-green-300' :
+                            (campaign.open_rate || 0) >= 0.15 ? 'text-yellow-300' : 'text-red-300'
+                          }`}>
+                            {((campaign.open_rate || 0) * 100).toFixed(1)}%
                           </div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-white/60 text-xs">Click:</span>
-                            <span className={`text-sm font-bold ${
-                              (campaign.click_rate || 0) >= 0.03 ? 'text-green-300' :
-                              (campaign.click_rate || 0) >= 0.015 ? 'text-yellow-300' : 'text-red-300'
-                            }`}>
-                              {((campaign.click_rate || 0) * 100).toFixed(1)}%
-                            </span>
+                          <div className="text-white/50">open</div>
+                        </div>
+                        <div className="text-right">
+                          <div className={`font-bold ${
+                            (campaign.click_rate || 0) >= 0.03 ? 'text-green-300' :
+                            (campaign.click_rate || 0) >= 0.015 ? 'text-yellow-300' : 'text-red-300'
+                          }`}>
+                            {((campaign.click_rate || 0) * 100).toFixed(1)}%
                           </div>
+                          <div className="text-white/50">click</div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-white/80 font-medium">
+                            ${(campaign.revenue || 0).toLocaleString()}
+                          </div>
+                          <div className="text-white/50">revenue</div>
                         </div>
                       </div>
                     </div>
+                  ))
+                ) : (
+                  <div className="text-center py-8">
+                    <Mail className="w-8 h-8 text-white/40 mx-auto mb-2" />
+                    <p className="text-white/60">No campaigns available</p>
                   </div>
-                ))
-              ) : (
-                <div className="text-center py-8">
-                  <Mail className="w-12 h-12 text-white/40 mx-auto mb-4" />
-                  <p className="text-white/60">No subject lines available</p>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -2102,7 +2144,7 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
                 <div className="text-white/80 text-sm">
                   Weekly subscription and unsubscription trends over time
                 </div>
-                {/* Net Growth Bar Chart */}
+                {/* Simple Net Growth Bar Chart */}
                 <div className="h-64">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
@@ -2111,7 +2153,7 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
                         dataKey="date" 
                         stroke="rgba(255,255,255,0.6)"
                         fontSize={12}
-                        tickFormatter={(value) => new Date(value).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                        tickFormatter={(value: any) => new Date(value).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                       />
                       <YAxis stroke="rgba(255,255,255,0.6)" fontSize={12} />
                       <Tooltip 
@@ -2121,39 +2163,41 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
                           borderRadius: '8px',
                           color: 'white'
                         }}
-                        formatter={(value: any, name: string) => {
-                          const formatName = {
-                            'net_growth': 'Net Growth',
-                            'email_subscriptions': 'New Subscribers', 
-                            'email_unsubscribes': 'Unsubscribes'
-                          }[name] || name
-                          return [`${value}`, formatName]
-                        }}
-                        labelFormatter={(label) => new Date(label).toLocaleDateString('en-US', { 
+                        formatter={(value: any, name: string) => [
+                          `${value} ${value >= 0 ? '(Growth)' : '(Decline)'}`, 
+                          'Net Subscriber Change'
+                        ]}
+                        labelFormatter={(label: any) => new Date(label).toLocaleDateString('en-US', { 
                           weekday: 'short', 
                           month: 'short', 
                           day: 'numeric' 
                         })}
                       />
-                      {/* Background bars for subscriptions and unsubscribes */}
-                      <Bar 
-                        dataKey="email_subscriptions" 
-                        fill="rgba(34, 197, 94, 0.3)" 
-                        name="email_subscriptions"
-                        radius={[2, 2, 0, 0]}
-                      />
-                      <Bar 
-                        dataKey="email_unsubscribes" 
-                        fill="rgba(239, 68, 68, 0.3)" 
-                        name="email_unsubscribes"
-                        radius={[2, 2, 0, 0]}
-                      />
-                      {/* Primary net growth bar - static color (will be enhanced later) */}
+                      {/* Single net growth bar - green if positive, red if negative */}
                       <Bar 
                         dataKey="net_growth" 
                         fill="#22c55e"
                         name="net_growth"
                         radius={[4, 4, 0, 0]}
+                        shape={(props: any) => {
+                          const { x, y, width, height, payload } = props
+                          const isPositive = payload.net_growth >= 0
+                          const color = isPositive ? '#22c55e' : '#ef4444'
+                          const actualY = isPositive ? y : y
+                          const actualHeight = Math.abs(height)
+                          
+                          return (
+                            <rect
+                              x={x}
+                              y={actualY}
+                              width={width}
+                              height={actualHeight}
+                              fill={color}
+                              rx={4}
+                              ry={4}
+                            />
+                          )
+                        }}
                       />
                     </BarChart>
                   </ResponsiveContainer>
@@ -2516,9 +2560,10 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
                 <div className="flex justify-between items-center p-3 bg-white/5 rounded-lg">
                   <span className="text-white/80">Flow Delivery Rate</span>
                   <span className="text-white font-bold">
-                    {flows.length > 0 ? 
-                      (flows.reduce((sum: number, f: any) => sum + (f.delivery_rate || 0), 0) / flows.length).toFixed(1)
-                      : '0'}%
+                    {flows.length > 0 && flows.some((f: any) => f.recipients > 0) ? 
+                      ((flows.reduce((sum: number, f: any) => sum + (f.deliveries || 0), 0) / 
+                        flows.reduce((sum: number, f: any) => sum + (f.recipients || 0), 0)) * 100).toFixed(1)
+                      : 'N/A'}%
                   </span>
                 </div>
                 <div className="flex justify-between items-center p-3 bg-white/5 rounded-lg">
