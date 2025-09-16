@@ -2718,4 +2718,4 @@ function MetricCard({ title, value, change, icon: Icon, trend }: MetricCardProps
       </CardContent>
     </Card>
   )
-} 
+}
