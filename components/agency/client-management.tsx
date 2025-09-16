@@ -663,7 +663,7 @@ ${campaignDetails.slice(0, 3).map((c: any, i: number) =>
         body: JSON.stringify({
           klaviyoApiKey: client.klaviyo_api_key,
           clientId: client.id,
-          timeframe: 'last-30-days'
+          timeframe: 'last-365-days'
         }),
       })
 

@@ -10,7 +10,7 @@ export async function POST(request: NextRequest) {
     const { 
       klaviyoApiKey, 
       clientId, 
-      timeframe = 'last-30-days',
+      timeframe = 'last-365-days',
       startDate, 
       endDate 
     } = body
@@ -41,8 +41,8 @@ export async function POST(request: NextRequest) {
       actualEndDate = endDate
     } else {
       const now = new Date()
-      const thirtyDaysAgo = new Date(now.getTime() - (30 * 24 * 60 * 60 * 1000))
-      actualStartDate = thirtyDaysAgo.toISOString().split('T')[0] + 'T00:00:00Z'
+      const threeHundredSixtyFiveDaysAgo = new Date(now.getTime() - (365 * 24 * 60 * 60 * 1000))
+      actualStartDate = threeHundredSixtyFiveDaysAgo.toISOString().split('T')[0] + 'T00:00:00Z'
       actualEndDate = now.toISOString().split('T')[0] + 'T23:59:59Z'
     }
 
@@ -138,7 +138,7 @@ export async function POST(request: NextRequest) {
 
     // Save to database
     let savedCount = 0
-    for (const [date, data] of dateMap) {
+    for (const [date, data] of Array.from(dateMap.entries())) {
       // Calculate percentages
       const email_percentage = data.total_revenue > 0 ? 
         Math.round((data.email_revenue / data.total_revenue) * 10000) / 100 : 0
