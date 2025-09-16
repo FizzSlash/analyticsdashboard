@@ -70,7 +70,8 @@ export async function POST(request: NextRequest) {
 
     console.log('📊 Raw data received:', {
       total: allRevenueData?.data?.length || 0,
-      sampleRecord: allRevenueData?.data?.[0]
+      sampleRecord: allRevenueData?.data?.[0],
+      fullResponse: JSON.stringify(allRevenueData, null, 2)
     })
     
     // For now, treat all revenue as total revenue (we'll enhance channel detection later)
@@ -130,9 +131,22 @@ export async function POST(request: NextRequest) {
     }
 
     // Process total data
+    console.log('🔍 PROCESSING: Total data structure:', {
+      isArray: Array.isArray(totalData),
+      length: totalData?.length || 0,
+      sampleItem: totalData?.[0]
+    })
+    
     if (totalData && Array.isArray(totalData)) {
-      totalData.forEach((item: any) => {
-        const date = item.date || item.dimensions?.date
+      totalData.forEach((item: any, index: number) => {
+        console.log(`📊 PROCESSING: Item ${index}:`, {
+          date: item.date,
+          dimensions: item.dimensions,
+          attributes: item.attributes,
+          measurements: item.measurements || item.attributes?.measurements
+        })
+        
+        const date = item.date || item.dimensions?.date || item.attributes?.date
         if (date) {
           const key = date.split('T')[0]
           if (!dateMap.has(key)) {
@@ -147,10 +161,17 @@ export async function POST(request: NextRequest) {
             })
           }
           const entry = dateMap.get(key)
-          entry.total_revenue += (item.measurements?.sum_value || 0) / 100 // Convert cents to dollars
-          entry.total_orders += item.measurements?.count || 0
+          const measurements = item.measurements || item.attributes?.measurements
+          entry.total_revenue += (measurements?.sum_value || 0) / 100 // Convert cents to dollars
+          entry.total_orders += measurements?.count || 0
+          
+          console.log(`💾 ADDED: Date ${key}, Revenue: ${(measurements?.sum_value || 0) / 100}, Orders: ${measurements?.count || 0}`)
+        } else {
+          console.log(`⚠️ SKIPPED: No date found in item ${index}`)
         }
       })
+    } else {
+      console.log('❌ PROCESSING: totalData is not a valid array')
     }
 
     // Save to database
