@@ -74,6 +74,16 @@ export async function POST(request: NextRequest) {
       fullResponse: JSON.stringify(allRevenueData, null, 2)
     })
     
+    // TEMPORARY: Return raw API data for debugging
+    return NextResponse.json({ 
+      success: true,
+      debug: true,
+      message: 'DEBUG MODE: Showing raw API response',
+      rawApiResponse: allRevenueData,
+      placedOrderMetricId: placedOrderMetric.id,
+      dateRange: { startDate: actualStartDate, endDate: actualEndDate }
+    })
+    
     // For now, treat all revenue as total revenue (we'll enhance channel detection later)
     const totalData = allRevenueData?.data || []
     const emailData: any[] = [] // Will implement channel detection after seeing data structure
