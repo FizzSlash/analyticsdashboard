@@ -30,7 +30,8 @@ import {
   Eye,
   MousePointer,
   Target,
-  Percent
+  Percent,
+  MessageSquare
 } from 'lucide-react'
 
 interface ModernDashboardProps {
@@ -2131,21 +2132,187 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
     )
   }
 
-  const renderListGrowthTab = () => (
-    <div className="space-y-6">
-      <Card className="bg-white/10 backdrop-blur-md border-white/20">
-        <CardHeader>
-          <CardTitle className="text-white flex items-center gap-2">
-            <Users className="w-5 h-5" />
-            List Growth Analytics
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-white/80">List growth metrics will be displayed here</p>
-        </CardContent>
-      </Card>
-    </div>
-  )
+  const renderListGrowthTab = () => {
+    const listGrowth = data?.listGrowthMetrics || []
+    const summary = data?.listGrowthSummary || {}
+    
+    // Calculate total metrics from summary
+    const totalEmailSubscriptions = summary.total_email_subscriptions || 0
+    const totalEmailUnsubscribes = summary.total_email_unsubscribes || 0
+    const totalSmsSubscriptions = summary.total_sms_subscriptions || 0
+    const totalFormSubmissions = summary.total_form_submissions || 0
+    const netGrowth = summary.net_growth || 0
+    const averageGrowthRate = summary.average_growth_rate || 0
+    const averageChurnRate = summary.average_churn_rate || 0
+    
+    // Prepare chart data from list growth metrics
+    const chartData = listGrowth.map((point: any) => ({
+      date: point.date_recorded,
+      email_subscriptions: point.email_subscriptions || 0,
+      email_unsubscribes: point.email_unsubscribes || 0,
+      net_growth: point.email_net_growth || 0,
+      sms_subscriptions: point.sms_subscriptions || 0,
+      form_submissions: point.form_submissions || 0
+    })).reverse() // Reverse for chronological order
+    
+    return (
+      <div className="space-y-6">
+        {/* List Growth Overview Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Card className="bg-white/10 backdrop-blur-md border-white/20">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-white/60 text-sm font-medium">Total New Subscribers</p>
+                  <p className="text-2xl font-bold text-white mt-1">{totalEmailSubscriptions.toLocaleString()}</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="text-green-300 text-xs">📧 Email</span>
+                    <span className="text-white/40 text-xs">+{totalSmsSubscriptions} SMS</span>
+                  </div>
+                </div>
+                <div className="bg-white/10 p-3 rounded-lg">
+                  <Users className="w-6 h-6 text-white" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-white/10 backdrop-blur-md border-white/20">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-white/60 text-sm font-medium">Net Growth</p>
+                  <p className="text-2xl font-bold text-white mt-1">
+                    {netGrowth >= 0 ? '+' : ''}{netGrowth.toLocaleString()}
+                  </p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className={`text-xs ${netGrowth >= 0 ? 'text-green-300' : 'text-red-300'}`}>
+                      {netGrowth >= 0 ? '↗️' : '↘️'} {averageGrowthRate > 0 ? `${(averageGrowthRate * 100).toFixed(1)}%` : '0%'}
+                    </span>
+                    <span className="text-white/40 text-xs">growth rate</span>
+                  </div>
+                </div>
+                <div className="bg-white/10 p-3 rounded-lg">
+                  <TrendingUp className="w-6 h-6 text-white" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-white/10 backdrop-blur-md border-white/20">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-white/60 text-sm font-medium">Churn Rate</p>
+                  <p className="text-2xl font-bold text-white mt-1">
+                    {(averageChurnRate * 100).toFixed(1)}%
+                  </p>
+                  <p className="text-white/60 text-xs mt-1">
+                    {totalEmailUnsubscribes.toLocaleString()} unsubscribes
+                  </p>
+                </div>
+                <div className="bg-white/10 p-3 rounded-lg">
+                  <Users className="w-6 h-6 text-white" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Growth Trend Chart */}
+        <Card className="bg-white/10 backdrop-blur-md border-white/20">
+          <CardHeader>
+            <CardTitle className="text-white flex items-center gap-2">
+              <TrendingUp className="w-5 h-5" />
+              Subscription Growth Trends
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {chartData.length > 0 ? (
+              <div className="space-y-4">
+                <div className="text-white/80 text-sm">
+                  Weekly subscription and unsubscription trends over time
+                </div>
+                {/* Placeholder for actual chart - will implement with Recharts later */}
+                <div className="h-64 bg-white/5 rounded-lg flex items-center justify-center">
+                  <div className="text-center text-white/60">
+                    <TrendingUp className="w-8 h-8 mx-auto mb-2" />
+                    <p>Chart visualization coming soon</p>
+                    <p className="text-xs mt-1">{chartData.length} data points ready</p>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <Users className="w-12 h-12 text-white/40 mx-auto mb-4" />
+                <p className="text-white/60 mb-2">No list growth data available</p>
+                <p className="text-white/40 text-sm">
+                  Use the sync button to fetch subscription growth data
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Channel Breakdown */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Card className="bg-white/10 backdrop-blur-md border-white/20">
+            <CardHeader>
+              <CardTitle className="text-white flex items-center gap-2">
+                <Mail className="w-5 h-5" />
+                Email Growth
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-white/60">New Email Subscribers</span>
+                  <span className="text-white font-semibold">{totalEmailSubscriptions.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-white/60">Email Unsubscribes</span>
+                  <span className="text-white font-semibold">{totalEmailUnsubscribes.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between items-center pt-2 border-t border-white/20">
+                  <span className="text-white font-medium">Net Email Growth</span>
+                  <span className={`font-bold ${(totalEmailSubscriptions - totalEmailUnsubscribes) >= 0 ? 'text-green-300' : 'text-red-300'}`}>
+                    {(totalEmailSubscriptions - totalEmailUnsubscribes) >= 0 ? '+' : ''}{(totalEmailSubscriptions - totalEmailUnsubscribes).toLocaleString()}
+                  </span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-white/10 backdrop-blur-md border-white/20">
+            <CardHeader>
+              <CardTitle className="text-white flex items-center gap-2">
+                <MessageSquare className="w-5 h-5" />
+                Other Channels
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-white/60">SMS Subscriptions</span>
+                  <span className="text-white font-semibold">{totalSmsSubscriptions.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-white/60">Form Submissions</span>
+                  <span className="text-white font-semibold">{totalFormSubmissions.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between items-center pt-2 border-t border-white/20">
+                  <span className="text-white font-medium">Total Growth Rate</span>
+                  <span className="text-green-300 font-bold">
+                    {averageGrowthRate > 0 ? `+${(averageGrowthRate * 100).toFixed(1)}%` : '0%'}
+                  </span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    )
+  }
 
   const renderDeliverabilityTab = () => (
     <div className="space-y-6">

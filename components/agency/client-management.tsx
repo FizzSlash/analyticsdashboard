@@ -17,7 +17,8 @@ import {
   RotateCw,
   Building2,
   Mail,
-  Zap
+  Zap,
+  TrendingUp
 } from 'lucide-react'
 
 interface ClientManagementProps {
@@ -430,6 +431,210 @@ ${campaignDetails.slice(0, 3).map((c: any, i: number) =>
     } finally {
       setLoading(false)
     }
+  }
+
+  const triggerListGrowthSync = async (client: Client) => {
+    setLoading(true)
+    setError('')
+    setSuccess('')
+    
+    try {
+      console.log('📈 LIST GROWTH SYNC: Starting subscription growth sync for:', client.brand_slug)
+      
+      // Step 1: Get all available metrics
+      setSuccess('Step 1/3: Getting available metrics...')
+      console.log('📡 FRONTEND: Calling metrics proxy API')
+      
+      const metricsResponse = await fetch(`/api/klaviyo-proxy/metrics?clientSlug=${client.brand_slug}`)
+      if (!metricsResponse.ok) {
+        throw new Error(`Metrics API failed: ${metricsResponse.status}`)
+      }
+      
+      const metricsResult = await metricsResponse.json()
+      console.log('📊 FRONTEND: Available metrics:', metricsResult.data?.data?.length || 0)
+      
+      // Create metric lookup
+      const metrics = metricsResult.data?.data || []
+      const metricLookup: { [key: string]: string } = {}
+      metrics.forEach((metric: any) => {
+        metricLookup[metric.attributes.name] = metric.id
+      })
+      
+      console.log('📋 FRONTEND: Subscription metrics found:', Object.keys(metricLookup).filter(name => 
+        name.toLowerCase().includes('subscrib') || name.toLowerCase().includes('form')
+      ))
+      
+      // Step 2: Query metric aggregates for last 12 months
+      setSuccess('Step 2/3: Getting subscription growth data...')
+      console.log('📈 FRONTEND: Querying metric aggregates')
+      
+      const timeframe = ["2023-01-01T00:00:00Z", "2024-12-31T23:59:59Z"] // Last 12+ months
+      const subscriptionMetrics = [
+        'Subscribed to Email Marketing',
+        'Unsubscribed from Email Marketing',
+        'Subscribed to SMS Marketing', 
+        'Unsubscribed from SMS Marketing',
+        'Form submitted by profile',
+        'Subscribed to List',
+        'Unsubscribed from List',
+        'Subscribed to Back in Stock'
+      ]
+      
+      const aggregateQueries = []
+      const validMetrics = []
+      
+      for (const metricName of subscriptionMetrics) {
+        if (metricLookup[metricName]) {
+          aggregateQueries.push(
+            fetch('/api/klaviyo-proxy/metric-aggregates', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                clientSlug: client.brand_slug,
+                metricId: metricLookup[metricName],
+                interval: 'week',
+                timeframe: timeframe
+              })
+            })
+          )
+          validMetrics.push(metricName)
+        }
+      }
+      
+      console.log(`🎯 FRONTEND: Querying ${aggregateQueries.length} metrics: ${validMetrics.join(', ')}`)
+      
+      const aggregateResponses = await Promise.all(aggregateQueries)
+      const aggregateResults = await Promise.all(
+        aggregateResponses.map(response => response.json())
+      )
+      
+      console.log('📊 FRONTEND: Metric aggregate results:', aggregateResults.length)
+      
+      // Step 3: Transform and save data
+      setSuccess('Step 3/3: Saving list growth data...')
+      console.log('💾 FRONTEND: Transforming and saving data')
+      
+      // Transform API data into database format
+      const growthData = transformMetricAggregateData(aggregateResults, validMetrics)
+      console.log('📈 FRONTEND: Transformed data points:', growthData.length)
+      
+      // Save to database
+      const saveResponse = await fetch('/api/klaviyo-proxy/save-list-growth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          clientSlug: client.brand_slug,
+          growthData: growthData,
+          interval: 'week'
+        })
+      })
+      
+      if (!saveResponse.ok) {
+        const errorData = await saveResponse.json()
+        throw new Error(`Save list growth failed: ${errorData.message}`)
+      }
+      
+      const saveResult = await saveResponse.json()
+      console.log('✅ FRONTEND: List growth sync completed:', saveResult)
+      
+      setSuccess(`✅ List Growth Sync Complete! Saved ${saveResult.saved} data points.`)
+      
+    } catch (error: any) {
+      console.error('❌ FRONTEND: List growth sync failed:', error)
+      setError(`List growth sync failed: ${error.message}`)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Helper function to transform metric aggregate data
+  const transformMetricAggregateData = (aggregateResults: any[], metricNames: string[]) => {
+    console.log('🔄 TRANSFORM: Processing metric aggregate data')
+    
+    if (!aggregateResults || aggregateResults.length === 0) {
+      console.log('⚠️ TRANSFORM: No aggregate results to process')
+      return []
+    }
+    
+    // Get dates from first valid result
+    const firstResult = aggregateResults.find(r => r.success && r.data?.data?.attributes?.dates)
+    if (!firstResult) {
+      console.log('⚠️ TRANSFORM: No valid results with dates found')
+      return []
+    }
+    
+    const dates = firstResult.data.data.attributes.dates
+    console.log(`📅 TRANSFORM: Processing ${dates.length} date points`)
+    
+    // Create data point for each date
+    const growthData = dates.map((date: string, index: number) => {
+      const dataPoint: any = {
+        date: date,
+        email_subscriptions: 0,
+        email_unsubscribes: 0,
+        sms_subscriptions: 0,
+        sms_unsubscribes: 0,
+        form_submissions: 0,
+        list_subscriptions: 0,
+        list_unsubscribes: 0,
+        back_in_stock_subscriptions: 0
+      }
+      
+      // Map each metric result to the data point
+      aggregateResults.forEach((result, resultIndex) => {
+        if (!result.success || !result.data?.data?.attributes?.data?.[0]?.measurements?.count) {
+          return
+        }
+        
+        const metricName = metricNames[resultIndex]
+        const count = result.data.data.attributes.data[0].measurements.count[index] || 0
+        
+        // Map metric names to data point fields
+        switch (metricName) {
+          case 'Subscribed to Email Marketing':
+            dataPoint.email_subscriptions = count
+            break
+          case 'Unsubscribed from Email Marketing':
+            dataPoint.email_unsubscribes = count
+            break
+          case 'Subscribed to SMS Marketing':
+            dataPoint.sms_subscriptions = count
+            break
+          case 'Unsubscribed from SMS Marketing':
+            dataPoint.sms_unsubscribes = count
+            break
+          case 'Form submitted by profile':
+            dataPoint.form_submissions = count
+            break
+          case 'Subscribed to List':
+            dataPoint.list_subscriptions = count
+            break
+          case 'Unsubscribed from List':
+            dataPoint.list_unsubscribes = count
+            break
+          case 'Subscribed to Back in Stock':
+            dataPoint.back_in_stock_subscriptions = count
+            break
+        }
+      })
+      
+      // Calculate growth and churn rates
+      const totalSubscriptions = dataPoint.email_subscriptions + dataPoint.sms_subscriptions + dataPoint.list_subscriptions
+      const totalUnsubscriptions = dataPoint.email_unsubscribes + dataPoint.sms_unsubscribes + dataPoint.list_unsubscribes
+      
+      if (totalSubscriptions > 0) {
+        dataPoint.growth_rate = totalSubscriptions > totalUnsubscriptions ? 
+          ((totalSubscriptions - totalUnsubscriptions) / totalSubscriptions) : 0
+        dataPoint.churn_rate = totalUnsubscriptions / totalSubscriptions
+      }
+      
+      return dataPoint
+    })
+    
+    console.log(`✅ TRANSFORM: Created ${growthData.length} growth data points`)
+    console.log('📊 TRANSFORM: Sample data point:', growthData[0])
+    
+    return growthData
   }
 
   const triggerFlowSync = async (client: Client) => {
@@ -899,6 +1104,15 @@ ${flowDetails.slice(0, 3).map((f: any, i: number) =>
                       title="Sync Flows"
                     >
                       <Zap className="h-4 w-4" />
+                    </button>
+                    
+                    <button
+                      onClick={() => triggerListGrowthSync(client)}
+                      disabled={loading}
+                      className="p-2 text-gray-600 hover:text-green-600 hover:bg-green-50 rounded-md transition-colors"
+                      title="Sync List Growth"
+                    >
+                      <TrendingUp className="h-4 w-4" />
                     </button>
                     
                     <a 

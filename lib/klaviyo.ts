@@ -796,6 +796,114 @@ export class KlaviyoAPI {
     console.log(`📧 FLOW MESSAGES API: Full endpoint: ${endpoint}`)
     return this.makeRequest(endpoint)
   }
+
+  // Get all available metrics for the account
+  async getMetrics() {
+    console.log(`📊 METRICS API: Getting all available metrics`)
+    
+    try {
+      const result = await this.makeRequest('/metrics')
+      console.log(`✅ METRICS API: Found ${result.data?.length || 0} metrics`)
+      return result
+    } catch (error) {
+      console.error('❌ METRICS API: Error fetching metrics:', error)
+      throw error
+    }
+  }
+
+  // Query Metric Aggregates - For subscription growth tracking
+  async queryMetricAggregates(metricId: string, interval: string = 'week', timeframe: any) {
+    console.log(`📈 METRIC AGGREGATES API: Querying metric ${metricId} with ${interval} interval`)
+    
+    try {
+      const requestBody = {
+        data: {
+          type: 'metric-aggregate',
+          attributes: {
+            metric_id: metricId,
+            measurements: ['count'],
+            interval: interval, // 'day', 'week', 'month'
+            timeframe: timeframe,
+            timezone: 'UTC'
+          }
+        }
+      }
+      
+      console.log(`📊 METRIC AGGREGATES: Request body:`, JSON.stringify(requestBody, null, 2))
+      
+      const result = await this.makeRequest('/metric-aggregates', {
+        method: 'POST',
+        body: JSON.stringify(requestBody)
+      })
+      
+      console.log(`✅ METRIC AGGREGATES API: Successfully retrieved data for metric ${metricId}`)
+      console.log(`📊 METRIC AGGREGATES: Response sample:`, JSON.stringify(result.data?.attributes?.data?.[0], null, 2))
+      
+      return result
+    } catch (error) {
+      console.error(`❌ METRIC AGGREGATES API: Error querying metric ${metricId}:`, error)
+      throw error
+    }
+  }
+
+  // Helper method to get subscription growth data for multiple metrics
+  async getSubscriptionGrowthData(timeframe: any, interval: string = 'week') {
+    console.log(`🔄 SUBSCRIPTION GROWTH: Getting growth data for timeframe with ${interval} interval`)
+    
+    try {
+      // First get all metrics to find the right IDs
+      const metricsResponse = await this.getMetrics()
+      const metrics = metricsResponse.data || []
+      
+      // Create lookup for metric names to IDs
+      const metricLookup: { [key: string]: string } = {}
+      metrics.forEach((metric: any) => {
+        metricLookup[metric.attributes.name] = metric.id
+      })
+      
+      console.log(`📋 SUBSCRIPTION GROWTH: Available metrics:`, Object.keys(metricLookup).filter(name => 
+        name.toLowerCase().includes('subscrib') || name.toLowerCase().includes('form')
+      ))
+      
+      // Query all subscription-related metrics
+      const subscriptionMetrics = [
+        'Subscribed to Email Marketing',
+        'Unsubscribed from Email Marketing', 
+        'Subscribed to SMS Marketing',
+        'Unsubscribed from SMS Marketing',
+        'Form submitted by profile',
+        'Subscribed to List',
+        'Unsubscribed from List',
+        'Subscribed to Back in Stock'
+      ]
+      
+      const queries = []
+      const validMetrics = []
+      
+      for (const metricName of subscriptionMetrics) {
+        if (metricLookup[metricName]) {
+          queries.push(this.queryMetricAggregates(metricLookup[metricName], interval, timeframe))
+          validMetrics.push(metricName)
+        } else {
+          console.log(`⚠️ SUBSCRIPTION GROWTH: Metric "${metricName}" not found in account`)
+        }
+      }
+      
+      console.log(`🎯 SUBSCRIPTION GROWTH: Querying ${queries.length} metrics: ${validMetrics.join(', ')}`)
+      
+      const results = await Promise.all(queries)
+      
+      return {
+        metricNames: validMetrics,
+        metricData: results,
+        metricLookup: metricLookup
+      }
+      
+    } catch (error) {
+      console.error('❌ SUBSCRIPTION GROWTH: Error getting growth data:', error)
+      throw error
+    }
+  }
 }
 
 // Helper functions for data transformation

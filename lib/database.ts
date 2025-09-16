@@ -865,4 +865,125 @@ export class DatabaseService {
     
     return emails
   }
+
+  // ===== LIST GROWTH METRICS METHODS =====
+
+  static async upsertListGrowthMetric(metric: Omit<any, 'id' | 'created_at'>): Promise<void> {
+    const { error } = await supabaseAdmin
+      .from('list_growth_metrics')
+      .upsert(metric, {
+        onConflict: 'client_id,date_recorded,interval_type'
+      })
+
+    if (error) {
+      console.error('Error upserting list growth metric:', error)
+      throw error
+    }
+  }
+
+  static async getListGrowthMetrics(clientId: string, days: number = 30): Promise<any[]> {
+    console.log(`📈 DATABASE: Getting list growth metrics for CLIENT_ID: ${clientId}, ${days} days`)
+    
+    const cutoffDate = new Date()
+    cutoffDate.setDate(cutoffDate.getDate() - days)
+
+    const { data, error } = await supabaseAdmin
+      .from('list_growth_metrics')
+      .select('*')
+      .eq('client_id', clientId)
+      .gte('date_recorded', cutoffDate.toISOString().split('T')[0])
+      .order('date_recorded', { ascending: false })
+
+    if (error) {
+      console.error('Error fetching list growth metrics:', error)
+      throw error
+    }
+
+    console.log(`📈 DATABASE: Found ${data?.length || 0} list growth data points`)
+    return data || []
+  }
+
+  static async getListGrowthTrends(clientId: string, days: number = 90): Promise<any[]> {
+    console.log(`📊 DATABASE: Getting list growth trends for CLIENT_ID: ${clientId}, ${days} days`)
+    
+    const cutoffDate = new Date()
+    cutoffDate.setDate(cutoffDate.getDate() - days)
+
+    const { data, error } = await supabaseAdmin
+      .from('list_growth_metrics')
+      .select(`
+        date_recorded,
+        email_subscriptions,
+        email_unsubscribes, 
+        email_net_growth,
+        sms_subscriptions,
+        sms_unsubscribes,
+        sms_net_growth,
+        form_submissions,
+        total_new_subscriptions,
+        total_unsubscriptions,
+        overall_net_growth,
+        growth_rate,
+        churn_rate
+      `)
+      .eq('client_id', clientId)
+      .gte('date_recorded', cutoffDate.toISOString().split('T')[0])
+      .order('date_recorded', { ascending: true }) // Ascending for trend charts
+
+    if (error) {
+      console.error('Error fetching list growth trends:', error)
+      throw error
+    }
+
+    console.log(`📊 DATABASE: Found ${data?.length || 0} list growth trend points`)
+    return data || []
+  }
+
+  static async getListGrowthSummary(clientId: string, days: number = 30): Promise<any> {
+    console.log(`📋 DATABASE: Getting list growth summary for CLIENT_ID: ${clientId}, ${days} days`)
+    
+    const trends = await this.getListGrowthTrends(clientId, days)
+    
+    if (!trends || trends.length === 0) {
+      return {
+        total_email_subscriptions: 0,
+        total_email_unsubscribes: 0,
+        total_sms_subscriptions: 0, 
+        total_form_submissions: 0,
+        net_growth: 0,
+        average_growth_rate: 0,
+        average_churn_rate: 0
+      }
+    }
+
+    // Calculate totals from trends
+    const totals = trends.reduce((acc, trend) => ({
+      total_email_subscriptions: acc.total_email_subscriptions + (trend.email_subscriptions || 0),
+      total_email_unsubscribes: acc.total_email_unsubscribes + (trend.email_unsubscribes || 0),
+      total_sms_subscriptions: acc.total_sms_subscriptions + (trend.sms_subscriptions || 0),
+      total_form_submissions: acc.total_form_submissions + (trend.form_submissions || 0),
+      net_growth: acc.net_growth + (trend.overall_net_growth || 0),
+      growth_rate_sum: acc.growth_rate_sum + (trend.growth_rate || 0),
+      churn_rate_sum: acc.churn_rate_sum + (trend.churn_rate || 0)
+    }), {
+      total_email_subscriptions: 0,
+      total_email_unsubscribes: 0,
+      total_sms_subscriptions: 0,
+      total_form_submissions: 0,
+      net_growth: 0,
+      growth_rate_sum: 0,
+      churn_rate_sum: 0
+    })
+
+    return {
+      ...totals,
+      average_growth_rate: totals.growth_rate_sum / trends.length,
+      average_churn_rate: totals.churn_rate_sum / trends.length,
+      data_points: trends.length,
+      date_range: {
+        start: trends[0]?.date_recorded,
+        end: trends[trends.length - 1]?.date_recorded
+      }
+    }
+  }
 }

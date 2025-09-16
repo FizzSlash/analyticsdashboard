@@ -28,7 +28,9 @@ export async function GET(request: NextRequest) {
       revenue,
       topCampaigns,
       topFlows,
-      flowWeeklyTrends
+      flowWeeklyTrends,
+      listGrowthMetrics,
+      listGrowthSummary
     ] = await Promise.all([
       DatabaseService.getDashboardSummary(client.id, timeframe),
       DatabaseService.getRecentCampaignMetrics(client.id, timeframe),
@@ -37,10 +39,13 @@ export async function GET(request: NextRequest) {
       DatabaseService.getRevenueAttribution(client.id, timeframe),
       DatabaseService.getTopCampaigns(client.id, 'open_rate', 5),
       DatabaseService.getTopFlows(client.id, 'revenue', 5),
-      DatabaseService.getFlowWeeklyTrends(client.id, timeframe)
+      DatabaseService.getFlowWeeklyTrends(client.id, timeframe),
+      DatabaseService.getListGrowthTrends(client.id, timeframe),
+      DatabaseService.getListGrowthSummary(client.id, timeframe)
     ])
 
     console.log(`DASHBOARD API: Fetched ${campaigns.length} campaigns, ${flows.length} flows for ${timeframe} days`)
+    console.log(`DASHBOARD API: List growth data points: ${listGrowthMetrics.length}`)
     console.log(`DASHBOARD API: Flow data sample:`, flows.slice(0, 1))
     console.log(`DASHBOARD API: Flow revenue check:`, flows.map(f => ({ id: f.flow_id, name: f.flow_name, revenue: f.revenue })).slice(0, 3))
 
@@ -56,7 +61,9 @@ export async function GET(request: NextRequest) {
         revenue,
         topCampaigns,
         topFlows,
-        flowWeeklyTrends
+        flowWeeklyTrends,
+        listGrowthMetrics,
+        listGrowthSummary
       }
     })
 
