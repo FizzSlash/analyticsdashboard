@@ -661,8 +661,7 @@ ${campaignDetails.slice(0, 3).map((c: any, i: number) =>
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          klaviyoApiKey: client.klaviyo_api_key,
-          clientId: client.id,
+          clientSlug: client.brand_slug,
           timeframe: 'last-365-days'
         }),
       })

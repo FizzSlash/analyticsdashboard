@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { KlaviyoAPI } from '@/lib/klaviyo'
+import { KlaviyoAPI, decryptApiKey } from '@/lib/klaviyo'
 import { DatabaseService } from '@/lib/database'
 
 export async function POST(request: NextRequest) {
@@ -8,21 +8,27 @@ export async function POST(request: NextRequest) {
     
     const body = await request.json()
     const { 
-      klaviyoApiKey, 
-      clientId, 
+      clientSlug, 
       timeframe = 'last-365-days',
       startDate, 
       endDate 
     } = body
 
-    if (!klaviyoApiKey || !clientId) {
+    if (!clientSlug) {
       console.error('❌ Missing required parameters')
       return NextResponse.json({ 
-        error: 'Klaviyo API key and client ID are required' 
+        error: 'Client slug is required' 
       }, { status: 400 })
     }
 
-    const klaviyo = new KlaviyoAPI(klaviyoApiKey)
+    // Get client and decrypt API key (same pattern as working syncs)
+    const client = await DatabaseService.getClientBySlug(clientSlug)
+    if (!client) {
+      return NextResponse.json({ error: 'Client not found' }, { status: 404 })
+    }
+
+    const decryptedKey = decryptApiKey(client.klaviyo_api_key)
+    const klaviyo = new KlaviyoAPI(decryptedKey)
     
     // Get the "Placed Order" metric ID
     const metrics = await klaviyo.getMetrics()
@@ -145,7 +151,7 @@ export async function POST(request: NextRequest) {
         Math.round((data.sms_revenue / data.total_revenue) * 10000) / 100 : 0
 
       await DatabaseService.upsertRevenueAttributionMetric({
-        client_id: clientId,
+        client_id: client.id,
         date,
         email_revenue: data.email_revenue,
         sms_revenue: data.sms_revenue,
@@ -160,7 +166,7 @@ export async function POST(request: NextRequest) {
       savedCount++
     }
 
-    console.log(`✅ Successfully saved ${savedCount} revenue attribution records for client ${clientId}`)
+    console.log(`✅ Successfully saved ${savedCount} revenue attribution records for client ${client.brand_slug}`)
     
     return NextResponse.json({ 
       success: true,
