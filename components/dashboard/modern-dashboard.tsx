@@ -806,72 +806,16 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
       .filter(c => c.subject_line && c.open_rate > 0)
       .sort((a, b) => (b.open_rate || 0) - (a.open_rate || 0))
     
-    // Calculate subject line stats
-    const totalCampaigns = topCampaigns.length
-    const avgOpenRate = totalCampaigns > 0 ? 
-      topCampaigns.reduce((sum, c) => sum + (c.open_rate || 0), 0) / totalCampaigns : 0
-    const avgClickRate = totalCampaigns > 0 ? 
-      topCampaigns.reduce((sum, c) => sum + (c.click_rate || 0), 0) / totalCampaigns : 0
-
-
     return (
       <div className="space-y-6">
-        {/* Summary Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card className="bg-white/10 backdrop-blur-md border-white/20">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-white/60 text-sm font-medium">Total Campaigns</p>
-                  <p className="text-2xl font-bold text-white mt-1">{totalCampaigns}</p>
-                  <p className="text-white/60 text-xs mt-1">with subject lines</p>
-                </div>
-                <div className="bg-white/10 p-3 rounded-lg">
-                  <Mail className="w-6 h-6 text-white" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card className="bg-white/10 backdrop-blur-md border-white/20">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-white/60 text-sm font-medium">Avg Open Rate</p>
-                  <p className="text-2xl font-bold text-white mt-1">{(avgOpenRate * 100).toFixed(1)}%</p>
-                  <p className="text-white/60 text-xs mt-1">across all campaigns</p>
-                </div>
-                <div className="bg-white/10 p-3 rounded-lg">
-                  <Eye className="w-6 h-6 text-white" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card className="bg-white/10 backdrop-blur-md border-white/20">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-white/60 text-sm font-medium">Avg Click Rate</p>
-                  <p className="text-2xl font-bold text-white mt-1">{(avgClickRate * 100).toFixed(1)}%</p>
-                  <p className="text-white/60 text-xs mt-1">across all campaigns</p>
-                </div>
-                <div className="bg-white/10 p-3 rounded-lg">
-                  <MousePointer className="w-6 h-6 text-white" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Top Performing Subject Lines - Scrollable List */}
+        {/* Top Performing Subject Lines - Simple Scrollable List */}
         <Card className="bg-white/10 backdrop-blur-md border-white/20">
           <CardHeader>
             <CardTitle className="text-white flex items-center gap-2">
               <Eye className="w-5 h-5" />
-              Top Performing Subject Lines
+              Top Subject Lines ({topCampaigns.length} campaigns)
             </CardTitle>
-            <p className="text-white/60 text-sm mt-1">Campaigns ranked by open rate performance</p>
+            <p className="text-white/60 text-sm mt-1">Ranked by open rate performance</p>
           </CardHeader>
           <CardContent>
             <div className="max-h-96 overflow-y-auto space-y-3">
@@ -881,216 +825,61 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
                     key={campaign.campaign_id} 
                     className="p-4 bg-white/5 rounded-lg hover:bg-white/10 transition-colors"
                   >
-                    <div className="flex items-start justify-between">
+                    <div className="flex justify-between items-start">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-3 mb-2">
-                          <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-500/20 text-blue-300 text-sm font-bold">
+                          <div className="w-8 h-8 rounded-full bg-blue-500/20 text-blue-300 text-sm font-bold flex items-center justify-center">
                             #{index + 1}
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <h3 className="text-white font-medium text-sm">
+                          <div className="flex-1">
+                            <h3 className="text-white font-medium text-sm truncate">
                               {campaign.subject_line || 'No Subject Line'}
                             </h3>
-                            <p className="text-white/60 text-xs mt-1">
+                            <p className="text-white/60 text-xs">
                               {campaign.campaign_name || `Campaign ${campaign.campaign_id}`}
                             </p>
                           </div>
                         </div>
-                        
-                        {/* Campaign Metadata */}
-                        <div className="ml-11 flex items-center gap-4 text-xs text-white/60">
-                          <span>📅 {campaign.send_date ? new Date(campaign.send_date).toLocaleDateString() : 'No date'}</span>
-                          <span>👥 {(campaign.recipients_count || 0).toLocaleString()} recipients</span>
-                          <span>💰 ${(campaign.revenue || 0).toLocaleString()} revenue</span>
+                        <div className="ml-11 text-xs text-white/60">
+                          📅 {campaign.send_date ? new Date(campaign.send_date).toLocaleDateString() : 'No date'} 
+                          • 👥 {(campaign.recipients_count || 0).toLocaleString()} recipients
+                          • 💰 ${(campaign.revenue || 0).toLocaleString()}
                         </div>
                       </div>
-                      
-                      {/* Performance Metrics */}
-                      <div className="text-right ml-4">
+                      <div className="text-right">
                         <div className="space-y-1">
                           <div className="flex items-center gap-2">
-                            <span className="text-white/60 text-xs">Open Rate:</span>
-                            <span className={`text-sm font-bold ${\n                              (campaign.open_rate || 0) >= 0.25 ? 'text-green-300' :\n                              (campaign.open_rate || 0) >= 0.15 ? 'text-yellow-300' : 'text-red-300'\n                            }`}>\n                              {((campaign.open_rate || 0) * 100).toFixed(1)}%\n                            </span>\n                          </div>\n                          <div className=\"flex items-center gap-2\">\n                            <span className=\"text-white/60 text-xs\">Click Rate:</span>\n                            <span className={`text-sm font-bold ${\n                              (campaign.click_rate || 0) >= 0.03 ? 'text-green-300' :\n                              (campaign.click_rate || 0) >= 0.015 ? 'text-yellow-300' : 'text-red-300'\n                            }`}>\n                              {((campaign.click_rate || 0) * 100).toFixed(1)}%\n                            </span>\n                          </div>\n                          <div className=\"flex items-center gap-2\">\n                            <span className=\"text-white/60 text-xs\">CTR:</span>\n                            <span className=\"text-white text-sm font-medium\">\n                              {((campaign.click_to_open_rate || 0) * 100).toFixed(1)}%\n                            </span>\n                          </div>\n                        </div>\n                      </div>\n                    </div>\n                  </div>\n                ))\n              ) : (\n                <div className=\"text-center py-8\">\n                  <Mail className=\"w-12 h-12 text-white/40 mx-auto mb-4\" />\n                  <p className=\"text-white/60 mb-2\">No campaign subject lines available</p>\n                  <p className=\"text-white/40 text-sm\">\n                    Sync campaigns to see subject line performance\n                  </p>\n                </div>\n              )}\n            </div>\n          </CardContent>\n        </Card>"}
-          <div className="space-y-2">
-            {getSmartInsights().map((insight, index) => (
-              <p key={index} className="text-white/90 text-sm flex items-start gap-2">
-                <span className="text-blue-300 font-medium">•</span>
-                {insight}
-              </p>
-            ))}
-          </div>
-        </div>
-
-        {/* Subject Line Performance Charts */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Open Rate Analysis */}
-          <Card className="bg-white/10 backdrop-blur-md border-white/20">
-            <CardHeader>
-              <CardTitle className="text-white flex items-center gap-2">
-                <Eye className="w-5 h-5" />
-                Open Rate Performance
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-80">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
-                    data={openRateData}
-                    layout="horizontal"
-                    margin={{ top: 5, right: 30, left: 5, bottom: 5 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                    <XAxis 
-                      type="number" 
-                      tick={{ fill: 'rgba(255,255,255,0.7)', fontSize: 11 }}
-                      axisLine={{ stroke: 'rgba(255,255,255,0.2)' }}
-                      domain={[0, 'dataMax + 5']}
-                    />
-                    <YAxis 
-                      type="category" 
-                      dataKey="name"
-                      tick={{ fill: 'rgba(255,255,255,0.7)', fontSize: 10 }}
-                      axisLine={{ stroke: 'rgba(255,255,255,0.2)' }}
-                      width={200}
-                    />
-                    <Tooltip 
-                      contentStyle={{
-                        backgroundColor: 'rgba(0,0,0,0.9)',
-                        border: '1px solid rgba(255,255,255,0.2)',
-                        borderRadius: '8px',
-                        color: 'white'
-                      }}
-                      formatter={(value: number, name: string) => [
-                        `${value.toFixed(1)}%`, 'Open Rate'
-                      ]}
-                      labelFormatter={(label: string, payload: any) => {
-                        const data = payload[0]?.payload
-                        return (
-                          <div>
-                            <div className="font-medium">{data?.fullName}</div>
-                            <div className="text-xs text-gray-300">
-                              {data?.campaigns_count} campaigns • {data?.total_recipients.toLocaleString()} recipients
-                            </div>
+                            <span className="text-white/60 text-xs">Open:</span>
+                            <span className={`text-sm font-bold ${
+                              (campaign.open_rate || 0) >= 0.25 ? 'text-green-300' :
+                              (campaign.open_rate || 0) >= 0.15 ? 'text-yellow-300' : 'text-red-300'
+                            }`}>
+                              {((campaign.open_rate || 0) * 100).toFixed(1)}%
+                            </span>
                           </div>
-                        )
-                      }}
-                    />
-                    <Bar 
-                      dataKey="open_rate" 
-                      fill="#60A5FA"
-                      radius={[0, 4, 4, 0]}
-                    />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Click Rate Analysis */}
-          <Card className="bg-white/10 backdrop-blur-md border-white/20">
-            <CardHeader>
-              <CardTitle className="text-white flex items-center gap-2">
-                <MousePointer className="w-5 h-5" />
-                Click Rate Performance
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-80">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
-                    data={clickRateData}
-                    layout="horizontal"
-                    margin={{ top: 5, right: 30, left: 5, bottom: 5 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                    <XAxis 
-                      type="number" 
-                      tick={{ fill: 'rgba(255,255,255,0.7)', fontSize: 11 }}
-                      axisLine={{ stroke: 'rgba(255,255,255,0.2)' }}
-                      domain={[0, 'dataMax + 1']}
-                    />
-                    <YAxis 
-                      type="category" 
-                      dataKey="name"
-                      tick={{ fill: 'rgba(255,255,255,0.7)', fontSize: 10 }}
-                      axisLine={{ stroke: 'rgba(255,255,255,0.2)' }}
-                      width={200}
-                    />
-                    <Tooltip 
-                      contentStyle={{
-                        backgroundColor: 'rgba(0,0,0,0.9)',
-                        border: '1px solid rgba(255,255,255,0.2)',
-                        borderRadius: '8px',
-                        color: 'white'
-                      }}
-                      formatter={(value: number) => [`${value.toFixed(2)}%`, 'Click Rate']}
-                      labelFormatter={(label: string, payload: any) => {
-                        const data = payload[0]?.payload
-                        return (
-                          <div>
-                            <div className="font-medium">{data?.fullName}</div>
-                            <div className="text-xs text-gray-300">
-                              Revenue: ${data?.revenue.toLocaleString()} • {data?.campaigns_count} campaigns
-                            </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-white/60 text-xs">Click:</span>
+                            <span className={`text-sm font-bold ${
+                              (campaign.click_rate || 0) >= 0.03 ? 'text-green-300' :
+                              (campaign.click_rate || 0) >= 0.015 ? 'text-yellow-300' : 'text-red-300'
+                            }`}>
+                              {((campaign.click_rate || 0) * 100).toFixed(1)}%
+                            </span>
                           </div>
-                        )
-                      }}
-                    />
-                    <Bar 
-                      dataKey="click_rate" 
-                      fill="#A78BFA"
-                      radius={[0, 4, 4, 0]}
-                    />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Category Analysis Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {Object.entries(subjectInsights).map(([key, insight]: [string, any]) => {
-            if (insight.count === 0) return null
-            
-            const categoryNames: Record<string, string> = {
-              withEmoji: '📧 With Emojis',
-              withPersonalization: '👤 Personalized',
-              withUrgency: '⚡ Urgency Words',
-              withNumbers: '🔢 With Numbers',
-              withQuestion: '❓ Questions',
-              shortLines: '📏 Short (<30 chars)',
-              withBrackets: '🔲 With Brackets'
-            }
-
-            if (!categoryNames[key]) return null
-
-            return (
-              <Card key={key} className="bg-white/10 backdrop-blur-md border-white/20">
-                <CardContent className="p-4">
-                  <div className="flex justify-between items-center mb-2">
-                    <h3 className="text-white font-medium text-sm">{categoryNames[key]}</h3>
-                    <span className="text-white/60 text-xs">{insight.count} campaigns</span>
-                  </div>
-                  <div className="space-y-1">
-                    <div className="flex justify-between items-center">
-                      <span className="text-white/80 text-xs">Open Rate</span>
-                      <span className="text-green-300 font-semibold text-sm">
-                        {insight.avgOpenRate.toFixed(1)}%
-                      </span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-white/80 text-xs">Click Rate</span>
-                      <span className="text-purple-300 font-semibold text-sm">
-                        {insight.avgClickRate.toFixed(2)}%
-                      </span>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
-            )
-          })}
-        </div>
+                ))
+              ) : (
+                <div className="text-center py-8">
+                  <Mail className="w-12 h-12 text-white/40 mx-auto mb-4" />
+                  <p className="text-white/60">No subject lines available</p>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
       </div>
     )
   }
@@ -1100,6 +889,22 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
     
     // Calculate total campaign revenue
     const totalRevenue = campaigns.reduce((sum: number, campaign: any) => sum + (campaign.revenue || 0), 0)
+    
+    // Sort campaigns
+    const sortedCampaigns = [...campaigns].sort((a: any, b: any) => {
+      let aVal = a[sortField]
+      let bVal = b[sortField]
+      
+      // Handle different data types
+      if (typeof aVal === 'string') aVal = aVal.toLowerCase()
+      if (typeof bVal === 'string') bVal = bVal.toLowerCase()
+      
+      if (sortDirection === 'asc') {
+        return aVal < bVal ? -1 : aVal > bVal ? 1 : 0
+      } else {
+        return aVal > bVal ? -1 : aVal < bVal ? 1 : 0
+      }
+    })
     
     // Sort campaigns
     const sortedCampaigns = [...campaigns].sort((a: any, b: any) => {
