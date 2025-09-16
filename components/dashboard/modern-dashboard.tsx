@@ -633,9 +633,12 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
       }
     }
 
-    // Always fetch when timeframe changes from initial load
+    // Always fetch when timeframe changes (skip only on first load with matching data)
     if (!initialData || timeframe !== initialTimeframe) {
+      console.log(`🔄 Fetching data for timeframe: ${timeframe} days (initial was ${initialTimeframe})`)
       fetchData()
+    } else {
+      console.log(`⏭️ Skipping fetch - using initial data for timeframe: ${timeframe} days`)
     }
   }, [timeframe, campaignTimeframe, flowTimeframe, client?.brand_slug, initialData, initialTimeframe])
 
@@ -2173,11 +2176,15 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
             <TimeframeSelector 
               selectedTimeframe={timeframe}
               onTimeframeChange={(days: number) => {
+                console.log(`🎯 TimeframeSelector changed: ${days} days (activeTab: ${activeTab})`)
                 if (activeTab === 'campaigns' || activeTab === 'subject-lines') {
+                  console.log(`📅 Setting campaignTimeframe: ${campaignTimeframe} → ${days}`)
                   setCampaignTimeframe(days)
                 } else if (activeTab === 'flows') {
+                  console.log(`📅 Setting flowTimeframe: ${flowTimeframe} → ${days}`)
                   setFlowTimeframe(days)
                 } else {
+                  console.log(`📅 Setting campaignTimeframe (default): ${campaignTimeframe} → ${days}`)
                   setCampaignTimeframe(days)
                 }
               }}
