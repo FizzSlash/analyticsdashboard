@@ -42,10 +42,12 @@ export function TimeframeSelector({ selectedTimeframe, onTimeframeChange, classN
   useEffect(() => {
     if (isOpen && buttonRef.current) {
       const rect = buttonRef.current.getBoundingClientRect()
-      setDropdownPosition({
+      const newPosition = {
         top: rect.bottom + 8,
-        left: rect.left
-      })
+        left: Math.max(rect.left, 10) // Ensure dropdown doesn't go off left edge
+      }
+      console.log(`📍 Calculating dropdown position:`, newPosition, `from button rect:`, rect)
+      setDropdownPosition(newPosition)
     }
   }, [isOpen])
 
@@ -73,58 +75,38 @@ export function TimeframeSelector({ selectedTimeframe, onTimeframeChange, classN
     }
   }, [isOpen])
 
-  const dropdown = isOpen ? createPortal(
-    <>
-      {/* Full screen backdrop */}
-      <div 
-        className="fixed inset-0 bg-black/20"
-        style={{ zIndex: 999998 }}
-        onClick={() => {
-          console.log(`🖱️ TimeframeSelector backdrop clicked - closing dropdown`)
-          setIsOpen(false)
-        }}
-      />
-      
-      {/* Dropdown */}
-      <div 
-        className="w-48 bg-slate-900 border border-slate-600 rounded-lg shadow-2xl"
-        style={{
-          position: 'fixed',
-          top: dropdownPosition.top,
-          left: dropdownPosition.left,
-          zIndex: 999999
-        }}
-        onClick={(e) => {
-          console.log(`📋 TimeframeSelector dropdown clicked (should not close)`)
-          e.stopPropagation()
-        }}
-      >
-        <div className="py-2">
-          {timeframeOptions.map((option) => (
-            <button
-              key={option.value}
-              onClick={(e) => {
-                console.log(`🎯 TimeframeSelector option clicked: ${option.value} (${option.label})`)
-                e.preventDefault()
-                e.stopPropagation()
-                console.log(`📞 Calling onTimeframeChange with: ${option.value}`)
-                onTimeframeChange(option.value)
-                setIsOpen(false)
-              }}
-              className={`w-full text-left px-4 py-2 text-sm hover:bg-slate-800 transition-colors cursor-pointer ${
-                option.value === selectedTimeframe 
-                  ? 'bg-slate-800 text-white font-medium' 
-                  : 'text-slate-200'
-              }`}
-            >
-              {option.label}
-            </button>
-          ))}
-        </div>
+  const dropdown = isOpen && (
+    <div 
+      className="absolute top-full left-0 mt-2 w-48 bg-slate-900 border border-slate-600 rounded-lg shadow-2xl z-50"
+      onClick={(e) => {
+        console.log(`📋 TimeframeSelector dropdown clicked (should not close)`)
+        e.stopPropagation()
+      }}
+    >
+      <div className="py-2">
+        {timeframeOptions.map((option) => (
+          <button
+            key={option.value}
+            onClick={(e) => {
+              console.log(`🎯 TimeframeSelector option clicked: ${option.value} (${option.label})`)
+              e.preventDefault()
+              e.stopPropagation()
+              console.log(`📞 Calling onTimeframeChange with: ${option.value}`)
+              onTimeframeChange(option.value)
+              setIsOpen(false)
+            }}
+            className={`w-full text-left px-4 py-2 text-sm hover:bg-slate-800 transition-colors cursor-pointer ${
+              option.value === selectedTimeframe 
+                ? 'bg-slate-800 text-white font-medium' 
+                : 'text-slate-200'
+            }`}
+          >
+            {option.label}
+          </button>
+        ))}
       </div>
-    </>,
-    document.body
-  ) : null
+    </div>
+  )
 
   return (
     <div className={`relative ${className}`}>
