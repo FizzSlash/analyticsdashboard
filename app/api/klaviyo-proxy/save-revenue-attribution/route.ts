@@ -74,8 +74,8 @@ export async function POST(request: NextRequest) {
     
     // For now, treat all revenue as total revenue (we'll enhance channel detection later)
     const totalData = allRevenueData?.data || []
-    const emailData = [] // Will implement channel detection after seeing data structure
-    const smsData = []   // Will implement channel detection after seeing data structure
+    const emailData: any[] = [] // Will implement channel detection after seeing data structure
+    const smsData: any[] = []   // Will implement channel detection after seeing data structure
 
     // Process and aggregate data by date
     const dateMap = new Map()
