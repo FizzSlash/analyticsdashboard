@@ -2288,7 +2288,7 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
     // Get recent campaigns with deliverability issues
     const problemCampaigns = [...campaigns]
       .filter((c: any) => (c.bounce_rate || 0) > 0.05 || (c.unsubscribe_rate || 0) > 0.02)
-      .sort((a, b) => (b.bounce_rate || 0) - (a.bounce_rate || 0))
+      .sort((a: any, b: any) => (b.bounce_rate || 0) - (a.bounce_rate || 0))
       .slice(0, 10)
 
     return (
