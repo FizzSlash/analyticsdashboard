@@ -190,26 +190,39 @@ export class KlaviyoAPI {
     return this.makeRequest(endpoint)
   }
 
-  // Query Metric Aggregates
-  async queryMetricAggregates(metricId: string, measurements: string[], filter?: string, groupBy?: string[], startDate?: string, endDate?: string) {
-    const body: any = {
-      data: {
-        type: 'metric-aggregate',
-        attributes: {
-          measurements,
+  // Query Metric Aggregates - For subscription growth tracking
+  async queryMetricAggregates(metricId: string, interval: string = 'week', timeframe: any) {
+    console.log(`📈 METRIC AGGREGATES API: Querying metric ${metricId} with ${interval} interval`)
+    
+    try {
+      const requestBody = {
+        data: {
+          type: 'metric-aggregate',
+          attributes: {
+            metric_id: metricId,
+            measurements: ['count'],
+            interval: interval, // 'day', 'week', 'month'
+            timeframe: timeframe,
+            timezone: 'UTC'
+          }
         }
       }
+      
+      console.log(`📊 METRIC AGGREGATES: Request body:`, JSON.stringify(requestBody, null, 2))
+      
+      const result = await this.makeRequest('/metric-aggregates', {
+        method: 'POST',
+        body: JSON.stringify(requestBody)
+      })
+      
+      console.log(`✅ METRIC AGGREGATES API: Successfully retrieved data for metric ${metricId}`)
+      console.log(`📊 METRIC AGGREGATES: Response sample:`, JSON.stringify(result.data?.attributes?.data?.[0], null, 2))
+      
+      return result
+    } catch (error) {
+      console.error(`❌ METRIC AGGREGATES API: Error querying metric ${metricId}:`, error)
+      throw error
     }
-
-    if (filter) body.data.attributes.filter = filter
-    if (groupBy) body.data.attributes.by = groupBy
-    if (startDate) body.data.attributes.interval = startDate
-    if (endDate) body.data.attributes.interval = `${startDate},${endDate}`
-
-    return this.makeRequest(`/metrics/${metricId}/query`, {
-      method: 'POST',
-      body: JSON.stringify(body)
-    })
   }
 
   // Get Profiles
@@ -797,62 +810,14 @@ export class KlaviyoAPI {
     return this.makeRequest(endpoint)
   }
 
-  // Get all available metrics for the account
-  async getMetrics() {
-    console.log(`📊 METRICS API: Getting all available metrics`)
-    
-    try {
-      const result = await this.makeRequest('/metrics')
-      console.log(`✅ METRICS API: Found ${result.data?.length || 0} metrics`)
-      return result
-    } catch (error) {
-      console.error('❌ METRICS API: Error fetching metrics:', error)
-      throw error
-    }
-  }
-
-  // Query Metric Aggregates - For subscription growth tracking
-  async queryMetricAggregates(metricId: string, interval: string = 'week', timeframe: any) {
-    console.log(`📈 METRIC AGGREGATES API: Querying metric ${metricId} with ${interval} interval`)
-    
-    try {
-      const requestBody = {
-        data: {
-          type: 'metric-aggregate',
-          attributes: {
-            metric_id: metricId,
-            measurements: ['count'],
-            interval: interval, // 'day', 'week', 'month'
-            timeframe: timeframe,
-            timezone: 'UTC'
-          }
-        }
-      }
-      
-      console.log(`📊 METRIC AGGREGATES: Request body:`, JSON.stringify(requestBody, null, 2))
-      
-      const result = await this.makeRequest('/metric-aggregates', {
-        method: 'POST',
-        body: JSON.stringify(requestBody)
-      })
-      
-      console.log(`✅ METRIC AGGREGATES API: Successfully retrieved data for metric ${metricId}`)
-      console.log(`📊 METRIC AGGREGATES: Response sample:`, JSON.stringify(result.data?.attributes?.data?.[0], null, 2))
-      
-      return result
-    } catch (error) {
-      console.error(`❌ METRIC AGGREGATES API: Error querying metric ${metricId}:`, error)
-      throw error
-    }
-  }
 
   // Helper method to get subscription growth data for multiple metrics
   async getSubscriptionGrowthData(timeframe: any, interval: string = 'week') {
     console.log(`🔄 SUBSCRIPTION GROWTH: Getting growth data for timeframe with ${interval} interval`)
     
     try {
-      // First get all metrics to find the right IDs
-      const metricsResponse = await this.getMetrics()
+      // First get all metrics to find the right IDs (using existing method)
+      const metricsResponse = await this.getMetrics() // Uses existing method with optional cursor
       const metrics = metricsResponse.data || []
       
       // Create lookup for metric names to IDs
