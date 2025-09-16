@@ -31,7 +31,8 @@ import {
   MousePointer,
   Target,
   Percent,
-  MessageSquare
+  MessageSquare,
+  AlertTriangle
 } from 'lucide-react'
 
 interface ModernDashboardProps {
@@ -799,38 +800,117 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
 
   const renderSubjectLinesTab = () => {
     const campaigns = data?.campaigns || []
-    const subjectInsights = getSubjectLineInsights(campaigns)
-    const openRateData = getSubjectLineBarChartData(campaigns, 'open_rate')
-    const clickRateData = getSubjectLineBarChartData(campaigns, 'click_rate')
+    
+    // Sort campaigns by open rate (best performing first)
+    const topCampaigns = [...campaigns]
+      .filter(c => c.subject_line && c.open_rate > 0)
+      .sort((a, b) => (b.open_rate || 0) - (a.open_rate || 0))
+    
+    // Calculate subject line stats
+    const totalCampaigns = topCampaigns.length
+    const avgOpenRate = totalCampaigns > 0 ? 
+      topCampaigns.reduce((sum, c) => sum + (c.open_rate || 0), 0) / totalCampaigns : 0
+    const avgClickRate = totalCampaigns > 0 ? 
+      topCampaigns.reduce((sum, c) => sum + (c.click_rate || 0), 0) / totalCampaigns : 0
 
-    // Smart insights based on data
-    const getSmartInsights = () => {
-      const insights = []
-      
-      if (subjectInsights.withEmoji.avgOpenRate > subjectInsights.withoutEmoji.avgOpenRate) {
-        insights.push(`📧 Subject lines with emojis perform ${(subjectInsights.withEmoji.avgOpenRate - subjectInsights.withoutEmoji.avgOpenRate).toFixed(1)}% better than those without`)
-      }
-      
-      if (subjectInsights.shortLines.avgOpenRate > subjectInsights.longLines.avgOpenRate && subjectInsights.shortLines.count > 0) {
-        insights.push(`📏 Short subject lines (<30 chars) have ${subjectInsights.shortLines.avgOpenRate.toFixed(1)}% open rate vs ${subjectInsights.longLines.avgOpenRate.toFixed(1)}% for longer ones`)
-      }
-      
-      if (subjectInsights.withPersonalization.count > 0) {
-        insights.push(`👤 Personalized subject lines average ${subjectInsights.withPersonalization.avgOpenRate.toFixed(1)}% open rate across ${subjectInsights.withPersonalization.count} campaigns`)
-      }
-      
-      if (subjectInsights.withUrgency.count > 0) {
-        insights.push(`⚡ Urgency-driven subject lines generate ${subjectInsights.withUrgency.avgOpenRate.toFixed(1)}% open rate with ${subjectInsights.withUrgency.avgClickRate.toFixed(1)}% click rate`)
-      }
-
-      return insights.slice(0, 3) // Top 3 insights
-    }
 
     return (
       <div className="space-y-6">
-        {/* Header with Smart Insights */}
-        <div className="bg-white/10 backdrop-blur-md border-white/20 rounded-lg p-6">
-          <h2 className="text-white text-xl font-bold mb-4">✨ Smart Subject Line Insights</h2>
+        {/* Summary Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Card className="bg-white/10 backdrop-blur-md border-white/20">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-white/60 text-sm font-medium">Total Campaigns</p>
+                  <p className="text-2xl font-bold text-white mt-1">{totalCampaigns}</p>
+                  <p className="text-white/60 text-xs mt-1">with subject lines</p>
+                </div>
+                <div className="bg-white/10 p-3 rounded-lg">
+                  <Mail className="w-6 h-6 text-white" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-white/10 backdrop-blur-md border-white/20">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-white/60 text-sm font-medium">Avg Open Rate</p>
+                  <p className="text-2xl font-bold text-white mt-1">{(avgOpenRate * 100).toFixed(1)}%</p>
+                  <p className="text-white/60 text-xs mt-1">across all campaigns</p>
+                </div>
+                <div className="bg-white/10 p-3 rounded-lg">
+                  <Eye className="w-6 h-6 text-white" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-white/10 backdrop-blur-md border-white/20">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-white/60 text-sm font-medium">Avg Click Rate</p>
+                  <p className="text-2xl font-bold text-white mt-1">{(avgClickRate * 100).toFixed(1)}%</p>
+                  <p className="text-white/60 text-xs mt-1">across all campaigns</p>
+                </div>
+                <div className="bg-white/10 p-3 rounded-lg">
+                  <MousePointer className="w-6 h-6 text-white" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Top Performing Subject Lines - Scrollable List */}
+        <Card className="bg-white/10 backdrop-blur-md border-white/20">
+          <CardHeader>
+            <CardTitle className="text-white flex items-center gap-2">
+              <Eye className="w-5 h-5" />
+              Top Performing Subject Lines
+            </CardTitle>
+            <p className="text-white/60 text-sm mt-1">Campaigns ranked by open rate performance</p>
+          </CardHeader>
+          <CardContent>
+            <div className="max-h-96 overflow-y-auto space-y-3">
+              {topCampaigns.length > 0 ? (
+                topCampaigns.map((campaign, index) => (
+                  <div 
+                    key={campaign.campaign_id} 
+                    className="p-4 bg-white/5 rounded-lg hover:bg-white/10 transition-colors"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-3 mb-2">
+                          <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-500/20 text-blue-300 text-sm font-bold">
+                            #{index + 1}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h3 className="text-white font-medium text-sm">
+                              {campaign.subject_line || 'No Subject Line'}
+                            </h3>
+                            <p className="text-white/60 text-xs mt-1">
+                              {campaign.campaign_name || `Campaign ${campaign.campaign_id}`}
+                            </p>
+                          </div>
+                        </div>
+                        
+                        {/* Campaign Metadata */}
+                        <div className="ml-11 flex items-center gap-4 text-xs text-white/60">
+                          <span>📅 {campaign.send_date ? new Date(campaign.send_date).toLocaleDateString() : 'No date'}</span>
+                          <span>👥 {(campaign.recipients_count || 0).toLocaleString()} recipients</span>
+                          <span>💰 ${(campaign.revenue || 0).toLocaleString()} revenue</span>
+                        </div>
+                      </div>
+                      
+                      {/* Performance Metrics */}
+                      <div className="text-right ml-4">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-white/60 text-xs">Open Rate:</span>
+                            <span className={`text-sm font-bold ${\n                              (campaign.open_rate || 0) >= 0.25 ? 'text-green-300' :\n                              (campaign.open_rate || 0) >= 0.15 ? 'text-yellow-300' : 'text-red-300'\n                            }`}>\n                              {((campaign.open_rate || 0) * 100).toFixed(1)}%\n                            </span>\n                          </div>\n                          <div className=\"flex items-center gap-2\">\n                            <span className=\"text-white/60 text-xs\">Click Rate:</span>\n                            <span className={`text-sm font-bold ${\n                              (campaign.click_rate || 0) >= 0.03 ? 'text-green-300' :\n                              (campaign.click_rate || 0) >= 0.015 ? 'text-yellow-300' : 'text-red-300'\n                            }`}>\n                              {((campaign.click_rate || 0) * 100).toFixed(1)}%\n                            </span>\n                          </div>\n                          <div className=\"flex items-center gap-2\">\n                            <span className=\"text-white/60 text-xs\">CTR:</span>\n                            <span className=\"text-white text-sm font-medium\">\n                              {((campaign.click_to_open_rate || 0) * 100).toFixed(1)}%\n                            </span>\n                          </div>\n                        </div>\n                      </div>\n                    </div>\n                  </div>\n                ))\n              ) : (\n                <div className=\"text-center py-8\">\n                  <Mail className=\"w-12 h-12 text-white/40 mx-auto mb-4\" />\n                  <p className=\"text-white/60 mb-2\">No campaign subject lines available</p>\n                  <p className=\"text-white/40 text-sm\">\n                    Sync campaigns to see subject line performance\n                  </p>\n                </div>\n              )}\n            </div>\n          </CardContent>\n        </Card>"}
           <div className="space-y-2">
             {getSmartInsights().map((insight, index) => (
               <p key={index} className="text-white/90 text-sm flex items-start gap-2">
@@ -2362,21 +2442,312 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
     )
   }
 
-  const renderDeliverabilityTab = () => (
-    <div className="space-y-6">
-      <Card className="bg-white/10 backdrop-blur-md border-white/20">
-        <CardHeader>
-          <CardTitle className="text-white flex items-center gap-2">
-            <Shield className="w-5 h-5" />
-            Deliverability Insights
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-white/80">Deliverability metrics will be displayed here</p>
-        </CardContent>
-      </Card>
-    </div>
-  )
+  const renderDeliverabilityTab = () => {
+    const campaigns = data?.campaigns || []
+    const flows = data?.flows || []
+    
+    // Calculate overall deliverability metrics from campaigns and flows
+    const calculateDeliverabilityMetrics = () => {
+      let totalSent = 0, totalDelivered = 0, totalBounced = 0, totalSpam = 0, totalUnsubscribed = 0
+      
+      // Process campaigns
+      campaigns.forEach(campaign => {
+        totalSent += campaign.recipients_count || 0
+        totalDelivered += campaign.delivered_count || 0
+        totalBounced += campaign.bounced_count || 0
+        totalUnsubscribed += campaign.unsubscribed_count || 0
+      })
+      
+      // Process flows (from flow_message_metrics aggregated data)
+      flows.forEach(flow => {
+        totalSent += flow.recipients || 0
+        totalDelivered += flow.deliveries || 0
+        totalBounced += flow.bounces || 0
+        totalUnsubscribed += flow.unsubscribes || 0
+        totalSpam += flow.spam_complaints || 0
+      })
+      
+      // Calculate rates
+      const deliveryRate = totalSent > 0 ? (totalDelivered / totalSent) * 100 : 0
+      const bounceRate = totalSent > 0 ? (totalBounced / totalSent) * 100 : 0
+      const spamRate = totalSent > 0 ? (totalSpam / totalSent) * 100 : 0
+      const unsubscribeRate = totalSent > 0 ? (totalUnsubscribed / totalSent) * 100 : 0
+      
+      // Calculate reputation score (0-100)
+      let reputationScore = 100
+      if (bounceRate > 5) reputationScore -= (bounceRate - 5) * 8
+      if (spamRate > 0.1) reputationScore -= spamRate * 40
+      if (unsubscribeRate > 2) reputationScore -= (unsubscribeRate - 2) * 5
+      reputationScore = Math.max(0, Math.min(100, reputationScore))
+      
+      return {
+        totalSent,
+        totalDelivered,
+        totalBounced,
+        totalSpam,
+        totalUnsubscribed,
+        deliveryRate,
+        bounceRate,
+        spamRate,
+        unsubscribeRate,
+        reputationScore
+      }
+    }
+    
+    const metrics = calculateDeliverabilityMetrics()
+    
+    // Get recent campaigns with deliverability issues
+    const problemCampaigns = [...campaigns]
+      .filter(c => (c.bounce_rate || 0) > 0.05 || (c.unsubscribe_rate || 0) > 0.02)
+      .sort((a, b) => (b.bounce_rate || 0) - (a.bounce_rate || 0))
+      .slice(0, 10)
+
+    return (
+      <div className="space-y-6">
+        {/* Deliverability Overview Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <Card className="bg-white/10 backdrop-blur-md border-white/20">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-white/60 text-sm font-medium">Delivery Rate</p>
+                  <p className="text-2xl font-bold text-white mt-1">{metrics.deliveryRate.toFixed(1)}%</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className={`text-xs ${
+                      metrics.deliveryRate >= 95 ? 'text-green-300' :
+                      metrics.deliveryRate >= 90 ? 'text-yellow-300' : 'text-red-300'
+                    }`}>
+                      {metrics.deliveryRate >= 95 ? '✅ Excellent' :
+                       metrics.deliveryRate >= 90 ? '⚠️ Good' : '🚨 Poor'}
+                    </span>
+                  </div>
+                </div>
+                <div className="bg-white/10 p-3 rounded-lg">
+                  <Shield className="w-6 h-6 text-white" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-white/10 backdrop-blur-md border-white/20">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-white/60 text-sm font-medium">Bounce Rate</p>
+                  <p className="text-2xl font-bold text-white mt-1">{metrics.bounceRate.toFixed(1)}%</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className={`text-xs ${
+                      metrics.bounceRate <= 2 ? 'text-green-300' :
+                      metrics.bounceRate <= 5 ? 'text-yellow-300' : 'text-red-300'
+                    }`}>
+                      {metrics.bounceRate <= 2 ? '✅ Excellent' :
+                       metrics.bounceRate <= 5 ? '⚠️ Acceptable' : '🚨 High'}
+                    </span>
+                  </div>
+                </div>
+                <div className="bg-white/10 p-3 rounded-lg">
+                  <Activity className="w-6 h-6 text-white" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-white/10 backdrop-blur-md border-white/20">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-white/60 text-sm font-medium">Spam Rate</p>
+                  <p className="text-2xl font-bold text-white mt-1">{metrics.spamRate.toFixed(2)}%</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className={`text-xs ${
+                      metrics.spamRate <= 0.1 ? 'text-green-300' :
+                      metrics.spamRate <= 0.3 ? 'text-yellow-300' : 'text-red-300'
+                    }`}>
+                      {metrics.spamRate <= 0.1 ? '✅ Excellent' :
+                       metrics.spamRate <= 0.3 ? '⚠️ Acceptable' : '🚨 High'}
+                    </span>
+                  </div>
+                </div>
+                <div className="bg-white/10 p-3 rounded-lg">
+                  <Shield className="w-6 h-6 text-white" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-white/10 backdrop-blur-md border-white/20">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-white/60 text-sm font-medium">Reputation Score</p>
+                  <p className="text-2xl font-bold text-white mt-1">{metrics.reputationScore.toFixed(0)}</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className={`text-xs ${
+                      metrics.reputationScore >= 80 ? 'text-green-300' :
+                      metrics.reputationScore >= 60 ? 'text-yellow-300' : 'text-red-300'
+                    }`}>
+                      {metrics.reputationScore >= 80 ? '✅ Excellent' :
+                       metrics.reputationScore >= 60 ? '⚠️ Good' : '🚨 Poor'}
+                    </span>
+                  </div>
+                </div>
+                <div className="bg-white/10 p-3 rounded-lg">
+                  <Target className="w-6 h-6 text-white" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Campaigns with Deliverability Issues */}
+        <Card className="bg-white/10 backdrop-blur-md border-white/20">
+          <CardHeader>
+            <CardTitle className="text-white flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5" />
+              Campaigns Needing Attention
+            </CardTitle>
+            <p className="text-white/60 text-sm mt-1">Recent campaigns with deliverability issues</p>
+          </CardHeader>
+          <CardContent>
+            <div className="max-h-64 overflow-y-auto space-y-2">
+              {problemCampaigns.length > 0 ? (
+                problemCampaigns.map((campaign, index) => (
+                  <div 
+                    key={campaign.campaign_id} 
+                    className="p-3 bg-white/5 rounded-lg flex items-center justify-between"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <h4 className="text-white text-sm font-medium truncate">
+                        {campaign.campaign_name || campaign.subject_line || `Campaign ${campaign.campaign_id}`}
+                      </h4>
+                      <p className="text-white/60 text-xs mt-1">
+                        📅 {campaign.send_date ? new Date(campaign.send_date).toLocaleDateString() : 'No date'}
+                        • 👥 {(campaign.recipients_count || 0).toLocaleString()} recipients
+                      </p>
+                    </div>
+                    <div className="text-right ml-4">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-white/60 text-xs">Bounce:</span>
+                          <span className={`text-xs font-bold ${
+                            (campaign.bounce_rate || 0) <= 0.02 ? 'text-green-300' :
+                            (campaign.bounce_rate || 0) <= 0.05 ? 'text-yellow-300' : 'text-red-300'
+                          }`}>
+                            {((campaign.bounce_rate || 0) * 100).toFixed(1)}%
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-white/60 text-xs">Unsub:</span>
+                          <span className={`text-xs font-bold ${
+                            (campaign.unsubscribe_rate || 0) <= 0.01 ? 'text-green-300' :
+                            (campaign.unsubscribe_rate || 0) <= 0.02 ? 'text-yellow-300' : 'text-red-300'
+                          }`}>
+                            {((campaign.unsubscribe_rate || 0) * 100).toFixed(2)}%
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-6">
+                  <Shield className="w-8 h-8 text-green-300 mx-auto mb-2" />
+                  <p className="text-green-300 text-sm font-medium">Great deliverability!</p>
+                  <p className="text-white/60 text-xs">No campaigns with significant issues found</p>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Overall Email Health Summary */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Card className="bg-white/10 backdrop-blur-md border-white/20">
+            <CardHeader>
+              <CardTitle className="text-white flex items-center gap-2">
+                <Activity className="w-5 h-5" />
+                Email Health Summary
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="text-center">
+                  <div className={`text-4xl font-bold mb-2 ${
+                    metrics.reputationScore >= 80 ? 'text-green-300' :
+                    metrics.reputationScore >= 60 ? 'text-yellow-300' : 'text-red-300'
+                  }`}>
+                    {metrics.reputationScore.toFixed(0)}
+                  </div>
+                  <p className="text-white/80 text-sm font-medium">Overall Reputation Score</p>
+                  <p className="text-white/60 text-xs mt-1">
+                    Based on {metrics.totalSent.toLocaleString()} emails sent
+                  </p>
+                </div>
+                
+                <div className="space-y-2 pt-4 border-t border-white/20">
+                  <div className="flex justify-between items-center">
+                    <span className="text-white/60 text-xs">Successfully Delivered</span>
+                    <span className="text-white text-sm">{metrics.totalDelivered.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-white/60 text-xs">Bounced</span>
+                    <span className="text-white text-sm">{metrics.totalBounced.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-white/60 text-xs">Spam Complaints</span>
+                    <span className="text-white text-sm">{metrics.totalSpam.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-white/60 text-xs">Unsubscribed</span>
+                    <span className="text-white text-sm">{metrics.totalUnsubscribed.toLocaleString()}</span>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-white/10 backdrop-blur-md border-white/20">
+            <CardHeader>
+              <CardTitle className="text-white flex items-center gap-2">
+                <BarChart3 className="w-5 h-5" />
+                Campaign vs Flow Performance
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex justify-between items-center p-3 bg-white/5 rounded-lg">
+                  <span className="text-white/80">Campaign Delivery Rate</span>
+                  <span className="text-white font-bold">
+                    {campaigns.length > 0 ? 
+                      ((campaigns.reduce((sum, c) => sum + (c.delivered_count || 0), 0) / 
+                        campaigns.reduce((sum, c) => sum + (c.recipients_count || 0), 0)) * 100).toFixed(1)
+                      : '0'}%
+                  </span>
+                </div>
+                <div className="flex justify-between items-center p-3 bg-white/5 rounded-lg">
+                  <span className="text-white/80">Flow Delivery Rate</span>
+                  <span className="text-white font-bold">
+                    {flows.length > 0 ? 
+                      (flows.reduce((sum, f) => sum + (f.delivery_rate || 0), 0) / flows.length).toFixed(1)
+                      : '0'}%
+                  </span>
+                </div>
+                <div className="flex justify-between items-center p-3 bg-white/5 rounded-lg">
+                  <span className="text-white/80">Combined Bounce Rate</span>
+                  <span className={`font-bold ${
+                    metrics.bounceRate <= 2 ? 'text-green-300' :
+                    metrics.bounceRate <= 5 ? 'text-yellow-300' : 'text-red-300'
+                  }`}>
+                    {metrics.bounceRate.toFixed(1)}%
+                  </span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900">
