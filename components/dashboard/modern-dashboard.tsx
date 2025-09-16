@@ -40,7 +40,7 @@ interface ModernDashboardProps {
   data?: any
 }
 
-type TabType = 'dashboard' | 'campaigns' | 'flows' | 'subject-lines' | 'list-growth' | 'deliverability'
+type TabType = 'dashboard' | 'campaigns' | 'flows' | 'subject-lines' | 'list-growth' | 'deliverability' | 'deliverability'
 
 export function ModernDashboard({ client, data: initialData }: ModernDashboardProps) {
   const [activeTab, setActiveTab] = useState<TabType>('dashboard')
