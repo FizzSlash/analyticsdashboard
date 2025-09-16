@@ -2240,7 +2240,7 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
       let totalSent = 0, totalDelivered = 0, totalBounced = 0, totalSpam = 0, totalUnsubscribed = 0
       
       // Process campaigns
-      campaigns.forEach(campaign => {
+      campaigns.forEach((campaign: any) => {
         totalSent += campaign.recipients_count || 0
         totalDelivered += campaign.delivered_count || 0
         totalBounced += campaign.bounced_count || 0
@@ -2248,7 +2248,7 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
       })
       
       // Process flows (from flow_message_metrics aggregated data)
-      flows.forEach(flow => {
+      flows.forEach((flow: any) => {
         totalSent += flow.recipients || 0
         totalDelivered += flow.deliveries || 0
         totalBounced += flow.bounces || 0
