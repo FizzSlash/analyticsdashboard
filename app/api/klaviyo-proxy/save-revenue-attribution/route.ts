@@ -74,115 +74,50 @@ export async function POST(request: NextRequest) {
       fullResponse: JSON.stringify(allRevenueData, null, 2)
     })
     
-    // TEMPORARY: Return raw API data for debugging
-    return NextResponse.json({ 
-      success: true,
-      debug: true,
-      message: 'DEBUG MODE: Showing raw API response',
-      rawApiResponse: allRevenueData,
-      placedOrderMetricId: placedOrderMetric.id,
-      dateRange: { startDate: actualStartDate, endDate: actualEndDate }
-    })
-    
-    // For now, treat all revenue as total revenue (we'll enhance channel detection later)
-    const totalData = allRevenueData?.data || []
-    const emailData: any[] = [] // Will implement channel detection after seeing data structure
-    const smsData: any[] = []   // Will implement channel detection after seeing data structure
+    // Process Klaviyo's parallel array structure
+    const apiData = allRevenueData?.data?.attributes
+    const dates = apiData?.dates || []
+    const dataRecord = apiData?.data?.[0] // First (and usually only) data record
+    const measurements = dataRecord?.measurements || {}
+    const orderCounts = measurements.count || []
+    const revenueValues = measurements.sum_value || []
 
-    // Process and aggregate data by date
+    console.log('📊 PARSING: Parallel arrays:', {
+      datesCount: dates.length,
+      ordersCount: orderCounts.length, 
+      revenueCount: revenueValues.length,
+      sampleDate: dates[0],
+      sampleOrders: orderCounts[0],
+      sampleRevenue: revenueValues[0]
+    })
+    // Process parallel arrays (Klaviyo's actual format)
     const dateMap = new Map()
-
-    // Process email data
-    if (emailData && Array.isArray(emailData)) {
-      emailData.forEach((item: any) => {
-        const date = item.date || item.dimensions?.date
-        if (date) {
-          const key = date.split('T')[0] // Get YYYY-MM-DD
-          if (!dateMap.has(key)) {
-            dateMap.set(key, {
-              date: key,
-              email_revenue: 0,
-              email_orders: 0,
-              sms_revenue: 0,
-              sms_orders: 0,
-              total_revenue: 0,
-              total_orders: 0
-            })
-          }
-          const entry = dateMap.get(key)
-          entry.email_revenue += (item.measurements?.sum_value || 0) / 100 // Convert cents to dollars
-          entry.email_orders += item.measurements?.count || 0
-        }
-      })
-    }
-
-    // Process SMS data
-    if (smsData && Array.isArray(smsData)) {
-      smsData.forEach((item: any) => {
-        const date = item.date || item.dimensions?.date
-        if (date) {
-          const key = date.split('T')[0]
-          if (!dateMap.has(key)) {
-            dateMap.set(key, {
-              date: key,
-              email_revenue: 0,
-              email_orders: 0,
-              sms_revenue: 0,
-              sms_orders: 0,
-              total_revenue: 0,
-              total_orders: 0
-            })
-          }
-          const entry = dateMap.get(key)
-          entry.sms_revenue += (item.measurements?.sum_value || 0) / 100 // Convert cents to dollars
-          entry.sms_orders += item.measurements?.count || 0
-        }
-      })
-    }
-
-    // Process total data
-    console.log('🔍 PROCESSING: Total data structure:', {
-      isArray: Array.isArray(totalData),
-      length: totalData?.length || 0,
-      sampleItem: totalData?.[0]
-    })
     
-    if (totalData && Array.isArray(totalData)) {
-      totalData.forEach((item: any, index: number) => {
-        console.log(`📊 PROCESSING: Item ${index}:`, {
-          date: item.date,
-          dimensions: item.dimensions,
-          attributes: item.attributes,
-          measurements: item.measurements || item.attributes?.measurements
+    // Iterate through parallel arrays using index
+    for (let i = 0; i < dates.length; i++) {
+      const date = dates[i]
+      const orderCount = orderCounts[i] || 0
+      const revenueValue = revenueValues[i] || 0
+      
+      if (date) {
+        const key = date.split('T')[0] // Get YYYY-MM-DD
+        
+        // For now, treat all revenue as total revenue (will add channel detection later)
+        dateMap.set(key, {
+          date: key,
+          email_revenue: 0,        // Will implement channel detection later
+          email_orders: 0,         // Will implement channel detection later
+          sms_revenue: 0,          // Will implement channel detection later
+          sms_orders: 0,           // Will implement channel detection later
+          total_revenue: revenueValue / 100, // Convert cents to dollars
+          total_orders: orderCount
         })
         
-        const date = item.date || item.dimensions?.date || item.attributes?.date
-        if (date) {
-          const key = date.split('T')[0]
-          if (!dateMap.has(key)) {
-            dateMap.set(key, {
-              date: key,
-              email_revenue: 0,
-              email_orders: 0,
-              sms_revenue: 0,
-              sms_orders: 0,
-              total_revenue: 0,
-              total_orders: 0
-            })
-          }
-          const entry = dateMap.get(key)
-          const measurements = item.measurements || item.attributes?.measurements
-          entry.total_revenue += (measurements?.sum_value || 0) / 100 // Convert cents to dollars
-          entry.total_orders += measurements?.count || 0
-          
-          console.log(`💾 ADDED: Date ${key}, Revenue: ${(measurements?.sum_value || 0) / 100}, Orders: ${measurements?.count || 0}`)
-        } else {
-          console.log(`⚠️ SKIPPED: No date found in item ${index}`)
-        }
-      })
-    } else {
-      console.log('❌ PROCESSING: totalData is not a valid array')
+        console.log(`💾 PROCESSED: Date ${key}, Revenue: $${(revenueValue / 100).toFixed(2)}, Orders: ${orderCount}`)
+      }
     }
+    
+    console.log(`✅ PROCESSING: Created ${dateMap.size} date records from ${dates.length} API data points`)
 
     // Save to database
     let savedCount = 0
