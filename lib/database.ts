@@ -694,7 +694,7 @@ export class DatabaseService {
       }
     }
 
-    const totals = metrics.reduce((acc, metric) => ({
+    const totals = metrics.reduce((acc: any, metric: any) => ({
       email_revenue: acc.email_revenue + Number(metric.email_revenue || 0),
       sms_revenue: acc.sms_revenue + Number(metric.sms_revenue || 0),
       total_revenue: acc.total_revenue + Number(metric.total_revenue || 0),
