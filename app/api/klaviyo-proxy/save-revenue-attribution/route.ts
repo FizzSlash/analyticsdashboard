@@ -194,7 +194,7 @@ export async function POST(request: NextRequest) {
         Math.round((data.sms_revenue / data.total_revenue) * 10000) / 100 : 0
 
       await DatabaseService.upsertRevenueAttributionMetric({
-        client_id: client.id,
+        client_id: client!.id, // Non-null assertion since we validated client exists above
         date,
         email_revenue: data.email_revenue,
         sms_revenue: data.sms_revenue,
