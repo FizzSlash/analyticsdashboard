@@ -23,7 +23,6 @@ export async function POST(request: NextRequest) {
     }
 
     const klaviyo = new KlaviyoAPI(klaviyoApiKey)
-    const db = new DatabaseService()
     
     // Get the "Placed Order" metric ID
     const metrics = await klaviyo.getMetrics()
@@ -145,7 +144,7 @@ export async function POST(request: NextRequest) {
       const sms_percentage = data.total_revenue > 0 ?
         Math.round((data.sms_revenue / data.total_revenue) * 10000) / 100 : 0
 
-      await db.upsertRevenueAttributionMetric({
+      await DatabaseService.upsertRevenueAttributionMetric({
         client_id: clientId,
         date,
         email_revenue: data.email_revenue,
