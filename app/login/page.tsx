@@ -10,6 +10,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
+  const [redirecting, setRedirecting] = useState(false)
   const [error, setError] = useState('')
   
   const router = useRouter()
@@ -21,10 +22,66 @@ export default function LoginPage() {
   useEffect(() => {
     if (initialized && user) {
       console.log('LOGIN: User already authenticated, redirecting')
-      const destination = redirectTo || '/client/hydrus'
-      router.push(destination)
+      handleRedirectAfterAuth()
     }
   }, [initialized, user, redirectTo, router])
+
+  const handleRedirectAfterAuth = async () => {
+    if (!supabase || !user) return
+
+    setRedirecting(true)
+    
+    try {
+      console.log('LOGIN: Determining redirect destination based on user role')
+      
+      // Get user profile to determine role and redirect destination
+      const { data: profile, error: profileError } = await supabase
+        .from('user_profiles')
+        .select('*, agencies(slug), clients(brand_slug)')
+        .eq('id', user.id)
+        .single()
+
+      if (profileError) {
+        console.error('LOGIN: Error fetching user profile:', profileError)
+        // Fallback to default redirect
+        router.push(redirectTo || '/client/hydrus')
+        return
+      }
+
+      console.log('LOGIN: User profile:', profile)
+
+      // Redirect based on role
+      if (profile.role === 'agency_admin') {
+        const agencySlug = profile.agencies?.slug
+        if (agencySlug) {
+          console.log(`LOGIN: Redirecting agency admin to: /agency/${agencySlug}/admin`)
+          router.push(`/agency/${agencySlug}/admin`)
+        } else {
+          console.error('LOGIN: Agency admin user has no agency slug')
+          router.push('/unauthorized')
+        }
+      } else if (profile.role === 'client_user') {
+        const clientSlug = profile.clients?.brand_slug
+        if (clientSlug) {
+          console.log(`LOGIN: Redirecting client user to: /client/${clientSlug}`)
+          router.push(`/client/${clientSlug}`)
+        } else {
+          console.error('LOGIN: Client user has no client slug')
+          router.push('/unauthorized')
+        }
+      } else {
+        console.error('LOGIN: Unknown user role:', profile.role)
+        router.push('/unauthorized')
+      }
+
+    } catch (error) {
+      console.error('LOGIN: Error during redirect logic:', error)
+      // Fallback redirect
+      router.push(redirectTo || '/client/hydrus')
+    } finally {
+      setRedirecting(false)
+    }
+  }
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -50,9 +107,9 @@ export default function LoginPage() {
       }
 
       if (data.user) {
-        console.log('LOGIN: Authentication successful, waiting for auth state update')
-        // Don't redirect immediately - let the auth provider handle the state change
-        // The useEffect above will handle the redirect when user state updates
+        console.log('LOGIN: Authentication successful, determining redirect...')
+        // Trigger the redirect logic immediately after successful login
+        await handleRedirectAfterAuth()
       }
     } catch (err) {
       console.error('LOGIN: Unexpected error:', err)
@@ -62,14 +119,16 @@ export default function LoginPage() {
     }
   }
 
-  // Show loading while auth initializes
-  if (!initialized) {
+  // Show loading while auth initializes or redirecting
+  if (!initialized || redirecting) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
         <Card className="w-full max-w-md">
           <CardContent className="flex flex-col items-center justify-center py-12">
             <Loader2 className="h-8 w-8 animate-spin text-blue-600 mb-4" />
-            <p className="text-gray-600">Initializing...</p>
+            <p className="text-gray-600">
+              {redirecting ? 'Redirecting to your dashboard...' : 'Initializing...'}
+            </p>
           </CardContent>
         </Card>
       </div>
