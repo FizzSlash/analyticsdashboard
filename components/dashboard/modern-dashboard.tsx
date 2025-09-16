@@ -40,7 +40,7 @@ interface ModernDashboardProps {
   data?: any
 }
 
-type TabType = 'dashboard' | 'campaigns' | 'flows' | 'subject-lines' | 'list-growth' | 'deliverability' | 'deliverability'
+type TabType = 'dashboard' | 'campaigns' | 'flows' | 'subject-lines' | 'list-growth' | 'deliverability'
 
 export function ModernDashboard({ client, data: initialData }: ModernDashboardProps) {
   const [activeTab, setActiveTab] = useState<TabType>('dashboard')
@@ -95,7 +95,7 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
     })
     
     return Object.entries(revenueRecipientsByPeriod)
-      .map(([period, data]) => ({ 
+      .map(([period, data]: [string, any]) => ({ 
         period, 
         revenue: data.revenue,
         recipients: data.recipients 
@@ -133,7 +133,7 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
     })
     
     return Object.entries(rprByPeriod)
-      .map(([period, data]) => ({
+      .map(([period, data]: [string, any]) => ({
         period,
         rpr: data.recipients > 0 ? data.revenue / data.recipients : 0
       }))
@@ -158,7 +158,7 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
       }
     }
     
-    return Object.entries(weeklyData).map(([week, data]) => ({
+    return Object.entries(weeklyData).map(([week, data]: [string, any]) => ({
       week,
       revenue: data.revenue,
       opens: data.opens
@@ -803,8 +803,8 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
     
     // Sort campaigns by open rate (best performing first)
     const topCampaigns = [...campaigns]
-      .filter(c => c.subject_line && c.open_rate > 0)
-      .sort((a, b) => (b.open_rate || 0) - (a.open_rate || 0))
+      .filter((c: any) => c.subject_line && c.open_rate > 0)
+      .sort((a: any, b: any) => (b.open_rate || 0) - (a.open_rate || 0))
     
     return (
       <div className="space-y-6">
@@ -820,7 +820,7 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
           <CardContent>
             <div className="max-h-96 overflow-y-auto space-y-3">
               {topCampaigns.length > 0 ? (
-                topCampaigns.map((campaign, index) => (
+                topCampaigns.map((campaign: any, index: number) => (
                   <div 
                     key={campaign.campaign_id} 
                     className="p-4 bg-white/5 rounded-lg hover:bg-white/10 transition-colors"
@@ -2287,7 +2287,7 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
     
     // Get recent campaigns with deliverability issues
     const problemCampaigns = [...campaigns]
-      .filter(c => (c.bounce_rate || 0) > 0.05 || (c.unsubscribe_rate || 0) > 0.02)
+      .filter((c: any) => (c.bounce_rate || 0) > 0.05 || (c.unsubscribe_rate || 0) > 0.02)
       .sort((a, b) => (b.bounce_rate || 0) - (a.bounce_rate || 0))
       .slice(0, 10)
 
@@ -2400,7 +2400,7 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
           <CardContent>
             <div className="max-h-64 overflow-y-auto space-y-2">
               {problemCampaigns.length > 0 ? (
-                problemCampaigns.map((campaign, index) => (
+                problemCampaigns.map((campaign: any, index: number) => (
                   <div 
                     key={campaign.campaign_id} 
                     className="p-3 bg-white/5 rounded-lg flex items-center justify-between"
@@ -2573,7 +2573,7 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
       <div className="bg-white/5 backdrop-blur-sm border-b border-white/10">
         <div className="max-w-7xl mx-auto px-6">
           <nav className="flex space-x-8">
-            {tabs.map((tab) => {
+            {tabs.map((tab: any) => {
               const Icon = tab.icon
               return (
                 <button
@@ -2607,13 +2607,13 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
           <div className="space-y-6 animate-pulse">
             {/* Loading skeleton for cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {[...Array(3)].map((_, i) => (
+              {[...Array(3)].map((_: any, i: number) => (
                 <div key={i} className="h-32 bg-white/10 rounded-lg"></div>
               ))}
             </div>
             {/* Loading skeleton for charts */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {[...Array(2)].map((_, i) => (
+              {[...Array(2)].map((_: any, i: number) => (
                 <div key={i} className="h-80 bg-white/10 rounded-lg"></div>
               ))}
             </div>
