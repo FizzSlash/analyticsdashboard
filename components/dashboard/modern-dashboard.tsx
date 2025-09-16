@@ -2233,13 +2233,61 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
                 <div className="text-white/80 text-sm">
                   Weekly subscription and unsubscription trends over time
                 </div>
-                {/* Placeholder for actual chart - will implement with Recharts later */}
-                <div className="h-64 bg-white/5 rounded-lg flex items-center justify-center">
-                  <div className="text-center text-white/60">
-                    <TrendingUp className="w-8 h-8 mx-auto mb-2" />
-                    <p>Chart visualization coming soon</p>
-                    <p className="text-xs mt-1">{chartData.length} data points ready</p>
-                  </div>
+                {/* Net Growth Bar Chart */}
+                <div className="h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+                      <XAxis 
+                        dataKey="date" 
+                        stroke="rgba(255,255,255,0.6)"
+                        fontSize={12}
+                        tickFormatter={(value) => new Date(value).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                      />
+                      <YAxis stroke="rgba(255,255,255,0.6)" fontSize={12} />
+                      <Tooltip 
+                        contentStyle={{ 
+                          backgroundColor: 'rgba(30, 41, 59, 0.95)', 
+                          border: '1px solid rgba(255,255,255,0.2)',
+                          borderRadius: '8px',
+                          color: 'white'
+                        }}
+                        formatter={(value: any, name: string) => {
+                          const formatName = {
+                            'net_growth': 'Net Growth',
+                            'email_subscriptions': 'New Subscribers', 
+                            'email_unsubscribes': 'Unsubscribes'
+                          }[name] || name
+                          return [`${value}`, formatName]
+                        }}
+                        labelFormatter={(label) => new Date(label).toLocaleDateString('en-US', { 
+                          weekday: 'short', 
+                          month: 'short', 
+                          day: 'numeric' 
+                        })}
+                      />
+                      {/* Background bars for subscriptions and unsubscribes */}
+                      <Bar 
+                        dataKey="email_subscriptions" 
+                        fill="rgba(34, 197, 94, 0.3)" 
+                        name="email_subscriptions"
+                        radius={[2, 2, 0, 0]}
+                      />
+                      <Bar 
+                        dataKey="email_unsubscribes" 
+                        fill="rgba(239, 68, 68, 0.3)" 
+                        name="email_unsubscribes"
+                        radius={[2, 2, 0, 0]}
+                      />
+                      {/* Primary net growth bar - green if positive, red if negative */}
+                      <Bar 
+                        dataKey="net_growth" 
+                        fill={(entry: any) => entry.net_growth >= 0 ? "#22c55e" : "#ef4444"}
+                        name="net_growth"
+                        radius={[4, 4, 0, 0]}
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
                 </div>
               </div>
             ) : (
