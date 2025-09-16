@@ -34,13 +34,16 @@ export async function POST(request: NextRequest) {
     const metricsResponse = await klaviyo.getMetrics()
     console.log('📊 REVENUE: Metrics response structure:', {
       hasData: !!metricsResponse.data,
-      hasDataData: !!metricsResponse.data?.data,
-      dataLength: metricsResponse.data?.data?.length || 0
+      dataLength: metricsResponse.data?.length || 0,
+      sampleMetric: metricsResponse.data?.[0]
     })
     
-    const placedOrderMetric = metricsResponse.data?.data?.find((m: any) => 
+    const placedOrderMetric = metricsResponse.data?.find((m: any) => 
       m.attributes?.name === 'Placed Order'
     )
+    
+    console.log('🔍 REVENUE: Looking for Placed Order metric in', metricsResponse.data?.length || 0, 'metrics')
+    console.log('🎯 REVENUE: Found Placed Order metric:', placedOrderMetric)
     
     if (!placedOrderMetric) {
       console.error('❌ Placed Order metric not found')
