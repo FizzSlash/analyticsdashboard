@@ -986,4 +986,78 @@ export class DatabaseService {
       }
     }
   }
+
+  // ===== REVENUE ATTRIBUTION METRICS METHODS =====
+
+  static async upsertRevenueAttributionMetric(metric: Omit<any, 'id' | 'created_at'>): Promise<void> {
+    const { error } = await supabaseAdmin
+      .from('revenue_attribution_metrics')
+      .upsert(metric, {
+        onConflict: 'client_id,date_recorded,interval_type'
+      })
+
+    if (error) {
+      console.error('Error upserting revenue attribution metric:', error)
+      throw error
+    }
+  }
+
+  static async getRevenueAttributionMetrics(clientId: string, days: number = 30): Promise<any[]> {
+    console.log(`💰 DATABASE: Getting revenue attribution metrics for CLIENT_ID: ${clientId}, ${days} days`)
+    
+    const cutoffDate = new Date()
+    cutoffDate.setDate(cutoffDate.getDate() - days)
+
+    const { data, error } = await supabaseAdmin
+      .from('revenue_attribution_metrics')
+      .select('*')
+      .eq('client_id', clientId)
+      .gte('date_recorded', cutoffDate.toISOString().split('T')[0])
+      .order('date_recorded', { ascending: false })
+
+    if (error) {
+      console.error('Error fetching revenue attribution metrics:', error)
+      throw error
+    }
+
+    console.log(`💰 DATABASE: Found ${data?.length || 0} revenue attribution data points`)
+    return data || []
+  }
+
+  static async getRevenueAttributionSummary(clientId: string, days: number = 30): Promise<any> {
+    console.log(`📊 DATABASE: Getting revenue attribution summary for CLIENT_ID: ${clientId}, ${days} days`)
+    
+    const metrics = await this.getRevenueAttributionMetrics(clientId, days)
+    
+    if (!metrics || metrics.length === 0) {
+      return {
+        total_store_revenue: 0,
+        total_email_revenue: 0,
+        total_sms_revenue: 0,
+        email_attribution_percentage: 0,
+        sms_attribution_percentage: 0,
+        unattributed_percentage: 0,
+        email_conversion_rate: 0,
+        store_average_order_value: 0
+      }
+    }
+
+    // Calculate totals from recent data
+    const latest = metrics[0] // Most recent data point
+    
+    return {
+      total_store_revenue: latest.total_store_revenue || 0,
+      total_email_revenue: latest.total_email_revenue || 0,
+      total_sms_revenue: latest.total_sms_revenue || 0,
+      email_attribution_percentage: latest.email_attribution_percentage || 0,
+      sms_attribution_percentage: latest.sms_attribution_percentage || 0,
+      unattributed_percentage: latest.unattributed_percentage || 0,
+      email_conversion_rate: latest.email_conversion_rate || 0,
+      sms_conversion_rate: latest.sms_conversion_rate || 0,
+      store_average_order_value: latest.store_average_order_value || 0,
+      email_average_order_value: latest.email_average_order_value || 0,
+      sms_average_order_value: latest.sms_average_order_value || 0,
+      last_updated: latest.date_recorded
+    }
+  }
 }

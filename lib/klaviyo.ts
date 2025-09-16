@@ -891,6 +891,178 @@ export class KlaviyoAPI {
       throw error
     }
   }
+
+  // ===== REVENUE ATTRIBUTION METHODS =====
+
+  // Campaign Values Reports - Email attribution
+  async getCampaignValuesReport(conversionMetricId: string, timeframe: any = {"key": "last_12_months"}) {
+    console.log(`💰 CAMPAIGN VALUES: Getting email campaign attribution data`)
+    
+    try {
+      const requestBody = {
+        data: {
+          type: 'campaign-values-report',
+          attributes: {
+            statistics: [
+              'revenue', 'orders_count', 'average_order_value',
+              'placed_order_rate', 'revenue_per_recipient',
+              'unique_opens', 'unique_clicks', 'conversion_rate',
+              'recipients'
+            ],
+            timeframe: timeframe,
+            conversion_metric_id: conversionMetricId
+          }
+        }
+      }
+      
+      console.log(`📊 CAMPAIGN VALUES: Request body:`, JSON.stringify(requestBody, null, 2))
+      
+      const result = await this.makeRequest('/campaign-values-reports', {
+        method: 'POST',
+        body: JSON.stringify(requestBody)
+      })
+      
+      console.log(`✅ CAMPAIGN VALUES: Successfully retrieved email campaign attribution data`)
+      console.log(`📊 CAMPAIGN VALUES: Response sample:`, JSON.stringify(result.data?.attributes, null, 2))
+      
+      return result
+    } catch (error) {
+      console.error(`❌ CAMPAIGN VALUES: Error getting email campaign attribution:`, error)
+      throw error
+    }
+  }
+
+  // Flow Values Reports - Email attribution  
+  async getFlowValuesReport(conversionMetricId: string, timeframe: any = {"key": "last_12_months"}) {
+    console.log(`💰 FLOW VALUES: Getting email flow attribution data`)
+    
+    try {
+      const requestBody = {
+        data: {
+          type: 'flow-values-report',
+          attributes: {
+            statistics: [
+              'revenue', 'orders_count', 'average_order_value',
+              'conversion_rate', 'revenue_per_recipient',
+              'unique_opens', 'unique_clicks', 'recipients'
+            ],
+            timeframe: timeframe,
+            conversion_metric_id: conversionMetricId
+          }
+        }
+      }
+      
+      console.log(`📊 FLOW VALUES: Request body:`, JSON.stringify(requestBody, null, 2))
+      
+      const result = await this.makeRequest('/flow-values-reports', {
+        method: 'POST',
+        body: JSON.stringify(requestBody)
+      })
+      
+      console.log(`✅ FLOW VALUES: Successfully retrieved email flow attribution data`)
+      console.log(`📊 FLOW VALUES: Response sample:`, JSON.stringify(result.data?.attributes, null, 2))
+      
+      return result
+    } catch (error) {
+      console.error(`❌ FLOW VALUES: Error getting email flow attribution:`, error)
+      throw error
+    }
+  }
+
+  // Get total store revenue from Placed Order metric
+  async getTotalStoreRevenue(placedOrderMetricId: string, startDate?: string, endDate?: string) {
+    console.log(`🏪 STORE REVENUE: Getting total store revenue via Placed Order metric`)
+    
+    // Default to last 12 months if no dates provided
+    const defaultEndDate = new Date().toISOString()
+    const defaultStartDate = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString()
+    
+    const actualStartDate = startDate || defaultStartDate
+    const actualEndDate = endDate || defaultEndDate
+    
+    try {
+      const requestBody = {
+        data: {
+          type: 'metric-aggregate',
+          attributes: {
+            metric_id: placedOrderMetricId,
+            measurements: ['value', 'count'], // Revenue and order count
+            interval: 'month',
+            filter: [
+              `greater-or-equal(datetime,${actualStartDate})`,
+              `less-than(datetime,${actualEndDate})`
+            ],
+            timezone: 'UTC'
+          }
+        }
+      }
+      
+      console.log(`📊 STORE REVENUE: Request body:`, JSON.stringify(requestBody, null, 2))
+      
+      const result = await this.queryMetricAggregates(
+        placedOrderMetricId, 
+        'month', 
+        actualStartDate, 
+        actualEndDate
+      )
+      
+      console.log(`✅ STORE REVENUE: Successfully retrieved total store revenue data`)
+      
+      return result
+    } catch (error) {
+      console.error(`❌ STORE REVENUE: Error getting total store revenue:`, error)
+      throw error
+    }
+  }
+
+  // Comprehensive revenue attribution analysis
+  async getRevenueAttributionData(timeframe: any = {"key": "last_12_months"}, startDate?: string, endDate?: string) {
+    console.log(`🔄 REVENUE ATTRIBUTION: Getting comprehensive attribution data`)
+    
+    try {
+      // First get all metrics to find the right IDs
+      const metricsResponse = await this.getMetrics()
+      const metrics = metricsResponse.data || []
+      
+      // Create lookup for metric names to IDs
+      const metricLookup: { [key: string]: string } = {}
+      metrics.forEach((metric: any) => {
+        metricLookup[metric.attributes.name] = metric.id
+      })
+      
+      const placedOrderMetricId = metricLookup['Placed Order']
+      if (!placedOrderMetricId) {
+        throw new Error('Placed Order metric not found')
+      }
+      
+      console.log(`🎯 REVENUE ATTRIBUTION: Found Placed Order metric ID: ${placedOrderMetricId}`)
+      
+      // Query all revenue attribution sources in parallel
+      const [
+        totalStoreRevenue,
+        emailCampaignAttribution,
+        emailFlowAttribution
+      ] = await Promise.all([
+        this.getTotalStoreRevenue(placedOrderMetricId, startDate, endDate),
+        this.getCampaignValuesReport(placedOrderMetricId, timeframe),
+        this.getFlowValuesReport(placedOrderMetricId, timeframe)
+      ])
+      
+      console.log(`✅ REVENUE ATTRIBUTION: Successfully retrieved all attribution data`)
+      
+      return {
+        metricLookup,
+        totalStoreRevenue,
+        emailCampaignAttribution,
+        emailFlowAttribution,
+        placedOrderMetricId
+      }
+      
+    } catch (error) {
+      console.error('❌ REVENUE ATTRIBUTION: Error getting attribution data:', error)
+      throw error
+    }
+  }
 }
 
 // Helper functions for data transformation
