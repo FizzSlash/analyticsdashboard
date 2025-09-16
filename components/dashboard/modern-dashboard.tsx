@@ -2359,10 +2359,10 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
                         name="email_unsubscribes"
                         radius={[2, 2, 0, 0]}
                       />
-                      {/* Primary net growth bar - green if positive, red if negative */}
+                      {/* Primary net growth bar - static color (will be enhanced later) */}
                       <Bar 
                         dataKey="net_growth" 
-                        fill={(entry: any) => entry.net_growth >= 0 ? "#22c55e" : "#ef4444"}
+                        fill="#22c55e"
                         name="net_growth"
                         radius={[4, 4, 0, 0]}
                       />
