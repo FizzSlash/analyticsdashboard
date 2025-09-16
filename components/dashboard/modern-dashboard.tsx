@@ -905,11 +905,6 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
         return aVal > bVal ? -1 : aVal < bVal ? 1 : 0
       }
     })
-    
-    // Sort campaigns
-    const sortedCampaigns = [...campaigns].sort((a: any, b: any) => {
-      let aVal = a[sortField]
-      let bVal = b[sortField]
       
       // Handle different data types
       if (typeof aVal === 'string') aVal = aVal.toLowerCase()
