@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
 
     // Call 1: Get EMAIL attributed revenue
     console.log('📧 Fetching EMAIL attributed revenue...')
-    const revenueData = await klaviyo.queryRevenueWithAttribution(
+    const revenueData = await klaviyo.queryRevenueByAttributedChannel(
       placedOrderMetric.id,
       actualStartDate,
       actualEndDate
