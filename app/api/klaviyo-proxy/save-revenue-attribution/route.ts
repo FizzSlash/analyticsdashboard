@@ -73,6 +73,16 @@ export async function POST(request: NextRequest) {
       sampleRecord: allRevenueData?.data?.[0],
       fullResponse: JSON.stringify(allRevenueData, null, 2)
     })
+
+    // TEMPORARY: Return raw API response for channel attribution debugging
+    return NextResponse.json({ 
+      success: true,
+      debug: true,
+      message: 'ATTRIBUTION DEBUG: Showing raw API response structure',
+      rawApiResponse: allRevenueData,
+      placedOrderMetricId: placedOrderMetric.id,
+      dateRange: { startDate: actualStartDate, endDate: actualEndDate }
+    })
     
     // Process Klaviyo's parallel array structure
     const apiData = allRevenueData?.data?.attributes
