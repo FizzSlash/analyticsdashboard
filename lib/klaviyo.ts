@@ -394,7 +394,7 @@ export class KlaviyoAPI {
           type: 'metric-aggregate',
           attributes: {
             metric_id: metricId,
-            measurements: ['count', 'sum_value'], // count = orders, sum_value = revenue
+            measurements: ['sum_value'], // Only sum_value like Flow LUXE
             interval: 'day', // Daily time grouping
             filter: [
               `greater-or-equal(datetime,${startDate})`,
@@ -402,7 +402,7 @@ export class KlaviyoAPI {
             ],
             by: ['$attributed_channel'], // Single grouping like Flow LUXE
             page_size: 500,
-            timezone: 'UTC'
+            timezone: 'America/New_York' // Match Flow LUXE timezone
           }
         }
       })
@@ -420,7 +420,7 @@ export class KlaviyoAPI {
           type: 'metric-aggregate',
           attributes: {
             metric_id: metricId,
-            measurements: ['count', 'sum_value'], // count = orders, sum_value = revenue in cents
+            measurements: ['sum_value'], // Only sum_value like Flow LUXE
             interval: 'day', // This handles time grouping
             filter: [
               `greater-or-equal(datetime,${startDate})`,
@@ -428,7 +428,7 @@ export class KlaviyoAPI {
             ],
             // Remove 'by' parameter - not needed for time-based aggregation
             page_size: 500,
-            timezone: 'UTC'
+            timezone: 'America/New_York' // Match Flow LUXE timezone
           }
         }
       })

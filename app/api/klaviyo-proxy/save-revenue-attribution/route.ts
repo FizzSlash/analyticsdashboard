@@ -84,10 +84,10 @@ export async function POST(request: NextRequest) {
     
     const dates = attributionApiData?.dates || totalApiData?.dates || []
     
-    // Extract channel data using blueprint array indices  
-    const emailData = attributionApiData?.data?.[1]?.measurements || { count: [], sum_value: [] }  // data[1] = EMAIL
-    const smsData = attributionApiData?.data?.[2]?.measurements || { count: [], sum_value: [] }    // data[2] = SMS
-    const totalDataRecord = totalApiData?.data?.[0]?.measurements || { count: [], sum_value: [] }  // data[0] = TOTAL
+    // Extract channel data using blueprint array indices (only sum_value)
+    const emailData = attributionApiData?.data?.[1]?.measurements || { sum_value: [] }  // data[1] = EMAIL
+    const smsData = attributionApiData?.data?.[2]?.measurements || { sum_value: [] }    // data[2] = SMS
+    const totalDataRecord = totalApiData?.data?.[0]?.measurements || { sum_value: [] }  // data[0] = TOTAL
 
     console.log('📊 BLUEPRINT: Channel data extracted:', {
       datesCount: dates.length,
@@ -109,13 +109,15 @@ export async function POST(request: NextRequest) {
       if (date) {
         const key = date.split('T')[0] // Get YYYY-MM-DD
         
-        // Extract data using Flow LUXE blueprint indices
+        // Extract data using Flow LUXE blueprint indices (only revenue, no orders)
         const emailRevenue = emailData.sum_value?.[i] || 0      // data[1] = EMAIL
-        const emailOrders = emailData.count?.[i] || 0           // data[1] = EMAIL  
         const smsRevenue = smsData.sum_value?.[i] || 0          // data[2] = SMS
-        const smsOrders = smsData.count?.[i] || 0               // data[2] = SMS
         const totalRevenue = totalDataRecord.sum_value?.[i] || 0 // data[0] = TOTAL
-        const totalOrders = totalDataRecord.count?.[i] || 0     // data[0] = TOTAL
+        
+        // Set orders to 0 since Flow LUXE doesn't track order counts in this approach
+        const emailOrders = 0
+        const smsOrders = 0  
+        const totalOrders = 0
         
         dateMap.set(key, {
           date: key,
