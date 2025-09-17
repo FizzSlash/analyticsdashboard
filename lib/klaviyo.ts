@@ -383,7 +383,7 @@ export class KlaviyoAPI {
 
   // REVENUE ATTRIBUTION BY CHANNEL METHODS
   
-  // Query Revenue Attribution with Channel Breakdown
+  // Query Revenue Attribution with Channel Breakdown (Enhanced with user's API example)
   async queryRevenueWithAttribution(metricId: string, startDate: string, endDate: string) {
     console.log(`💰 REVENUE: Querying revenue with channel attribution from ${startDate} to ${endDate}`)
     
@@ -400,8 +400,12 @@ export class KlaviyoAPI {
               `greater-or-equal(datetime,${startDate})`,
               `less-than(datetime,${endDate})`
             ],
-            by: ['$message'], // Group by message to get attribution data
-            sort: '$attributed_channel', // Sort by channel for attribution
+            by: [
+              '$attributed_channel',    // Primary: Email, SMS, etc.
+              '$campaign_channel',      // Campaign channel
+              '$flow_channel'           // Flow channel
+            ],
+            sort: '$attributed_channel', // Sort by primary attribution channel
             page_size: 500,
             timezone: 'UTC'
           }

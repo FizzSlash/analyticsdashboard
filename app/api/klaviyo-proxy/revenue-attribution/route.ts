@@ -42,27 +42,9 @@ export async function POST(request: NextRequest) {
 
     // Call 1: Get EMAIL attributed revenue
     console.log('📧 Fetching EMAIL attributed revenue...')
-    const emailRevenue = await klaviyo.queryRevenueByChannel(
-      placedOrderMetric.id, 
-      'EMAIL',
-      actualStartDate,
-      actualEndDate
-    )
-
-    // Call 2: Get SMS attributed revenue  
-    console.log('📱 Fetching SMS attributed revenue...')
-    const smsRevenue = await klaviyo.queryRevenueByChannel(
+    const revenueData = await klaviyo.queryRevenueWithAttribution(
       placedOrderMetric.id,
-      'SMS', 
       actualStartDate,
-      actualEndDate
-    )
-
-    // Call 3: Get TOTAL revenue (all channels)
-    console.log('💰 Fetching TOTAL revenue...')
-    const totalRevenue = await klaviyo.queryTotalRevenue(
-      placedOrderMetric.id,
-      actualStartDate, 
       actualEndDate
     )
 
@@ -70,12 +52,8 @@ export async function POST(request: NextRequest) {
     
     return NextResponse.json({ 
       success: true,
-      data: {
-        email: emailRevenue,
-        sms: smsRevenue, 
-        total: totalRevenue,
-        dateRange: { startDate: actualStartDate, endDate: actualEndDate }
-      }
+      data: revenueData,
+      dateRange: { startDate: actualStartDate, endDate: actualEndDate }
     })
 
   } catch (error) {
