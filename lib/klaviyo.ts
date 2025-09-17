@@ -383,9 +383,9 @@ export class KlaviyoAPI {
 
   // REVENUE ATTRIBUTION BY CHANNEL METHODS
   
-  // Query Revenue Attribution with Channel Breakdown (Enhanced with user's API example)
-  async queryRevenueWithAttribution(metricId: string, startDate: string, endDate: string) {
-    console.log(`💰 REVENUE: Querying revenue with channel attribution from ${startDate} to ${endDate}`)
+  // Query Revenue Attribution by Channel (Flow LUXE Blueprint approach)
+  async queryRevenueByAttributedChannel(metricId: string, startDate: string, endDate: string) {
+    console.log(`💰 REVENUE: Querying attributed channel revenue from ${startDate} to ${endDate}`)
     
     return this.makeRequest('/metric-aggregates', {
       method: 'POST',
@@ -400,12 +400,7 @@ export class KlaviyoAPI {
               `greater-or-equal(datetime,${startDate})`,
               `less-than(datetime,${endDate})`
             ],
-            by: [
-              '$attributed_channel',    // Primary: Email, SMS, etc.
-              '$campaign_channel',      // Campaign channel
-              '$flow_channel'           // Flow channel
-            ],
-            sort: '$attributed_channel', // Sort by primary attribution channel
+            by: ['$attributed_channel'], // Single grouping like Flow LUXE
             page_size: 500,
             timezone: 'UTC'
           }

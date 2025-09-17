@@ -65,131 +65,80 @@ export async function POST(request: NextRequest) {
 
     console.log('📅 Fetching revenue data for date range:', { actualStartDate, actualEndDate })
 
-    // Fetch revenue data WITH channel attribution  
-    const allRevenueData = await klaviyo.queryRevenueWithAttribution(placedOrderMetric.id, actualStartDate, actualEndDate)
-
-    console.log('📊 Raw data received:', {
-      total: allRevenueData?.data?.length || 0,
-      sampleRecord: allRevenueData?.data?.[0],
-      fullResponse: JSON.stringify(allRevenueData, null, 2)
-    })
-
-    // TEMPORARY: Return raw API response for channel attribution debugging
-    return NextResponse.json({ 
-      success: true,
-      debug: true,
-      message: 'ATTRIBUTION DEBUG: Showing raw API response structure',
-      rawApiResponse: allRevenueData,
-      placedOrderMetricId: placedOrderMetric.id,
-      dateRange: { startDate: actualStartDate, endDate: actualEndDate }
-    })
+    // Fetch data using Flow LUXE blueprint approach
+    console.log('📊 BLUEPRINT: Making 2 API calls like Flow LUXE...')
     
-    // Process Klaviyo's parallel array structure
-    const apiData = allRevenueData?.data?.attributes
-    const dates = apiData?.dates || []
-    const dataRecord = apiData?.data?.[0] // First (and usually only) data record
-    const measurements = dataRecord?.measurements || {}
-    const orderCounts = measurements.count || []
-    const revenueValues = measurements.sum_value || []
+    const [attributionData, totalData] = await Promise.all([
+      klaviyo.queryRevenueByAttributedChannel(placedOrderMetric.id, actualStartDate, actualEndDate),
+      klaviyo.queryTotalRevenue(placedOrderMetric.id, actualStartDate, actualEndDate)
+    ])
 
-    console.log('📊 PARSING: Parallel arrays:', {
-      datesCount: dates.length,
-      ordersCount: orderCounts.length, 
-      revenueCount: revenueValues.length,
-      sampleDate: dates[0],
-      sampleOrders: orderCounts[0],
-      sampleRevenue: revenueValues[0]
+    console.log('📊 BLUEPRINT: API responses received:', {
+      attribution: attributionData?.data?.attributes?.data?.length || 0,
+      total: totalData?.data?.attributes?.data?.length || 0
     })
-    // Process message-level attribution data (new structure with channel attribution)
+
+    // Extract data using Flow LUXE blueprint approach
+    const attributionApiData = attributionData?.data?.attributes
+    const totalApiData = totalData?.data?.attributes
+    
+    const dates = attributionApiData?.dates || totalApiData?.dates || []
+    
+    // Extract channel data using blueprint array indices  
+    const emailData = attributionApiData?.data?.[1]?.measurements || { count: [], sum_value: [] }  // data[1] = EMAIL
+    const smsData = attributionApiData?.data?.[2]?.measurements || { count: [], sum_value: [] }    // data[2] = SMS
+    const totalDataRecord = totalApiData?.data?.[0]?.measurements || { count: [], sum_value: [] }  // data[0] = TOTAL
+
+    console.log('📊 BLUEPRINT: Channel data extracted:', {
+      datesCount: dates.length,
+      emailValues: emailData.sum_value?.length || 0,
+      smsValues: smsData.sum_value?.length || 0,
+      totalValues: totalDataRecord.sum_value?.length || 0,
+      sampleDate: dates[0],
+      sampleEmail: emailData.sum_value?.[0] || 0,
+      sampleSms: smsData.sum_value?.[0] || 0,
+      sampleTotal: totalDataRecord.sum_value?.[0] || 0
+    })
+    // Process parallel arrays using Flow LUXE blueprint approach
     const dateMap = new Map()
     
-    // Process message-level data to extract channel attribution
-    if (apiData?.data && Array.isArray(apiData.data)) {
-      console.log(`📊 ATTRIBUTION: Processing ${apiData.data.length} message records`)
+    // Process each date using blueprint array access method
+    for (let i = 0; i < dates.length; i++) {
+      const date = dates[i]
       
-      apiData.data.forEach((record: any, index: number) => {
-        const dates = record.dates || apiData.dates || []
-        const measurements = record.measurements || {}
-        const orderCounts = measurements.count || []
-        const revenueValues = measurements.sum_value || []
-        const dimensions = record.dimensions || {}
+      if (date) {
+        const key = date.split('T')[0] // Get YYYY-MM-DD
         
-        // Extract channel from message attribution
-        const messageId = dimensions['$message'] || dimensions.message_id
-        const attributedChannel = dimensions['$attributed_channel'] || 'UNKNOWN'
+        // Extract data using Flow LUXE blueprint indices
+        const emailRevenue = emailData.sum_value?.[i] || 0      // data[1] = EMAIL
+        const emailOrders = emailData.count?.[i] || 0           // data[1] = EMAIL  
+        const smsRevenue = smsData.sum_value?.[i] || 0          // data[2] = SMS
+        const smsOrders = smsData.count?.[i] || 0               // data[2] = SMS
+        const totalRevenue = totalDataRecord.sum_value?.[i] || 0 // data[0] = TOTAL
+        const totalOrders = totalDataRecord.count?.[i] || 0     // data[0] = TOTAL
         
-        console.log(`📧 ATTRIBUTION: Record ${index}, Channel: ${attributedChannel}, MessageID: ${messageId}`)
+        dateMap.set(key, {
+          date: key,
+          email_revenue: emailRevenue,
+          email_orders: emailOrders,
+          sms_revenue: smsRevenue,
+          sms_orders: smsOrders, 
+          total_revenue: totalRevenue,
+          total_orders: totalOrders
+        })
         
-        // Process each date for this message/channel combination
-        for (let i = 0; i < dates.length; i++) {
-          const date = dates[i]
-          const orderCount = orderCounts[i] || 0
-          const revenueValue = revenueValues[i] || 0
-          
-          if (date && (orderCount > 0 || revenueValue > 0)) {
-            const key = date.split('T')[0] // Get YYYY-MM-DD
-            
-            if (!dateMap.has(key)) {
-              dateMap.set(key, {
-                date: key,
-                email_revenue: 0,
-                email_orders: 0,
-                sms_revenue: 0,
-                sms_orders: 0,
-                total_revenue: 0,
-                total_orders: 0
-              })
-            }
-            
-            const entry = dateMap.get(key)
-            
-            // Add to totals
-            entry.total_revenue += revenueValue
-            entry.total_orders += orderCount
-            
-            // Add to channel-specific totals
-            if (attributedChannel === 'EMAIL' || attributedChannel === 'email') {
-              entry.email_revenue += revenueValue
-              entry.email_orders += orderCount
-            } else if (attributedChannel === 'SMS' || attributedChannel === 'sms') {
-              entry.sms_revenue += revenueValue
-              entry.sms_orders += orderCount
-            }
-            
-            console.log(`💾 ATTRIBUTION: Date ${key}, Channel: ${attributedChannel}, Revenue: $${revenueValue.toFixed(2)}, Orders: ${orderCount}`)
-          }
-        }
-      })
-    } else {
-      console.log('❌ ATTRIBUTION: No message-level data found, falling back to basic aggregation')
-      
-      // Fallback: Process basic parallel arrays without attribution
-      for (let i = 0; i < dates.length; i++) {
-        const date = dates[i]
-        const orderCount = orderCounts[i] || 0
-        const revenueValue = revenueValues[i] || 0
-        
-        if (date) {
-          const key = date.split('T')[0]
-          dateMap.set(key, {
-            date: key,
-            email_revenue: 0,        // No attribution data available
-            email_orders: 0,
-            sms_revenue: 0,
-            sms_orders: 0,
-            total_revenue: revenueValue,
-            total_orders: orderCount
-          })
+        if (emailRevenue > 0 || smsRevenue > 0 || totalRevenue > 0) {
+          console.log(`💾 BLUEPRINT: Date ${key}, Email: $${emailRevenue.toFixed(2)} (${emailOrders}), SMS: $${smsRevenue.toFixed(2)} (${smsOrders}), Total: $${totalRevenue.toFixed(2)} (${totalOrders})`)
         }
       }
     }
     
-    console.log(`✅ PROCESSING: Created ${dateMap.size} date records from ${dates.length} API data points`)
+    console.log(`✅ BLUEPRINT: Created ${dateMap.size} date records from ${dates.length} API data points`)
 
     // Save to database
     let savedCount = 0
     for (const [date, data] of Array.from(dateMap.entries())) {
-      // Calculate percentages
+      // Calculate percentages (Flow LUXE blueprint method)
       const email_percentage = data.total_revenue > 0 ? 
         Math.round((data.email_revenue / data.total_revenue) * 10000) / 100 : 0
       const sms_percentage = data.total_revenue > 0 ?
@@ -211,12 +160,18 @@ export async function POST(request: NextRequest) {
       savedCount++
     }
 
-    console.log(`✅ Successfully saved ${savedCount} revenue attribution records for client ${client!.brand_slug}`)
+    console.log(`✅ BLUEPRINT: Successfully saved ${savedCount} revenue attribution records for client ${client!.brand_slug}`)
+    console.log(`📊 BLUEPRINT: Email/SMS attribution should now be visible on dashboard!`)
     
     return NextResponse.json({ 
       success: true,
-      message: `Successfully synced ${savedCount} days of revenue attribution data`,
+      message: `Successfully synced ${savedCount} days of revenue attribution data using Flow LUXE blueprint approach`,
       savedCount,
+      channelBreakdown: {
+        emailRecords: Array.from(dateMap.values()).filter(d => d.email_revenue > 0).length,
+        smsRecords: Array.from(dateMap.values()).filter(d => d.sms_revenue > 0).length,
+        totalRecords: savedCount
+      },
       dateRange: { startDate: actualStartDate, endDate: actualEndDate }
     })
 
