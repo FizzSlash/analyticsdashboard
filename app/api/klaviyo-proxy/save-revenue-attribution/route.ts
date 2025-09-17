@@ -65,8 +65,8 @@ export async function POST(request: NextRequest) {
 
     console.log('📅 Fetching revenue data for date range:', { actualStartDate, actualEndDate })
 
-    // Fetch ALL revenue data once (no channel filtering)
-    const allRevenueData = await klaviyo.queryTotalRevenue(placedOrderMetric.id, actualStartDate, actualEndDate)
+    // Fetch revenue data WITH channel attribution  
+    const allRevenueData = await klaviyo.queryRevenueWithAttribution(placedOrderMetric.id, actualStartDate, actualEndDate)
 
     console.log('📊 Raw data received:', {
       total: allRevenueData?.data?.length || 0,
@@ -90,30 +90,87 @@ export async function POST(request: NextRequest) {
       sampleOrders: orderCounts[0],
       sampleRevenue: revenueValues[0]
     })
-    // Process parallel arrays (Klaviyo's actual format)
+    // Process message-level attribution data (new structure with channel attribution)
     const dateMap = new Map()
     
-    // Iterate through parallel arrays using index
-    for (let i = 0; i < dates.length; i++) {
-      const date = dates[i]
-      const orderCount = orderCounts[i] || 0
-      const revenueValue = revenueValues[i] || 0
+    // Process message-level data to extract channel attribution
+    if (apiData?.data && Array.isArray(apiData.data)) {
+      console.log(`📊 ATTRIBUTION: Processing ${apiData.data.length} message records`)
       
-      if (date) {
-        const key = date.split('T')[0] // Get YYYY-MM-DD
+      apiData.data.forEach((record: any, index: number) => {
+        const dates = record.dates || apiData.dates || []
+        const measurements = record.measurements || {}
+        const orderCounts = measurements.count || []
+        const revenueValues = measurements.sum_value || []
+        const dimensions = record.dimensions || {}
         
-        // For now, treat all revenue as total revenue (will add channel detection later)
-        dateMap.set(key, {
-          date: key,
-          email_revenue: 0,        // Will implement channel detection later
-          email_orders: 0,         // Will implement channel detection later
-          sms_revenue: 0,          // Will implement channel detection later
-          sms_orders: 0,           // Will implement channel detection later
-          total_revenue: revenueValue, // Klaviyo API returns dollars already (not cents)
-          total_orders: orderCount
-        })
+        // Extract channel from message attribution
+        const messageId = dimensions['$message'] || dimensions.message_id
+        const attributedChannel = dimensions['$attributed_channel'] || 'UNKNOWN'
         
-        console.log(`💾 PROCESSED: Date ${key}, Revenue: $${revenueValue.toFixed(2)}, Orders: ${orderCount}`)
+        console.log(`📧 ATTRIBUTION: Record ${index}, Channel: ${attributedChannel}, MessageID: ${messageId}`)
+        
+        // Process each date for this message/channel combination
+        for (let i = 0; i < dates.length; i++) {
+          const date = dates[i]
+          const orderCount = orderCounts[i] || 0
+          const revenueValue = revenueValues[i] || 0
+          
+          if (date && (orderCount > 0 || revenueValue > 0)) {
+            const key = date.split('T')[0] // Get YYYY-MM-DD
+            
+            if (!dateMap.has(key)) {
+              dateMap.set(key, {
+                date: key,
+                email_revenue: 0,
+                email_orders: 0,
+                sms_revenue: 0,
+                sms_orders: 0,
+                total_revenue: 0,
+                total_orders: 0
+              })
+            }
+            
+            const entry = dateMap.get(key)
+            
+            // Add to totals
+            entry.total_revenue += revenueValue
+            entry.total_orders += orderCount
+            
+            // Add to channel-specific totals
+            if (attributedChannel === 'EMAIL' || attributedChannel === 'email') {
+              entry.email_revenue += revenueValue
+              entry.email_orders += orderCount
+            } else if (attributedChannel === 'SMS' || attributedChannel === 'sms') {
+              entry.sms_revenue += revenueValue
+              entry.sms_orders += orderCount
+            }
+            
+            console.log(`💾 ATTRIBUTION: Date ${key}, Channel: ${attributedChannel}, Revenue: $${revenueValue.toFixed(2)}, Orders: ${orderCount}`)
+          }
+        }
+      })
+    } else {
+      console.log('❌ ATTRIBUTION: No message-level data found, falling back to basic aggregation')
+      
+      // Fallback: Process basic parallel arrays without attribution
+      for (let i = 0; i < dates.length; i++) {
+        const date = dates[i]
+        const orderCount = orderCounts[i] || 0
+        const revenueValue = revenueValues[i] || 0
+        
+        if (date) {
+          const key = date.split('T')[0]
+          dateMap.set(key, {
+            date: key,
+            email_revenue: 0,        // No attribution data available
+            email_orders: 0,
+            sms_revenue: 0,
+            sms_orders: 0,
+            total_revenue: revenueValue,
+            total_orders: orderCount
+          })
+        }
       }
     }
     
