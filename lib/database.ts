@@ -566,36 +566,15 @@ export class DatabaseService {
   }
 
   // Revenue Attribution
+  // DEPRECATED: Old revenue_attribution table methods (kept for backward compatibility)
   static async getRevenueAttribution(clientId: string, days: number = 30): Promise<RevenueAttribution[]> {
-    const startDate = new Date()
-    startDate.setDate(startDate.getDate() - days)
-
-    const { data, error } = await supabaseAdmin
-      .from('revenue_attribution')
-      .select('*')
-      .eq('client_id', clientId)
-      .gte('date_recorded', startDate.toISOString().split('T')[0])
-      .order('date_recorded', { ascending: false })
-
-    if (error) {
-      console.error('Error fetching revenue attribution:', error)
-      return []
-    }
-
-    return data || []
+    console.log('⚠️ WARNING: Using deprecated getRevenueAttribution method. Use getRevenueAttributionMetrics instead.')
+    return [] // Return empty array instead of calling old table
   }
 
   static async upsertRevenueAttribution(metric: Omit<RevenueAttribution, 'id' | 'created_at'>): Promise<void> {
-    const { error } = await supabaseAdmin
-      .from('revenue_attribution')
-      .upsert(metric, {
-        onConflict: 'client_id,date_recorded',
-        ignoreDuplicates: false
-      })
-
-    if (error) {
-      console.error('Error upserting revenue attribution:', error)
-    }
+    console.log('⚠️ WARNING: Using deprecated upsertRevenueAttribution method. Use upsertRevenueAttributionMetric instead.')
+    // Do nothing - deprecated
   }
 
   // REVENUE ATTRIBUTION METRICS METHODS (New Table)

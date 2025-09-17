@@ -109,11 +109,11 @@ export async function POST(request: NextRequest) {
           email_orders: 0,         // Will implement channel detection later
           sms_revenue: 0,          // Will implement channel detection later
           sms_orders: 0,           // Will implement channel detection later
-          total_revenue: revenueValue / 100, // Convert cents to dollars
+          total_revenue: revenueValue, // Klaviyo API returns dollars already (not cents)
           total_orders: orderCount
         })
         
-        console.log(`💾 PROCESSED: Date ${key}, Revenue: $${(revenueValue / 100).toFixed(2)}, Orders: ${orderCount}`)
+        console.log(`💾 PROCESSED: Date ${key}, Revenue: $${revenueValue.toFixed(2)}, Orders: ${orderCount}`)
       }
     }
     
