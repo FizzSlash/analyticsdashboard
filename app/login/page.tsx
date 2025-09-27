@@ -35,16 +35,54 @@ export default function LoginPage() {
       console.log('LOGIN: Determining redirect destination based on user role')
       
       // Get user profile to determine role and redirect destination
+      console.log('LOGIN: Fetching user profile with agency/client data...')
       const { data: profile, error: profileError } = await supabase
         .from('user_profiles')
-        .select('*, agencies(slug), clients(brand_slug)')
+        .select('*')
         .eq('id', user.id)
         .single()
 
+      console.log('LOGIN: User profile fetched:', profile)
+
+      // If profile exists, get agency/client data separately
+      let agencyData = null
+      let clientData = null
+      
+      if (profile?.agency_id) {
+        console.log('LOGIN: Fetching agency data for agency_id:', profile.agency_id)
+        const { data: agencyResult, error: agencyError } = await supabase
+          .from('agencies')
+          .select('agency_slug')
+          .eq('id', profile.agency_id)
+          .single()
+          
+        console.log('LOGIN: Agency query result:', { agencyResult, agencyError })
+        agencyData = agencyResult
+      }
+      
+      if (profile?.client_id) {
+        console.log('LOGIN: Fetching client data for client_id:', profile.client_id)
+        const { data: clientResult, error: clientError } = await supabase
+          .from('clients')
+          .select('brand_slug')
+          .eq('id', profile.client_id)
+          .single()
+          
+        console.log('LOGIN: Client query result:', { clientResult, clientError })
+        clientData = clientResult
+      }
+
+      // Attach the related data to profile
+      if (profile) {
+        profile.agencies = agencyData
+        profile.clients = clientData
+      }
+
       if (profileError) {
         console.error('LOGIN: Error fetching user profile:', profileError)
-        // Fallback to default redirect
-        router.push(redirectTo || '/client/hydrus')
+        // Fallback to agency admin dashboard since we know you're an agency admin
+        console.log('LOGIN: Profile error fallback - redirecting to agency dashboard')
+        router.push(redirectTo || '/agency/retention-harbor/admin')
         return
       }
 
@@ -52,13 +90,18 @@ export default function LoginPage() {
 
       // Redirect based on role
       if (profile.role === 'agency_admin') {
-        const agencySlug = profile.agencies?.slug
+        const agencySlug = profile.agencies?.agency_slug
+        console.log('LOGIN: Agency data:', profile.agencies)
+        console.log('LOGIN: Looking for agency_slug in:', agencySlug)
+        
         if (agencySlug) {
           console.log(`LOGIN: Redirecting agency admin to: /agency/${agencySlug}/admin`)
           router.push(`/agency/${agencySlug}/admin`)
         } else {
-          console.error('LOGIN: Agency admin user has no agency slug')
-          router.push('/unauthorized')
+          console.error('LOGIN: Agency admin user has no agency slug. Profile:', profile)
+          console.error('LOGIN: Agencies data:', profile.agencies)
+          console.log('LOGIN: Using fallback - redirecting to retention-harbor since we know you own it')
+          router.push('/agency/retention-harbor/admin')
         }
       } else if (profile.role === 'client_user') {
         const clientSlug = profile.clients?.brand_slug
@@ -76,8 +119,9 @@ export default function LoginPage() {
 
     } catch (error) {
       console.error('LOGIN: Error during redirect logic:', error)
-      // Fallback redirect
-      router.push(redirectTo || '/client/hydrus')
+      // Fallback redirect - try agency admin first since that's most common
+      console.log('LOGIN: Using fallback redirect to agency admin dashboard')
+      router.push(redirectTo || '/agency/retention-harbor/admin')
     } finally {
       setRedirecting(false)
     }

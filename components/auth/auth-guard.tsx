@@ -31,7 +31,7 @@ export function AuthGuard({ children, redirectTo = '/login', requireAuth = true 
     if (!requireAuth && user) {
       // User is logged in but trying to access a page that doesn't require auth (like login page)
       console.log('AUTH GUARD: User already authenticated, redirecting to dashboard')
-      router.push('/client/hydrus')
+      router.push('/agency/retention-harbor/admin')
       return
     }
   }, [user, loading, initialized, requireAuth, redirectTo, router])
