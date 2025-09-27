@@ -439,44 +439,155 @@ export class SyncService {
     }
   }
 
-  // Sync revenue attribution
+  // Sync revenue attribution using Flow LUXE proper attribution APIs
   async syncRevenueAttribution() {
-    this.log('💰 REVENUE: Starting revenue attribution analysis (past year)...')
+    this.log('💰 FLOW LUXE REVENUE: Starting proper attribution analysis (past 30 days)...')
     
     try {
-      // Get past year of campaign and flow metrics for comprehensive analysis
-      this.log('💰 REVENUE: Fetching campaign metrics from past 365 days...')
-      const campaigns = await DatabaseService.getRecentCampaignMetrics(this.client.id, 365)
-      this.log(`💰 REVENUE: Found ${campaigns.length} campaigns with revenue data`)
-      
-      this.log('💰 REVENUE: Fetching flow metrics from past 365 days...')
-      const flows = await DatabaseService.getRecentFlowMetrics(this.client.id, 365)
-      this.log(`💰 REVENUE: Found ${flows.length} flows with revenue data`)
+      // Get conversion metric ID dynamically
+      const conversionMetricId = await this.getConversionMetricId()
+      if (!conversionMetricId) {
+        this.log('❌ REVENUE: No conversion metric found, skipping attribution sync')
+        return
+      }
 
-      const campaignRevenue = campaigns.reduce((sum, c) => sum + c.revenue, 0)
-      const campaignOrders = campaigns.reduce((sum, c) => sum + c.orders_count, 0)
-      
-      const flowRevenue = flows.reduce((sum, f) => sum + f.revenue, 0)
-      const flowOrders = flows.reduce((sum, f) => sum + f.orders_count, 0)
+      // Calculate date range (29 days like Flow LUXE)
+      const now = new Date()
+      const twentyNineDaysAgo = new Date(now.getTime() - (29 * 24 * 60 * 60 * 1000))
+      const startDate = twentyNineDaysAgo.toISOString().split('.')[0] // Flow LUXE format
+      const endDate = now.toISOString().split('.')[0]
 
+      this.log(`💰 FLOW LUXE: Using date range ${startDate} to ${endDate}`)
+
+      // FLOW LUXE PATTERN: Make 4 separate API calls for TRUE attribution
+      this.log('🎯 FLOW LUXE: Starting 4-call attribution pattern...')
+      
+      const [
+        attributedChannelData,
+        totalRevenueData, 
+        flowChannelData,
+        campaignChannelData
+      ] = await Promise.all([
+        // Call 1: Revenue by attributed channel (Email vs SMS)
+        this.klaviyo.queryRevenueByAttributedChannel(conversionMetricId, startDate, endDate),
+        
+        // Call 2: Total revenue (all channels)
+        this.klaviyo.queryTotalRevenue(conversionMetricId, startDate, endDate),
+        
+        // Call 3: Revenue by flow channel
+        this.klaviyo.queryRevenueByFlowChannel(conversionMetricId, startDate, endDate),
+        
+        // Call 4: Revenue by campaign channel
+        this.klaviyo.queryRevenueByCampaignChannel(conversionMetricId, startDate, endDate)
+      ])
+
+      this.log('✅ FLOW LUXE: All 4 attribution API calls completed')
+
+      // Process data exactly like Flow LUXE blueprint did
+      const emailRevenue = attributedChannelData.data?.attributes?.data?.find((d: any) => 
+        d.groupings?.$attributed_channel === 'email'
+      )?.measurements?.sum_value || 0
+
+      const smsRevenue = attributedChannelData.data?.attributes?.data?.find((d: any) => 
+        d.groupings?.$attributed_channel === 'sms'
+      )?.measurements?.sum_value || 0
+
+      const totalRevenue = totalRevenueData.data?.attributes?.data?.[0]?.measurements?.sum_value || 0
+
+      const flowEmailRevenue = flowChannelData.data?.attributes?.data?.find((d: any) =>
+        d.groupings?.$flow_channel === 'email'
+      )?.measurements?.sum_value || 0
+
+      const campaignEmailRevenue = campaignChannelData.data?.attributes?.data?.find((d: any) =>
+        d.groupings?.$campaign_channel === 'email'
+      )?.measurements?.sum_value || 0
+
+      // Process SMS data too
+      const flowSmsRevenue = flowChannelData.data?.attributes?.data?.find((d: any) =>
+        d.groupings?.$flow_channel === 'sms'
+      )?.measurements?.sum_value || 0
+
+      const campaignSmsRevenue = campaignChannelData.data?.attributes?.data?.find((d: any) =>
+        d.groupings?.$campaign_channel === 'sms'
+      )?.measurements?.sum_value || 0
+
+      // Prepare complete Flow LUXE revenue attribution data
       const revenueData = {
         client_id: this.client.id,
         date_recorded: format(new Date(), 'yyyy-MM-dd'),
-        campaign_revenue: campaignRevenue,
-        flow_revenue: flowRevenue,
-        total_email_revenue: campaignRevenue + flowRevenue,
-        campaign_orders: campaignOrders,
-        flow_orders: flowOrders,
-        total_email_orders: campaignOrders + flowOrders,
-        campaign_aov: campaignOrders > 0 ? campaignRevenue / campaignOrders : 0,
-        flow_aov: flowOrders > 0 ? flowRevenue / flowOrders : 0,
-        overall_aov: (campaignOrders + flowOrders) > 0 ? (campaignRevenue + flowRevenue) / (campaignOrders + flowOrders) : 0
+        
+        // Legacy fields (for backward compatibility)
+        campaign_revenue: campaignEmailRevenue,
+        flow_revenue: flowEmailRevenue,
+        total_email_revenue: emailRevenue, // TRUE attributed email revenue
+        
+        // Flow LUXE attribution fields (TRUE attribution from Klaviyo APIs)
+        sms_revenue: smsRevenue, // Total SMS attributed revenue
+        total_revenue: totalRevenue, // Cross-channel total (includes attribution overlap)
+        flow_email_revenue: flowEmailRevenue, // Email revenue from flows only
+        flow_sms_revenue: flowSmsRevenue, // SMS revenue from flows only  
+        campaign_email_revenue: campaignEmailRevenue, // Email revenue from campaigns only
+        campaign_sms_revenue: campaignSmsRevenue, // SMS revenue from campaigns only
+        
+        // Calculate orders and AOV from true attribution (placeholder for now)
+        campaign_orders: 0, // TODO: Get order counts from additional API calls if needed
+        flow_orders: 0,
+        total_email_orders: 0,
+        
+        campaign_aov: campaignEmailRevenue > 0 ? campaignEmailRevenue / Math.max(1, 1) : 0,
+        flow_aov: flowEmailRevenue > 0 ? flowEmailRevenue / Math.max(1, 1) : 0,
+        overall_aov: totalRevenue > 0 ? totalRevenue / Math.max(1, 1) : 0
       }
 
-      await DatabaseService.upsertRevenueAttribution(revenueData)
-      this.log('✅ REVENUE: Synced revenue attribution')
+      this.log(`💰 FLOW LUXE: Processed complete attribution data:
+🏷️  ATTRIBUTED CHANNEL BREAKDOWN:
+     📧 Email Revenue: $${emailRevenue}
+     📱 SMS Revenue: $${smsRevenue}
+💰 TOTAL REVENUE (Cross-channel): $${totalRevenue}
+🔄 FLOW CHANNEL BREAKDOWN:
+     📧 Flow Email: $${flowEmailRevenue}
+     📱 Flow SMS: $${flowSmsRevenue}
+📧 CAMPAIGN CHANNEL BREAKDOWN:
+     📧 Campaign Email: $${campaignEmailRevenue}
+     📱 Campaign SMS: $${campaignSmsRevenue}`)
+
+      // Map complete Flow LUXE data to revenue_attribution_metrics table structure
+      const totalFlowRevenue = flowEmailRevenue + flowSmsRevenue
+      const totalCampaignRevenue = campaignEmailRevenue + campaignSmsRevenue
+      
+      const revenueMetric = {
+        client_id: this.client.id,
+        date: format(new Date(), 'yyyy-MM-dd'), // Note: 'date' not 'date_recorded'
+        
+        // TRUE attributed channel breakdown (Flow LUXE Module 246)
+        email_revenue: emailRevenue, // TRUE attributed email revenue from $attributed_channel
+        sms_revenue: smsRevenue,     // TRUE attributed SMS revenue from $attributed_channel
+        total_revenue: totalRevenue, // Cross-channel total revenue (Module 247)
+        
+        // Flow LUXE channel breakdown (Modules 249 & 250)
+        flow_email_revenue: flowEmailRevenue,       // Flow email revenue ($flow_channel)
+        flow_sms_revenue: flowSmsRevenue,           // Flow SMS revenue ($flow_channel) 
+        campaign_email_revenue: campaignEmailRevenue, // Campaign email revenue ($campaign_channel)
+        campaign_sms_revenue: campaignSmsRevenue,   // Campaign SMS revenue ($campaign_channel)
+        
+        // Calculate percentages like Flow LUXE did
+        email_percentage: totalRevenue > 0 ? (emailRevenue / totalRevenue) * 100 : 0,
+        sms_percentage: totalRevenue > 0 ? (smsRevenue / totalRevenue) * 100 : 0,
+        flow_percentage: totalRevenue > 0 ? (totalFlowRevenue / totalRevenue) * 100 : 0,
+        campaign_percentage: totalRevenue > 0 ? (totalCampaignRevenue / totalRevenue) * 100 : 0,
+        
+        // Order data (placeholder for now)
+        email_orders: 0, // TODO: Get order counts from additional API calls if needed
+        sms_orders: 0,
+        total_orders: 0
+      }
+
+      await DatabaseService.upsertRevenueAttributionMetric(revenueMetric)
+      this.log('✅ FLOW LUXE: Synced proper revenue attribution to revenue_attribution_metrics table')
+      
     } catch (error) {
-      console.error('Error syncing revenue attribution:', error)
+      this.log(`❌ FLOW LUXE REVENUE: Error syncing attribution: ${error}`)
+      console.error('Error syncing Flow LUXE revenue attribution:', error)
       throw error
     }
   }

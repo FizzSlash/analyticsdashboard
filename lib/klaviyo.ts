@@ -435,6 +435,58 @@ export class KlaviyoAPI {
     })
   }
 
+  // Query Revenue by Flow Channel (Flow LUXE Blueprint Module 249)
+  async queryRevenueByFlowChannel(metricId: string, startDate: string, endDate: string) {
+    console.log(`🔄 REVENUE: Querying FLOW channel revenue from ${startDate} to ${endDate}`)
+    
+    return this.makeRequest('/metric-aggregates', {
+      method: 'POST',
+      body: JSON.stringify({
+        data: {
+          type: 'metric-aggregate',
+          attributes: {
+            metric_id: metricId,
+            measurements: ['sum_value'],
+            interval: 'day',
+            filter: [
+              `greater-or-equal(datetime,${startDate})`,
+              `less-than(datetime,${endDate})`
+            ],
+            by: ['$flow_channel'], // Group by flow channel like Flow LUXE
+            page_size: 500,
+            timezone: 'America/New_York'
+          }
+        }
+      })
+    })
+  }
+
+  // Query Revenue by Campaign Channel (Flow LUXE Blueprint Module 250)
+  async queryRevenueByCampaignChannel(metricId: string, startDate: string, endDate: string) {
+    console.log(`📧 REVENUE: Querying CAMPAIGN channel revenue from ${startDate} to ${endDate}`)
+    
+    return this.makeRequest('/metric-aggregates', {
+      method: 'POST',
+      body: JSON.stringify({
+        data: {
+          type: 'metric-aggregate',
+          attributes: {
+            metric_id: metricId,
+            measurements: ['sum_value'],
+            interval: 'day',
+            filter: [
+              `greater-or-equal(datetime,${startDate})`,
+              `less-than(datetime,${endDate})`
+            ],
+            by: ['$campaign_channel'], // Group by campaign channel like Flow LUXE
+            page_size: 500,
+            timezone: 'America/New_York'
+          }
+        }
+      })
+    })
+  }
+
   // REPORTING API METHODS
   
   // Campaign Analytics Report - BLUEPRINT APPROACH (ALL campaigns in one call)

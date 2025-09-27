@@ -573,11 +573,24 @@ export class DatabaseService {
   }
 
   static async upsertRevenueAttribution(metric: Omit<RevenueAttribution, 'id' | 'created_at'>): Promise<void> {
-    console.log('⚠️ WARNING: Using deprecated upsertRevenueAttribution method. Use upsertRevenueAttributionMetric instead.')
-    // Do nothing - deprecated
+    console.log('💾 DATABASE: Upserting Flow LUXE revenue attribution data to revenue_attribution table...')
+    
+    const { error } = await supabaseAdmin
+      .from('revenue_attribution')
+      .upsert(metric, {
+        onConflict: 'client_id,date_recorded',
+        ignoreDuplicates: false
+      })
+
+    if (error) {
+      console.error('❌ DATABASE: Error upserting revenue attribution:', error)
+      throw error
+    }
+    
+    console.log('✅ DATABASE: Flow LUXE revenue attribution saved successfully')
   }
 
-  // REVENUE ATTRIBUTION METRICS METHODS (New Table)
+  // REVENUE ATTRIBUTION METRICS METHODS (Enhanced with Flow LUXE fields)
   static async upsertRevenueAttributionMetric(metric: {
     client_id: string;
     date: string;
@@ -589,6 +602,13 @@ export class DatabaseService {
     total_orders: number;
     email_percentage: number;
     sms_percentage: number;
+    // Flow LUXE attribution fields
+    flow_email_revenue?: number;
+    flow_sms_revenue?: number;
+    campaign_email_revenue?: number;
+    campaign_sms_revenue?: number;
+    flow_percentage?: number;
+    campaign_percentage?: number;
   }): Promise<void> {
     const { error } = await supabaseAdmin
       .from('revenue_attribution_metrics')

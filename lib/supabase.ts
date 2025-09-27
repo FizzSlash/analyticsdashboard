@@ -216,10 +216,16 @@ export interface RevenueAttribution {
   campaign_aov: number
   flow_aov: number
   overall_aov: number
+  // Flow LUXE attribution fields for TRUE Klaviyo attribution
+  sms_revenue?: number
+  total_revenue?: number // Cross-channel total (includes attribution overlap)
+  flow_email_revenue?: number // From $flow_channel API
+  flow_sms_revenue?: number
+  campaign_email_revenue?: number // From $campaign_channel API
+  campaign_sms_revenue?: number
   // legacy/optional fields for back-compat
   date?: string
   email_revenue?: number
-  total_revenue?: number
   email_orders?: number
   total_orders?: number
   created_at: string
