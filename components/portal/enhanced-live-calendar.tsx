@@ -18,7 +18,7 @@ import {
   ChevronRight,
   Upload,
   Download,
-  Sync,
+  RefreshCw,
   CheckCircle,
   AlertTriangle
 } from 'lucide-react'
@@ -319,7 +319,7 @@ export function EnhancedLiveCalendar({ client, onSave }: EnhancedLiveCalendarPro
                     </>
                   ) : (
                     <>
-                      <Sync className="h-3 w-3" />
+                      <RefreshCw className="h-3 w-3" />
                       Sync to Airtable
                     </>
                   )}
