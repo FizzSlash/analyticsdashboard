@@ -99,7 +99,7 @@ export function EnhancedLiveCalendar({ client, onSave }: EnhancedLiveCalendarPro
       audience: 'New Subscribers',
       subject_line: 'Discover what makes us different',
       synced_to_external: false,
-      external_id: null
+      external_id: undefined
     }
   ]
 
