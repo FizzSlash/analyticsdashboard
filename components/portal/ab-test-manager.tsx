@@ -15,7 +15,8 @@ import {
   Users,
   Target,
   Award,
-  AlertCircle
+  AlertCircle,
+  X
 } from 'lucide-react'
 
 interface ABTest {
