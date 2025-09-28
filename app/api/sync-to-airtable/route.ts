@@ -1,131 +1,198 @@
 import { NextRequest, NextResponse } from 'next/server'
 
+// Airtable configuration from environment variables
+const AIRTABLE_BASE_ID = process.env.AIRTABLE_BASE_ID
+const AIRTABLE_TOKEN = process.env.AIRTABLE_TOKEN  
+const AIRTABLE_TABLE_NAME = process.env.AIRTABLE_TABLE_NAME || 'Campaigns'
+
 export async function POST(request: NextRequest) {
   try {
+    // Validate required environment variables
+    if (!AIRTABLE_BASE_ID || !AIRTABLE_TOKEN) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Airtable not configured - missing AIRTABLE_BASE_ID or AIRTABLE_TOKEN environment variables',
+          message: 'Please set your Airtable environment variables'
+        },
+        { status: 500 }
+      )
+    }
+
     const body = await request.json()
     const { client, campaign } = body
 
-    console.log('🔄 AIRTABLE SYNC: Starting sync for:', campaign.campaign_name || campaign.title)
+    console.log('🔄 AIRTABLE SYNC: Starting real Airtable API sync for:', campaign.campaign_name || campaign.title)
 
-    // TODO: Replace with your actual Airtable/Make.com webhook
-    const AIRTABLE_WEBHOOK_URL = process.env.AIRTABLE_WEBHOOK_URL || 
-                                 process.env.MAKE_WEBHOOK_URL ||
-                                 'https://hook.us1.make.com/your-webhook-id'
-
-    // Prepare data for external system
-    const syncData = {
-      // Campaign Details
-      campaign_id: campaign.id,
-      campaign_name: campaign.campaign_name || campaign.title,
-      campaign_type: campaign.campaign_type || campaign.type,
-      subject_line: campaign.subject_line,
-      
-      // Client Details
-      client_slug: client,
-      client_name: client, // You might want to pass full client object
-      
-      // Scheduling
-      scheduled_date: campaign.scheduled_date || campaign.date?.toISOString?.(),
-      scheduled_time: campaign.scheduled_time || campaign.time,
-      
-      // Status & Content
-      status: campaign.status,
-      description: campaign.description,
-      target_audience: campaign.target_audience || campaign.audience,
-      
-      // Metadata
-      created_at: new Date().toISOString(),
-      source: 'portal_live_calendar',
-      
-      // Additional fields for different request types
-      ...(campaign.type === 'flow' && {
-        flow_type: campaign.subtype,
-        automation: true
-      }),
-      ...(campaign.type === 'popup' && {
-        popup_type: campaign.subtype,
-        conversion_tracking: true  
-      }),
-      ...(campaign.type === 'misc' && {
-        project_type: campaign.subtype,
-        custom_requirements: campaign.key_requirements
-      })
+    // Prepare data for Airtable (proper API format)
+    const airtableRecord = {
+      fields: {
+        'Campaign ID': campaign.id,
+        'Campaign Name': campaign.campaign_name || campaign.title,
+        'Campaign Type': campaign.campaign_type || campaign.type || 'email',
+        'Subject Line': campaign.subject_line || '',
+        'Client': client,
+        'Scheduled Date': campaign.scheduled_date || (campaign.date ? campaign.date.toISOString?.() : ''),
+        'Scheduled Time': campaign.scheduled_time || campaign.time || '',
+        'Status': campaign.status || 'draft',
+        'Description': campaign.description || '',
+        'Target Audience': campaign.target_audience || campaign.audience || '',
+        'Created At': new Date().toISOString(),
+        'Source': 'Portal Live Calendar',
+        
+        // Additional fields based on campaign type
+        ...(campaign.type === 'flow' && {
+          'Flow Type': campaign.subtype || '',
+          'Is Automation': true
+        }),
+        ...(campaign.type === 'popup' && {
+          'Popup Type': campaign.subtype || '',  
+          'Conversion Tracking': true
+        }),
+        ...(campaign.type === 'misc' && {
+          'Project Type': campaign.subtype || '',
+          'Requirements': campaign.key_requirements?.join(', ') || ''
+        })
+      }
     }
 
-    console.log('📤 AIRTABLE SYNC: Sending data:', JSON.stringify(syncData, null, 2))
+    console.log('📤 AIRTABLE SYNC: Sending record to Airtable:', JSON.stringify(airtableRecord, null, 2))
 
-    // Send to external system
-    const response = await fetch(AIRTABLE_WEBHOOK_URL, {
+    // Send to Airtable API
+    const airtableUrl = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${AIRTABLE_TABLE_NAME}`
+    const response = await fetch(airtableUrl, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        // Add authentication if needed
-        // 'Authorization': `Bearer ${process.env.AIRTABLE_API_KEY}`
+        'Authorization': `Bearer ${AIRTABLE_TOKEN}`,
+        'Content-Type': 'application/json'
       },
-      body: JSON.stringify(syncData)
+      body: JSON.stringify(airtableRecord)
     })
 
     if (!response.ok) {
-      throw new Error(`External sync failed: ${response.status} ${response.statusText}`)
+      const errorText = await response.text()
+      throw new Error(`Airtable API error: ${response.status} ${response.statusText} - ${errorText}`)
     }
 
     const result = await response.json()
     console.log('✅ AIRTABLE SYNC: Success:', result)
 
-    // Optionally, save external ID back to database
-    if (result.record_id || result.id) {
-      // TODO: Update campaign with external_id
-      console.log('💾 AIRTABLE SYNC: External ID received:', result.record_id || result.id)
+    // Airtable returns record ID in result.id
+    const airtableRecordId = result.id
+    if (airtableRecordId) {
+      console.log('💾 AIRTABLE SYNC: Record ID received:', airtableRecordId)
     }
 
     return NextResponse.json({
       success: true,
-      message: 'Successfully synced to external system',
-      external_id: result.record_id || result.id,
+      message: `Successfully synced "${campaign.campaign_name || campaign.title}" to Airtable`,
+      airtable_record_id: airtableRecordId,
+      external_id: airtableRecordId, // For compatibility
       data: result
     })
 
   } catch (error) {
     console.error('❌ AIRTABLE SYNC: Error:', error)
     
+    let errorMessage = 'Failed to sync to Airtable'
+    let statusCode = 500
+    
+    if (error instanceof Error) {
+      if (error.message.includes('401')) {
+        errorMessage = 'Airtable authentication failed - check your AIRTABLE_TOKEN'
+        statusCode = 401
+      } else if (error.message.includes('404')) {
+        errorMessage = `Airtable base or table not found - check AIRTABLE_BASE_ID (${AIRTABLE_BASE_ID}) and table name (${AIRTABLE_TABLE_NAME})`
+        statusCode = 404
+      } else if (error.message.includes('422')) {
+        errorMessage = 'Airtable validation failed - check your table structure and field names'
+        statusCode = 422
+      }
+    }
+    
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : 'Sync failed',
-        message: 'Failed to sync to external system'
+        error: error instanceof Error ? error.message : errorMessage,
+        message: errorMessage,
+        debug: {
+          base_id: AIRTABLE_BASE_ID,
+          table_name: AIRTABLE_TABLE_NAME,
+          has_token: !!AIRTABLE_TOKEN
+        }
       },
-      { status: 500 }
+      { status: statusCode }
     )
   }
 }
 
-// GET endpoint to check sync status (optional)
+// GET endpoint to test connection and get info
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
-  const campaignId = searchParams.get('campaign_id')
+  const test = searchParams.get('test')
   
-  if (!campaignId) {
-    return NextResponse.json(
-      { error: 'campaign_id required' },
-      { status: 400 }
-    )
-  }
-
-  try {
-    // TODO: Check sync status from database
-    // const campaign = await DatabaseService.getCampaign(campaignId)
+  if (test === 'connection') {
+    // Test Airtable connection
+    if (!AIRTABLE_BASE_ID || !AIRTABLE_TOKEN) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Airtable not configured - missing environment variables',
+          configured: false,
+          base_id: AIRTABLE_BASE_ID || 'NOT_SET',
+          table_name: AIRTABLE_TABLE_NAME,
+          has_token: !!AIRTABLE_TOKEN
+        },
+        { status: 500 }
+      )
+    }
     
-    return NextResponse.json({
-      campaign_id: campaignId,
-      synced: false, // TODO: Replace with actual status
-      external_id: null,
-      last_sync: null
-    })
-    
-  } catch (error) {
-    return NextResponse.json(
-      { error: 'Failed to check sync status' },
-      { status: 500 }
-    )
+    try {
+      // Test connection by fetching one record
+      const testUrl = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${AIRTABLE_TABLE_NAME}?maxRecords=1`
+      const response = await fetch(testUrl, {
+        headers: {
+          'Authorization': `Bearer ${AIRTABLE_TOKEN}`
+        }
+      })
+      
+      if (!response.ok) {
+        throw new Error(`${response.status} ${response.statusText}`)
+      }
+      
+      const result = await response.json()
+      
+      return NextResponse.json({
+        success: true,
+        message: 'Airtable connection successful!',
+        configured: true,
+        base_id: AIRTABLE_BASE_ID,
+        table_name: AIRTABLE_TABLE_NAME,
+        records_found: result.records?.length || 0,
+        sample_fields: result.records?.[0]?.fields ? Object.keys(result.records[0].fields) : []
+      })
+      
+    } catch (error) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: error instanceof Error ? error.message : 'Connection test failed',
+          configured: true,
+          base_id: AIRTABLE_BASE_ID,
+          table_name: AIRTABLE_TABLE_NAME,
+          has_token: !!AIRTABLE_TOKEN
+        },
+        { status: 500 }
+      )
+    }
   }
+  
+  // Default: return config info
+  return NextResponse.json({
+    configured: !!(AIRTABLE_BASE_ID && AIRTABLE_TOKEN),
+    base_id: AIRTABLE_BASE_ID || 'NOT_SET',
+    table_name: AIRTABLE_TABLE_NAME,
+    has_token: !!AIRTABLE_TOKEN,
+    test_connection: `${request.nextUrl.origin}/api/sync-to-airtable?test=connection`
+  })
 }
