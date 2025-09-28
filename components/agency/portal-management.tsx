@@ -20,7 +20,9 @@ import {
   Eye,
   Edit,
   Send,
-  CheckCircle
+  CheckCircle,
+  Clock,
+  ArrowRight
 } from 'lucide-react'
 
 interface PortalManagementProps {
