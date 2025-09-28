@@ -85,14 +85,28 @@ export async function POST(request: NextRequest) {
     const dates = attributionApiData?.dates || totalApiData?.dates || []
     
     // Extract channel data by GROUPING KEY (not array index) - Flow LUXE approach
-    console.log('🔍 BLUEPRINT: Raw attribution API data structure:', JSON.stringify(attributionApiData?.data, null, 2))
+    console.log('🔍 BLUEPRINT: Full attribution API response:', JSON.stringify(attributionData, null, 2))
+    console.log('🔍 BLUEPRINT: Attribution data structure:', JSON.stringify(attributionApiData?.data, null, 2))
+    console.log('🔍 BLUEPRINT: Total data structure:', JSON.stringify(totalApiData?.data, null, 2))
     
     const emailDataGroup = attributionApiData?.data?.find((d: any) => d.groupings?.$attributed_channel === 'email')
     const smsDataGroup = attributionApiData?.data?.find((d: any) => d.groupings?.$attributed_channel === 'sms')
     const totalDataRecord = totalApiData?.data?.[0]?.measurements || { sum_value: [] }
     
-    const emailData = emailDataGroup?.measurements || { sum_value: [] }
-    const smsData = smsDataGroup?.measurements || { sum_value: [] }
+    // FALLBACK: If groupings are null, use first data record as email (common for email-only accounts)
+    let emailData = emailDataGroup?.measurements || { sum_value: [] }
+    let smsData = smsDataGroup?.measurements || { sum_value: [] }
+    
+    // If no channel groupings found but we have attribution data, assume it's email
+    if (!emailDataGroup && !smsDataGroup && attributionApiData?.data?.[0]?.measurements) {
+      console.log('⚠️ BLUEPRINT: No channel groupings found, using first data record as email attribution')
+      emailData = attributionApiData.data[0].measurements
+      console.log('📧 BLUEPRINT: Fallback email data:', {
+        hasSumValue: !!emailData.sum_value,
+        sampleValue: emailData.sum_value?.[0] || 0,
+        valuesCount: emailData.sum_value?.length || 0
+      })
+    }
 
     console.log('📊 BLUEPRINT: Channel data extracted by groupings:', {
       datesCount: dates.length,
