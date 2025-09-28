@@ -4,8 +4,8 @@ import { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { CampaignBuilder } from '../portal/campaign-builder'
 import { ABTestManager } from '../portal/ab-test-manager'
-import { CampaignRequests } from '../portal/campaign-requests'
-import { LiveEditableCalendar } from '../portal/live-editable-calendar'
+import { EnhancedRequests } from '../portal/enhanced-requests'
+import { EnhancedLiveCalendar } from '../portal/enhanced-live-calendar'
 import { 
   Plus, 
   Mail,
@@ -212,29 +212,66 @@ export function PortalManagement({ agency, clients }: PortalManagementProps) {
         </Card>
       </div>
 
-      {/* Live Calendar Feature Highlight */}
-      <Card className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 shadow-sm">
-        <CardHeader>
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <Calendar className="h-5 w-5 text-blue-600" />
+      {/* Live CRUD Features Highlight */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Card className="bg-gradient-to-r from-blue-50 to-blue-100 border border-blue-200 shadow-sm">
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <Calendar className="h-5 w-5 text-blue-600" />
+              </div>
+              <CardTitle className="text-gray-900">🔴 Live Calendar CRUD</CardTitle>
             </div>
-            <CardTitle className="text-gray-900">🔴 Live Calendar Builder</CardTitle>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <p className="text-gray-700 mb-4">
-            Build campaign calendars live during client calls. Add, edit, and schedule campaigns in real-time with instant client collaboration.
-          </p>
-          <button 
-            onClick={() => setActiveTab('livecalendar')}
-            className="bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded-lg font-medium transition-colors flex items-center gap-2"
-          >
-            <Calendar className="h-4 w-4" />
-            Open Live Calendar
-          </button>
-        </CardContent>
-      </Card>
+          </CardHeader>
+          <CardContent>
+            <p className="text-gray-700 mb-4">
+              <strong>Add, Edit, Delete campaigns</strong> live during client calls. No external dependencies - fully self-contained. Sync to Airtable after the call.
+            </p>
+            <div className="text-sm text-gray-600 mb-4">
+              ✅ Real-time campaign creation<br/>
+              ✅ Instant editing and deletion<br/>
+              ✅ Status management<br/>
+              ✅ Sync to Airtable when ready
+            </div>
+            <button 
+              onClick={() => setActiveTab('livecalendar')}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
+            >
+              <Calendar className="h-4 w-4" />
+              Open Live Calendar
+            </button>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-r from-green-50 to-green-100 border border-green-200 shadow-sm">
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-green-100 rounded-lg">
+                <FileText className="h-5 w-5 text-green-600" />
+              </div>
+              <CardTitle className="text-gray-900">📝 Multi-Type Requests</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <p className="text-gray-700 mb-4">
+              <strong>Enhanced request system</strong> for campaigns, flows, popups, and misc projects. Full lifecycle tracking.
+            </p>
+            <div className="grid grid-cols-2 gap-2 text-xs text-gray-600 mb-4">
+              <div>📧 Campaign Requests</div>
+              <div>🔄 Flow Requests</div>
+              <div>🎯 Popup Requests</div>
+              <div>⚙️ Misc Requests</div>
+            </div>
+            <button 
+              onClick={() => setActiveTab('requests')}
+              className="w-full bg-green-600 hover:bg-green-700 text-white py-3 px-6 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
+            >
+              <FileText className="h-4 w-4" />
+              Manage Requests
+            </button>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   )
 
@@ -403,11 +440,11 @@ export function PortalManagement({ agency, clients }: PortalManagementProps) {
             {!loading && (
               <>
                 {activeTab === 'overview' && renderOverviewTab()}
-                {activeTab === 'livecalendar' && <LiveEditableCalendar client={selectedClient} />}
+                {activeTab === 'livecalendar' && <EnhancedLiveCalendar client={selectedClient} />}
                 {activeTab === 'campaigns' && renderCampaignCreatorTab()}
                 {activeTab === 'flows' && renderFlowCreatorTab()}
                 {activeTab === 'abtests' && <ABTestManager client={selectedClient} />}
-                {activeTab === 'requests' && <CampaignRequests client={selectedClient} />}
+                {activeTab === 'requests' && <EnhancedRequests client={selectedClient} />}
                 {activeTab === 'templates' && renderTemplatesTab()}
               </>
             )}

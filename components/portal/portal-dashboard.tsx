@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { CampaignApprovalCalendar } from './campaign-approval-calendar'
 import { FlowEmailReview } from './flow-email-review'
 import { ABTestManager } from './ab-test-manager'
-import { CampaignRequests } from './campaign-requests'
+import { EnhancedRequests } from './enhanced-requests'
 import { CheckCircle, Zap, TestTube, FileText } from 'lucide-react'
 
 interface PortalDashboardProps {
@@ -22,7 +22,7 @@ export function PortalDashboard({ client, data }: PortalDashboardProps) {
     { id: 'approvals', label: 'Campaign Approvals', icon: CheckCircle },
     { id: 'flows', label: 'Flow Approvals', icon: Zap },
     { id: 'abtests', label: 'A/B Test Results', icon: TestTube },
-    { id: 'requests', label: 'Make Requests', icon: FileText }
+    { id: 'requests', label: 'Submit Requests', icon: FileText }
   ]
 
   return (
@@ -64,7 +64,7 @@ export function PortalDashboard({ client, data }: PortalDashboardProps) {
             {activeTab === 'approvals' && <CampaignApprovalCalendar client={client} />}
             {activeTab === 'flows' && <FlowEmailReview client={client} />}
             {activeTab === 'abtests' && <ABTestManager client={client} />}
-            {activeTab === 'requests' && <CampaignRequests client={client} />}
+            {activeTab === 'requests' && <EnhancedRequests client={client} />}
           </>
         )}
       </div>
