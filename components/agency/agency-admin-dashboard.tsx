@@ -8,6 +8,7 @@ import { ClientManagement } from './client-management'
 import { UserManagement } from './user-management'
 import { AgencySettings } from './agency-settings'
 import { PortalManagement } from './portal-management'
+import { UnifiedCampaignPortal } from '../portal/unified-campaign-portal'
 import { 
   Users, 
   Building2, 
@@ -15,7 +16,8 @@ import {
   BarChart3,
   Plus,
   UserPlus,
-  Calendar
+  Calendar,
+  Mail
 } from 'lucide-react'
 
 interface AgencyAdminDashboardProps {
@@ -24,7 +26,7 @@ interface AgencyAdminDashboardProps {
   clientUsers: (UserProfile & { clients?: { brand_name: string; brand_slug: string } })[]
 }
 
-type ActiveTab = 'overview' | 'clients' | 'users' | 'portal' | 'settings'
+type ActiveTab = 'overview' | 'campaigns' | 'clients' | 'users' | 'portal' | 'settings'
 
 export function AgencyAdminDashboard({ agency, clients, clientUsers }: AgencyAdminDashboardProps) {
   const [activeTab, setActiveTab] = useState<ActiveTab>('overview')
@@ -35,6 +37,7 @@ export function AgencyAdminDashboard({ agency, clients, clientUsers }: AgencyAdm
 
   const tabs = [
     { id: 'overview', label: 'Overview', icon: BarChart3 },
+    { id: 'campaigns', label: 'Campaign Portal', icon: Mail },
     { id: 'clients', label: 'Clients', icon: Building2 },
     { id: 'users', label: 'Users', icon: Users },
     { id: 'portal', label: 'Portal Management', icon: Calendar },
@@ -257,6 +260,28 @@ export function AgencyAdminDashboard({ agency, clients, clientUsers }: AgencyAdm
 
         {activeTab === 'users' && (
           <UserManagement agency={agency} clients={clients} clientUsers={clientUsers} />
+        )}
+
+        {activeTab === 'campaigns' && (
+          <div className="space-y-6">
+            <div className="flex flex-col gap-4 mb-6">
+              <h2 className="text-xl font-semibold text-gray-900">Campaign Portal - All Clients</h2>
+              <p className="text-gray-600">Manage campaigns across all your clients. Auto-syncs to Airtable.</p>
+            </div>
+            {activeClients.map(client => (
+              <div key={client.id} className="mb-8">
+                <h3 className="text-lg font-medium text-gray-800 mb-4 flex items-center gap-2">
+                  <Building2 className="h-5 w-5 text-blue-600" />
+                  {client.brand_name}
+                </h3>
+                <UnifiedCampaignPortal 
+                  user={{ agency: agency }}
+                  client={client}
+                  userRole="agency_admin"
+                />
+              </div>
+            ))}
+          </div>
         )}
 
         {activeTab === 'portal' && (

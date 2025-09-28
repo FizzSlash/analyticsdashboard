@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 
 // Airtable configuration from environment variables
 const AIRTABLE_BASE_ID = process.env.AIRTABLE_BASE_ID
-const AIRTABLE_TOKEN = process.env.AIRTABLE_TOKEN  
-const AIRTABLE_TABLE_NAME = process.env.AIRTABLE_TABLE_NAME || 'Campaigns'
+const AIRTABLE_TOKEN = process.env.AIRTABLE_TOKEN
+const AIRTABLE_TABLE_NAME = process.env.AIRTABLE_TABLE_NAME || 'Retention'  // Correct table name from discovery
 
 export async function POST(request: NextRequest) {
   try {
@@ -24,42 +24,142 @@ export async function POST(request: NextRequest) {
 
     console.log('🔄 AIRTABLE SYNC: Starting real Airtable API sync for:', campaign.campaign_name || campaign.title)
 
-    // Prepare data for Airtable (proper API format)
+    // Prepare data for Airtable using discovered field structure
     const airtableRecord = {
       fields: {
-        'Campaign ID': campaign.id,
-        'Campaign Name': campaign.campaign_name || campaign.title,
-        'Campaign Type': campaign.campaign_type || campaign.type || 'email',
-        'Subject Line': campaign.subject_line || '',
-        'Client': client,
-        'Scheduled Date': campaign.scheduled_date || (campaign.date ? campaign.date.toISOString?.() : ''),
-        'Scheduled Time': campaign.scheduled_time || campaign.time || '',
-        'Status': campaign.status || 'draft',
-        'Description': campaign.description || '',
-        'Target Audience': campaign.target_audience || campaign.audience || '',
-        'Created At': new Date().toISOString(),
-        'Source': 'Portal Live Calendar',
+        // Primary field - campaign title/name  
+        'Tasks': campaign.campaign_name || campaign.title || 'New Campaign',
         
-        // Additional fields based on campaign type
-        ...(campaign.type === 'flow' && {
-          'Flow Type': campaign.subtype || '',
-          'Is Automation': true
-        }),
-        ...(campaign.type === 'popup' && {
-          'Popup Type': campaign.subtype || '',  
-          'Conversion Tracking': true
-        }),
-        ...(campaign.type === 'misc' && {
-          'Project Type': campaign.subtype || '',
-          'Requirements': campaign.key_requirements?.join(', ') || ''
-        })
+        // Campaign Type - multiple select (email, sms)
+        'Campaign Type': getAirtableCampaignType(campaign.type || 'email'),
+        
+        // Stage - single select for workflow status
+        'Stage': getAirtableStage(campaign.status || 'draft'),
+        
+        // Client - single select (you'll need to map your client names)
+        'Client': getAirtableClient(client),
+        
+        // Type - array of strings (Campaigns, Flows, Popup)  
+        'Type': getAirtableType(campaign.type || 'campaign'),
+        
+        // Send Date - ISO date string
+        'Send Date': campaign.scheduled_date || (campaign.date ? campaign.date.toISOString?.().split('T')[0] : ''),
+        
+        // Notes - enhanced multiline text with all details
+        'Notes': buildEnhancedNotesField(campaign),
+        
+        // Optional fields that map to your Airtable structure
+        ...(campaign.offer && { 'Offer': campaign.offer }),
+        ...(campaign.subject_line && !campaign.offer && { 'Offer': campaign.subject_line }),
+        ...(campaign.ab_test && { 'A/B Test': campaign.ab_test }),
+        ...(campaign.copy_link && { 'Copy Link': campaign.copy_link }),
+        
+        // Due dates (if provided)
+        ...(campaign.copy_due_date && { 'Copy Due Date': campaign.copy_due_date.toISOString().split('T')[0] }),
+        ...(campaign.design_due_date && { 'Design Due Date': campaign.design_due_date.toISOString().split('T')[0] }),
       }
+    }
+
+    // Enhanced field mapping functions
+    function getAirtableStage(status: string): string {
+      const stageMap: Record<string, string> = {
+        'draft': 'Content Strategy',
+        'in_progress': 'Copy',
+        'review': 'Copy QA', 
+        'client_approval': 'Ready For Client Approval',
+        'approved': 'Approved',
+        'revisions': 'Client Revisions',
+        'scheduled': 'Ready For Schedule',
+        'sent': 'Scheduled - Close',
+        'live': 'Scheduled - Close'
+      }
+      return stageMap[status] || 'Content Strategy'
+    }
+    
+    function getAirtableClient(clientSlug: string): string {
+      const clientMap: Record<string, string> = {
+        'tririg': 'TriRig',
+        'hydrus': 'Hydrus', 
+        'ramrods-archery': 'Ramrods Archery',
+        'safari-pedals': 'Safari Pedals',
+        'nyan': 'nyan',
+        'montis': 'montis',
+        'brilliant-scents': 'brilliant scents',
+        'retention-harbor': 'TriRig', // Default fallback
+        // Handle brand_slug variations
+        'retention': 'TriRig',
+        'unknown-client': 'TriRig'
+      }
+      return clientMap[clientSlug?.toLowerCase().replace(/[^a-z0-9]/g, '-')] || 'TriRig'
+    }
+    
+    function getAirtableType(type: string): string[] {
+      const typeMap: Record<string, string[]> = {
+        'campaign': ['Campaigns'],
+        'email': ['Campaigns'],
+        'sms': ['Campaigns'], 
+        'flow': ['Flows'],
+        'popup': ['Popup'],
+        'misc': ['Campaigns']
+      }
+      return typeMap[type] || ['Campaigns']
+    }
+    
+    function getAirtableCampaignType(type: string): string[] {
+      const campaignTypeMap: Record<string, string[]> = {
+        'email': ['email'],
+        'sms': ['sms'],
+        'flow': ['email'], // Flows are email-based
+        'popup': ['email'], // Popups typically capture emails
+        'campaign': ['email'] // Default
+      }
+      return campaignTypeMap[type] || ['email']
+    }
+    
+    function buildEnhancedNotesField(campaign: any): string {
+      let notes = campaign.description || ''
+      
+      // Add target audience
+      if (campaign.target_audience || campaign.audience) {
+        notes += `\n\nTarget Audience: ${campaign.target_audience || campaign.audience}`
+      }
+      
+      // Add flow-specific info
+      if (campaign.type === 'flow') {
+        if (campaign.flow_type) {
+          notes += `\n\nFlow Type: ${campaign.flow_type.replace('_', ' ')}`
+        }
+        if (campaign.trigger_criteria) {
+          notes += `\n\nTrigger: ${campaign.trigger_criteria}`
+        }
+        if (campaign.num_emails) {
+          notes += `\n\nNumber of Emails: ${campaign.num_emails}`
+        }
+      }
+      
+      // Add popup-specific info
+      if (campaign.type === 'popup' && campaign.trigger_criteria) {
+        notes += `\n\nTrigger: ${campaign.trigger_criteria}`
+      }
+      
+      // Add requirements
+      if (campaign.key_requirements?.length) {
+        notes += `\n\nRequirements: ${campaign.key_requirements.join(', ')}`
+      }
+      
+      // Add user notes
+      if (campaign.notes) {
+        notes += `\n\nAdditional Notes: ${campaign.notes}`
+      }
+      
+      notes += `\n\nSource: Unified Campaign Portal (${new Date().toISOString()})`
+      return notes.trim()
     }
 
     console.log('📤 AIRTABLE SYNC: Sending record to Airtable:', JSON.stringify(airtableRecord, null, 2))
 
-    // Send to Airtable API
-    const airtableUrl = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${AIRTABLE_TABLE_NAME}`
+    // Send to Airtable API (using table ID for reliability)
+    const airtableUrl = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/tblG1qADMDrBjuX5R`
     const response = await fetch(airtableUrl, {
       method: 'POST',
       headers: {
@@ -148,8 +248,8 @@ export async function GET(request: NextRequest) {
     }
     
     try {
-      // Test connection by fetching one record
-      const testUrl = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${AIRTABLE_TABLE_NAME}?maxRecords=1`
+      // Test connection by fetching one record from Retention table
+      const testUrl = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/tblG1qADMDrBjuX5R?maxRecords=1`
       const response = await fetch(testUrl, {
         headers: {
           'Authorization': `Bearer ${AIRTABLE_TOKEN}`
@@ -224,8 +324,8 @@ export async function DELETE(request: NextRequest) {
 
     console.log('🗑️ AIRTABLE DELETE: Deleting record:', airtable_record_id)
 
-    // Delete from Airtable
-    const airtableUrl = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${AIRTABLE_TABLE_NAME}/${airtable_record_id}`
+    // Delete from Airtable (using table ID for reliability)
+    const airtableUrl = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/tblG1qADMDrBjuX5R/${airtable_record_id}`
     const response = await fetch(airtableUrl, {
       method: 'DELETE',
       headers: {

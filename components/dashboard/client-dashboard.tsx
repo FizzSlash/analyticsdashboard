@@ -18,6 +18,7 @@ import {
   Target
 } from 'lucide-react'
 import { formatCurrency, formatNumber, formatPercentage, aggregateMetricsByDate } from '@/lib/utils'
+import { UnifiedCampaignPortal } from '../portal/unified-campaign-portal'
 
 interface ClientDashboardProps {
   client: Client
@@ -385,6 +386,14 @@ export function ClientDashboard({ client, data: providedData }: ClientDashboardP
               </div>
             </CardContent>
           </Card>
+        </div>
+
+        {/* Campaign Portal */}
+        <div className="mt-8">
+          <UnifiedCampaignPortal 
+            user={{ client: client }}
+            userRole="client_user"
+          />
         </div>
       </div>
     </div>
