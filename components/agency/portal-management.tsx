@@ -235,7 +235,6 @@ export function PortalManagement({ agency, clients }: PortalManagementProps) {
           </button>
         </CardContent>
       </Card>
-      </div>
     </div>
   )
 
