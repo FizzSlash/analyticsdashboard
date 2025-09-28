@@ -3,6 +3,10 @@
 import { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { CampaignBuilder } from './campaign-builder'
+import { CampaignApprovalCalendar } from './campaign-approval-calendar'
+import { FlowEmailReview } from './flow-email-review'
+import { ABTestManager } from './ab-test-manager'
+import { CampaignRequests } from './campaign-requests'
 import { 
   Plus, 
   FileText, 
@@ -16,7 +20,11 @@ import {
   Mail,
   Users,
   Calendar,
-  ArrowRight
+  ArrowRight,
+  TestTube,
+  MessageSquare,
+  BarChart3,
+  Settings
 } from 'lucide-react'
 
 interface PortalDashboardProps {
@@ -24,7 +32,7 @@ interface PortalDashboardProps {
   data?: any
 }
 
-type PortalTab = 'overview' | 'campaigns' | 'flows' | 'drafts' | 'approvals'
+type PortalTab = 'overview' | 'approvals' | 'campaigns' | 'flows' | 'abtests' | 'requests' | 'misc'
 type PortalView = 'dashboard' | 'campaign-builder' | 'flow-builder'
 
 export function PortalDashboard({ client, data }: PortalDashboardProps) {
@@ -33,35 +41,37 @@ export function PortalDashboard({ client, data }: PortalDashboardProps) {
   const [loading, setLoading] = useState(false)
 
   const portalTabs = [
-    { id: 'overview', label: 'Overview', icon: FileText },
+    { id: 'overview', label: 'Overview', icon: BarChart3 },
+    { id: 'approvals', label: 'Approvals', icon: CheckCircle },
     { id: 'campaigns', label: 'Campaign Builder', icon: Mail },
-    { id: 'flows', label: 'Flow Builder', icon: Zap },
-    { id: 'drafts', label: 'Drafts & Templates', icon: Edit3 },
-    { id: 'approvals', label: 'Approvals', icon: CheckCircle }
+    { id: 'flows', label: 'Flow Reviews', icon: Zap },
+    { id: 'abtests', label: 'A/B Tests', icon: TestTube },
+    { id: 'requests', label: 'Requests', icon: FileText },
+    { id: 'misc', label: 'Misc', icon: Settings }
   ]
 
   const renderOverviewTab = () => (
     <div className="space-y-6">
       {/* Quick Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <Card className="bg-white/5 border-white/10 hover:bg-white/10 transition-colors cursor-pointer">
           <CardHeader className="pb-3">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-500/20 rounded-lg">
-                <Plus className="h-5 w-5 text-blue-400" />
+              <div className="p-2 bg-green-500/20 rounded-lg">
+                <CheckCircle className="h-5 w-5 text-green-400" />
               </div>
-              <CardTitle className="text-white text-lg">Create Campaign</CardTitle>
+              <CardTitle className="text-white text-lg">Approvals</CardTitle>
             </div>
           </CardHeader>
           <CardContent>
             <p className="text-white/60 text-sm mb-4">
-              Design and launch new email campaigns with our drag-drop builder
+              Review and approve pending campaigns with calendar view
             </p>
             <button 
-              onClick={() => setCurrentView('campaign-builder')}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg text-sm font-medium transition-colors"
+              onClick={() => setActiveTab('approvals')}
+              className="w-full bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg text-sm font-medium transition-colors"
             >
-              Start Campaign
+              View Calendar
             </button>
           </CardContent>
         </Card>
@@ -72,15 +82,18 @@ export function PortalDashboard({ client, data }: PortalDashboardProps) {
               <div className="p-2 bg-purple-500/20 rounded-lg">
                 <Zap className="h-5 w-5 text-purple-400" />
               </div>
-              <CardTitle className="text-white text-lg">Build Flow</CardTitle>
+              <CardTitle className="text-white text-lg">Flow Reviews</CardTitle>
             </div>
           </CardHeader>
           <CardContent>
             <p className="text-white/60 text-sm mb-4">
-              Create automated email sequences and customer journeys
+              Review individual emails in flows and leave feedback
             </p>
-            <button className="w-full bg-purple-600 hover:bg-purple-700 text-white py-2 px-4 rounded-lg text-sm font-medium transition-colors">
-              Build Flow
+            <button 
+              onClick={() => setActiveTab('flows')}
+              className="w-full bg-purple-600 hover:bg-purple-700 text-white py-2 px-4 rounded-lg text-sm font-medium transition-colors"
+            >
+              Review Flows
             </button>
           </CardContent>
         </Card>
@@ -88,18 +101,43 @@ export function PortalDashboard({ client, data }: PortalDashboardProps) {
         <Card className="bg-white/5 border-white/10 hover:bg-white/10 transition-colors cursor-pointer">
           <CardHeader className="pb-3">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-green-500/20 rounded-lg">
-                <Eye className="h-5 w-5 text-green-400" />
+              <div className="p-2 bg-blue-500/20 rounded-lg">
+                <Plus className="h-5 w-5 text-blue-400" />
               </div>
-              <CardTitle className="text-white text-lg">Review Drafts</CardTitle>
+              <CardTitle className="text-white text-lg">New Request</CardTitle>
             </div>
           </CardHeader>
           <CardContent>
             <p className="text-white/60 text-sm mb-4">
-              Review and approve pending campaigns and flows
+              Submit new campaign requests and track progress
             </p>
-            <button className="w-full bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg text-sm font-medium transition-colors">
-              View Drafts
+            <button 
+              onClick={() => setActiveTab('requests')}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg text-sm font-medium transition-colors"
+            >
+              Make Request
+            </button>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-white/5 border-white/10 hover:bg-white/10 transition-colors cursor-pointer">
+          <CardHeader className="pb-3">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-orange-500/20 rounded-lg">
+                <TestTube className="h-5 w-5 text-orange-400" />
+              </div>
+              <CardTitle className="text-white text-lg">A/B Tests</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <p className="text-white/60 text-sm mb-4">
+              Manage and review A/B test results
+            </p>
+            <button 
+              onClick={() => setActiveTab('abtests')}
+              className="w-full bg-orange-600 hover:bg-orange-700 text-white py-2 px-4 rounded-lg text-sm font-medium transition-colors"
+            >
+              View Tests
             </button>
           </CardContent>
         </Card>
@@ -285,21 +323,66 @@ export function PortalDashboard({ client, data }: PortalDashboardProps) {
     </div>
   )
 
-  const renderApprovalsTab = () => (
+  const renderMiscTab = () => (
     <div className="space-y-6">
-      <Card className="bg-white/5 border-white/10">
-        <CardHeader>
-          <CardTitle className="text-white">Pending Approvals</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-8">
-            <div className="p-4 bg-green-500/20 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-              <CheckCircle className="h-6 w-6 text-green-400" />
-            </div>
-            <p className="text-white/60">No campaigns pending approval. All set!</p>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Misc Tools */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Card className="bg-white/5 border-white/10">
+          <CardHeader>
+            <CardTitle className="text-white">Campaign Performance Archive</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-white/60 text-sm mb-4">
+              View detailed performance reports for all past campaigns
+            </p>
+            <button className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg text-sm font-medium transition-colors">
+              View Archive
+            </button>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-white/5 border-white/10">
+          <CardHeader>
+            <CardTitle className="text-white">Template Library</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-white/60 text-sm mb-4">
+              Manage and organize your email and SMS templates
+            </p>
+            <button className="w-full bg-purple-600 hover:bg-purple-700 text-white py-2 px-4 rounded-lg text-sm font-medium transition-colors">
+              Manage Templates
+            </button>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-white/5 border-white/10">
+          <CardHeader>
+            <CardTitle className="text-white">Subscriber Insights</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-white/60 text-sm mb-4">
+              Analyze subscriber behavior and engagement patterns
+            </p>
+            <button className="w-full bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg text-sm font-medium transition-colors">
+              View Insights
+            </button>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-white/5 border-white/10">
+          <CardHeader>
+            <CardTitle className="text-white">Integration Settings</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-white/60 text-sm mb-4">
+              Configure integrations and webhook settings
+            </p>
+            <button className="w-full bg-gray-600 hover:bg-gray-700 text-white py-2 px-4 rounded-lg text-sm font-medium transition-colors">
+              Configure
+            </button>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   )
 
@@ -342,10 +425,12 @@ export function PortalDashboard({ client, data }: PortalDashboardProps) {
             {!loading && (
               <>
                 {activeTab === 'overview' && renderOverviewTab()}
+                {activeTab === 'approvals' && <CampaignApprovalCalendar client={client} />}
                 {activeTab === 'campaigns' && renderCampaignBuilderTab()}
-                {activeTab === 'flows' && renderFlowBuilderTab()}
-                {activeTab === 'drafts' && renderDraftsTab()}
-                {activeTab === 'approvals' && renderApprovalsTab()}
+                {activeTab === 'flows' && <FlowEmailReview client={client} />}
+                {activeTab === 'abtests' && <ABTestManager client={client} />}
+                {activeTab === 'requests' && <CampaignRequests client={client} />}
+                {activeTab === 'misc' && renderMiscTab()}
               </>
             )}
           </div>
