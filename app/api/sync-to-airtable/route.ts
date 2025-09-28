@@ -196,3 +196,68 @@ export async function GET(request: NextRequest) {
     test_connection: `${request.nextUrl.origin}/api/sync-to-airtable?test=connection`
   })
 }
+
+// DELETE endpoint to remove records from Airtable
+export async function DELETE(request: NextRequest) {
+  try {
+    // Validate required environment variables
+    if (!AIRTABLE_BASE_ID || !AIRTABLE_TOKEN) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Airtable not configured - missing AIRTABLE_BASE_ID or AIRTABLE_TOKEN environment variables',
+          message: 'Please set your Airtable environment variables'
+        },
+        { status: 500 }
+      )
+    }
+
+    const body = await request.json()
+    const { airtable_record_id, campaign_id } = body
+
+    if (!airtable_record_id) {
+      return NextResponse.json(
+        { success: false, error: 'airtable_record_id required for deletion' },
+        { status: 400 }
+      )
+    }
+
+    console.log('🗑️ AIRTABLE DELETE: Deleting record:', airtable_record_id)
+
+    // Delete from Airtable
+    const airtableUrl = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${AIRTABLE_TABLE_NAME}/${airtable_record_id}`
+    const response = await fetch(airtableUrl, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${AIRTABLE_TOKEN}`
+      }
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      throw new Error(`Airtable deletion failed: ${response.status} ${response.statusText} - ${errorText}`)
+    }
+
+    const result = await response.json()
+    console.log('✅ AIRTABLE DELETE: Record deleted successfully:', result)
+
+    return NextResponse.json({
+      success: true,
+      message: 'Campaign deleted successfully from Airtable',
+      deleted_record_id: result.id,
+      campaign_id: campaign_id
+    })
+
+  } catch (error) {
+    console.error('❌ AIRTABLE DELETE: Error:', error)
+    
+    return NextResponse.json(
+      {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to delete from Airtable',
+        message: 'Airtable deletion failed'
+      },
+      { status: 500 }
+    )
+  }
+}

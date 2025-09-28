@@ -51,18 +51,24 @@ export function EnhancedLiveCalendar({ client, onSave }: EnhancedLiveCalendarPro
   const [editingCampaign, setEditingCampaign] = useState<CalendarCampaign | null>(null)
   const [showAddModal, setShowAddModal] = useState(false)
   const [isLiveMode, setIsLiveMode] = useState(false)
-  const [syncStatus, setSyncStatus] = useState<string | null>(null)
-  const [unsyncedCount, setUnsyncedCount] = useState(0)
+  const [syncingOperations, setSyncingOperations] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     loadCampaigns()
   }, [client])
 
-  useEffect(() => {
-    // Count unsynced campaigns
-    const unsynced = campaigns.filter(c => !c.synced_to_external).length
-    setUnsyncedCount(unsynced)
-  }, [campaigns])
+  // Helper functions for tracking sync operations
+  const addSyncingOperation = (campaignId: string) => {
+    setSyncingOperations(prev => new Set(prev).add(campaignId))
+  }
+
+  const removeSyncingOperation = (campaignId: string) => {
+    setSyncingOperations(prev => {
+      const newSet = new Set(prev)
+      newSet.delete(campaignId)
+      return newSet
+    })
+  }
 
   const loadCampaigns = async () => {
     try {
@@ -122,75 +128,114 @@ export function EnhancedLiveCalendar({ client, onSave }: EnhancedLiveCalendarPro
   }
 
   const saveCampaign = async (campaign: CalendarCampaign) => {
+    addSyncingOperation(campaign.id)
+    
     try {
-      // Mark as unsynced when edited
       const updatedCampaign = { 
         ...campaign, 
         isNew: false, 
-        synced_to_external: false,
+        synced_to_external: false, // Will be true after automatic sync
         last_sync: undefined
       }
 
+      // Update local state immediately for responsive UI
       if (campaign.isNew) {
         setCampaigns(prev => [...prev, updatedCampaign])
       } else {
         setCampaigns(prev => prev.map(c => c.id === campaign.id ? updatedCampaign : c))
       }
 
-      // TODO: Save to database (campaign_approvals table)
+      // Save to database first
       await saveCampaignToDatabase(updatedCampaign)
+      
+      // 🚀 AUTO-SYNC: Immediately sync to Airtable
+      console.log('🔄 AUTO-SYNC: Syncing campaign to Airtable:', updatedCampaign.title)
+      const syncResponse = await fetch('/api/sync-to-airtable', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          client: client.brand_slug || 'unknown-client',
+          campaign: updatedCampaign
+        })
+      })
+
+      const syncResult = await syncResponse.json()
+      
+      if (syncResult.success) {
+        // Mark as synced and update with external ID
+        setCampaigns(prev => prev.map(c => 
+          c.id === campaign.id 
+            ? { 
+                ...c, 
+                synced_to_external: true, 
+                external_id: syncResult.airtable_record_id,
+                last_sync: new Date() 
+              }
+            : c
+        ))
+        console.log('✅ AUTO-SYNC: Campaign synced successfully to Airtable')
+      } else {
+        console.error('❌ AUTO-SYNC: Failed to sync to Airtable:', syncResult.error)
+        // Keep as unsynced - user can see the status and retry if needed
+      }
       
       setEditingCampaign(null)
       setShowAddModal(false)
       onSave?.(campaigns)
     } catch (error) {
-      console.error('Error saving campaign:', error)
+      console.error('❌ AUTO-SYNC: Error saving/syncing campaign:', error)
+    } finally {
+      removeSyncingOperation(campaign.id)
     }
   }
 
   const deleteCampaign = async (campaignId: string) => {
+    addSyncingOperation(campaignId)
+    
     try {
+      // Find campaign before deleting to get external_id
+      const campaign = campaigns.find(c => c.id === campaignId)
+      
+      // Remove from local state immediately for responsive UI
       setCampaigns(prev => prev.filter(c => c.id !== campaignId))
-      // TODO: Delete from database
+      
+      // Delete from database
       await deleteCampaignFromDatabase(campaignId)
+      
+      // 🚀 AUTO-SYNC: Automatically delete from Airtable if it has an external_id
+      if (campaign?.external_id) {
+        console.log('🗑️ AUTO-SYNC: Deleting campaign from Airtable:', campaign.title)
+        try {
+          const deleteResponse = await fetch('/api/sync-to-airtable', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              airtable_record_id: campaign.external_id,
+              campaign_id: campaignId
+            })
+          })
+          
+          const deleteResult = await deleteResponse.json()
+          if (deleteResult.success) {
+            console.log('✅ AUTO-SYNC: Campaign deleted successfully from Airtable')
+          } else {
+            console.error('❌ AUTO-SYNC: Failed to delete from Airtable:', deleteResult.error)
+          }
+        } catch (syncError) {
+          console.error('❌ AUTO-SYNC: Error deleting from Airtable:', syncError)
+        }
+      } else {
+        console.log('ℹ️ AUTO-SYNC: Campaign has no external_id, skipping Airtable deletion')
+      }
+      
     } catch (error) {
-      console.error('Error deleting campaign:', error)
+      console.error('❌ AUTO-SYNC: Error deleting campaign:', error)
+      // Could restore campaign if deletion failed, but for now just log
+    } finally {
+      removeSyncingOperation(campaignId)
     }
   }
 
-  const syncToAirtable = async () => {
-    setSyncStatus('syncing')
-    try {
-      const unsyncedCampaigns = campaigns.filter(c => !c.synced_to_external)
-      
-      for (const campaign of unsyncedCampaigns) {
-        // TODO: Sync to Airtable/Make.com webhook
-        const response = await fetch('/api/sync-to-airtable', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            client: client.brand_slug,
-            campaign: campaign
-          })
-        })
-        
-        if (response.ok) {
-          // Mark as synced
-          setCampaigns(prev => prev.map(c => 
-            c.id === campaign.id 
-              ? { ...c, synced_to_external: true, last_sync: new Date() }
-              : c
-          ))
-        }
-      }
-      
-      setSyncStatus('success')
-      setTimeout(() => setSyncStatus(null), 3000)
-    } catch (error) {
-      setSyncStatus('error')
-      setTimeout(() => setSyncStatus(null), 5000)
-    }
-  }
 
   const saveCampaignToDatabase = async (campaign: CalendarCampaign) => {
     // TODO: Implement database save
@@ -285,46 +330,18 @@ export function EnhancedLiveCalendar({ client, onSave }: EnhancedLiveCalendarPro
             
             <div className="flex items-center gap-3">
               <div className="text-gray-600 text-sm">
-                {client.brand_name} • {unsyncedCount} unsynced
+                {client.brand_name}
+                {syncingOperations.size > 0 && (
+                  <span className="ml-2 text-blue-600">
+                    • {syncingOperations.size} syncing to Airtable
+                  </span>
+                )}
               </div>
               
-              {unsyncedCount > 0 && (
-                <button
-                  onClick={syncToAirtable}
-                  disabled={syncStatus === 'syncing'}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
-                    syncStatus === 'syncing' 
-                      ? 'bg-gray-100 text-gray-400'
-                      : syncStatus === 'success'
-                      ? 'bg-green-100 text-green-700 border border-green-300'
-                      : syncStatus === 'error'
-                      ? 'bg-red-100 text-red-700 border border-red-300'
-                      : 'bg-blue-100 text-blue-700 border border-blue-300 hover:bg-blue-200'
-                  }`}
-                >
-                  {syncStatus === 'syncing' ? (
-                    <>
-                      <div className="animate-spin rounded-full h-3 w-3 border-b border-gray-400"></div>
-                      Syncing...
-                    </>
-                  ) : syncStatus === 'success' ? (
-                    <>
-                      <CheckCircle className="h-3 w-3" />
-                      Synced
-                    </>
-                  ) : syncStatus === 'error' ? (
-                    <>
-                      <AlertTriangle className="h-3 w-3" />
-                      Error
-                    </>
-                  ) : (
-                    <>
-                      <RefreshCw className="h-3 w-3" />
-                      Sync to Airtable
-                    </>
-                  )}
-                </button>
-              )}
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" title="Auto-sync enabled"></div>
+                <span className="text-green-600 text-sm font-medium">Auto-Sync Active</span>
+              </div>
             </div>
           </div>
         </CardHeader>
@@ -416,8 +433,12 @@ export function EnhancedLiveCalendar({ client, onSave }: EnhancedLiveCalendarPro
                                 </div>
                               </div>
                               <div className="flex flex-col items-end gap-1 ml-2">
-                                {!campaign.synced_to_external && (
-                                  <div className="w-2 h-2 bg-orange-500 rounded-full" title="Unsynced"></div>
+                                {syncingOperations.has(campaign.id) ? (
+                                  <div className="w-3 h-3 animate-spin rounded-full border border-blue-500 border-t-transparent" title="Auto-syncing to Airtable..."></div>
+                                ) : campaign.synced_to_external ? (
+                                  <div className="w-2 h-2 bg-green-500 rounded-full" title="Synced to Airtable"></div>
+                                ) : (
+                                  <div className="w-2 h-2 bg-gray-400 rounded-full" title="Not yet synced"></div>
                                 )}
                                 {isLiveMode && (
                                   <button
@@ -425,8 +446,9 @@ export function EnhancedLiveCalendar({ client, onSave }: EnhancedLiveCalendarPro
                                       e.stopPropagation()
                                       deleteCampaign(campaign.id)
                                     }}
-                                    className="text-gray-400 hover:text-red-600 transition-colors p-0.5 rounded hover:bg-red-50"
-                                    title="Delete campaign"
+                                    disabled={syncingOperations.has(campaign.id)}
+                                    className="text-gray-400 hover:text-red-600 disabled:text-gray-300 transition-colors p-0.5 rounded hover:bg-red-50 disabled:cursor-not-allowed"
+                                    title={syncingOperations.has(campaign.id) ? "Syncing..." : "Delete campaign"}
                                   >
                                     <Trash2 className="h-3 w-3" />
                                   </button>
@@ -614,8 +636,8 @@ export function EnhancedLiveCalendar({ client, onSave }: EnhancedLiveCalendarPro
                 <p className="text-green-600 text-sm mt-1">
                   • Click any date to add campaigns instantly<br/>
                   • Click existing campaigns to edit details<br/>
-                  • Changes save automatically to database<br/>
-                  • Sync to Airtable when call is complete
+                  • All changes auto-sync to Airtable immediately<br/>
+                  • Perfect mirror - no manual sync needed!
                 </p>
               </div>
             </div>
