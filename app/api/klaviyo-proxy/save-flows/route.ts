@@ -77,42 +77,49 @@ export async function POST(request: NextRequest) {
         }
 
         // Save flow summary to flow_metrics table (aggregated totals)
+        // ALWAYS save flows, even if they have no message data (0 messages)
+        let totalOpens = 0, totalClicks = 0, totalRevenue = 0
+        
         if (flowDetail.weeklyData && Array.isArray(flowDetail.weeklyData)) {
           // Aggregate weekly data to flow totals
-          const totalOpens = flowDetail.weeklyData.reduce((sum: number, week: any) => 
+          totalOpens = flowDetail.weeklyData.reduce((sum: number, week: any) => 
             sum + (week.attributes?.opens || 0), 0
           )
-          const totalClicks = flowDetail.weeklyData.reduce((sum: number, week: any) => 
+          totalClicks = flowDetail.weeklyData.reduce((sum: number, week: any) => 
             sum + (week.attributes?.clicks || 0), 0
           )
-          const totalRevenue = flowDetail.weeklyData.reduce((sum: number, week: any) => 
+          totalRevenue = flowDetail.weeklyData.reduce((sum: number, week: any) => 
             sum + (week.attributes?.conversion_value || 0), 0
           )
-          
-          await DatabaseService.upsertFlowMetric({
-            client_id: clientId,
-            flow_id: flowDetail.flow_id,
-            flow_name: flowDetail.flow_name,
-            flow_type: flowDetail.flow_type || 'email',
-            flow_status: flowDetail.flow_status,
-            date_start: new Date().toISOString().split('T')[0],
-            date_end: new Date().toISOString().split('T')[0],
-            
-            // Required legacy fields
-            triggered_count: 0,
-            completed_count: 0,
-            completion_rate: 0,
-            orders_count: totalClicks,
-            revenue_per_trigger: 0,
-            
-            // Aggregated totals
-            opens: totalOpens,
-            clicks: totalClicks,
-            revenue: totalRevenue,
-            open_rate: totalOpens > 0 ? totalClicks / totalOpens : 0,
-            click_rate: totalClicks > 0 ? totalClicks / totalOpens : 0
-          })
+          console.log(`📊 SAVE FLOWS: Flow ${flowDetail.flow_id} has weeklyData with ${flowDetail.weeklyData.length} records`)
+        } else {
+          console.log(`📊 SAVE FLOWS: Flow ${flowDetail.flow_id} has NO weeklyData (0 messages) - saving with zero values`)
         }
+        
+        // Save ALL flows (with data or without)
+        await DatabaseService.upsertFlowMetric({
+          client_id: clientId,
+          flow_id: flowDetail.flow_id,
+          flow_name: flowDetail.flow_name,
+          flow_type: flowDetail.flow_type || 'email',
+          flow_status: flowDetail.flow_status,
+          date_start: new Date().toISOString().split('T')[0],
+          date_end: new Date().toISOString().split('T')[0],
+          
+          // Required legacy fields
+          triggered_count: 0,
+          completed_count: 0,
+          completion_rate: 0,
+          orders_count: totalClicks,
+          revenue_per_trigger: 0,
+          
+          // Aggregated totals (will be 0 for flows without messages)
+          opens: totalOpens,
+          clicks: totalClicks,
+          revenue: totalRevenue,
+          open_rate: totalOpens > 0 ? totalClicks / totalOpens : 0,
+          click_rate: totalClicks > 0 ? totalClicks / totalOpens : 0
+        })
 
          results.successful++
          console.log(`✅ SAVE FLOWS: Successfully saved ${flowDetail.weeklyData?.length || 0} weekly records for flow ${flowDetail.flow_id}`)

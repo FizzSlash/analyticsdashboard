@@ -214,18 +214,19 @@ export class DatabaseService {
     cutoffDate.setDate(cutoffDate.getDate() - days)
     console.log(`📊 DATABASE: Cutoff date: ${cutoffDate.toISOString().split('T')[0]}`)
 
-    // Get weekly data from flow_message_metrics and flow metadata
-    const [weeklyResult, flowMetaResult] = await Promise.all([
+    // Get ALL flows from flow_metrics (includes flows with 0 messages) + weekly data
+    const [flowMetaResult, weeklyResult] = await Promise.all([
+      supabaseAdmin
+        .from('flow_metrics')
+        .select('flow_id, flow_name, flow_status, flow_type, opens, clicks, revenue, open_rate, click_rate, date_start')
+        .eq('client_id', clientId)
+        .order('date_start', { ascending: false }),
       supabaseAdmin
         .from('flow_message_metrics')
         .select('*')
         .eq('client_id', clientId)
         .gte('week_date', cutoffDate.toISOString().split('T')[0])
-        .order('week_date', { ascending: false }),
-      supabaseAdmin
-        .from('flow_metrics')
-        .select('flow_id, flow_name, flow_status, trigger_type')
-        .eq('client_id', clientId)
+        .order('week_date', { ascending: false })
     ])
 
     let weeklyData = weeklyResult.data
@@ -297,152 +298,94 @@ export class DatabaseService {
       flowMetaLookup[meta.flow_id] = meta
     })
 
-    console.log(`📊 DATABASE: Created metadata lookup for ${Object.keys(flowMetaLookup).length} flows`)
-    console.log(`📊 DATABASE: Starting aggregation of ${weeklyData.length} weekly records`)
+    console.log(`📊 DATABASE: Flow metadata available for ${flowMeta.length} flows`)
+    console.log(`📊 DATABASE: Weekly data available for ${weeklyData?.length || 0} records`)
 
-    // Aggregate weekly data by flow_id
+    // Start with ALL flows from flow_metrics (includes flows with 0 messages)
     const flowAggregates: { [flowId: string]: any } = {}
     
-    weeklyData.forEach((record: any) => {
-      const flowId = record.flow_id
-      const meta = flowMetaLookup[flowId] || {}
-      
-      if (!flowAggregates[flowId]) {
-        flowAggregates[flowId] = {
-          id: `${flowId}_${days}d`, // Unique ID for this timeframe
-          client_id: clientId,
-          flow_id: flowId,
-          flow_name: meta.flow_name || `Flow ${flowId}`,
-          flow_type: 'email',
-          flow_status: meta.flow_status || 'live',
-          trigger_type: meta.trigger_type,
-          date_start: record.week_date,
-          date_end: record.week_date,
-          triggered_count: 0,
-          completed_count: 0,
-          completion_rate: 0,
-          revenue: 0,
-          orders_count: 0,
-          revenue_per_trigger: 0,
-          opens: 0,
-          opens_unique: 0,
-          clicks: 0,
-          clicks_unique: 0,
-          open_rate: 0,
-          click_rate: 0,
-          click_to_open_rate: 0,
-          conversions: 0,
-          conversion_value: 0,
-          recipients: 0,
-          revenue_per_recipient: 0,
-          average_order_value: 0,
-          delivery_rate: 0,
-          bounce_rate: 0,
-          created_at: record.created_at,
-          updated_at: record.updated_at,
-          recordCount: 0
-        }
-      }
-      
-      // Aggregate the weekly data with proper type conversion
-      const agg = flowAggregates[flowId]
-      agg.opens += parseInt(record.opens) || 0
-      agg.opens_unique += parseInt(record.opens_unique) || 0
-      agg.clicks += parseInt(record.clicks) || 0
-      agg.clicks_unique += parseInt(record.clicks_unique) || 0
-      agg.conversions += parseInt(record.conversions) || 0
-      
-      // Handle revenue/conversion_value as strings
-      const revenueValue = parseFloat(record.conversion_value || record.revenue || 0)
-      agg.conversion_value += revenueValue
-      agg.revenue += revenueValue
-      
-      agg.recipients += parseInt(record.recipients) || 0
-      agg.delivered += parseInt(record.delivered) || 0
-      agg.bounced += parseInt(record.bounced) || 0
-      agg.recordCount++
-      
-      console.log(`📊 AGGREGATING: Flow ${flowId}, Week ${record.week_date}, Opens: ${record.opens}, Revenue: ${revenueValue}`)
-      
-      // Update date range
-      if (record.week_date > agg.date_end) {
-        agg.date_end = record.week_date
-      }
-      if (record.week_date < agg.date_start) {
-        agg.date_start = record.week_date
+    // STEP 1: Add ALL flows from flow_metrics (even those with 0 messages)
+    flowMeta.forEach((flow: any) => {
+      flowAggregates[flow.flow_id] = {
+        id: `${flow.flow_id}_${days}d`,
+        client_id: clientId,
+        flow_id: flow.flow_id,
+        flow_name: flow.flow_name || `Flow ${flow.flow_id}`,
+        flow_type: flow.flow_type || 'email',
+        flow_status: flow.flow_status || 'live',
+        trigger_type: flow.flow_type,
+        date_start: flow.date_start,
+        date_end: flow.date_start,
+        
+        // Default values (will be updated if weekly data exists)
+        triggered_count: 0,
+        completed_count: 0,
+        completion_rate: 0,
+        revenue: flow.revenue || 0,
+        orders_count: 0,
+        revenue_per_trigger: 0,
+        opens: flow.opens || 0,
+        clicks: flow.clicks || 0,
+        open_rate: flow.open_rate || 0,
+        click_rate: flow.click_rate || 0,
+        
+        // Weekly aggregation fields (will be updated if weekly data exists)
+        weeklyOpens: 0,
+        weeklyClicks: 0,
+        weeklyRevenue: 0,
+        weeklyDelivered: 0,
+        weeklyRecipients: 0,
+        averageOrderValue: 0,
+        revenuePerRecipient: 0,
+        created_at: flow.date_start
       }
     })
     
-    // Calculate rates and finalize aggregates
-    Object.values(flowAggregates).forEach((agg: any) => {
-      if (agg.recipients > 0) {
-        agg.open_rate = agg.opens / agg.recipients
-        agg.click_rate = agg.clicks / agg.recipients
-        agg.delivery_rate = agg.delivered / agg.recipients
-        agg.bounce_rate = agg.bounced / agg.recipients
-        agg.revenue_per_recipient = agg.revenue / agg.recipients
-      }
-      
-      if (agg.opens > 0) {
-        agg.click_to_open_rate = agg.clicks / agg.opens
-      }
-      
-      if (agg.conversions > 0) {
-        agg.average_order_value = agg.revenue / agg.conversions
-      }
-      
-      // Clean up temporary fields
-      delete agg.recordCount
-    })
-
-    // Add email details to each flow
-    Object.values(flowAggregates).forEach((flow: any) => {
-      // Get unique emails for this flow
-      const flowEmails = weeklyData
-        .filter((record: any) => record.flow_id === flow.flow_id)
-        .reduce((emails: any[], record: any) => {
-          const existing = emails.find(e => e.message_id === record.message_id)
-          if (!existing) {
-            emails.push({
-              message_id: record.message_id,
-              message_name: record.message_name || 'Untitled Email',
-              subject_line: record.subject_line || 'No subject',
-              opens: 0,
-              clicks: 0,
-              revenue: 0,
-              open_rate: 0,
-              click_rate: 0
-            })
-          }
-          return emails
-        }, [])
-      
-      // Aggregate performance for each email
-      flowEmails.forEach((email: any) => {
-        const emailRecords = weeklyData.filter((r: any) => 
-          r.flow_id === flow.flow_id && r.message_id === email.message_id
-        )
+    console.log(`📊 DATABASE: Initialized ${Object.keys(flowAggregates).length} flows from flow_metrics`)
+    
+    // STEP 2: Enhance with weekly data where available
+    if (weeklyData && weeklyData.length > 0) {
+      weeklyData.forEach((record: any) => {
+        const flowId = record.flow_id
         
-        email.opens = emailRecords.reduce((sum: number, r: any) => sum + (r.opens || 0), 0)
-        email.clicks = emailRecords.reduce((sum: number, r: any) => sum + (r.clicks || 0), 0)
-        email.revenue = emailRecords.reduce((sum: number, r: any) => sum + parseFloat(r.conversion_value || 0), 0)
-        
-        if (email.opens > 0) {
-          email.open_rate = (email.opens / emailRecords.reduce((sum: number, r: any) => sum + (r.recipients || 0), 0)) * 100
-          email.click_rate = (email.clicks / email.opens) * 100
+        if (flowAggregates[flowId]) {
+          // Update existing flow with weekly data
+          const existing = flowAggregates[flowId]
+          
+          // Add weekly data to existing aggregates
+          existing.weeklyOpens += record.opens || 0
+          existing.weeklyClicks += record.clicks || 0
+          existing.weeklyRevenue += record.revenue || 0
+          existing.weeklyDelivered += record.delivered || 0
+          existing.weeklyRecipients += record.recipients || 0
+          
+          // Update totals (override with weekly aggregated data)
+          existing.opens = existing.weeklyOpens
+          existing.clicks = existing.weeklyClicks
+          existing.revenue = existing.weeklyRevenue
+          existing.open_rate = existing.weeklyOpens > 0 ? (existing.weeklyClicks / existing.weeklyOpens) * 100 : 0
+          existing.click_rate = existing.weeklyClicks > 0 ? (existing.weeklyClicks / existing.weeklyOpens) * 100 : 0
+          existing.averageOrderValue = record.average_order_value || 0
+          existing.revenuePerRecipient = record.revenue_per_recipient || 0
         }
       })
-      
-      flow.emails = flowEmails
-    })
+      console.log(`📊 DATABASE: Enhanced ${Object.keys(flowAggregates).length} flows with weekly data`)
+    } else {
+      console.log(`📊 DATABASE: No weekly data available - showing flows with zero values`)
+    }
 
-    const result = Object.values(flowAggregates) as FlowMetric[]
-    console.log(`📊 DATABASE: Final result - ${result.length} flows aggregated`)
-    console.log(`📊 DATABASE: Sample result:`, result.slice(0, 1))
-    console.log(`📊 DATABASE: FlowAggregates keys:`, Object.keys(flowAggregates))
-    console.log(`📊 DATABASE: Aggregated ${weeklyData.length} weekly records into ${result.length} flows with email details for ${days} days`)
+    // Convert aggregates to array and return ALL flows (including those with 0 messages)
+    const flows = Object.values(flowAggregates)
+    console.log(`📊 DATABASE: Returning ${flows.length} total flows (including flows with 0 messages)`)
+    console.log(`📊 DATABASE: Flow breakdown:`, flows.map(f => ({ 
+      id: f.flow_id, 
+      name: f.flow_name, 
+      status: f.flow_status,
+      opens: f.opens,
+      revenue: f.revenue
+    })))
     
-    return result
+    return flows
   }
 
   static async upsertFlowMetric(metric: Omit<FlowMetric, 'id' | 'created_at' | 'updated_at'>): Promise<void> {
