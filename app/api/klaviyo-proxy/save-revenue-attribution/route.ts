@@ -84,20 +84,28 @@ export async function POST(request: NextRequest) {
     
     const dates = attributionApiData?.dates || totalApiData?.dates || []
     
-    // Extract channel data using blueprint array indices (only sum_value)
-    const emailData = attributionApiData?.data?.[1]?.measurements || { sum_value: [] }  // data[1] = EMAIL
-    const smsData = attributionApiData?.data?.[2]?.measurements || { sum_value: [] }    // data[2] = SMS
-    const totalDataRecord = totalApiData?.data?.[0]?.measurements || { sum_value: [] }  // data[0] = TOTAL
+    // Extract channel data by GROUPING KEY (not array index) - Flow LUXE approach
+    console.log('🔍 BLUEPRINT: Raw attribution API data structure:', JSON.stringify(attributionApiData?.data, null, 2))
+    
+    const emailDataGroup = attributionApiData?.data?.find(d => d.groupings?.$attributed_channel === 'email')
+    const smsDataGroup = attributionApiData?.data?.find(d => d.groupings?.$attributed_channel === 'sms')
+    const totalDataRecord = totalApiData?.data?.[0]?.measurements || { sum_value: [] }
+    
+    const emailData = emailDataGroup?.measurements || { sum_value: [] }
+    const smsData = smsDataGroup?.measurements || { sum_value: [] }
 
-    console.log('📊 BLUEPRINT: Channel data extracted:', {
+    console.log('📊 BLUEPRINT: Channel data extracted by groupings:', {
       datesCount: dates.length,
+      emailGroupFound: !!emailDataGroup,
+      smsGroupFound: !!smsDataGroup,
       emailValues: emailData.sum_value?.length || 0,
       smsValues: smsData.sum_value?.length || 0,
       totalValues: totalDataRecord.sum_value?.length || 0,
       sampleDate: dates[0],
       sampleEmail: emailData.sum_value?.[0] || 0,
       sampleSms: smsData.sum_value?.[0] || 0,
-      sampleTotal: totalDataRecord.sum_value?.[0] || 0
+      sampleTotal: totalDataRecord.sum_value?.[0] || 0,
+      allGroupings: attributionApiData?.data?.map(d => d.groupings) || []
     })
     // Process parallel arrays using Flow LUXE blueprint approach
     const dateMap = new Map()
@@ -165,14 +173,33 @@ export async function POST(request: NextRequest) {
     console.log(`✅ BLUEPRINT: Successfully saved ${savedCount} revenue attribution records for client ${client!.brand_slug}`)
     console.log(`📊 BLUEPRINT: Email/SMS attribution should now be visible on dashboard!`)
     
+    // Calculate channel breakdown for response
+    const emailRecords = Array.from(dateMap.values()).filter(d => d.email_revenue > 0).length
+    const smsRecords = Array.from(dateMap.values()).filter(d => d.sms_revenue > 0).length
+    
+    // Debug logging for channel breakdown
+    console.log('📊 FINAL BREAKDOWN:', {
+      emailRecords,
+      smsRecords, 
+      totalRecords: savedCount,
+      sampleData: Array.from(dateMap.values()).slice(0, 3)
+    })
+    
     return NextResponse.json({ 
       success: true,
       message: `Successfully synced ${savedCount} days of revenue attribution data using Flow LUXE blueprint approach`,
       savedCount,
       channelBreakdown: {
-        emailRecords: Array.from(dateMap.values()).filter(d => d.email_revenue > 0).length,
-        smsRecords: Array.from(dateMap.values()).filter(d => d.sms_revenue > 0).length,
+        emailRecords,
+        smsRecords,
         totalRecords: savedCount
+      },
+      debug: {
+        emailGroupFound: !!emailDataGroup,
+        smsGroupFound: !!smsDataGroup,
+        sampleEmailRevenue: emailData.sum_value?.[0] || 0,
+        sampleSmsRevenue: smsData.sum_value?.[0] || 0,
+        allGroupings: attributionApiData?.data?.map(d => d.groupings) || []
       },
       dateRange: { startDate: actualStartDate, endDate: actualEndDate }
     })
