@@ -87,8 +87,8 @@ export async function POST(request: NextRequest) {
     // Extract channel data by GROUPING KEY (not array index) - Flow LUXE approach
     console.log('🔍 BLUEPRINT: Raw attribution API data structure:', JSON.stringify(attributionApiData?.data, null, 2))
     
-    const emailDataGroup = attributionApiData?.data?.find(d => d.groupings?.$attributed_channel === 'email')
-    const smsDataGroup = attributionApiData?.data?.find(d => d.groupings?.$attributed_channel === 'sms')
+    const emailDataGroup = attributionApiData?.data?.find((d: any) => d.groupings?.$attributed_channel === 'email')
+    const smsDataGroup = attributionApiData?.data?.find((d: any) => d.groupings?.$attributed_channel === 'sms')
     const totalDataRecord = totalApiData?.data?.[0]?.measurements || { sum_value: [] }
     
     const emailData = emailDataGroup?.measurements || { sum_value: [] }
@@ -105,7 +105,7 @@ export async function POST(request: NextRequest) {
       sampleEmail: emailData.sum_value?.[0] || 0,
       sampleSms: smsData.sum_value?.[0] || 0,
       sampleTotal: totalDataRecord.sum_value?.[0] || 0,
-      allGroupings: attributionApiData?.data?.map(d => d.groupings) || []
+      allGroupings: attributionApiData?.data?.map((d: any) => d.groupings) || []
     })
     // Process parallel arrays using Flow LUXE blueprint approach
     const dateMap = new Map()
@@ -199,7 +199,7 @@ export async function POST(request: NextRequest) {
         smsGroupFound: !!smsDataGroup,
         sampleEmailRevenue: emailData.sum_value?.[0] || 0,
         sampleSmsRevenue: smsData.sum_value?.[0] || 0,
-        allGroupings: attributionApiData?.data?.map(d => d.groupings) || []
+        allGroupings: attributionApiData?.data?.map((d: any) => d.groupings) || []
       },
       dateRange: { startDate: actualStartDate, endDate: actualEndDate }
     })
