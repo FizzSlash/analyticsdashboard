@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 const AIRTABLE_BASE_ID = process.env.AIRTABLE_BASE_ID
 const AIRTABLE_TOKEN = process.env.AIRTABLE_TOKEN
 const AIRTABLE_TABLE_NAME = process.env.AIRTABLE_TABLE_NAME || 'Retention'  // Correct table name from discovery
+const AIRTABLE_TABLE_ID = 'tblG1qADMDrBjuX5R'  // Main retention table ID
 
 export async function POST(request: NextRequest) {
   try {
@@ -159,7 +160,7 @@ export async function POST(request: NextRequest) {
     console.log('📤 AIRTABLE SYNC: Sending record to Airtable:', JSON.stringify(airtableRecord, null, 2))
 
     // Send to Airtable API (using table ID for reliability)
-    const airtableUrl = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/tblG1qADMDrBjuX5R`
+    const airtableUrl = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${AIRTABLE_TABLE_ID}`
     const response = await fetch(airtableUrl, {
       method: 'POST',
       headers: {
@@ -249,7 +250,7 @@ export async function GET(request: NextRequest) {
     
     try {
       // Test connection by fetching one record from Retention table
-      const testUrl = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/tblG1qADMDrBjuX5R?maxRecords=1`
+      const testUrl = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${AIRTABLE_TABLE_ID}?maxRecords=1`
       const response = await fetch(testUrl, {
         headers: {
           'Authorization': `Bearer ${AIRTABLE_TOKEN}`
@@ -325,7 +326,7 @@ export async function DELETE(request: NextRequest) {
     console.log('🗑️ AIRTABLE DELETE: Deleting record:', airtable_record_id)
 
     // Delete from Airtable (using table ID for reliability)
-    const airtableUrl = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/tblG1qADMDrBjuX5R/${airtable_record_id}`
+    const airtableUrl = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${AIRTABLE_TABLE_ID}/${airtable_record_id}`
     const response = await fetch(airtableUrl, {
       method: 'DELETE',
       headers: {
