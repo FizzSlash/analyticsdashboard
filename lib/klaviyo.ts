@@ -637,12 +637,16 @@ export class KlaviyoAPI {
     return { data: results }
   }
 
-  // Flow Analytics Report - SERIES APPROACH (Daily Data for 365 Days)
+  // Flow Analytics Report - SERIES APPROACH (Dynamic 365 Days)
   async getFlowAnalytics(flowIds: string[], conversionMetricId: string | null = null) {
-    console.log(`🔄 FLOWS: Calling Flow Series Report API for ${flowIds.length} flows - DAILY SERIES`)
+    console.log(`🔄 FLOWS: Calling Flow Series Report API for ${flowIds.length} flows - DYNAMIC SERIES`)
     
-    console.log(`📅 FLOWS: Using last_365_days timeframe for daily series data`)
-    console.log(`📊 FLOWS: SERIES CALL - Getting daily analytics for ALL ${flowIds.length} flows`)
+    // Calculate dynamic date range (last 365 days from today)
+    const endDate = new Date().toISOString().split('T')[0]
+    const startDate = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+    
+    console.log(`📅 FLOWS: Using DYNAMIC date range: ${startDate} to ${endDate}`)
+    console.log(`📊 FLOWS: SERIES CALL - Getting weekly analytics for ALL ${flowIds.length} flows`)
     console.log(`🎯 FLOWS: Using conversion metric ID: ${conversionMetricId || 'none'}`)
     
     try {
@@ -664,8 +668,11 @@ export class KlaviyoAPI {
               'spam_complaints', 'spam_complaint_rate',
               'average_order_value'
             ],
-            timeframe: { key: 'last_12_months' },
-            interval: 'weekly', // Weekly interval for 12 months
+            timeframe: { 
+              start: startDate, 
+              end: endDate 
+            }, // DYNAMIC dates instead of static key
+            interval: 'weekly', // Weekly interval for 365 days
             filter: `contains-any(flow_id,["${flowIds.join('","')}"])` // BATCH ALL FLOWS
           }
         }
