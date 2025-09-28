@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { CampaignBuilder } from '../portal/campaign-builder'
 import { ABTestManager } from '../portal/ab-test-manager'
 import { CampaignRequests } from '../portal/campaign-requests'
+import { LiveEditableCalendar } from '../portal/live-editable-calendar'
 import { 
   Plus, 
   Mail,
@@ -30,7 +31,7 @@ interface PortalManagementProps {
   clients: any[]
 }
 
-type ManagementTab = 'overview' | 'campaigns' | 'flows' | 'abtests' | 'requests' | 'templates'
+type ManagementTab = 'overview' | 'livecalendar' | 'campaigns' | 'flows' | 'abtests' | 'requests' | 'templates'
 type ManagementView = 'dashboard' | 'campaign-builder' | 'flow-builder'
 
 export function PortalManagement({ agency, clients }: PortalManagementProps) {
@@ -41,6 +42,7 @@ export function PortalManagement({ agency, clients }: PortalManagementProps) {
 
   const managementTabs = [
     { id: 'overview', label: 'Portal Overview', icon: BarChart3 },
+    { id: 'livecalendar', label: 'Live Calendar', icon: Calendar },
     { id: 'campaigns', label: 'Campaign Creator', icon: Mail },
     { id: 'flows', label: 'Flow Creator', icon: Zap },
     { id: 'abtests', label: 'A/B Test Manager', icon: TestTube },
@@ -52,57 +54,57 @@ export function PortalManagement({ agency, clients }: PortalManagementProps) {
     <div className="space-y-6">
       {/* Portal Statistics */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card className="bg-white/5 border-white/10">
+        <Card className="bg-white border border-gray-200 shadow-sm">
           <CardContent className="p-6">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-orange-500/20 rounded-lg">
-                <Clock className="h-5 w-5 text-orange-400" />
+              <div className="p-2 bg-orange-100 rounded-lg">
+                <Clock className="h-5 w-5 text-orange-600" />
               </div>
               <div>
-                <p className="text-white/60 text-sm">Pending Approvals</p>
-                <p className="text-white text-2xl font-bold">7</p>
+                <p className="text-gray-600 text-sm">Pending Approvals</p>
+                <p className="text-gray-900 text-2xl font-bold">7</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-white/5 border-white/10">
+        <Card className="bg-white border border-gray-200 shadow-sm">
           <CardContent className="p-6">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-500/20 rounded-lg">
-                <FileText className="h-5 w-5 text-blue-400" />
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <FileText className="h-5 w-5 text-blue-600" />
               </div>
               <div>
-                <p className="text-white/60 text-sm">Active Requests</p>
-                <p className="text-white text-2xl font-bold">12</p>
+                <p className="text-gray-600 text-sm">Active Requests</p>
+                <p className="text-gray-900 text-2xl font-bold">12</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-white/5 border-white/10">
+        <Card className="bg-white border border-gray-200 shadow-sm">
           <CardContent className="p-6">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-purple-500/20 rounded-lg">
-                <TestTube className="h-5 w-5 text-purple-400" />
+              <div className="p-2 bg-purple-100 rounded-lg">
+                <TestTube className="h-5 w-5 text-purple-600" />
               </div>
               <div>
-                <p className="text-white/60 text-sm">Running Tests</p>
-                <p className="text-white text-2xl font-bold">3</p>
+                <p className="text-gray-600 text-sm">Running Tests</p>
+                <p className="text-gray-900 text-2xl font-bold">3</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-white/5 border-white/10">
+        <Card className="bg-white border border-gray-200 shadow-sm">
           <CardContent className="p-6">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-green-500/20 rounded-lg">
-                <Send className="h-5 w-5 text-green-400" />
+              <div className="p-2 bg-green-100 rounded-lg">
+                <Send className="h-5 w-5 text-green-600" />
               </div>
               <div>
-                <p className="text-white/60 text-sm">Campaigns Sent</p>
-                <p className="text-white text-2xl font-bold">43</p>
+                <p className="text-gray-600 text-sm">Campaigns Sent</p>
+                <p className="text-gray-900 text-2xl font-bold">43</p>
               </div>
             </div>
           </CardContent>
@@ -110,28 +112,28 @@ export function PortalManagement({ agency, clients }: PortalManagementProps) {
       </div>
 
       {/* Client Portal Activity */}
-      <Card className="bg-white/5 border-white/10">
+      <Card className="bg-white border border-gray-200 shadow-sm">
         <CardHeader>
-          <CardTitle className="text-white">Recent Client Activity</CardTitle>
+          <CardTitle className="text-gray-900">Recent Client Activity</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
             {clients.slice(0, 5).map(client => (
-              <div key={client.id} className="flex items-center justify-between p-4 bg-white/5 rounded-lg">
+              <div key={client.id} className="flex items-center justify-between p-4 bg-gray-50 border border-gray-200 rounded-lg">
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-sm font-semibold">
                     {client.brand_name.charAt(0)}
                   </div>
                   <div>
-                    <h4 className="text-white font-medium">{client.brand_name}</h4>
-                    <p className="text-white/60 text-sm">2 pending approvals • Last activity 3h ago</p>
+                    <h4 className="text-gray-900 font-medium">{client.brand_name}</h4>
+                    <p className="text-gray-600 text-sm">2 pending approvals • Last activity 3h ago</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="px-2 py-1 bg-orange-500/20 text-orange-400 text-xs rounded-full">
+                  <span className="px-2 py-1 bg-orange-100 text-orange-600 text-xs rounded-full border border-orange-200">
                     Needs Review
                   </span>
-                  <button className="text-white/60 hover:text-white">
+                  <button className="text-gray-400 hover:text-gray-600">
                     <ArrowRight className="h-4 w-4" />
                   </button>
                 </div>
@@ -143,17 +145,17 @@ export function PortalManagement({ agency, clients }: PortalManagementProps) {
 
       {/* Quick Actions for Admins */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="bg-white/5 border-white/10 hover:bg-white/10 transition-colors cursor-pointer">
+        <Card className="bg-white border border-gray-200 shadow-sm hover:shadow-md transition-shadow cursor-pointer">
           <CardHeader className="pb-3">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-500/20 rounded-lg">
-                <Plus className="h-5 w-5 text-blue-400" />
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <Plus className="h-5 w-5 text-blue-600" />
               </div>
-              <CardTitle className="text-white text-lg">Create Campaign</CardTitle>
+              <CardTitle className="text-gray-900 text-lg">Create Campaign</CardTitle>
             </div>
           </CardHeader>
           <CardContent>
-            <p className="text-white/60 text-sm mb-4">
+            <p className="text-gray-600 text-sm mb-4">
               Create new campaigns for client approval
             </p>
             <button 
@@ -165,17 +167,17 @@ export function PortalManagement({ agency, clients }: PortalManagementProps) {
           </CardContent>
         </Card>
 
-        <Card className="bg-white/5 border-white/10 hover:bg-white/10 transition-colors cursor-pointer">
+        <Card className="bg-white border border-gray-200 shadow-sm hover:shadow-md transition-shadow cursor-pointer">
           <CardHeader className="pb-3">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-purple-500/20 rounded-lg">
-                <TestTube className="h-5 w-5 text-purple-400" />
+              <div className="p-2 bg-purple-100 rounded-lg">
+                <TestTube className="h-5 w-5 text-purple-600" />
               </div>
-              <CardTitle className="text-white text-lg">Manage A/B Tests</CardTitle>
+              <CardTitle className="text-gray-900 text-lg">Manage A/B Tests</CardTitle>
             </div>
           </CardHeader>
           <CardContent>
-            <p className="text-white/60 text-sm mb-4">
+            <p className="text-gray-600 text-sm mb-4">
               Create and monitor A/B tests across clients
             </p>
             <button 
@@ -187,17 +189,17 @@ export function PortalManagement({ agency, clients }: PortalManagementProps) {
           </CardContent>
         </Card>
 
-        <Card className="bg-white/5 border-white/10 hover:bg-white/10 transition-colors cursor-pointer">
+        <Card className="bg-white border border-gray-200 shadow-sm hover:shadow-md transition-shadow cursor-pointer">
           <CardHeader className="pb-3">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-green-500/20 rounded-lg">
-                <FileText className="h-5 w-5 text-green-400" />
+              <div className="p-2 bg-green-100 rounded-lg">
+                <FileText className="h-5 w-5 text-green-600" />
               </div>
-              <CardTitle className="text-white text-lg">View Requests</CardTitle>
+              <CardTitle className="text-gray-900 text-lg">View Requests</CardTitle>
             </div>
           </CardHeader>
           <CardContent>
-            <p className="text-white/60 text-sm mb-4">
+            <p className="text-gray-600 text-sm mb-4">
               Review and process client campaign requests
             </p>
             <button 
@@ -208,6 +210,31 @@ export function PortalManagement({ agency, clients }: PortalManagementProps) {
             </button>
           </CardContent>
         </Card>
+      </div>
+
+      {/* Live Calendar Feature Highlight */}
+      <Card className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 shadow-sm">
+        <CardHeader>
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-blue-100 rounded-lg">
+              <Calendar className="h-5 w-5 text-blue-600" />
+            </div>
+            <CardTitle className="text-gray-900">🔴 Live Calendar Builder</CardTitle>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <p className="text-gray-700 mb-4">
+            Build campaign calendars live during client calls. Add, edit, and schedule campaigns in real-time with instant client collaboration.
+          </p>
+          <button 
+            onClick={() => setActiveTab('livecalendar')}
+            className="bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded-lg font-medium transition-colors flex items-center gap-2"
+          >
+            <Calendar className="h-4 w-4" />
+            Open Live Calendar
+          </button>
+        </CardContent>
+      </Card>
       </div>
     </div>
   )
@@ -334,13 +361,13 @@ export function PortalManagement({ agency, clients }: PortalManagementProps) {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <Card className="bg-white/5 border-white/10">
+      <Card className="bg-white border border-gray-200 shadow-sm">
         <CardHeader>
           <div className="flex justify-between items-center">
-            <CardTitle className="text-white">Portal Management</CardTitle>
+            <CardTitle className="text-gray-900">Portal Management</CardTitle>
             {selectedClient && (
-              <div className="text-white/60 text-sm">
-                Active Client: <span className="text-white font-medium">{selectedClient.brand_name}</span>
+              <div className="text-gray-600 text-sm">
+                Active Client: <span className="text-gray-900 font-medium">{selectedClient.brand_name}</span>
               </div>
             )}
           </div>
@@ -358,10 +385,10 @@ export function PortalManagement({ agency, clients }: PortalManagementProps) {
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id as ManagementTab)}
                   className={`
-                    flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200
+                    flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 border
                     ${activeTab === tab.id 
-                      ? 'bg-white/20 text-white shadow-lg' 
-                      : 'text-white/70 hover:text-white hover:bg-white/10'
+                      ? 'bg-blue-600 text-white shadow-lg border-blue-600' 
+                      : 'bg-white text-gray-700 hover:bg-gray-50 border-gray-300'
                     }
                   `}
                 >
@@ -377,6 +404,7 @@ export function PortalManagement({ agency, clients }: PortalManagementProps) {
             {!loading && (
               <>
                 {activeTab === 'overview' && renderOverviewTab()}
+                {activeTab === 'livecalendar' && <LiveEditableCalendar client={selectedClient} />}
                 {activeTab === 'campaigns' && renderCampaignCreatorTab()}
                 {activeTab === 'flows' && renderFlowCreatorTab()}
                 {activeTab === 'abtests' && <ABTestManager client={selectedClient} />}
