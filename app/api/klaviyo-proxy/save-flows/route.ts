@@ -26,6 +26,14 @@ export async function POST(request: NextRequest) {
         // Save flow message weekly performance data to flow_message_metrics
     for (const flowDetail of flowDetails) {
       try {
+        // Skip draft flows - only process active/live flows (match frontend filter)
+        if (!['active', 'live'].includes(flowDetail.flow_status)) {
+          console.log(`⏭️ SAVE FLOWS: Skipping ${flowDetail.flow_status} flow: ${flowDetail.flow_name}`)
+          results.total-- // Don't count skipped flows in total
+          continue
+        }
+        
+        console.log(`✅ SAVE FLOWS: Processing ${flowDetail.flow_status} flow: ${flowDetail.flow_name}`)
         // Save weekly data to flow_message_metrics table (per message, per week)
         if (flowDetail.weeklyData && Array.isArray(flowDetail.weeklyData)) {
           for (const weekData of flowDetail.weeklyData) {

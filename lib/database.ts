@@ -214,12 +214,13 @@ export class DatabaseService {
     cutoffDate.setDate(cutoffDate.getDate() - days)
     console.log(`📊 DATABASE: Cutoff date: ${cutoffDate.toISOString().split('T')[0]}`)
 
-    // Get ALL flows from flow_metrics (includes flows with 0 messages) + weekly data
+    // Get ONLY ACTIVE/LIVE flows from flow_metrics (exclude drafts) + weekly data
     const [flowMetaResult, weeklyResult] = await Promise.all([
       supabaseAdmin
         .from('flow_metrics')
         .select('flow_id, flow_name, flow_status, flow_type, opens, clicks, revenue, open_rate, click_rate, date_start')
         .eq('client_id', clientId)
+        .in('flow_status', ['active', 'live'])  // Match frontend filter: active OR live, no drafts
         .order('date_start', { ascending: false }),
       supabaseAdmin
         .from('flow_message_metrics')
