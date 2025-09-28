@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { TimeframeSelector } from '@/components/ui/timeframe-selector'
+import { ViewToggle, type ViewMode } from '@/components/ui/view-toggle'
+import { PortalDashboard } from '@/components/portal/portal-dashboard'
 import { 
   LineChart, 
   Line, 
@@ -43,6 +45,7 @@ interface ModernDashboardProps {
 type TabType = 'dashboard' | 'campaigns' | 'flows' | 'subject-lines' | 'list-growth' | 'deliverability'
 
 export function ModernDashboard({ client, data: initialData }: ModernDashboardProps) {
+  const [viewMode, setViewMode] = useState<ViewMode>('analytics')
   const [activeTab, setActiveTab] = useState<TabType>('dashboard')
   const [campaignTimeframe, setCampaignTimeframe] = useState(30) // Default to 30 days for campaigns
   const [flowTimeframe, setFlowTimeframe] = useState(90) // Default to 3 months for flows  
@@ -2544,37 +2547,48 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold text-white">{client?.brand_name || 'Dashboard'}</h1>
-              <p className="text-white/60 text-sm">Analytics Dashboard</p>
+              <p className="text-white/60 text-sm">
+                {viewMode === 'analytics' ? 'Analytics Dashboard' : 'Campaign Portal'}
+              </p>
             </div>
-            <TimeframeSelector 
-              selectedTimeframe={timeframe}
-              onTimeframeChange={(days: number) => {
-                console.log(`🎯 TimeframeSelector changed: ${days} days (activeTab: ${activeTab})`)
-                if (activeTab === 'campaigns' || activeTab === 'subject-lines') {
-                  console.log(`📅 Setting campaignTimeframe: ${campaignTimeframe} → ${days}`)
-                  setCampaignTimeframe(days)
-                } else if (activeTab === 'flows') {
-                  console.log(`📅 Setting flowTimeframe: ${flowTimeframe} → ${days}`)
-                  setFlowTimeframe(days)
-                } else {
-                  console.log(`📅 Setting campaignTimeframe (default): ${campaignTimeframe} → ${days}`)
-                  setCampaignTimeframe(days)
-                }
-              }}
-              mode={activeTab === 'flows' ? 'flow' : 'campaign'}
-            />
+            <div className="flex items-center gap-4">
+              <ViewToggle 
+                currentMode={viewMode}
+                onModeChange={setViewMode}
+              />
+              {viewMode === 'analytics' && (
+                <TimeframeSelector 
+                  selectedTimeframe={timeframe}
+                  onTimeframeChange={(days: number) => {
+                    console.log(`🎯 TimeframeSelector changed: ${days} days (activeTab: ${activeTab})`)
+                    if (activeTab === 'campaigns' || activeTab === 'subject-lines') {
+                      console.log(`📅 Setting campaignTimeframe: ${campaignTimeframe} → ${days}`)
+                      setCampaignTimeframe(days)
+                    } else if (activeTab === 'flows') {
+                      console.log(`📅 Setting flowTimeframe: ${flowTimeframe} → ${days}`)
+                      setFlowTimeframe(days)
+                    } else {
+                      console.log(`📅 Setting campaignTimeframe (default): ${campaignTimeframe} → ${days}`)
+                      setCampaignTimeframe(days)
+                    }
+                  }}
+                  mode={activeTab === 'flows' ? 'flow' : 'campaign'}
+                />
+              )}
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Navigation Tabs */}
-      <div className="bg-white/5 backdrop-blur-sm border-b border-white/10">
-        <div className="max-w-7xl mx-auto px-6">
-          <nav className="flex space-x-8">
-            {tabs.map((tab: any) => {
-              const Icon = tab.icon
-              return (
-                <button
+      {/* Navigation Tabs - Only show in Analytics mode */}
+      {viewMode === 'analytics' && (
+        <div className="bg-white/5 backdrop-blur-sm border-b border-white/10">
+          <div className="max-w-7xl mx-auto px-6">
+            <nav className="flex space-x-8">
+              {tabs.map((tab: any) => {
+                const Icon = tab.icon
+                return (
+                  <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id as TabType)}
                   className={`flex items-center gap-2 px-4 py-4 border-b-2 transition-all duration-200 ${
@@ -2591,6 +2605,7 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
           </nav>
         </div>
       </div>
+      )}
 
       {/* Content */}
       <div className="max-w-7xl mx-auto px-6 py-8">
@@ -2620,12 +2635,20 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
         
         {!loading && (
           <>
-            {activeTab === 'dashboard' && renderOverviewTab()}
-            {activeTab === 'campaigns' && renderCampaignsTab()}
-            {activeTab === 'flows' && renderFlowsTab()}
-            {activeTab === 'subject-lines' && renderSubjectLinesTab()}
-            {activeTab === 'list-growth' && renderListGrowthTab()}
-            {activeTab === 'deliverability' && renderDeliverabilityTab()}
+            {viewMode === 'analytics' ? (
+              // Analytics Mode - Original Dashboard Content
+              <>
+                {activeTab === 'dashboard' && renderOverviewTab()}
+                {activeTab === 'campaigns' && renderCampaignsTab()}
+                {activeTab === 'flows' && renderFlowsTab()}
+                {activeTab === 'subject-lines' && renderSubjectLinesTab()}
+                {activeTab === 'list-growth' && renderListGrowthTab()}
+                {activeTab === 'deliverability' && renderDeliverabilityTab()}
+              </>
+            ) : (
+              // Portal Mode - Campaign Management Interface
+              <PortalDashboard client={client} data={data} />
+            )}
           </>
         )}
       </div>
