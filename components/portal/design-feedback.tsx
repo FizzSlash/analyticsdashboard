@@ -4,19 +4,16 @@ import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { 
   Image,
-  ThumbsUp,
-  ThumbsDown,
   MessageSquare,
   Eye,
   Download,
   ExternalLink,
-  Calendar,
   User,
   Star,
-  Heart,
   X,
-  Upload
+  Edit
 } from 'lucide-react'
+import { ImageAnnotator } from './image-annotator'
 
 interface DesignFile {
   id: string
@@ -36,10 +33,9 @@ interface DesignItem {
   created_date: Date
   status: string
   assignee?: string
-  likes: number
   client_feedback?: string
   agency_feedback?: string
-  user_has_liked: boolean
+  annotations?: any[] // Design annotations from database
 }
 
 interface DesignFeedbackProps {
@@ -51,6 +47,7 @@ export function DesignFeedback({ client, userRole }: DesignFeedbackProps) {
   const [designs, setDesigns] = useState<DesignItem[]>([])
   const [selectedDesign, setSelectedDesign] = useState<DesignItem | null>(null)
   const [viewingImage, setViewingImage] = useState<DesignFile | null>(null)
+  const [annotatingImage, setAnnotatingImage] = useState<{ file: DesignFile; design: DesignItem } | null>(null)
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
@@ -79,10 +76,9 @@ export function DesignFeedback({ client, userRole }: DesignFeedbackProps) {
             created_date: new Date(item.last_sync || Date.now()),
             status: item.status,
             assignee: item.assignee,
-            likes: Math.floor(Math.random() * 12), // TODO: Get from database
             client_feedback: item.client_notes || '',
             agency_feedback: item.notes || '',
-            user_has_liked: false // TODO: Get from database
+            annotations: [] // TODO: Load annotations from database
           }))
           .sort((a, b) => b.created_date.getTime() - a.created_date.getTime()) // Most recent first
         
@@ -96,19 +92,19 @@ export function DesignFeedback({ client, userRole }: DesignFeedbackProps) {
     }
   }
 
-  const toggleLike = async (designId: string) => {
+  const addAnnotation = async (designId: string, fileId: string, annotation: any) => {
+    // TODO: Save annotation to database
+    console.log('💬 Added annotation to design:', designId, fileId, annotation)
+    
+    // Update local state
     setDesigns(prev => prev.map(design => 
       design.id === designId 
         ? { 
             ...design, 
-            likes: design.user_has_liked ? design.likes - 1 : design.likes + 1,
-            user_has_liked: !design.user_has_liked
+            annotations: [...(design.annotations || []), annotation]
           }
         : design
     ))
-    
-    // TODO: Sync like status to database
-    console.log('👍 Toggled like for design:', designId)
   }
 
   const addFeedback = async (designId: string, feedback: string) => {
@@ -207,7 +203,6 @@ export function DesignFeedback({ client, userRole }: DesignFeedbackProps) {
                       <div 
                         key={file.id}
                         className="relative bg-white/10 rounded-lg overflow-hidden cursor-pointer hover:bg-white/20 transition-colors"
-                        onClick={() => setViewingImage(file)}
                       >
                         <img 
                           src={file.thumbnail_url}
@@ -218,11 +213,29 @@ export function DesignFeedback({ client, userRole }: DesignFeedbackProps) {
                             (e.target as HTMLImageElement).style.display = 'none'
                           }}
                         />
-                        <div className="absolute inset-0 bg-black/0 hover:bg-black/20 transition-colors flex items-center justify-center">
-                          <Eye className="h-6 w-6 text-white/80 opacity-0 hover:opacity-100 transition-opacity" />
+                        <div className="absolute inset-0 bg-black/0 hover:bg-black/20 transition-colors flex items-center justify-center gap-2">
+                          <button
+                            onClick={() => setViewingImage(file)}
+                            className="bg-white/20 hover:bg-white/30 text-white p-2 rounded-lg transition-colors"
+                            title="View full size"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => setAnnotatingImage({ file, design })}
+                            className="bg-blue-500/60 hover:bg-blue-500/80 text-white p-2 rounded-lg transition-colors"
+                            title="Add feedback on design"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </button>
                         </div>
                         <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white/90 text-xs p-2">
                           {file.filename}
+                          {design.annotations && design.annotations.length > 0 && (
+                            <span className="ml-2 bg-blue-500/60 px-1 rounded">
+                              {design.annotations.length} comments
+                            </span>
+                          )}
                         </div>
                       </div>
                     ))}
@@ -234,54 +247,46 @@ export function DesignFeedback({ client, userRole }: DesignFeedbackProps) {
                     )}
                   </div>
 
-                  {/* Feedback Section */}
-                  <div className="space-y-2">
-                    {/* Like Button */}
-                    <div className="flex items-center justify-between">
-                      <button
-                        onClick={() => toggleLike(design.id)}
-                        className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
-                          design.user_has_liked 
-                            ? 'bg-red-500/30 text-red-300' 
-                            : 'bg-white/10 text-white/70 hover:bg-white/20'
-                        }`}
-                      >
-                        <Heart className={`h-4 w-4 ${design.user_has_liked ? 'fill-current' : ''}`} />
-                        <span className="text-sm">{design.likes}</span>
-                      </button>
-                      
-                      <div className="flex gap-2">
-                        {design.copy_link && (
-                          <a
-                            href={design.copy_link}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-white/60 hover:text-white/80 transition-colors"
-                            title="View copy document"
-                          >
-                            <ExternalLink className="h-4 w-4" />
-                          </a>
-                        )}
-                        
-                        <button
-                          onClick={() => setSelectedDesign(design)}
-                          className="text-white/60 hover:text-white/80 transition-colors"
-                          title="Add feedback"
+                  {/* Actions */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex gap-2">
+                      {design.copy_link && (
+                        <a
+                          href={design.copy_link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="bg-white/10 hover:bg-white/20 text-white/80 px-2 py-1 rounded text-xs flex items-center gap-1 transition-colors"
+                          title="View copy document"
                         >
-                          <MessageSquare className="h-4 w-4" />
-                        </button>
-                      </div>
+                          <ExternalLink className="h-3 w-3" />
+                          Copy
+                        </a>
+                      )}
+                      
+                      <button
+                        onClick={() => setSelectedDesign(design)}
+                        className="bg-white/10 hover:bg-white/20 text-white/80 px-2 py-1 rounded text-xs flex items-center gap-1 transition-colors"
+                        title="View details"
+                      >
+                        <MessageSquare className="h-3 w-3" />
+                        Details
+                      </button>
                     </div>
-
-                    {/* Latest Feedback Preview */}
-                    {(design.client_feedback || design.agency_feedback) && (
-                      <div className="bg-white/5 rounded-lg p-2">
-                        <p className="text-white/70 text-xs line-clamp-2">
-                          💬 {design.client_feedback || design.agency_feedback}
-                        </p>
-                      </div>
-                    )}
+                    
+                    <div className="text-white/60 text-xs">
+                      {design.annotations?.length || 0} comments
+                    </div>
                   </div>
+
+                  {/* Latest Feedback Preview */}
+                  {(design.client_feedback || design.agency_feedback) && (
+                    <div className="bg-white/5 rounded-lg p-2">
+                      <p className="text-white/70 text-xs line-clamp-2">
+                        💬 {design.client_feedback || design.agency_feedback}
+                      </p>
+                    </div>
+                  )}
+                </div>
 
                   {/* Assignee */}
                   {design.assignee && (
@@ -465,6 +470,23 @@ export function DesignFeedback({ client, userRole }: DesignFeedbackProps) {
         </div>
       )}
 
+      {/* Image Annotator Modal */}
+      {annotatingImage && (
+        <ImageAnnotator
+          imageUrl={annotatingImage.file.url}
+          filename={annotatingImage.file.filename}
+          annotations={annotatingImage.design.annotations || []}
+          userRole={userRole}
+          userName={userRole === 'agency_admin' ? 'Agency Team' : 'Client'}
+          onAddAnnotation={(annotation) => addAnnotation(annotatingImage.design.id, annotatingImage.file.id, annotation)}
+          onUpdateAnnotation={(id, updates) => {
+            // TODO: Update annotation in database
+            console.log('Updated annotation:', id, updates)
+          }}
+          onClose={() => setAnnotatingImage(null)}
+        />
+      )}
+
       {/* Info Card */}
       <Card className="bg-white/5 border-white/10">
         <CardContent className="p-4">
@@ -474,9 +496,9 @@ export function DesignFeedback({ client, userRole }: DesignFeedbackProps) {
               <span className="font-medium text-white">Design Collaboration</span>
               <p className="text-white/70 text-sm mt-1">
                 • View all recent designs attached to campaigns and flows<br/>
-                • Like designs to show appreciation<br/>
-                • Add feedback directly from the portal<br/>
-                • {userRole === 'client_user' ? 'Provide client feedback on designs' : 'See client reactions and feedback'}
+                • Click "Add Feedback" to annotate directly on designs<br/>
+                • Leave comments at specific locations on the image<br/>
+                • {userRole === 'client_user' ? 'Provide detailed feedback on specific design elements' : 'Review all client feedback and design annotations'}
               </p>
             </div>
           </div>

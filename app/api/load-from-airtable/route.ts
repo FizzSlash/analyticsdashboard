@@ -202,19 +202,6 @@ function extractNumEmails(notes: string): number {
 }
 
 function mapAirtableStageToStatus(stage: string): string {
-  const stageMap: Record<string, string> = {
-    'Content Strategy': 'draft',
-    'Copy': 'copy',
-    'Copy QA': 'review',
-    'Design': 'design',
-    'Design QA': 'review',
-    'Ready For Client Approval': 'ready_for_client_approval',
-    'Client Approval': 'ready_for_client_approval',
-    'Approved': 'approved',
-    'Client Revisions': 'revisions',
-    'Ready For Schedule': 'scheduled',
-    'Ready For Imp QA': 'review',
-    'Scheduled - Close': 'live'
-  }
-  return stageMap[stage] || 'draft'
+  // Return the EXACT Airtable stage - don't transform it
+  return stage || 'Content Strategy'
 }

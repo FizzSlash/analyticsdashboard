@@ -22,7 +22,7 @@ interface Flow {
   id: string
   title: string
   flow_type: 'welcome' | 'abandoned_cart' | 'win_back' | 'post_purchase' | 'browse_abandon' | 'custom'
-  status: 'draft' | 'copy' | 'design' | 'ready_for_client_approval' | 'approved' | 'live'
+  status: string // Use actual Airtable stages
   client: string
   description: string
   trigger_criteria: string
@@ -87,55 +87,7 @@ export function FlowProgressTracker({ client, userRole, canEdit, canCreate, canA
   }
 
   const generateDemoFlows = (): Flow[] => [
-    {
-      id: 'flow1',
-      title: 'Welcome Series',
-      flow_type: 'welcome',
-      status: 'ready_for_client_approval',
-      client: client.brand_name,
-      description: '5-email welcome series for new subscribers',
-      trigger_criteria: 'Subscribed to newsletter',
-      num_emails: 5,
-      audience: 'New Subscribers',
-      assignee: 'Copy Team',
-      copy_due_date: new Date(2025, 10, 5),
-      live_date: new Date(2025, 10, 15),
-      notes: 'Include brand story, best sellers, and social proof. Set 2-day delays between emails.',
-      synced_to_external: true,
-      external_id: 'recFlow123'
-    },
-    {
-      id: 'flow2',
-      title: 'Abandoned Cart Recovery',
-      flow_type: 'abandoned_cart',
-      status: 'design',
-      client: client.brand_name,
-      description: '3-email abandoned cart recovery sequence',
-      trigger_criteria: 'Placed item in cart but did not purchase after 2 hours',
-      num_emails: 3,
-      audience: 'Cart Abandoners',
-      assignee: 'Design Team',
-      design_due_date: new Date(2025, 10, 8),
-      notes: 'Email 1: Reminder (1 hour), Email 2: 10% discount (24 hours), Email 3: 15% discount + urgency (48 hours)',
-      synced_to_external: false,
-      external_id: undefined
-    },
-    {
-      id: 'flow3',
-      title: 'VIP Win-Back Campaign',
-      flow_type: 'win_back',
-      status: 'live',
-      client: client.brand_name,
-      description: '4-email win-back series for inactive VIP customers',
-      trigger_criteria: 'No purchase in last 90 days AND lifetime value > $500',
-      num_emails: 4,
-      audience: 'Inactive VIP Customers',
-      assignee: 'Strategy Team',
-      live_date: new Date(2025, 9, 1),
-      notes: 'Focus on exclusive offers and personal touch. Include account manager contact.',
-      synced_to_external: true,
-      external_id: 'recFlow789'
-    }
+    // Return empty array - only use real Airtable data
   ]
 
   // Helper functions for sync operations
@@ -255,7 +207,7 @@ export function FlowProgressTracker({ client, userRole, canEdit, canCreate, canA
         f.id === flowId 
           ? { 
               ...f, 
-              status: approved ? 'approved' : 'revisions' as any,
+              status: approved ? 'Approved' : 'Client Revisions',
               client_notes: approved ? 'Approved by client' : (f.client_notes || 'Revisions requested'),
               synced_to_external: false
             }
@@ -353,7 +305,8 @@ export function FlowProgressTracker({ client, userRole, canEdit, canCreate, canA
     return acc
   }, {} as Record<string, Flow[]>)
 
-  const statuses = ['draft', 'copy', 'design', 'ready_for_client_approval', 'approved', 'live']
+  // Get unique statuses from actual flow data
+  const statuses = Array.from(new Set(flows.map(flow => flow.status))).filter(Boolean)
 
   return (
     <div className="space-y-6">
@@ -442,7 +395,7 @@ export function FlowProgressTracker({ client, userRole, canEdit, canCreate, canA
                         )}
 
                         {/* Client approval actions */}
-                        {canApprove && flow.status === 'ready_for_client_approval' && (
+                        {canApprove && (flow.status === 'Ready For Client Approval' || flow.status === 'Client Approval') && (
                           <div className="flex gap-2 mt-3">
                             <button
                               onClick={(e) => {
@@ -562,12 +515,18 @@ export function FlowProgressTracker({ client, userRole, canEdit, canCreate, canA
                     disabled={!canEdit}
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-900 focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
                   >
-                    <option value="draft">Draft</option>
-                    <option value="copy">Copy</option>
-                    <option value="design">Design</option>
-                    <option value="ready_for_client_approval">Ready for Client Approval</option>
-                    <option value="approved">Approved</option>
-                    <option value="live">Live</option>
+                    <option value="Content Strategy">Content Strategy</option>
+                    <option value="Copy">Copy</option>
+                    <option value="Copy QA">Copy QA</option>
+                    <option value="Design">Design</option>
+                    <option value="Design QA">Design QA</option>
+                    <option value="Ready For Client Approval">Ready For Client Approval</option>
+                    <option value="Client Approval">Client Approval</option>
+                    <option value="Approved">Approved</option>
+                    <option value="Client Revisions">Client Revisions</option>
+                    <option value="Ready For Schedule">Ready For Schedule</option>
+                    <option value="Ready For Imp QA">Ready For Imp QA</option>
+                    <option value="Scheduled - Close">Scheduled - Close</option>
                   </select>
                 </div>
               </div>

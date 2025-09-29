@@ -7,16 +7,13 @@ import { LogoutButton } from '@/components/auth/logout-button'
 import { ClientManagement } from './client-management'
 import { UserManagement } from './user-management'
 import { AgencySettings } from './agency-settings'
-import { CleanPortalDashboard } from '../portal/clean-portal-dashboard'
 import { 
   Users, 
   Building2, 
   Settings, 
   BarChart3,
   Plus,
-  UserPlus,
-  Calendar,
-  Mail
+  UserPlus
 } from 'lucide-react'
 
 interface AgencyAdminDashboardProps {
@@ -25,7 +22,7 @@ interface AgencyAdminDashboardProps {
   clientUsers: (UserProfile & { clients?: { brand_name: string; brand_slug: string } })[]
 }
 
-type ActiveTab = 'overview' | 'portal' | 'clients' | 'users' | 'settings'
+type ActiveTab = 'overview' | 'clients' | 'users' | 'settings'
 
 export function AgencyAdminDashboard({ agency, clients, clientUsers }: AgencyAdminDashboardProps) {
   const [activeTab, setActiveTab] = useState<ActiveTab>('overview')
@@ -36,7 +33,6 @@ export function AgencyAdminDashboard({ agency, clients, clientUsers }: AgencyAdm
 
   const tabs = [
     { id: 'overview', label: 'Overview', icon: BarChart3 },
-    { id: 'portal', label: 'Campaign Portal', icon: Calendar },
     { id: 'clients', label: 'Clients', icon: Building2 },
     { id: 'users', label: 'Users', icon: Users },
     { id: 'settings', label: 'Settings', icon: Settings },
@@ -258,14 +254,6 @@ export function AgencyAdminDashboard({ agency, clients, clientUsers }: AgencyAdm
 
         {activeTab === 'users' && (
           <UserManagement agency={agency} clients={clients} clientUsers={clientUsers} />
-        )}
-
-        {activeTab === 'portal' && (
-          <CleanPortalDashboard 
-            user={{ agency: agency }}
-            userRole="agency_admin"
-            allClients={activeClients}
-          />
         )}
 
         {activeTab === 'settings' && (

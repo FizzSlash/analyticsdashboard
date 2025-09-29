@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import { AgencyAdminDashboard } from '@/components/agency/agency-admin-dashboard'
+import { CleanPortalDashboard } from '@/components/portal/clean-portal-dashboard'
+import { ViewToggle, type ViewMode } from '@/components/ui/view-toggle'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/components/auth/auth-provider'
 
@@ -17,6 +19,7 @@ export default function AgencyAdminPage({ params }: PageProps) {
   const [clientUsers, setClientUsers] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [viewMode, setViewMode] = useState<ViewMode>('analytics')
   const router = useRouter()
   const { supabase, loading: authLoading } = useAuth() // Use centralized Supabase client
 
@@ -147,11 +150,60 @@ export default function AgencyAdminPage({ params }: PageProps) {
   }
 
   return (
-    <AgencyAdminDashboard 
-      agency={agency}
-      clients={clients}
-      clientUsers={clientUsers}
-    />
+    <div className="min-h-screen" 
+      style={{
+        background: viewMode === 'portal' 
+          ? `linear-gradient(135deg, ${agency.primary_color || '#3B82F6'} 0%, ${agency.secondary_color || '#1D4ED8'} 100%)`
+          : '#f9fafb'
+      }}
+    >
+      {/* Header with View Toggle */}
+      <div 
+        className={viewMode === 'portal' ? 'py-6' : 'py-8'}
+        style={{
+          background: viewMode === 'portal' 
+            ? 'transparent'
+            : `linear-gradient(135deg, ${agency.primary_color || '#3B82F6'} 0%, ${agency.secondary_color || '#1D4ED8'} 100%)`
+        }}
+      >
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold mb-2 text-white">{agency.agency_name}</h1>
+              <p className="text-blue-100 text-lg">
+                {viewMode === 'analytics' ? 'Agency Management Dashboard' : 'Campaign & Flow Portal'}
+              </p>
+            </div>
+            
+            <ViewToggle 
+              currentMode={viewMode}
+              onModeChange={setViewMode}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className={viewMode === 'portal' ? '' : 'bg-gray-50'}>
+        {viewMode === 'analytics' ? (
+          <div className="container mx-auto px-4 py-8">
+            <AgencyAdminDashboard 
+              agency={agency}
+              clients={clients}
+              clientUsers={clientUsers}
+            />
+          </div>
+        ) : (
+          <div className="container mx-auto px-4 py-8">
+            <CleanPortalDashboard 
+              user={{ agency: agency }}
+              userRole="agency_admin"
+              allClients={clients.filter(c => c.is_active)}
+            />
+          </div>
+        )}
+      </div>
+    </div>
   )
 }
 

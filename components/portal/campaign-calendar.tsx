@@ -33,7 +33,7 @@ interface Campaign {
   id: string
   title: string
   type: 'email' | 'sms' | 'popup' | 'ab_test'
-  status: 'draft' | 'copy' | 'design' | 'ready_for_client_approval' | 'approved' | 'scheduled' | 'sent'
+  status: string // Use actual Airtable stages: "Content Strategy", "Copy", "Design", "Ready For Client Approval", etc.
   client: string
   date: Date
   time: string
@@ -107,61 +107,7 @@ export function CampaignCalendar({ client, userRole, canEdit, canCreate, canAppr
   }
 
   const generateDemoCampaigns = (): Campaign[] => [
-    {
-      id: 'camp1',
-      title: 'Black Friday Email Campaign',
-      type: 'email',
-      status: 'ready_for_client_approval',
-      client: client.brand_name,
-      date: new Date(2025, 10, 25),
-      time: '09:00',
-      description: 'Major sale announcement with exclusive offers',
-      audience: 'All Subscribers',
-      subject_line: 'Get 50% OFF Everything - Limited Time! 🔥',
-      offer: 'Black Friday 50% OFF',
-      assignee: 'Design Team',
-      copy_due_date: new Date(2025, 10, 20),
-      design_due_date: new Date(2025, 10, 22),
-      notes: 'Focus on urgency and scarcity. Need holiday graphics.',
-      synced_to_external: true,
-      external_id: 'rec123abc'
-    },
-    {
-      id: 'camp2',
-      title: 'Holiday SMS Blast',
-      type: 'sms',
-      status: 'copy',
-      client: client.brand_name,
-      date: new Date(2025, 11, 15),
-      time: '16:00',
-      description: 'Holiday promotion SMS campaign',
-      audience: 'SMS Subscribers',
-      subject_line: '🎄 Holiday Sale - 30% OFF! Shop now: [link]',
-      offer: 'Holiday 30% OFF',
-      assignee: 'Copy Team',
-      copy_due_date: new Date(2025, 11, 10),
-      notes: 'Keep message under 160 characters. Include clear CTA and link.',
-      synced_to_external: false,
-      external_id: undefined
-    },
-    {
-      id: 'test1',
-      title: 'Black Friday Subject Line Test',
-      type: 'ab_test',
-      test_type: 'subject_line',
-      status: 'scheduled',
-      client: client.brand_name,
-      date: new Date(2025, 10, 20), // Start date
-      start_date: new Date(2025, 10, 20),
-      end_date: new Date(2025, 10, 27),
-      time: '09:00',
-      description: 'Testing 2 subject lines for Black Friday campaign',
-      audience: 'All Subscribers',
-      notes: 'Variant A: "50% OFF Everything!" vs Variant B: "Your Black Friday Gift Inside"',
-      assignee: 'Marketing Team',
-      synced_to_external: true,
-      external_id: 'rec789test'
-    }
+    // Return empty array - only use real Airtable data
   ]
 
   // Helper functions for sync operations
@@ -281,7 +227,7 @@ export function CampaignCalendar({ client, userRole, canEdit, canCreate, canAppr
         c.id === campaignId 
           ? { 
               ...c, 
-              status: approved ? 'approved' : 'revisions' as any,
+              status: approved ? 'Approved' : 'Client Revisions',
               client_notes: approved ? 'Approved by client' : (c.client_notes || 'Revisions requested'),
               synced_to_external: false
             }
@@ -388,14 +334,18 @@ export function CampaignCalendar({ client, userRole, canEdit, canCreate, canAppr
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'draft': return 'bg-gray-500/30 text-gray-300 border-gray-400'
-      case 'copy': return 'bg-blue-500/30 text-blue-300 border-blue-400'
-      case 'design': return 'bg-purple-500/30 text-purple-300 border-purple-400'
-      case 'ready_for_client_approval': return 'bg-orange-500/30 text-orange-300 border-orange-400'
-      case 'approved': return 'bg-green-500/30 text-green-300 border-green-400'
-      case 'revisions': return 'bg-red-500/30 text-red-300 border-red-400'
-      case 'scheduled': return 'bg-teal-500/30 text-teal-300 border-teal-400'
-      case 'sent': return 'bg-green-500/40 text-green-200 border-green-300'
+      case 'Content Strategy': return 'bg-gray-500/30 text-gray-300 border-gray-400'
+      case 'Copy': return 'bg-blue-500/30 text-blue-300 border-blue-400'
+      case 'Copy QA': return 'bg-blue-500/40 text-blue-200 border-blue-300'
+      case 'Design': return 'bg-purple-500/30 text-purple-300 border-purple-400'
+      case 'Design QA': return 'bg-purple-500/40 text-purple-200 border-purple-300'
+      case 'Ready For Client Approval': return 'bg-orange-500/30 text-orange-300 border-orange-400'
+      case 'Client Approval': return 'bg-orange-500/30 text-orange-300 border-orange-400'
+      case 'Approved': return 'bg-green-500/30 text-green-300 border-green-400'
+      case 'Client Revisions': return 'bg-red-500/30 text-red-300 border-red-400'
+      case 'Ready For Schedule': return 'bg-teal-500/30 text-teal-300 border-teal-400'
+      case 'Ready For Imp QA': return 'bg-indigo-500/30 text-indigo-300 border-indigo-400'
+      case 'Scheduled - Close': return 'bg-green-500/40 text-green-200 border-green-300'
       default: return 'bg-gray-500/30 text-gray-300 border-gray-400'
     }
   }
@@ -582,31 +532,31 @@ export function CampaignCalendar({ client, userRole, canEdit, canCreate, canAppr
                                     {campaign.status.replace('_', ' ')}
                                   </div>
                                   
-                                  {/* Client approval actions */}
-                                  {canApprove && campaign.status === 'ready_for_client_approval' && (
-                                    <div className="flex gap-1 mt-2">
-                                      <button
-                                        onClick={(e) => {
-                                          e.stopPropagation()
-                                          approveCampaign(campaign.id, true)
-                                        }}
-                                        className="bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded text-xs flex items-center gap-1"
-                                      >
-                                        <CheckCircle className="h-2 w-2" />
-                                        Approve
-                                      </button>
-                                      <button
-                                        onClick={(e) => {
-                                          e.stopPropagation()
-                                          approveCampaign(campaign.id, false)
-                                        }}
-                                        className="bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded text-xs flex items-center gap-1"
-                                      >
-                                        <AlertTriangle className="h-2 w-2" />
-                                        Revise
-                                      </button>
-                                    </div>
-                                  )}
+                        {/* Client approval actions */}
+                        {canApprove && (campaign.status === 'Ready For Client Approval' || campaign.status === 'Client Approval') && (
+                          <div className="flex gap-1 mt-2">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                approveCampaign(campaign.id, true)
+                              }}
+                              className="bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded text-xs flex items-center gap-1"
+                            >
+                              <CheckCircle className="h-2 w-2" />
+                              Approve
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                approveCampaign(campaign.id, false)
+                              }}
+                              className="bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded text-xs flex items-center gap-1"
+                            >
+                              <AlertTriangle className="h-2 w-2" />
+                              Revise
+                            </button>
+                          </div>
+                        )}
                                 </div>
                                 
                                 <div className="flex flex-col items-end gap-1 ml-2">
@@ -720,14 +670,18 @@ export function CampaignCalendar({ client, userRole, canEdit, canCreate, canAppr
                     disabled={!canEdit}
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-900 focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
                   >
-                    <option value="draft">Draft</option>
-                    <option value="copy">Copy</option>
-                    <option value="design">Design</option>
-                    <option value="ready_for_client_approval">Ready for Client Approval</option>
-                    <option value="approved">Approved</option>
-                    <option value="revisions">Revisions Needed</option>
-                    <option value="scheduled">Scheduled</option>
-                    <option value="sent">Sent</option>
+                    <option value="Content Strategy">Content Strategy</option>
+                    <option value="Copy">Copy</option>
+                    <option value="Copy QA">Copy QA</option>
+                    <option value="Design">Design</option>
+                    <option value="Design QA">Design QA</option>
+                    <option value="Ready For Client Approval">Ready For Client Approval</option>
+                    <option value="Client Approval">Client Approval</option>
+                    <option value="Approved">Approved</option>
+                    <option value="Client Revisions">Client Revisions</option>
+                    <option value="Ready For Schedule">Ready For Schedule</option>
+                    <option value="Ready For Imp QA">Ready For Imp QA</option>
+                    <option value="Scheduled - Close">Scheduled - Close</option>
                   </select>
                 </div>
               </div>
