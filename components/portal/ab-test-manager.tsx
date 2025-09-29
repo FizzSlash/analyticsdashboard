@@ -72,92 +72,10 @@ export function ABTestManager({ client }: ABTestManagerProps) {
     }
   }
 
-  const generateMockABTests = (): ABTest[] => [
-    {
-      id: 'ab1',
-      name: 'Black Friday Subject Line Test',
-      status: 'completed',
-      type: 'subject_line',
-      startDate: new Date(2025, 8, 20),
-      endDate: new Date(2025, 8, 27),
-      variants: [
-        {
-          id: 'var1',
-          name: 'Variant A',
-          description: 'Get 50% OFF Everything - Limited Time! 🔥',
-          metrics: {
-            sent: 5000,
-            opens: 1750,
-            clicks: 420,
-            conversions: 63,
-            revenue: 3150.00,
-            openRate: 35.0,
-            clickRate: 24.0,
-            conversionRate: 15.0
-          }
-        },
-        {
-          id: 'var2', 
-          name: 'Variant B',
-          description: 'Your Exclusive Black Friday Deal Inside',
-          metrics: {
-            sent: 5000,
-            opens: 2100,
-            clicks: 378,
-            conversions: 51,
-            revenue: 2550.00,
-            openRate: 42.0,
-            clickRate: 18.0,
-            conversionRate: 13.5
-          }
-        }
-      ],
-      winner: 'var2',
-      confidence: 95.2,
-      notes: 'Variant B had significantly higher open rate. More personalized subject lines perform better.'
-    },
-    {
-      id: 'ab2',
-      name: 'Welcome Email Content Test',
-      status: 'running',
-      type: 'content',
-      startDate: new Date(2025, 9, 1),
-      variants: [
-        {
-          id: 'var3',
-          name: 'Variant A',
-          description: 'Product-focused welcome with feature highlights',
-          metrics: {
-            sent: 1200,
-            opens: 780,
-            clicks: 156,
-            conversions: 12,
-            revenue: 480.00,
-            openRate: 65.0,
-            clickRate: 20.0,
-            conversionRate: 7.7
-          }
-        },
-        {
-          id: 'var4',
-          name: 'Variant B', 
-          description: 'Story-focused welcome with founder message',
-          metrics: {
-            sent: 1200,
-            opens: 732,
-            clicks: 183,
-            conversions: 18,
-            revenue: 720.00,
-            openRate: 61.0,
-            clickRate: 25.0,
-            conversionRate: 9.8
-          }
-        }
-      ],
-      confidence: 78.5,
-      notes: 'Test still running. Variant B showing higher conversion rate but needs more data.'
-    }
-  ]
+  const generateMockABTests = (): ABTest[] => {
+    // TODO: Load real A/B test data from database
+    return []
+  }
 
   const getStatusColor = (status: string) => {
     switch (status) {

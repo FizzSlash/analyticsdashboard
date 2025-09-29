@@ -304,162 +304,103 @@ export function FlowProgressTracker({ client, userRole, canEdit, canCreate, canA
     }
   }
 
-  // Group flows by status for better organization
-  const flowsByStatus = flows.reduce((acc, flow) => {
-    if (!acc[flow.status]) acc[flow.status] = []
-    acc[flow.status].push(flow)
-    return acc
-  }, {} as Record<string, Flow[]>)
-
-  // Get unique statuses from actual flow data
-  const statuses = Array.from(new Set(flows.map(flow => flow.status))).filter(Boolean)
-
   return (
     <div className="space-y-6">
-      {/* Quick Actions */}
-      {canCreate && (
-        <Card className="bg-white/10 backdrop-blur-md border-white/20 shadow-xl">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-white font-bold text-lg">Create New Flow</h3>
-                <p className="text-white/80 text-sm font-medium">Email flows are evergreen and go live (not scheduled)</p>
-              </div>
-              <button 
-                onClick={addFlow}
-                className="bg-purple-600/90 hover:bg-purple-600 text-white py-3 px-6 rounded-xl font-semibold transition-all duration-200 flex items-center gap-3 shadow-lg hover:shadow-xl hover:scale-105 backdrop-blur-sm border border-purple-500/30"
-              >
-                <Plus className="h-5 w-5" />
-                Add Flow
-              </button>
-            </div>
+      {/* Header */}
+      <Card className="bg-white/5 border-white/10">
+        <CardHeader>
+          <CardTitle className="text-white flex items-center gap-2">
+            <Zap className="h-5 w-5 text-purple-400" />
+            {userRole === 'agency_admin' ? 'Flow Management' : 'Flow Approvals'}
+          </CardTitle>
+        </CardHeader>
+      </Card>
+
+      {/* Flows Grid - Simple and Clean */}
+      {flows.length === 0 ? (
+        <Card className="bg-white/5 border-white/10">
+          <CardContent className="p-8 text-center">
+            <Zap className="h-12 w-12 text-white/40 mx-auto mb-4" />
+            <p className="text-white/70">No flows found</p>
+            <p className="text-white/50 text-sm">Flow approvals will appear here when ready</p>
           </CardContent>
         </Card>
-      )}
-
-      {/* Flow Progress List */}
-      <div className="space-y-4">
-        {statuses.map(status => {
-          const statusFlows = flowsByStatus[status] || []
-          if (statusFlows.length === 0) return null
-          
-          return (
-            <Card key={status} className="bg-white/10 backdrop-blur-md border-white/20 shadow-xl">
-              <CardHeader>
-                <CardTitle className="text-lg font-bold text-white flex items-center gap-3">
-                  <div className={`w-4 h-4 rounded-full shadow-lg ${getStatusColor(status).includes('bg-green') ? 'bg-green-400' : getStatusColor(status).includes('bg-orange') ? 'bg-orange-400' : 'bg-gray-400'}`}></div>
-                  {status.toUpperCase()} ({statusFlows.length})
-                  {(status === 'Ready For Client Approval' || status === 'Client Approval') && (
-                    <span className="text-orange-300 text-sm font-medium bg-orange-500/20 px-3 py-1 rounded-full border border-orange-400/30">→ Ready for your approval</span>
-                  )}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {statusFlows.map(flow => (
-                  <div 
-                    key={flow.id}
-                    className="p-5 border border-white/30 rounded-xl hover:bg-white/15 transition-all duration-200 cursor-pointer backdrop-blur-sm shadow-md hover:shadow-lg hover:scale-102"
-                    onClick={() => {
-                      setEditingFlow(flow)
-                      setShowAddModal(true)
-                    }}
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <Zap className="h-5 w-5 text-purple-400" />
-                          <h4 className="font-semibold text-white">{flow.title}</h4>
-                          <span className={`px-2 py-1 rounded-full text-xs border ${getFlowTypeColor(flow.flow_type)}`}>
-                            {flow.flow_type.replace('_', ' ')}
-                          </span>
-                          <span className={`px-2 py-1 rounded-full text-xs border ${getStatusColor(flow.status)}`}>
-                            {flow.status}
-                          </span>
-                        </div>
-                        
-                        <p className="text-white/70 text-sm mb-3">{flow.description}</p>
-                        
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs text-white/60">
-                          <div className="flex items-center gap-1">
-                            <Target className="h-3 w-3" />
-                            <span>Trigger: {flow.trigger_criteria}</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <Mail className="h-3 w-3" />
-                            <span>{flow.num_emails} emails</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <Users className="h-3 w-3" />
-                            <span>{flow.audience}</span>
-                          </div>
-                        </div>
-                        
-                        {flow.assignee && (
-                          <div className="mt-2 text-xs text-white/50">
-                            Assigned to: <span className="font-medium text-white/70">{flow.assignee}</span>
-                          </div>
-                        )}
-
-                        {/* Client approval actions */}
-                        {canApprove && (flow.status === 'Ready For Client Approval' || flow.status === 'Client Approval') && (
-                          <div className="flex gap-2 mt-3">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                approveFlow(flow.id, true)
-                              }}
-                              className="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg text-sm flex items-center gap-2"
-                            >
-                              <CheckCircle className="h-4 w-4" />
-                              Approve Flow
-                            </button>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                approveFlow(flow.id, false)
-                              }}
-                              className="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg text-sm flex items-center gap-2"
-                            >
-                              <AlertTriangle className="h-4 w-4" />
-                              Request Revisions
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                      
-                      <div className="flex flex-col items-end gap-2 ml-4">
-                        {/* Sync status indicator */}
-                        {syncingOperations.has(flow.id) ? (
-                          <div className="w-4 h-4 animate-spin rounded-full border border-blue-500 border-t-transparent" title="Syncing..."></div>
-                        ) : flow.synced_to_external ? (
-                          <div className="w-3 h-3 bg-green-500 rounded-full" title="Synced to Airtable"></div>
-                        ) : (
-                          <div className="w-3 h-3 bg-gray-400 rounded-full" title="Not synced"></div>
-                        )}
-                        
-                        {/* Delete button (agency only) */}
-                        {canEdit && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              deleteFlow(flow.id)
-                            }}
-                            disabled={syncingOperations.has(flow.id)}
-                            className="text-gray-400 hover:text-red-600 disabled:text-gray-300 transition-colors p-1 rounded hover:bg-red-50 disabled:cursor-not-allowed"
-                            title={syncingOperations.has(flow.id) ? "Syncing..." : "Delete flow"}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        )}
-                      </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {flows.map(flow => (
+            <Card key={flow.id} className="bg-white/5 border-white/10 hover:bg-white/10 transition-colors">
+              <CardContent className="p-4">
+                <div className="space-y-3">
+                  {/* Flow Header */}
+                  <div>
+                    <h4 className="text-white font-semibold">{flow.title}</h4>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className={`px-2 py-1 rounded-full text-xs border ${getFlowTypeColor(flow.flow_type)}`}>
+                        {flow.flow_type.replace('_', ' ')}
+                      </span>
+                      <span className={`px-2 py-1 rounded-full text-xs border ${getStatusColor(flow.status)}`}>
+                        {flow.status}
+                      </span>
                     </div>
                   </div>
-                ))}
+
+                  {/* Flow Info */}
+                  <div className="text-sm text-white/70">
+                    <p>{flow.num_emails} emails • {flow.audience}</p>
+                    {flow.trigger_criteria && (
+                      <p className="text-xs mt-1">Trigger: {flow.trigger_criteria}</p>
+                    )}
+                  </div>
+
+                  {/* Copy Link */}
+                  {flow.copy_link && (
+                    <a
+                      href={flow.copy_link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-blue-400 hover:text-blue-300 text-xs"
+                    >
+                      📄 View Copy
+                    </a>
+                  )}
+
+                  {/* Client Approval (Only for flows needing approval) */}
+                  {userRole === 'client_user' && (flow.status === 'Ready For Client Approval' || flow.status === 'Client Approval') && (
+                    <div className="space-y-3 pt-2 border-t border-white/10">
+                      <textarea
+                        placeholder="Add your approval notes or feedback..."
+                        className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white placeholder-white/50 text-sm resize-none"
+                        rows={2}
+                        value={flow.client_notes || ''}
+                        onChange={(e) => setFlows(prev => prev.map(f => 
+                          f.id === flow.id ? { ...f, client_notes: e.target.value } : f
+                        ))}
+                      />
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => approveFlow(flow.id, true)}
+                          className="flex-1 bg-green-600/80 hover:bg-green-600 text-white py-2 px-3 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-1"
+                        >
+                          <CheckCircle className="h-3 w-3" />
+                          Approve
+                        </button>
+                        <button
+                          onClick={() => approveFlow(flow.id, false)}
+                          className="flex-1 bg-orange-600/80 hover:bg-orange-600 text-white py-2 px-3 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-1"
+                        >
+                          <Edit className="h-3 w-3" />
+                          Request Changes
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </CardContent>
             </Card>
-          )
-        })}
-      </div>
+          ))}
+        </div>
+      )}
+
 
       {/* Flow Editor Modal */}
       {showAddModal && editingFlow && (

@@ -69,93 +69,10 @@ export function CampaignRequests({ client }: CampaignRequestsProps) {
     }
   }
 
-  const generateMockRequests = (): CampaignRequest[] => [
-    {
-      id: 'req1',
-      title: 'Holiday Season Launch Campaign',
-      type: 'email',
-      priority: 'high',
-      requestedBy: 'Marketing Team',
-      requestDate: new Date(2025, 9, 15),
-      desiredLaunchDate: new Date(2025, 10, 1),
-      status: 'in_progress',
-      description: 'Comprehensive holiday campaign to drive Q4 sales with new product line introduction',
-      objectives: [
-        'Increase Q4 revenue by 25%',
-        'Launch new holiday product line',
-        'Boost email list engagement',
-        'Drive traffic to holiday landing page'
-      ],
-      targetAudience: 'All subscribers + VIP customers',
-      keyMessages: [
-        'Exclusive holiday collection now available',
-        'Limited time 30% off everything',
-        'Free shipping on orders over $100',
-        'Holiday gift guides included'
-      ],
-      assets: [
-        { type: 'image', name: 'Holiday banner images', status: 'provided' },
-        { type: 'copy', name: 'Product descriptions', status: 'in_progress' },
-        { type: 'design', name: 'Email template design', status: 'needed' }
-      ],
-      budget: 5000,
-      notes: 'Need to coordinate with product team for inventory levels'
-    },
-    {
-      id: 'req2',
-      title: 'Customer Win-Back Series',
-      type: 'email',
-      priority: 'medium',
-      requestedBy: 'Customer Success',
-      requestDate: new Date(2025, 9, 10),
-      desiredLaunchDate: new Date(2025, 9, 25),
-      status: 'submitted',
-      description: 'Re-engagement campaign for customers who haven\'t purchased in 90+ days',
-      objectives: [
-        'Re-activate dormant customers',
-        'Increase customer lifetime value',
-        'Reduce churn rate'
-      ],
-      targetAudience: 'Customers with no purchase in 90+ days',
-      keyMessages: [
-        'We miss you message',
-        'Special comeback offer',
-        'New products since they left'
-      ],
-      assets: [
-        { type: 'copy', name: 'Personalized messaging', status: 'needed' },
-        { type: 'design', name: 'Win-back email templates', status: 'needed' }
-      ],
-      budget: 2500,
-      notes: 'Focus on emotional reconnection rather than just discounts'
-    },
-    {
-      id: 'req3',
-      title: 'Product Education Newsletter',
-      type: 'email',
-      priority: 'low',
-      requestedBy: 'Product Team',
-      requestDate: new Date(2025, 9, 12),
-      status: 'approved',
-      description: 'Monthly newsletter focusing on product education and tips',
-      objectives: [
-        'Educate users on product features',
-        'Increase product adoption',
-        'Build thought leadership'
-      ],
-      targetAudience: 'All active subscribers',
-      keyMessages: [
-        'How-to guides and tutorials',
-        'Feature spotlights',
-        'Customer success stories'
-      ],
-      assets: [
-        { type: 'copy', name: 'Educational content', status: 'provided' },
-        { type: 'image', name: 'Tutorial screenshots', status: 'provided' }
-      ],
-      notes: 'Monthly recurring campaign, template can be reused'
-    }
-  ]
+  const generateMockRequests = (): CampaignRequest[] => {
+    // TODO: Load real campaign requests from database
+    return []
+  }
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
