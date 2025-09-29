@@ -144,52 +144,52 @@ export function DashboardOverview({ client, userRole, onNavigate }: DashboardOve
 
   return (
     <div className="space-y-6">
-      {/* Hero Stats Grid - Super Cool Design */}
+      {/* Clean Stats Grid - Readable and Professional */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card 
-          className="bg-gradient-to-br from-orange-500/20 via-orange-500/10 to-orange-500/5 border-orange-400/30 hover:border-orange-400/50 transition-all duration-300 cursor-pointer group backdrop-blur-sm shadow-xl hover:shadow-2xl hover:scale-105"
+          className="bg-white/10 border-white/20 hover:bg-white/15 transition-all duration-300 cursor-pointer group backdrop-blur-sm shadow-lg hover:shadow-xl"
           onClick={() => onNavigate('campaigns')}
         >
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
-              <div className="bg-gradient-to-br from-orange-500/30 to-orange-600/30 p-4 rounded-2xl backdrop-blur-sm border border-orange-400/30 group-hover:scale-110 transition-transform">
-                <Calendar className="h-7 w-7 text-orange-300" />
+              <div className="bg-orange-500/80 p-4 rounded-xl shadow-lg group-hover:scale-110 transition-transform">
+                <Calendar className="h-6 w-6 text-white" />
               </div>
               {summary.pendingApprovals > 0 && (
-                <div className="bg-orange-500/40 text-orange-200 text-xs font-bold px-3 py-1 rounded-full animate-pulse">
-                  ACTION NEEDED
+                <div className="bg-red-500 text-white text-xs font-bold px-3 py-1 rounded-full">
+                  {summary.pendingApprovals} PENDING
                 </div>
               )}
             </div>
             <div className="space-y-1">
-              <p className="text-orange-200/80 text-sm font-medium">Campaign Approvals</p>
-              <p className="text-white text-3xl font-bold tracking-tight">{summary.pendingApprovals}</p>
-              <p className="text-orange-300/80 text-xs">
-                {summary.pendingApprovals > 0 ? 'Click to review and approve' : 'All campaigns up to date'}
+              <p className="text-white/70 text-sm font-medium">Campaign Approvals</p>
+              <p className="text-white text-3xl font-bold">{summary.pendingApprovals}</p>
+              <p className="text-white/60 text-sm">
+                {summary.pendingApprovals > 0 ? 'Click to review campaigns' : 'All campaigns approved'}
               </p>
             </div>
           </CardContent>
         </Card>
 
         <Card 
-          className="bg-gradient-to-br from-blue-500/20 via-blue-500/10 to-blue-500/5 border-blue-400/30 hover:border-blue-400/50 transition-all duration-300 cursor-pointer group backdrop-blur-sm shadow-xl hover:shadow-2xl hover:scale-105"
+          className="bg-white/10 border-white/20 hover:bg-white/15 transition-all duration-300 cursor-pointer group backdrop-blur-sm shadow-lg hover:shadow-xl"
           onClick={() => onNavigate('forms')}
         >
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
-              <div className="bg-gradient-to-br from-blue-500/30 to-blue-600/30 p-4 rounded-2xl backdrop-blur-sm border border-blue-400/30 group-hover:scale-110 transition-transform">
-                <FileText className="h-7 w-7 text-blue-300" />
+              <div className="bg-blue-500/80 p-4 rounded-xl shadow-lg group-hover:scale-110 transition-transform">
+                <FileText className="h-6 w-6 text-white" />
               </div>
               {summary.overdueForms > 0 && (
-                <div className="bg-red-500/40 text-red-200 text-xs font-bold px-3 py-1 rounded-full animate-pulse">
-                  OVERDUE
+                <div className="bg-red-500 text-white text-xs font-bold px-3 py-1 rounded-full">
+                  {summary.overdueForms} DUE
                 </div>
               )}
             </div>
             <div className="space-y-1">
-              <p className="text-blue-200/80 text-sm font-medium">Pending Forms</p>
-              <p className="text-white text-3xl font-bold tracking-tight">{summary.overdueForms}</p>
-              <p className="text-blue-300/80 text-xs">
+              <p className="text-white/70 text-sm font-medium">Forms To Complete</p>
+              <p className="text-white text-3xl font-bold">{summary.overdueForms}</p>
+              <p className="text-white/60 text-sm">
                 {summary.overdueForms > 0 ? 'Forms need completion' : 'All forms completed'}
               </p>
             </div>
@@ -197,23 +197,23 @@ export function DashboardOverview({ client, userRole, onNavigate }: DashboardOve
         </Card>
 
         <Card 
-          className="bg-gradient-to-br from-purple-500/20 via-purple-500/10 to-purple-500/5 border-purple-400/30 hover:border-purple-400/50 transition-all duration-300 cursor-pointer group backdrop-blur-sm shadow-xl hover:shadow-2xl hover:scale-105"
+          className="bg-white/10 border-white/20 hover:bg-white/15 transition-all duration-300 cursor-pointer group backdrop-blur-sm shadow-lg hover:shadow-xl"
           onClick={() => onNavigate('requests')}
         >
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
-              <div className="bg-gradient-to-br from-purple-500/30 to-purple-600/30 p-4 rounded-2xl backdrop-blur-sm border border-purple-400/30 group-hover:scale-110 transition-transform">
-                <MessageSquare className="h-7 w-7 text-purple-300" />
+              <div className="bg-green-500/80 p-4 rounded-xl shadow-lg group-hover:scale-110 transition-transform">
+                <MessageSquare className="h-6 w-6 text-white" />
               </div>
-              <div className="bg-purple-500/30 text-purple-200 text-xs font-medium px-3 py-1 rounded-full">
-                ACTIVE
+              <div className="bg-green-500/80 text-white text-xs font-medium px-3 py-1 rounded-full">
+                SUBMIT
               </div>
             </div>
             <div className="space-y-1">
-              <p className="text-purple-200/80 text-sm font-medium">Your Requests</p>
-              <p className="text-white text-3xl font-bold tracking-tight">{summary.activeRequests}</p>
-              <p className="text-purple-300/80 text-xs">
-                Click to submit new project
+              <p className="text-white/70 text-sm font-medium">Project Requests</p>
+              <p className="text-white text-3xl font-bold">{summary.activeRequests}</p>
+              <p className="text-white/60 text-sm">
+                Submit new projects here
               </p>
             </div>
           </CardContent>
@@ -371,24 +371,16 @@ export function DashboardOverview({ client, userRole, onNavigate }: DashboardOve
         </Card>
       )}
 
-      {/* All Caught Up State - Super Cool Success */}
+      {/* All Caught Up State - Clean Success */}
       {summary.pendingApprovals === 0 && summary.overdueForms === 0 && (
-        <Card className="bg-gradient-to-br from-green-500/20 via-emerald-500/15 to-teal-500/10 border-green-400/30 backdrop-blur-sm shadow-2xl">
+        <Card className="bg-white/10 border-white/20 backdrop-blur-sm">
           <CardContent className="p-8 text-center">
-            <div className="relative mb-6">
-              <div className="bg-gradient-to-br from-green-500/40 to-emerald-500/40 p-6 rounded-full w-20 h-20 mx-auto flex items-center justify-center backdrop-blur-sm border border-green-400/30 shadow-lg">
-                <CheckCircle className="h-10 w-10 text-green-300" />
-              </div>
-              <div className="absolute -top-2 -right-2 bg-yellow-500/30 p-2 rounded-full animate-bounce">
-                <Star className="h-4 w-4 text-yellow-300 fill-current" />
-              </div>
+            <div className="bg-green-500/80 p-6 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center shadow-lg">
+              <CheckCircle className="h-8 w-8 text-white" />
             </div>
-            <h3 className="text-white text-xl font-bold mb-2 bg-gradient-to-r from-green-300 to-emerald-300 bg-clip-text text-transparent">
-              All Caught Up!
-            </h3>
-            <p className="text-white/80 text-sm leading-relaxed">
-              Perfect! You've completed all pending items.<br/>
-              <span className="text-green-300 font-medium">Your account is fully up to date.</span>
+            <h3 className="text-white text-xl font-bold mb-2">All Caught Up!</h3>
+            <p className="text-white/70 text-sm">
+              You've completed all pending items. Great work!
             </p>
           </CardContent>
         </Card>

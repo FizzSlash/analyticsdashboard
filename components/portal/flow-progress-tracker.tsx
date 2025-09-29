@@ -15,7 +15,10 @@ import {
   CheckCircle,
   AlertTriangle,
   RefreshCw,
-  Mail
+  Mail,
+  Eye,
+  MessageSquare,
+  ExternalLink
 } from 'lucide-react'
 
 interface Flow {
@@ -53,6 +56,8 @@ export function FlowProgressTracker({ client, userRole, canEdit, canCreate, canA
   const [flows, setFlows] = useState<Flow[]>([])
   const [editingFlow, setEditingFlow] = useState<Flow | null>(null)
   const [showAddModal, setShowAddModal] = useState(false)
+  const [viewingFlow, setViewingFlow] = useState<Flow | null>(null)
+  const [flowComments, setFlowComments] = useState('')
   const [syncingOperations, setSyncingOperations] = useState<Set<string>>(new Set())
 
   useEffect(() => {
@@ -209,7 +214,7 @@ export function FlowProgressTracker({ client, userRole, canEdit, canCreate, canA
           ? { 
               ...f, 
               status: approved ? 'Approved' : 'Client Revisions',
-              client_notes: approved ? 'Approved by client' : (f.client_notes || 'Revisions requested'),
+              client_notes: flowComments || (approved ? 'Approved by client' : 'Revisions requested'),
               synced_to_external: false
             }
           : f
@@ -237,6 +242,9 @@ export function FlowProgressTracker({ client, userRole, canEdit, canCreate, canA
           ))
         }
       }
+      
+      setFlowComments('')
+      console.log(`✅ Flow ${approved ? 'approved' : 'revision requested'}:`, flowId)
       
     } catch (error) {
       console.error('❌ Error approving flow:', error)
@@ -364,36 +372,29 @@ export function FlowProgressTracker({ client, userRole, canEdit, canCreate, canA
                     </a>
                   )}
 
-                  {/* Client Approval (Only for flows needing approval) */}
-                  {userRole === 'client_user' && (flow.status === 'Ready For Client Approval' || flow.status === 'Client Approval') && (
-                    <div className="space-y-3 pt-2 border-t border-white/10">
-                      <textarea
-                        placeholder="Add your approval notes or feedback..."
-                        className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white placeholder-white/50 text-sm resize-none"
-                        rows={2}
-                        value={flow.client_notes || ''}
-                        onChange={(e) => setFlows(prev => prev.map(f => 
-                          f.id === flow.id ? { ...f, client_notes: e.target.value } : f
-                        ))}
-                      />
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => approveFlow(flow.id, true)}
-                          className="flex-1 bg-green-600/80 hover:bg-green-600 text-white py-2 px-3 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-1"
-                        >
-                          <CheckCircle className="h-3 w-3" />
-                          Approve
-                        </button>
-                        <button
-                          onClick={() => approveFlow(flow.id, false)}
-                          className="flex-1 bg-orange-600/80 hover:bg-orange-600 text-white py-2 px-3 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-1"
-                        >
-                          <Edit className="h-3 w-3" />
-                          Request Changes
-                        </button>
-                      </div>
-                    </div>
-                  )}
+                  {/* Flow Actions */}
+                  <div className="flex gap-2 pt-2">
+                    <button
+                      onClick={() => setViewingFlow(flow)}
+                      className="flex-1 bg-blue-600/80 hover:bg-blue-600 text-white py-2 px-3 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-1"
+                    >
+                      <Eye className="h-3 w-3" />
+                      View Flow
+                    </button>
+                    
+                    {userRole === 'client_user' && (flow.status === 'Ready For Client Approval' || flow.status === 'Client Approval') && (
+                      <button
+                        onClick={() => {
+                          setViewingFlow(flow)
+                          setFlowComments(flow.client_notes || '')
+                        }}
+                        className="bg-orange-500/80 hover:bg-orange-500 text-white py-2 px-3 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-1"
+                      >
+                        <MessageSquare className="h-3 w-3" />
+                        Review & Approve
+                      </button>
+                    )}
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -401,6 +402,169 @@ export function FlowProgressTracker({ client, userRole, canEdit, canCreate, canA
         </div>
       )}
 
+      {/* Flow Viewer Modal */}
+      {viewingFlow && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
+          <Card className="bg-white/10 border-white/20 w-full max-w-4xl max-h-[90vh] overflow-y-auto backdrop-blur-sm">
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-3">
+                  <Zap className="h-5 w-5 text-purple-400" />
+                  <CardTitle className="text-white">{viewingFlow.title}</CardTitle>
+                  <span className={`px-3 py-1 rounded-full text-xs border ${getStatusColor(viewingFlow.status)}`}>
+                    {viewingFlow.status}
+                  </span>
+                </div>
+                <button 
+                  onClick={() => {
+                    setViewingFlow(null)
+                    setFlowComments('')
+                  }}
+                  className="text-white/60 hover:text-white"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Flow Details */}
+                <div className="lg:col-span-2 space-y-4">
+                  <div>
+                    <h5 className="text-white font-medium mb-2">Flow Description</h5>
+                    <div className="bg-white/10 rounded-lg p-4 border border-white/20">
+                      <p className="text-white/80">{viewingFlow.description}</p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-white/10 rounded-lg p-4 border border-white/20">
+                      <p className="text-white/60 text-sm">Flow Type</p>
+                      <span className={`inline-block px-2 py-1 rounded-full text-sm border ${getFlowTypeColor(viewingFlow.flow_type)}`}>
+                        {viewingFlow.flow_type.replace('_', ' ')}
+                      </span>
+                    </div>
+                    <div className="bg-white/10 rounded-lg p-4 border border-white/20">
+                      <p className="text-white/60 text-sm">Email Count</p>
+                      <p className="text-white font-medium">{viewingFlow.num_emails} emails</p>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h5 className="text-white font-medium mb-2">Trigger & Audience</h5>
+                    <div className="bg-white/10 rounded-lg p-4 border border-white/20 space-y-2">
+                      <div>
+                        <p className="text-white/60 text-sm">Trigger:</p>
+                        <p className="text-white/80">{viewingFlow.trigger_criteria}</p>
+                      </div>
+                      <div>
+                        <p className="text-white/60 text-sm">Audience:</p>
+                        <p className="text-white/80">{viewingFlow.audience}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Copy Link */}
+                  {viewingFlow.copy_link && (
+                    <div>
+                      <h5 className="text-white font-medium mb-2">Copy Document</h5>
+                      <a
+                        href={viewingFlow.copy_link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 bg-blue-600/80 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors"
+                      >
+                        <ExternalLink className="h-4 w-4" />
+                        View Email Copy
+                      </a>
+                    </div>
+                  )}
+
+                  {/* Agency Notes */}
+                  {viewingFlow.notes && (
+                    <div>
+                      <h5 className="text-white font-medium mb-2">Agency Notes</h5>
+                      <div className="bg-white/10 rounded-lg p-4 border border-white/20">
+                        <p className="text-white/80">{viewingFlow.notes}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Client Review Section */}
+                <div className="space-y-4">
+                  <div className="bg-white/10 rounded-lg p-4 border border-white/20">
+                    <h5 className="text-white font-medium mb-3">Flow Status</h5>
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-white/60 text-sm">Current Status:</span>
+                        <span className={`px-2 py-1 rounded-full text-xs border ${getStatusColor(viewingFlow.status)}`}>
+                          {viewingFlow.status}
+                        </span>
+                      </div>
+                      {viewingFlow.assignee && (
+                        <div className="flex items-center justify-between">
+                          <span className="text-white/60 text-sm">Assigned to:</span>
+                          <span className="text-white">{viewingFlow.assignee}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Client Approval Section */}
+                  {userRole === 'client_user' && (viewingFlow.status === 'Ready For Client Approval' || viewingFlow.status === 'Client Approval') && (
+                    <div className="space-y-4">
+                      <div>
+                        <h5 className="text-white font-medium mb-2">Your Feedback</h5>
+                        <textarea
+                          placeholder="Add your feedback, questions, or approval notes..."
+                          className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white placeholder-white/50 resize-none"
+                          rows={4}
+                          value={flowComments}
+                          onChange={(e) => setFlowComments(e.target.value)}
+                        />
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <button
+                          onClick={() => {
+                            approveFlow(viewingFlow.id, true)
+                            setViewingFlow(null)
+                          }}
+                          className="bg-green-600/80 hover:bg-green-600 text-white py-3 px-4 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
+                        >
+                          <CheckCircle className="h-4 w-4" />
+                          Approve Flow
+                        </button>
+                        <button
+                          onClick={() => {
+                            approveFlow(viewingFlow.id, false)
+                            setViewingFlow(null)
+                          }}
+                          className="bg-orange-600/80 hover:bg-orange-600 text-white py-3 px-4 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
+                        >
+                          <Edit className="h-4 w-4" />
+                          Request Changes
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Previous Client Feedback */}
+                  {viewingFlow.client_notes && (
+                    <div>
+                      <h5 className="text-white font-medium mb-2">Previous Feedback</h5>
+                      <div className="bg-blue-500/10 rounded-lg p-3 border border-blue-400/30">
+                        <p className="text-white/80 text-sm">{viewingFlow.client_notes}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Flow Editor Modal */}
       {showAddModal && editingFlow && (
