@@ -34,6 +34,7 @@ interface Flow {
   copy_due_date?: Date
   design_due_date?: Date
   live_date?: Date
+  copy_link?: string // Google Docs copy link
   external_id?: string
   synced_to_external: boolean
   last_sync?: Date
@@ -317,18 +318,18 @@ export function FlowProgressTracker({ client, userRole, canEdit, canCreate, canA
     <div className="space-y-6">
       {/* Quick Actions */}
       {canCreate && (
-        <Card className="bg-white/5 border-white/10">
-          <CardContent className="p-4">
+        <Card className="bg-white/10 backdrop-blur-md border-white/20 shadow-xl">
+          <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-white font-medium">Create New Flow</h3>
-                <p className="text-white/70 text-sm">Email flows are evergreen and go live (not scheduled)</p>
+                <h3 className="text-white font-bold text-lg">Create New Flow</h3>
+                <p className="text-white/80 text-sm font-medium">Email flows are evergreen and go live (not scheduled)</p>
               </div>
               <button 
                 onClick={addFlow}
-                className="bg-purple-600/80 hover:bg-purple-600 text-white py-2 px-4 rounded-lg font-medium transition-colors flex items-center gap-2"
+                className="bg-purple-600/90 hover:bg-purple-600 text-white py-3 px-6 rounded-xl font-semibold transition-all duration-200 flex items-center gap-3 shadow-lg hover:shadow-xl hover:scale-105 backdrop-blur-sm border border-purple-500/30"
               >
-                <Plus className="h-4 w-4" />
+                <Plus className="h-5 w-5" />
                 Add Flow
               </button>
             </div>
@@ -343,13 +344,13 @@ export function FlowProgressTracker({ client, userRole, canEdit, canCreate, canA
           if (statusFlows.length === 0) return null
           
           return (
-            <Card key={status} className="bg-white/5 border-white/10">
+            <Card key={status} className="bg-white/10 backdrop-blur-md border-white/20 shadow-xl">
               <CardHeader>
-                <CardTitle className="text-lg font-semibold text-white flex items-center gap-2">
-                  <div className={`w-3 h-3 rounded-full ${getStatusColor(status).includes('bg-green') ? 'bg-green-400' : getStatusColor(status).includes('bg-orange') ? 'bg-orange-400' : 'bg-gray-400'}`}></div>
+                <CardTitle className="text-lg font-bold text-white flex items-center gap-3">
+                  <div className={`w-4 h-4 rounded-full shadow-lg ${getStatusColor(status).includes('bg-green') ? 'bg-green-400' : getStatusColor(status).includes('bg-orange') ? 'bg-orange-400' : 'bg-gray-400'}`}></div>
                   {status.toUpperCase()} ({statusFlows.length})
                   {(status === 'Ready For Client Approval' || status === 'Client Approval') && (
-                    <span className="text-orange-400 text-sm font-normal">→ Ready for your approval</span>
+                    <span className="text-orange-300 text-sm font-medium bg-orange-500/20 px-3 py-1 rounded-full border border-orange-400/30">→ Ready for your approval</span>
                   )}
                 </CardTitle>
               </CardHeader>
@@ -357,7 +358,7 @@ export function FlowProgressTracker({ client, userRole, canEdit, canCreate, canA
                 {statusFlows.map(flow => (
                   <div 
                     key={flow.id}
-                    className="p-4 border border-white/20 rounded-lg hover:bg-white/10 transition-all cursor-pointer"
+                    className="p-5 border border-white/30 rounded-xl hover:bg-white/15 transition-all duration-200 cursor-pointer backdrop-blur-sm shadow-md hover:shadow-lg hover:scale-102"
                     onClick={() => {
                       setEditingFlow(flow)
                       setShowAddModal(true)
@@ -560,6 +561,8 @@ export function FlowProgressTracker({ client, userRole, canEdit, canCreate, canA
                       className="w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-900 focus:ring-2 focus:ring-blue-500"
                     >
                       <option value="">Select assignee...</option>
+                      <option value="Reid Sickels">Reid Sickels</option>
+                      <option value="Connor Clements">Connor Clements</option>
                       <option value="Copy Team">Copy Team</option>
                       <option value="Design Team">Design Team</option>
                       <option value="Dev Team">Dev Team</option>
@@ -608,10 +611,49 @@ export function FlowProgressTracker({ client, userRole, canEdit, canCreate, canA
                 />
               </div>
 
+              {/* Agency-only fields for flows */}
+              {userRole === 'agency_admin' && (
+                <>
+                  {/* Due Dates */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-gray-700 text-sm font-medium mb-2">Copy Due Date</label>
+                      <input
+                        type="date"
+                        value={editingFlow.copy_due_date?.toISOString().split('T')[0] || ''}
+                        onChange={(e) => setEditingFlow({...editingFlow, copy_due_date: e.target.value ? new Date(e.target.value) : undefined})}
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-900 focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-gray-700 text-sm font-medium mb-2">Live Date</label>
+                      <input
+                        type="date"
+                        value={editingFlow.live_date?.toISOString().split('T')[0] || ''}
+                        onChange={(e) => setEditingFlow({...editingFlow, live_date: e.target.value ? new Date(e.target.value) : undefined})}
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-900 focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Copy Link */}
+                  <div>
+                    <label className="block text-gray-700 text-sm font-medium mb-2">Copy Link</label>
+                    <input
+                      type="url"
+                      value={editingFlow.copy_link || ''}
+                      onChange={(e) => setEditingFlow({...editingFlow, copy_link: e.target.value})}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-900 focus:ring-2 focus:ring-blue-500"
+                      placeholder="https://docs.google.com/document/..."
+                    />
+                  </div>
+                </>
+              )}
+
               {/* Notes (Both agency and client can edit) */}
               <div>
                 <label className="block text-gray-700 text-sm font-medium mb-2">
-                  {userRole === 'client_user' ? 'Your Notes & Feedback' : 'Internal Notes'}
+                  {userRole === 'client_user' ? 'Client Revisions' : 'Notes'}
                 </label>
                 <textarea
                   value={userRole === 'client_user' ? (editingFlow.client_notes || '') : editingFlow.notes}
@@ -666,16 +708,18 @@ export function FlowProgressTracker({ client, userRole, canEdit, canCreate, canA
 
       {/* Status Info for Clients */}
       {userRole === 'client_user' && (
-        <Card className="bg-white/5 border-white/10">
-          <CardContent className="p-4">
-            <div className="flex items-start gap-3">
-              <Zap className="h-5 w-5 text-purple-400 mt-0.5" />
+        <Card className="bg-gradient-to-r from-purple-500/20 to-indigo-500/20 backdrop-blur-md border-white/30 shadow-xl">
+          <CardContent className="p-6">
+            <div className="flex items-start gap-4">
+              <div className="bg-purple-500/30 p-3 rounded-xl backdrop-blur-sm border border-purple-400/30">
+                <Zap className="h-6 w-6 text-purple-300" />
+              </div>
               <div>
-                <span className="font-medium text-white">Flow Approval Process</span>
-                <p className="text-white/70 text-sm mt-1">
-                  • <strong>Ready for Client Approval</strong> → Review and approve/request revisions<br/>
+                <span className="font-bold text-white text-lg">Flow Approval Process</span>
+                <p className="text-white/80 text-sm mt-2 font-medium leading-relaxed">
+                  • <strong>Ready For Client Approval</strong> → Review and approve/request revisions<br/>
                   • <strong>Approved</strong> → Flow is approved and ready to go live<br/>
-                  • <strong>Live</strong> → Flow is active and sending emails automatically
+                  • <strong>Scheduled - Close</strong> → Flow is active and sending emails automatically
                 </p>
               </div>
             </div>

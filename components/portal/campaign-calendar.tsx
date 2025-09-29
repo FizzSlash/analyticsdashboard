@@ -400,40 +400,40 @@ export function CampaignCalendar({ client, userRole, canEdit, canCreate, canAppr
     <div className="space-y-6">
       {/* Quick Actions */}
       {canCreate && (
-        <Card className="bg-white/5 border-white/10">
-          <CardContent className="p-4">
+        <Card className="bg-white/10 backdrop-blur-md border-white/20 shadow-xl">
+          <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-white font-medium">Quick Actions</h3>
-                <p className="text-white/70 text-sm">Create new campaigns and tests</p>
+                <h3 className="text-white font-bold text-lg">Quick Actions</h3>
+                <p className="text-white/80 text-sm font-medium">Create new campaigns and tests</p>
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-3">
                 <button 
                   onClick={() => addCampaign(undefined, 'email')}
-                  className="bg-blue-600/80 hover:bg-blue-600 text-white py-2 px-3 rounded-lg font-medium transition-colors flex items-center gap-2 text-sm"
+                  className="bg-blue-600/90 hover:bg-blue-600 text-white py-3 px-4 rounded-xl font-semibold transition-all duration-200 flex items-center gap-2 text-sm shadow-lg hover:shadow-xl hover:scale-105 backdrop-blur-sm border border-blue-500/30"
                 >
-                  <Mail className="h-4 w-4" />
+                  <Mail className="h-5 w-5" />
                   Email
                 </button>
                 <button 
                   onClick={() => addCampaign(undefined, 'sms')}
-                  className="bg-yellow-600/80 hover:bg-yellow-600 text-white py-2 px-3 rounded-lg font-medium transition-colors flex items-center gap-2 text-sm"
+                  className="bg-yellow-600/90 hover:bg-yellow-600 text-white py-3 px-4 rounded-xl font-semibold transition-all duration-200 flex items-center gap-2 text-sm shadow-lg hover:shadow-xl hover:scale-105 backdrop-blur-sm border border-yellow-500/30"
                 >
-                  <MessageSquare className="h-4 w-4" />
+                  <MessageSquare className="h-5 w-5" />
                   SMS
                 </button>
                 <button 
                   onClick={() => addCampaign(undefined, 'popup')}
-                  className="bg-green-600/80 hover:bg-green-600 text-white py-2 px-3 rounded-lg font-medium transition-colors flex items-center gap-2 text-sm"
+                  className="bg-green-600/90 hover:bg-green-600 text-white py-3 px-4 rounded-xl font-semibold transition-all duration-200 flex items-center gap-2 text-sm shadow-lg hover:shadow-xl hover:scale-105 backdrop-blur-sm border border-green-500/30"
                 >
-                  <Target className="h-4 w-4" />
+                  <Target className="h-5 w-5" />
                   Popup
                 </button>
                 <button 
                   onClick={() => addCampaign(undefined, 'ab_test')}
-                  className="bg-purple-600/80 hover:bg-purple-600 text-white py-2 px-3 rounded-lg font-medium transition-colors flex items-center gap-2 text-sm"
+                  className="bg-purple-600/90 hover:bg-purple-600 text-white py-3 px-4 rounded-xl font-semibold transition-all duration-200 flex items-center gap-2 text-sm shadow-lg hover:shadow-xl hover:scale-105 backdrop-blur-sm border border-purple-500/30"
                 >
-                  <TestTube className="h-4 w-4" />
+                  <TestTube className="h-5 w-5" />
                   A/B Test
                 </button>
               </div>
@@ -446,32 +446,32 @@ export function CampaignCalendar({ client, userRole, canEdit, canCreate, canAppr
       <div className="flex justify-between items-center">
         <button 
           onClick={prevMonth}
-          className="flex items-center gap-2 px-4 py-2 bg-white/10 border border-white/20 text-white rounded-lg hover:bg-white/20 transition-colors"
+          className="flex items-center gap-3 px-6 py-3 bg-white/15 backdrop-blur-sm border border-white/30 text-white rounded-xl hover:bg-white/25 transition-all duration-200 font-semibold shadow-lg hover:shadow-xl hover:scale-105"
         >
-          <ChevronLeft className="h-4 w-4" />
+          <ChevronLeft className="h-5 w-5" />
           Previous
         </button>
         
-        <h2 className="text-xl font-semibold text-white">
+        <h2 className="text-2xl font-bold text-white bg-white/10 backdrop-blur-sm px-8 py-4 rounded-2xl border border-white/20 shadow-lg">
           {currentMonth.toLocaleString('default', { month: 'long', year: 'numeric' })}
         </h2>
         
         <button 
           onClick={nextMonth}
-          className="flex items-center gap-2 px-4 py-2 bg-white/10 border border-white/20 text-white rounded-lg hover:bg-white/20 transition-colors"
+          className="flex items-center gap-3 px-6 py-3 bg-white/15 backdrop-blur-sm border border-white/30 text-white rounded-xl hover:bg-white/25 transition-all duration-200 font-semibold shadow-lg hover:shadow-xl hover:scale-105"
         >
           Next
-          <ChevronRight className="h-4 w-4" />
+          <ChevronRight className="h-5 w-5" />
         </button>
       </div>
 
       {/* Calendar Grid */}
-      <Card className="bg-white/5 border-white/10">
+      <Card className="bg-white/10 backdrop-blur-md border-white/20 shadow-xl overflow-hidden">
         <CardContent className="p-0">
-          <div className="grid grid-cols-7 gap-px bg-white/10">
+          <div className="grid grid-cols-7 gap-px bg-white/5">
             {/* Weekday headers */}
             {weekdays.map(day => (
-              <div key={day} className="p-3 bg-white/20 text-center font-semibold text-white text-sm">
+              <div key={day} className="p-4 bg-white/20 backdrop-blur-sm text-center font-bold text-white text-sm border-b border-white/10">
                 {day}
               </div>
             ))}
@@ -483,9 +483,9 @@ export function CampaignCalendar({ client, userRole, canEdit, canCreate, canAppr
               return (
                 <div 
                   key={index}
-                  className={`min-h-[140px] p-2 bg-white/5 hover:bg-white/10 transition-colors ${
+                  className={`min-h-[160px] p-3 bg-white/5 hover:bg-white/15 transition-all duration-200 border-r border-b border-white/10 ${
                     !day.isCurrentMonth ? 'opacity-50' : ''
-                  } ${canCreate ? 'cursor-pointer' : ''}`}
+                  } ${canCreate ? 'cursor-pointer hover:shadow-lg' : ''}`}
                   onClick={() => day.date && canCreate && addCampaign(day.date)}
                 >
                   {day.date && (
@@ -514,7 +514,7 @@ export function CampaignCalendar({ client, userRole, canEdit, canCreate, canAppr
                           return (
                             <div 
                               key={campaign.id}
-                              className={`p-2 text-xs rounded border border-white/20 cursor-pointer hover:bg-white/10 transition-all ${getCampaignTypeColor(campaign.type)}`}
+                              className={`p-3 text-xs rounded-lg backdrop-blur-sm border border-white/30 cursor-pointer hover:bg-white/20 transition-all duration-200 shadow-md hover:shadow-lg hover:scale-102 ${getCampaignTypeColor(campaign.type)}`}
                               onClick={(e) => {
                                 e.stopPropagation()
                                 setEditingCampaign(campaign)
@@ -789,10 +789,90 @@ export function CampaignCalendar({ client, userRole, canEdit, canCreate, canAppr
                 />
               </div>
 
+              {/* Agency-only fields */}
+              {userRole === 'agency_admin' && (
+                <>
+                  {/* Assignee and Offer */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-gray-700 text-sm font-medium mb-2">Assignee</label>
+                      <select 
+                        value={editingCampaign.assignee || ''}
+                        onChange={(e) => setEditingCampaign({...editingCampaign, assignee: e.target.value})}
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-900 focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="">Select assignee...</option>
+                        <option value="Reid Sickels">Reid Sickels</option>
+                        <option value="Connor Clements">Connor Clements</option>
+                        <option value="Copy Team">Copy Team</option>
+                        <option value="Design Team">Design Team</option>
+                        <option value="Dev Team">Dev Team</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-gray-700 text-sm font-medium mb-2">Offer</label>
+                      <input
+                        type="text"
+                        value={editingCampaign.offer || ''}
+                        onChange={(e) => setEditingCampaign({...editingCampaign, offer: e.target.value})}
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-900 focus:ring-2 focus:ring-blue-500"
+                        placeholder="e.g., 30% OFF, Free Shipping..."
+                      />
+                    </div>
+                  </div>
+
+                  {/* Due Dates */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-gray-700 text-sm font-medium mb-2">Copy Due Date</label>
+                      <input
+                        type="date"
+                        value={editingCampaign.copy_due_date?.toISOString().split('T')[0] || ''}
+                        onChange={(e) => setEditingCampaign({...editingCampaign, copy_due_date: e.target.value ? new Date(e.target.value) : undefined})}
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-900 focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-gray-700 text-sm font-medium mb-2">Design Due Date</label>
+                      <input
+                        type="date"
+                        value={editingCampaign.design_due_date?.toISOString().split('T')[0] || ''}
+                        onChange={(e) => setEditingCampaign({...editingCampaign, design_due_date: e.target.value ? new Date(e.target.value) : undefined})}
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-900 focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Copy Link */}
+                  <div>
+                    <label className="block text-gray-700 text-sm font-medium mb-2">Copy Link</label>
+                    <input
+                      type="url"
+                      value={editingCampaign.copy_link || ''}
+                      onChange={(e) => setEditingCampaign({...editingCampaign, copy_link: e.target.value})}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-900 focus:ring-2 focus:ring-blue-500"
+                      placeholder="https://docs.google.com/document/..."
+                    />
+                  </div>
+
+                  {/* A/B Test */}
+                  <div>
+                    <label className="block text-gray-700 text-sm font-medium mb-2">A/B Test</label>
+                    <input
+                      type="text"
+                      value={editingCampaign.ab_test || ''}
+                      onChange={(e) => setEditingCampaign({...editingCampaign, ab_test: e.target.value})}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-900 focus:ring-2 focus:ring-blue-500"
+                      placeholder="A/B test details..."
+                    />
+                  </div>
+                </>
+              )}
+
               {/* Notes (Both agency and client can edit) */}
               <div>
                 <label className="block text-gray-700 text-sm font-medium mb-2">
-                  {userRole === 'client_user' ? 'Your Notes & Feedback' : 'Internal Notes'}
+                  {userRole === 'client_user' ? 'Client Revisions' : 'Notes'}
                 </label>
                 <textarea
                   value={userRole === 'client_user' ? (editingCampaign.client_notes || '') : editingCampaign.notes}
@@ -805,7 +885,7 @@ export function CampaignCalendar({ client, userRole, canEdit, canCreate, canAppr
                   }}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-900 focus:ring-2 focus:ring-blue-500 resize-none"
                   rows={3}
-                  placeholder={userRole === 'client_user' ? 'Add your feedback or approval notes...' : 'Internal notes and requirements...'}
+                  placeholder={userRole === 'client_user' ? 'Add your feedback or approval notes...' : 'Campaign notes and requirements...'}
                 />
               </div>
 

@@ -158,22 +158,22 @@ export async function POST(request: NextRequest) {
         // Notes - enhanced multiline text with all details
         'Notes': buildEnhancedNotesField(campaign),
         
-        // Map to your existing Airtable fields exactly
+        // Map to your EXACT existing Airtable fields
         ...(campaign.copy_link && { 'Copy Link': campaign.copy_link }),
         ...(campaign.notes && { 'Notes': campaign.notes }),
         ...(campaign.offer && { 'Offer': campaign.offer }),
         ...(campaign.subject_line && !campaign.offer && { 'Offer': campaign.subject_line }),
         ...(campaign.ab_test && { 'A/B Test': campaign.ab_test }),
         
-        // Assignee field (matches your Airtable user structure)
+        // Assignee field - map to your existing user structure
         ...(campaign.assignee && { 
-          'Assignee': [getAssigneeEmail(campaign.assignee)]
+          'Assignee': { 'email': getAssigneeEmail(campaign.assignee) }
         }),
         
-        // Client Revisions (for client feedback)
+        // Client Revisions field (your existing field for client feedback)
         ...(campaign.client_notes && { 'Client Revisions': campaign.client_notes }),
         
-        // Due dates (your existing fields)
+        // Due dates (your existing date fields)
         ...(campaign.copy_due_date && { 'Copy Due Date': campaign.copy_due_date.toISOString().split('T')[0] }),
         ...(campaign.design_due_date && { 'Design Due Date': campaign.design_due_date.toISOString().split('T')[0] }),
       }

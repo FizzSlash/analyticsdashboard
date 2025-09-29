@@ -69,16 +69,18 @@ export function CleanPortalDashboard({ user, client, userRole, allClients }: Cle
   return (
     <div className="space-y-6">
       {/* Portal Header */}
-      <Card className="bg-white/5 border-white/10">
+      <Card className="bg-white/10 backdrop-blur-md border-white/20 shadow-xl">
         <CardHeader>
           <div className="flex justify-between items-center">
-            <div className="flex items-center gap-3">
-              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+            <div className="flex items-center gap-4">
+              <div className="bg-green-500/30 p-3 rounded-xl backdrop-blur-sm border border-green-400/30">
+                <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
+              </div>
               <div>
-                <CardTitle className="text-white">
+                <CardTitle className="text-white text-xl font-bold">
                   {userRole === 'agency_admin' ? 'Agency Portal' : 'Client Portal'}
                 </CardTitle>
-                <p className="text-white/70 text-sm mt-1">
+                <p className="text-white/80 text-sm mt-1 font-medium">
                   {userRole === 'agency_admin' 
                     ? `Managing campaigns and flows • Auto-sync to Airtable` 
                     : `Approve campaigns and flows • Submit requests`
@@ -89,8 +91,8 @@ export function CleanPortalDashboard({ user, client, userRole, allClients }: Cle
             
             {/* Client Selector (Agency Admin Only) */}
             {userRole === 'agency_admin' && allClients && (
-              <div className="flex items-center gap-3">
-                <span className="text-white/70 text-sm">Client:</span>
+              <div className="flex items-center gap-4">
+                <span className="text-white/80 text-sm font-medium">Client:</span>
                 <select
                   value={selectedClient?.id || 'all'}
                   onChange={(e) => {
@@ -101,7 +103,7 @@ export function CleanPortalDashboard({ user, client, userRole, allClients }: Cle
                       setSelectedClient(selected)
                     }
                   }}
-                  className="bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-blue-400"
+                  className="bg-white/15 backdrop-blur-sm border border-white/30 rounded-xl px-4 py-2 text-white font-medium focus:ring-2 focus:ring-blue-400 shadow-lg"
                 >
                   <option value="all">All Clients</option>
                   {allClients.map(client => (
@@ -111,9 +113,9 @@ export function CleanPortalDashboard({ user, client, userRole, allClients }: Cle
                   ))}
                 </select>
                 {selectedClient && selectedClient.id !== 'all' && (
-                  <div className="flex items-center gap-2 bg-white/10 border border-white/20 rounded-lg px-3 py-2">
-                    <Building2 className="h-4 w-4 text-white/80" />
-                    <span className="text-white font-medium text-sm">{selectedClient.brand_name}</span>
+                  <div className="flex items-center gap-2 bg-white/15 backdrop-blur-sm border border-white/30 rounded-xl px-4 py-2 shadow-lg">
+                    <Building2 className="h-5 w-5 text-white" />
+                    <span className="text-white font-semibold text-sm">{selectedClient.brand_name}</span>
                   </div>
                 )}
               </div>
@@ -123,7 +125,7 @@ export function CleanPortalDashboard({ user, client, userRole, allClients }: Cle
       </Card>
 
       {/* Portal Navigation Tabs */}
-      <div className="flex gap-2">
+      <div className="flex gap-3 p-2 bg-white/5 backdrop-blur-sm rounded-2xl border border-white/20 shadow-lg">
         {portalTabs.map(tab => {
           const Icon = tab.icon
           return (
@@ -131,14 +133,14 @@ export function CleanPortalDashboard({ user, client, userRole, allClients }: Cle
               key={tab.id}
               onClick={() => setActiveTab(tab.id as PortalTab)}
               className={`
-                flex items-center gap-2 px-6 py-3 rounded-lg text-sm font-medium transition-all duration-200
+                flex items-center gap-3 px-6 py-4 rounded-xl text-sm font-semibold transition-all duration-300 backdrop-blur-sm
                 ${activeTab === tab.id 
-                  ? 'bg-white/20 text-white shadow-lg' 
-                  : 'text-white/70 hover:text-white hover:bg-white/10'
+                  ? 'bg-white/30 text-white shadow-lg border border-white/40 transform scale-105' 
+                  : 'text-white/80 hover:text-white hover:bg-white/15 hover:scale-102 hover:shadow-md'
                 }
               `}
             >
-              <Icon className="h-4 w-4" />
+              <Icon className="h-5 w-5" />
               {tab.label}
             </button>
           )
@@ -188,15 +190,17 @@ export function CleanPortalDashboard({ user, client, userRole, allClients }: Cle
       </div>
 
       {/* Status Info */}
-      <Card className="bg-white/5 border-white/10">
-        <CardContent className="p-4">
-          <div className="flex items-start gap-3">
-            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse mt-2"></div>
+      <Card className="bg-gradient-to-r from-green-500/20 to-blue-500/20 backdrop-blur-md border-white/30 shadow-xl">
+        <CardContent className="p-6">
+          <div className="flex items-start gap-4">
+            <div className="bg-green-500/30 p-3 rounded-xl backdrop-blur-sm border border-green-400/30">
+              <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
+            </div>
             <div>
-              <span className="font-medium text-white">
+              <span className="font-bold text-white text-lg">
                 {userRole === 'agency_admin' ? 'Agency Portal - Full Management' : 'Client Portal - Approval & Requests'}
               </span>
-              <p className="text-white/70 text-sm mt-1">
+              <p className="text-white/80 text-sm mt-2 font-medium leading-relaxed">
                 {userRole === 'agency_admin' ? (
                   <>• Create and manage campaigns/flows for all clients<br/>
                   • View and manage all design files and feedback<br/>
@@ -206,7 +210,7 @@ export function CleanPortalDashboard({ user, client, userRole, allClients }: Cle
                   <>• Approve campaigns and flows when ready<br/>
                   • Review designs and provide feedback<br/>
                   • Submit requests for new campaigns/flows<br/>
-                  • Like designs and add notes</>
+                  • Add location-specific comments on designs</>
                 )}
               </p>
             </div>
