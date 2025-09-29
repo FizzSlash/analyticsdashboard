@@ -49,6 +49,13 @@ type TabType = 'dashboard' | 'campaigns' | 'flows' | 'subject-lines' | 'list-gro
 export function ModernDashboard({ client, data: initialData, disablePortalMode = false, hideHeader = false }: ModernDashboardProps) {
   const [viewMode, setViewMode] = useState<ViewMode>('analytics')
   const [activeTab, setActiveTab] = useState<TabType>('dashboard')
+
+  // Dynamic colors based on client branding
+  const primaryColor = client?.primary_color || '#3B82F6'
+  const secondaryColor = client?.secondary_color || '#1D4ED8'
+  const accentColor = '#34D399' // Green for positive metrics
+  const warningColor = '#F59E0B' // Orange for neutral/warning
+  const errorColor = '#EF4444' // Red for negative metrics
   const [campaignTimeframe, setCampaignTimeframe] = useState(30) // Default to 30 days for campaigns
   const [flowTimeframe, setFlowTimeframe] = useState(90) // Default to 3 months for flows  
   const [data, setData] = useState(initialData)
@@ -1134,7 +1141,7 @@ export function ModernDashboard({ client, data: initialData, disablePortalMode =
                     <Bar 
                       yAxisId="revenue"
                       dataKey="revenue" 
-                      fill="#60A5FA"
+                      fill={primaryColor}
                       fillOpacity={0.8}
                       radius={[4, 4, 0, 0]}
                     />
@@ -1142,10 +1149,10 @@ export function ModernDashboard({ client, data: initialData, disablePortalMode =
                       yAxisId="recipients"
                       type="monotone" 
                       dataKey="recipients" 
-                      stroke="#34D399"
+                      stroke={accentColor}
                       strokeWidth={3}
-                      dot={{ fill: '#34D399', strokeWidth: 2, r: 4 }}
-                      activeDot={{ r: 6, stroke: '#34D399', strokeWidth: 2 }}
+                      dot={{ fill: accentColor, strokeWidth: 2, r: 4 }}
+                      activeDot={{ r: 6, stroke: accentColor, strokeWidth: 2 }}
                     />
                   </ComposedChart>
                 </ResponsiveContainer>
@@ -1188,10 +1195,10 @@ export function ModernDashboard({ client, data: initialData, disablePortalMode =
                     <Line 
                       type="monotone" 
                       dataKey="rpr" 
-                      stroke="#A78BFA"
+                      stroke={secondaryColor}
                       strokeWidth={3}
-                      dot={{ fill: '#A78BFA', strokeWidth: 2, r: 4 }}
-                      activeDot={{ r: 6, stroke: '#A78BFA', strokeWidth: 2 }}
+                      dot={{ fill: secondaryColor, strokeWidth: 2, r: 4 }}
+                      activeDot={{ r: 6, stroke: secondaryColor, strokeWidth: 2 }}
                     />
                   </LineChart>
                 </ResponsiveContainer>
@@ -1829,7 +1836,7 @@ export function ModernDashboard({ client, data: initialData, disablePortalMode =
                     <Bar 
                       yAxisId="revenue"
                       dataKey="revenue" 
-                      fill="#A78BFA"
+                      fill={secondaryColor}
                       fillOpacity={0.8}
                       radius={[4, 4, 0, 0]}
                     />
@@ -1837,10 +1844,10 @@ export function ModernDashboard({ client, data: initialData, disablePortalMode =
                       yAxisId="recipients"
                       type="monotone" 
                       dataKey="recipients" 
-                      stroke="#34D399"
+                      stroke={accentColor}
                       strokeWidth={3}
-                      dot={{ fill: '#34D399', strokeWidth: 2, r: 4 }}
-                      activeDot={{ r: 6, stroke: '#34D399', strokeWidth: 2 }}
+                      dot={{ fill: accentColor, strokeWidth: 2, r: 4 }}
+                      activeDot={{ r: 6, stroke: accentColor, strokeWidth: 2 }}
                     />
                   </ComposedChart>
                 </ResponsiveContainer>
@@ -1883,10 +1890,10 @@ export function ModernDashboard({ client, data: initialData, disablePortalMode =
                     <Line 
                       type="monotone" 
                       dataKey="revenue" 
-                      stroke="#A78BFA"
+                      stroke={secondaryColor}
                       strokeWidth={3}
-                      dot={{ fill: '#A78BFA', strokeWidth: 2, r: 4 }}
-                      activeDot={{ r: 6, stroke: '#A78BFA', strokeWidth: 2 }}
+                      dot={{ fill: secondaryColor, strokeWidth: 2, r: 4 }}
+                      activeDot={{ r: 6, stroke: secondaryColor, strokeWidth: 2 }}
                     />
                   </LineChart>
                 </ResponsiveContainer>
@@ -2199,13 +2206,13 @@ export function ModernDashboard({ client, data: initialData, disablePortalMode =
                       {/* Single net growth bar - green if positive, red if negative */}
                       <Bar 
                         dataKey="net_growth" 
-                        fill="#22c55e"
+                        fill={accentColor}
                         name="net_growth"
                         radius={[4, 4, 0, 0]}
                         shape={(props: any) => {
                           const { x, y, width, height, payload } = props
                           const isPositive = payload.net_growth >= 0
-                          const color = isPositive ? '#22c55e' : '#ef4444'
+                          const color = isPositive ? accentColor : errorColor
                           const actualY = isPositive ? y : y
                           const actualHeight = Math.abs(height)
                           
