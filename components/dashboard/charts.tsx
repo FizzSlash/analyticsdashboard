@@ -63,8 +63,9 @@ export function CustomLineChart({
   className,
   client
 }: LineChartProps) {
-  // Use client primary color as default, fallback to blue
-  const chartColor = color || client?.primary_color || '#3B82F6'
+  // Use client chart colors
+  const chartColors = getChartColors(client)
+  const chartColor = color || chartColors[0] || '#3B82F6'
   const formatValue = (value: number) => {
     switch (format) {
       case 'currency':
@@ -130,8 +131,9 @@ export function CustomBarChart({
   className,
   client
 }: BarChartProps) {
-  // Use client primary color as default, fallback to blue
-  const chartColor = color || client?.primary_color || '#3B82F6'
+  // Use client chart colors
+  const chartColors = getChartColors(client)
+  const chartColor = color || chartColors[0] || '#3B82F6'
   const formatValue = (value: number) => {
     switch (format) {
       case 'currency':
@@ -190,8 +192,9 @@ export function CustomAreaChart({
   className,
   client
 }: LineChartProps) {
-  // Use client primary color as default, fallback to blue
-  const chartColor = color || client?.primary_color || '#3B82F6'
+  // Use client chart colors
+  const chartColors = getChartColors(client)
+  const chartColor = color || chartColors[0] || '#3B82F6'
   const formatValue = (value: number) => {
     switch (format) {
       case 'currency':

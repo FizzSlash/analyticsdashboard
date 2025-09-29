@@ -37,6 +37,13 @@ interface ClientFormData {
   portal_title: string
   primary_color: string
   secondary_color: string
+  accent_color: string
+  success_color: string
+  warning_color: string
+  error_color: string
+  chart_color_1: string
+  chart_color_2: string
+  chart_color_3: string
   background_image_url: string
 }
 
@@ -59,6 +66,13 @@ export function ClientManagement({ agency, clients: initialClients }: ClientMana
     portal_title: '',
     primary_color: agency.primary_color,
     secondary_color: agency.secondary_color,
+    accent_color: '#6366F1', // Default accent
+    success_color: '#10B981', // Default success
+    warning_color: '#F59E0B', // Default warning  
+    error_color: '#EF4444', // Default error
+    chart_color_1: agency.primary_color,
+    chart_color_2: agency.secondary_color,
+    chart_color_3: '#6366F1', // Default third chart color
     background_image_url: ''
   })
 
@@ -71,6 +85,13 @@ export function ClientManagement({ agency, clients: initialClients }: ClientMana
       portal_title: '',
       primary_color: agency.primary_color,
       secondary_color: agency.secondary_color,
+      accent_color: '#6366F1',
+      success_color: '#10B981',
+      warning_color: '#F59E0B',
+      error_color: '#EF4444',
+      chart_color_1: agency.primary_color,
+      chart_color_2: agency.secondary_color,
+      chart_color_3: '#6366F1',
       background_image_url: ''
     })
     setEditingClient(null)
@@ -88,6 +109,13 @@ export function ClientManagement({ agency, clients: initialClients }: ClientMana
       portal_title: (client as any).portal_title || '',
       primary_color: client.primary_color,
       secondary_color: client.secondary_color,
+      accent_color: (client as any).accent_color || '#6366F1',
+      success_color: (client as any).success_color || '#10B981',
+      warning_color: (client as any).warning_color || '#F59E0B',
+      error_color: (client as any).error_color || '#EF4444',
+      chart_color_1: (client as any).chart_color_1 || client.primary_color,
+      chart_color_2: (client as any).chart_color_2 || client.secondary_color,
+      chart_color_3: (client as any).chart_color_3 || '#6366F1',
       background_image_url: client.background_image_url || ''
     })
     setEditingClient(client)
@@ -1238,28 +1266,132 @@ ${flowDetails.slice(0, 3).map((f: any, i: number) =>
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Primary Color
-                  </label>
-                  <input
-                    type="color"
-                    value={formData.primary_color}
-                    onChange={(e) => setFormData({ ...formData, primary_color: e.target.value })}
-                    className="w-full h-10 border border-gray-300 rounded-md"
-                  />
-                </div>
+                {/* Brand Colors Section */}
+                <div className="md:col-span-2">
+                  <h4 className="text-lg font-semibold text-gray-900 mb-4 border-b border-gray-200 pb-2">
+                    Brand Colors - Complete Control
+                  </h4>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Primary Color
+                      </label>
+                      <div className="space-y-2">
+                        <input
+                          type="color"
+                          value={formData.primary_color}
+                          onChange={(e) => setFormData({ ...formData, primary_color: e.target.value })}
+                          className="w-full h-10 border border-gray-300 rounded-md"
+                        />
+                        <p className="text-xs text-gray-500">Main buttons, icons</p>
+                      </div>
+                    </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Secondary Color
-                  </label>
-                  <input
-                    type="color"
-                    value={formData.secondary_color}
-                    onChange={(e) => setFormData({ ...formData, secondary_color: e.target.value })}
-                    className="w-full h-10 border border-gray-300 rounded-md"
-                  />
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Secondary Color
+                      </label>
+                      <div className="space-y-2">
+                        <input
+                          type="color"
+                          value={formData.secondary_color}
+                          onChange={(e) => setFormData({ ...formData, secondary_color: e.target.value })}
+                          className="w-full h-10 border border-gray-300 rounded-md"
+                        />
+                        <p className="text-xs text-gray-500">Secondary actions</p>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Accent Color
+                      </label>
+                      <div className="space-y-2">
+                        <input
+                          type="color"
+                          value={formData.accent_color}
+                          onChange={(e) => setFormData({ ...formData, accent_color: e.target.value })}
+                          className="w-full h-10 border border-gray-300 rounded-md"
+                        />
+                        <p className="text-xs text-gray-500">Highlights, links</p>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Success Color
+                      </label>
+                      <div className="space-y-2">
+                        <input
+                          type="color"
+                          value={formData.success_color}
+                          onChange={(e) => setFormData({ ...formData, success_color: e.target.value })}
+                          className="w-full h-10 border border-gray-300 rounded-md"
+                        />
+                        <p className="text-xs text-gray-500">Approve buttons</p>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Warning Color
+                      </label>
+                      <div className="space-y-2">
+                        <input
+                          type="color"
+                          value={formData.warning_color}
+                          onChange={(e) => setFormData({ ...formData, warning_color: e.target.value })}
+                          className="w-full h-10 border border-gray-300 rounded-md"
+                        />
+                        <p className="text-xs text-gray-500">Pending, revisions</p>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Error Color
+                      </label>
+                      <div className="space-y-2">
+                        <input
+                          type="color"
+                          value={formData.error_color}
+                          onChange={(e) => setFormData({ ...formData, error_color: e.target.value })}
+                          className="w-full h-10 border border-gray-300 rounded-md"
+                        />
+                        <p className="text-xs text-gray-500">Reject, errors</p>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Chart Color 1
+                      </label>
+                      <div className="space-y-2">
+                        <input
+                          type="color"
+                          value={formData.chart_color_1}
+                          onChange={(e) => setFormData({ ...formData, chart_color_1: e.target.value })}
+                          className="w-full h-10 border border-gray-300 rounded-md"
+                        />
+                        <p className="text-xs text-gray-500">Main chart color</p>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Chart Color 2
+                      </label>
+                      <div className="space-y-2">
+                        <input
+                          type="color"
+                          value={formData.chart_color_2}
+                          onChange={(e) => setFormData({ ...formData, chart_color_2: e.target.value })}
+                          className="w-full h-10 border border-gray-300 rounded-md"
+                        />
+                        <p className="text-xs text-gray-500">Secondary charts</p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
 
