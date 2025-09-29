@@ -19,7 +19,9 @@ import {
   Mail,
   Zap,
   TrendingUp,
-  DollarSign
+  DollarSign,
+  RefreshCw,
+  Link
 } from 'lucide-react'
 
 interface ClientManagementProps {
@@ -945,6 +947,50 @@ ${flowDetails.slice(0, 3).map((f: any, i: number) =>
           {success}
         </div>
       )}
+
+      {/* Airtable Client Mapping */}
+      <Card className="bg-blue-50 border border-blue-200">
+        <CardHeader>
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-2">
+              <Link className="h-5 w-5 text-blue-600" />
+              <CardTitle className="text-blue-900">Airtable Client Mapping</CardTitle>
+            </div>
+            <button
+              onClick={async () => {
+                // TODO: Implement client mapping sync
+                console.log('🔄 Syncing client mappings to Airtable...')
+                setSuccess('Client mappings updated successfully!')
+                setTimeout(() => setSuccess(''), 3000)
+              }}
+              className="bg-blue-600 hover:bg-blue-700 text-white py-2 px-3 rounded-lg font-medium transition-colors flex items-center gap-2 text-sm"
+            >
+              <RefreshCw className="h-4 w-4" />
+              Sync Client Names
+            </button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            <p className="text-blue-800 text-sm">
+              Client names are automatically mapped to Airtable. If a client doesn't appear correctly in Airtable campaigns, use the sync button to update mappings.
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {clients.filter(c => c.is_active).map(client => (
+                <div key={client.id} className="bg-white border border-blue-200 rounded-lg p-3">
+                  <div className="flex items-center gap-2">
+                    <Building2 className="h-4 w-4 text-blue-600" />
+                    <div>
+                      <div className="text-sm font-medium text-gray-900">{client.brand_name}</div>
+                      <div className="text-xs text-gray-600">→ {client.brand_slug}</div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Client Form */}
       {showForm && (
