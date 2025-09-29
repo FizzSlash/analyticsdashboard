@@ -2,18 +2,20 @@
 
 import { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { CampaignCalendar } from './campaign-calendar'
+import { CampaignApprovalCalendar } from './campaign-approval-calendar'
 import { FlowProgressTracker } from './flow-progress-tracker'
 import { ABTestManager } from './ab-test-manager'
 import { EnhancedRequests } from './enhanced-requests'
-import { DesignFeedback } from './design-feedback'
+import { DynamicForms } from './dynamic-forms'
 import { 
   Calendar, 
   Zap, 
   TestTube, 
   FileText,
   Building2,
-  Image
+  ClipboardList,
+  Figma,
+  ExternalLink
 } from 'lucide-react'
 
 interface CleanPortalDashboardProps {
@@ -23,7 +25,7 @@ interface CleanPortalDashboardProps {
   allClients?: any[] // For agency admins to see all clients
 }
 
-type PortalTab = 'campaigns' | 'flows' | 'designs' | 'abtests' | 'requests'
+type PortalTab = 'campaigns' | 'flows' | 'abtests' | 'requests' | 'forms'
 
 export function CleanPortalDashboard({ user, client, userRole, allClients }: CleanPortalDashboardProps) {
   const [activeTab, setActiveTab] = useState<PortalTab>('campaigns')
@@ -35,6 +37,7 @@ export function CleanPortalDashboard({ user, client, userRole, allClients }: Cle
     : { 
         brand_name: user.client?.brand_name || 'Your Brand',
         brand_slug: user.client?.brand_slug || 'unknown',
+        figma_url: user.client?.figma_url || client?.figma_url,
         ...client
       }
 
@@ -50,11 +53,6 @@ export function CleanPortalDashboard({ user, client, userRole, allClients }: Cle
       icon: Zap 
     },
     { 
-      id: 'designs', 
-      label: userRole === 'agency_admin' ? 'Design Center' : 'Design Feedback', 
-      icon: Image 
-    },
-    { 
       id: 'abtests', 
       label: userRole === 'agency_admin' ? 'A/B Test Manager' : 'A/B Test Results', 
       icon: TestTube 
@@ -63,6 +61,11 @@ export function CleanPortalDashboard({ user, client, userRole, allClients }: Cle
       id: 'requests', 
       label: userRole === 'agency_admin' ? 'Request Management' : 'Submit Requests', 
       icon: FileText 
+    },
+    { 
+      id: 'forms', 
+      label: userRole === 'agency_admin' ? 'Form Templates' : 'My Forms', 
+      icon: ClipboardList 
     }
   ]
 
@@ -89,37 +92,55 @@ export function CleanPortalDashboard({ user, client, userRole, allClients }: Cle
               </div>
             </div>
             
-            {/* Client Selector (Agency Admin Only) */}
-            {userRole === 'agency_admin' && allClients && (
-              <div className="flex items-center gap-4">
-                <span className="text-white/80 text-sm font-medium">Client:</span>
-                <select
-                  value={selectedClient?.id || 'all'}
-                  onChange={(e) => {
-                    if (e.target.value === 'all') {
-                      setSelectedClient({ brand_name: 'All Clients', brand_slug: 'all', id: 'all' })
-                    } else {
-                      const selected = allClients.find(c => c.id === e.target.value)
-                      setSelectedClient(selected)
-                    }
-                  }}
-                  className="bg-white/15 backdrop-blur-sm border border-white/30 rounded-xl px-4 py-2 text-white font-medium focus:ring-2 focus:ring-blue-400 shadow-lg"
+            {/* Action Buttons */}
+            <div className="flex items-center gap-3">
+              {/* Figma Button */}
+              {clientInfo.figma_url && (
+                <a
+                  href={clientInfo.figma_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="bg-gradient-to-r from-purple-500/80 to-pink-500/80 hover:from-purple-500 hover:to-pink-500 text-white px-4 py-2 rounded-xl font-semibold transition-all duration-300 flex items-center gap-2 backdrop-blur-sm border border-white/30 shadow-lg hover:scale-105"
+                  title="Open Figma Designs"
                 >
-                  <option value="all">All Clients</option>
-                  {allClients.map(client => (
-                    <option key={client.id} value={client.id}>
-                      {client.brand_name}
-                    </option>
-                  ))}
-                </select>
-                {selectedClient && selectedClient.id !== 'all' && (
-                  <div className="flex items-center gap-2 bg-white/15 backdrop-blur-sm border border-white/30 rounded-xl px-4 py-2 shadow-lg">
-                    <Building2 className="h-5 w-5 text-white" />
-                    <span className="text-white font-semibold text-sm">{selectedClient.brand_name}</span>
-                  </div>
-                )}
-              </div>
-            )}
+                  <Figma className="h-4 w-4" />
+                  Design Files
+                  <ExternalLink className="h-3 w-3" />
+                </a>
+              )}
+
+              {/* Client Selector (Agency Admin Only) */}
+              {userRole === 'agency_admin' && allClients && (
+                <div className="flex items-center gap-3">
+                  <span className="text-white/80 text-sm font-medium">Client:</span>
+                  <select
+                    value={selectedClient?.id || 'all'}
+                    onChange={(e) => {
+                      if (e.target.value === 'all') {
+                        setSelectedClient({ brand_name: 'All Clients', brand_slug: 'all', id: 'all' })
+                      } else {
+                        const selected = allClients.find(c => c.id === e.target.value)
+                        setSelectedClient(selected)
+                      }
+                    }}
+                    className="bg-white/15 backdrop-blur-sm border border-white/30 rounded-xl px-4 py-2 text-white font-medium focus:ring-2 focus:ring-blue-400 shadow-lg"
+                  >
+                    <option value="all">All Clients</option>
+                    {allClients.map(client => (
+                      <option key={client.id} value={client.id}>
+                        {client.brand_name}
+                      </option>
+                    ))}
+                  </select>
+                  {selectedClient && selectedClient.id !== 'all' && (
+                    <div className="flex items-center gap-2 bg-white/15 backdrop-blur-sm border border-white/30 rounded-xl px-4 py-2 shadow-lg">
+                      <Building2 className="h-5 w-5 text-white" />
+                      <span className="text-white font-semibold text-sm">{selectedClient.brand_name}</span>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         </CardHeader>
       </Card>
@@ -150,12 +171,9 @@ export function CleanPortalDashboard({ user, client, userRole, allClients }: Cle
       {/* Tab Content */}
       <div className="min-h-[600px]">
         {activeTab === 'campaigns' && (
-          <CampaignCalendar 
+          <CampaignApprovalCalendar 
             client={clientInfo}
             userRole={userRole}
-            canEdit={userRole === 'agency_admin'}
-            canCreate={userRole === 'agency_admin'}
-            canApprove={userRole === 'client_user'}
           />
         )}
         
@@ -169,13 +187,6 @@ export function CleanPortalDashboard({ user, client, userRole, allClients }: Cle
           />
         )}
         
-        {activeTab === 'designs' && (
-          <DesignFeedback 
-            client={clientInfo}
-            userRole={userRole}
-          />
-        )}
-        
         {activeTab === 'abtests' && (
           <ABTestManager 
             client={clientInfo}
@@ -185,6 +196,13 @@ export function CleanPortalDashboard({ user, client, userRole, allClients }: Cle
         {activeTab === 'requests' && (
           <EnhancedRequests 
             client={clientInfo}
+          />
+        )}
+        
+        {activeTab === 'forms' && (
+          <DynamicForms 
+            client={clientInfo}
+            userRole={userRole}
           />
         )}
       </div>
@@ -203,14 +221,15 @@ export function CleanPortalDashboard({ user, client, userRole, allClients }: Cle
               <p className="text-white/80 text-sm mt-2 font-medium leading-relaxed">
                 {userRole === 'agency_admin' ? (
                   <>• Create and manage campaigns/flows for all clients<br/>
-                  • View and manage all design files and feedback<br/>
+                  • Manage client Figma access and design files<br/>
+                  • Create dynamic forms and track responses<br/>
                   • All changes auto-sync to Airtable instantly<br/>
                   • Perfect for live client collaboration</>
                 ) : (
                   <>• Approve campaigns and flows when ready<br/>
-                  • Review designs and provide feedback<br/>
+                  • Access your dedicated Figma design files<br/>
                   • Submit requests for new campaigns/flows<br/>
-                  • Add location-specific comments on designs</>
+                  • Complete assigned forms and questionnaires</>
                 )}
               </p>
             </div>

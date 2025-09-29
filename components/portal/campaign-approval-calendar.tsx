@@ -14,8 +14,42 @@ import {
   Clock,
   X,
   Send,
-  Edit
+  Edit,
+  Plus,
+  Image as ImageIcon,
+  Pin,
+  Reply,
+  ThumbsUp,
+  Download
 } from 'lucide-react'
+
+interface DesignFile {
+  id: string
+  filename: string
+  url: string
+  thumbnail_url: string
+  type: string
+}
+
+interface Annotation {
+  id: string
+  x: number
+  y: number
+  comment: string
+  author: string
+  author_role: 'client_user' | 'agency_admin'
+  created_at: Date
+  resolved: boolean
+  replies?: Comment[]
+}
+
+interface Comment {
+  id: string
+  comment: string
+  author: string
+  author_role: 'client_user' | 'agency_admin'
+  created_at: Date
+}
 
 interface Campaign {
   id: string
@@ -29,14 +63,18 @@ interface Campaign {
   clientId: string
   clientRevisions: string
   previewUrl?: string
+  design_files?: DesignFile[]
+  annotations?: Annotation[]
+  comments?: Comment[]
   rawData?: any
 }
 
 interface CampaignApprovalCalendarProps {
   client: any
+  userRole?: 'client_user' | 'agency_admin'
 }
 
-export function CampaignApprovalCalendar({ client }: CampaignApprovalCalendarProps) {
+export function CampaignApprovalCalendar({ client, userRole = 'client_user' }: CampaignApprovalCalendarProps) {
   const [campaigns, setCampaigns] = useState<Campaign[]>([])
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null)
   const [clientRevisions, setClientRevisions] = useState('')
@@ -46,6 +84,10 @@ export function CampaignApprovalCalendar({ client }: CampaignApprovalCalendarPro
   const [showModal, setShowModal] = useState(false)
   const [updateStatus, setUpdateStatus] = useState<any>(null)
   const [activeTab, setActiveTab] = useState<'calendar' | 'approvals' | 'sent'>('calendar')
+  const [viewingDesign, setViewingDesign] = useState<{ campaign: Campaign; fileIndex: number } | null>(null)
+  const [newComment, setNewComment] = useState('')
+  const [replyingTo, setReplyingTo] = useState<string | null>(null)
+  const [newAnnotation, setNewAnnotation] = useState<{ x: number; y: number; comment: string } | null>(null)
 
   // Mock webhook URLs - replace with your actual Make.com webhooks
   const fetchCampaignsUrl = 'https://hook.us2.make.com/dlcqdia9qozi8lca39jytiu27xrf1t1l'
@@ -121,7 +163,25 @@ export function CampaignApprovalCalendar({ client }: CampaignApprovalCalendarPro
       status: 'Client Approval',
       clientId: client.brand_slug,
       clientRevisions: '',
-      previewUrl: 'https://example.com/preview/1'
+      previewUrl: 'https://example.com/preview/1',
+      design_files: [
+        {
+          id: 'file1',
+          filename: 'black-friday-email-design.jpg',
+          url: 'https://picsum.photos/800/1200?random=1',
+          thumbnail_url: 'https://picsum.photos/400/600?random=1',
+          type: 'image'
+        },
+        {
+          id: 'file2', 
+          filename: 'mobile-version.jpg',
+          url: 'https://picsum.photos/400/800?random=2',
+          thumbnail_url: 'https://picsum.photos/200/400?random=2',
+          type: 'image'
+        }
+      ],
+      annotations: [],
+      comments: []
     },
     {
       id: 'camp2', 
@@ -134,7 +194,18 @@ export function CampaignApprovalCalendar({ client }: CampaignApprovalCalendarPro
       status: 'Design Complete',
       clientId: client.brand_slug,
       clientRevisions: '',
-      previewUrl: 'https://example.com/preview/2'
+      previewUrl: 'https://example.com/preview/2',
+      design_files: [
+        {
+          id: 'file3',
+          filename: 'holiday-launch-email.jpg',
+          url: 'https://picsum.photos/800/1400?random=3',
+          thumbnail_url: 'https://picsum.photos/400/700?random=3',
+          type: 'image'
+        }
+      ],
+      annotations: [],
+      comments: []
     },
     {
       id: 'camp3',
@@ -147,7 +218,46 @@ export function CampaignApprovalCalendar({ client }: CampaignApprovalCalendarPro
       status: 'Client Approval',
       clientId: client.brand_slug,
       clientRevisions: 'Please adjust the CTA button color to match brand guidelines',
-      previewUrl: 'https://example.com/preview/3'
+      previewUrl: 'https://example.com/preview/3',
+      design_files: [
+        {
+          id: 'file4',
+          filename: 'welcome-email-3.jpg',
+          url: 'https://picsum.photos/800/1000?random=4',
+          thumbnail_url: 'https://picsum.photos/400/500?random=4',
+          type: 'image'
+        }
+      ],
+      annotations: [
+        {
+          id: 'ann1',
+          x: 50,
+          y: 30,
+          comment: 'The CTA button color should match our brand blue #1E40AF',
+          author: 'Client Team',
+          author_role: 'client_user',
+          created_at: new Date(2025, 9, 29),
+          resolved: false,
+          replies: [
+            {
+              id: 'reply1',
+              comment: 'Got it! We\'ll update the button color in the next revision.',
+              author: 'Design Team',
+              author_role: 'agency_admin',
+              created_at: new Date(2025, 9, 29, 14, 30)
+            }
+          ]
+        }
+      ],
+      comments: [
+        {
+          id: 'comment1',
+          comment: 'Overall design looks great! Just need the CTA button adjustment.',
+          author: 'Client Team',
+          author_role: 'client_user',
+          created_at: new Date(2025, 9, 29)
+        }
+      ]
     }
   ]
 
@@ -208,6 +318,120 @@ export function CampaignApprovalCalendar({ client }: CampaignApprovalCalendarPro
         message: error instanceof Error ? error.message : 'Error sending approval data' 
       })
     }
+  }
+
+  const addAnnotation = async (campaignId: string, fileId: string, annotation: { x: number; y: number; comment: string }) => {
+    const newAnnotation: Annotation = {
+      id: `ann-${Date.now()}`,
+      x: annotation.x,
+      y: annotation.y,
+      comment: annotation.comment,
+      author: userRole === 'agency_admin' ? 'Agency Team' : 'Client Team',
+      author_role: userRole,
+      created_at: new Date(),
+      resolved: false,
+      replies: []
+    }
+
+    setCampaigns(prev => prev.map(campaign => 
+      campaign.id === campaignId 
+        ? { 
+            ...campaign, 
+            annotations: [...(campaign.annotations || []), newAnnotation]
+          }
+        : campaign
+    ))
+    
+    console.log('📌 Added annotation:', newAnnotation)
+  }
+
+  const addComment = async (campaignId: string, comment: string) => {
+    const newComment: Comment = {
+      id: `comment-${Date.now()}`,
+      comment: comment,
+      author: userRole === 'agency_admin' ? 'Agency Team' : 'Client Team',
+      author_role: userRole,
+      created_at: new Date()
+    }
+
+    setCampaigns(prev => prev.map(campaign => 
+      campaign.id === campaignId 
+        ? { 
+            ...campaign, 
+            comments: [...(campaign.comments || []), newComment]
+          }
+        : campaign
+    ))
+    
+    setNewComment('')
+    console.log('💬 Added comment:', newComment)
+  }
+
+  const addReply = async (campaignId: string, annotationId: string, replyText: string) => {
+    const reply: Comment = {
+      id: `reply-${Date.now()}`,
+      comment: replyText,
+      author: userRole === 'agency_admin' ? 'Agency Team' : 'Client Team',
+      author_role: userRole,
+      created_at: new Date()
+    }
+
+    setCampaigns(prev => prev.map(campaign => 
+      campaign.id === campaignId 
+        ? { 
+            ...campaign, 
+            annotations: campaign.annotations?.map(ann => 
+              ann.id === annotationId 
+                ? { ...ann, replies: [...(ann.replies || []), reply] }
+                : ann
+            )
+          }
+        : campaign
+    ))
+    
+    setReplyingTo(null)
+    console.log('↩️ Added reply:', reply)
+  }
+
+  const resolveAnnotation = async (campaignId: string, annotationId: string) => {
+    setCampaigns(prev => prev.map(campaign => 
+      campaign.id === campaignId 
+        ? { 
+            ...campaign, 
+            annotations: campaign.annotations?.map(ann => 
+              ann.id === annotationId 
+                ? { ...ann, resolved: !ann.resolved }
+                : ann
+            )
+          }
+        : campaign
+    ))
+    
+    console.log('✅ Toggled annotation resolution:', annotationId)
+  }
+
+  const handleImageClick = (e: React.MouseEvent<HTMLImageElement>) => {
+    if (!viewingDesign) return
+    
+    const rect = e.currentTarget.getBoundingClientRect()
+    const x = ((e.clientX - rect.left) / rect.width) * 100
+    const y = ((e.clientY - rect.top) / rect.height) * 100
+    
+    setNewAnnotation({
+      x: Math.max(0, Math.min(95, x)),
+      y: Math.max(0, Math.min(95, y)),
+      comment: ''
+    })
+  }
+
+  const saveNewAnnotation = () => {
+    if (!newAnnotation || !newAnnotation.comment.trim() || !viewingDesign) return
+    
+    const fileId = viewingDesign.campaign.design_files?.[viewingDesign.fileIndex]?.id
+    if (!fileId) return
+    
+    addAnnotation(viewingDesign.campaign.id, fileId, newAnnotation)
+    setNewAnnotation(null)
   }
 
   const getCampaignTypeClass = (type: string) => {
@@ -572,6 +796,43 @@ export function CampaignApprovalCalendar({ client }: CampaignApprovalCalendarPro
                     </div>
                   </div>
 
+                  {/* Design Files */}
+                  {selectedCampaign.design_files && selectedCampaign.design_files.length > 0 && (
+                    <div>
+                      <h5 className="text-white font-medium mb-3">Design Files</h5>
+                      <div className="space-y-2">
+                        {selectedCampaign.design_files.map((file, index) => (
+                          <div
+                            key={file.id}
+                            className="bg-white/10 border border-white/20 rounded-lg p-3 hover:bg-white/20 transition-colors cursor-pointer"
+                            onClick={() => setViewingDesign({ campaign: selectedCampaign, fileIndex: index })}
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <ImageIcon className="h-5 w-5 text-blue-400" />
+                                <div>
+                                  <p className="text-white font-medium text-sm">{file.filename}</p>
+                                  <p className="text-white/60 text-xs">Click to review & annotate</p>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                {selectedCampaign.annotations?.some(ann => 
+                                  // Note: would need to filter by file in real implementation
+                                  !ann.resolved
+                                ) && (
+                                  <span className="bg-red-500/30 text-red-300 text-xs px-2 py-1 rounded">
+                                    Needs Review
+                                  </span>
+                                )}
+                                <Eye className="h-4 w-4 text-white/60" />
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                   {/* Campaign Preview */}
                   {selectedCampaign.previewUrl && (
                     <div>
@@ -602,19 +863,75 @@ export function CampaignApprovalCalendar({ client }: CampaignApprovalCalendarPro
                     </div>
                   ) : (
                     <>
-                      <div>
-                        <label className="block text-white text-sm font-medium mb-2">
-                          Client Revisions:
-                        </label>
-                        <textarea
-                          className="w-full bg-white/10 border border-white/20 rounded-lg p-3 text-white placeholder-white/50 resize-none"
-                          rows={4}
-                          value={clientRevisions}
-                          onChange={(e) => setClientRevisions(e.target.value)}
-                          placeholder="Enter your revision requests here..."
-                          disabled={!isClientApprovalStatus(selectedCampaign.status)}
-                        />
-                      </div>
+                  {/* Thread Comments */}
+                  <div>
+                    <h5 className="text-white font-medium mb-3">Discussion Thread</h5>
+                    <div className="bg-white/5 rounded-lg p-3 max-h-40 overflow-y-auto space-y-3">
+                      {selectedCampaign.comments && selectedCampaign.comments.length > 0 ? (
+                        selectedCampaign.comments.map(comment => (
+                          <div key={comment.id} className="space-y-2">
+                            <div className="flex items-start gap-3">
+                              <div className={`w-2 h-2 rounded-full mt-2 ${
+                                comment.author_role === 'client_user' 
+                                  ? 'bg-green-400' 
+                                  : 'bg-blue-400'
+                              }`}></div>
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <span className="text-white text-sm font-medium">{comment.author}</span>
+                                  <span className="text-white/60 text-xs">
+                                    {comment.created_at.toLocaleDateString()}
+                                  </span>
+                                </div>
+                                <p className="text-white/80 text-sm">{comment.comment}</p>
+                              </div>
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-white/60 text-sm">No comments yet. Start the discussion!</p>
+                      )}
+                    </div>
+                    
+                    <div className="mt-3 flex gap-2">
+                      <input
+                        type="text"
+                        value={newComment}
+                        onChange={(e) => setNewComment(e.target.value)}
+                        placeholder="Add a comment to the discussion..."
+                        className="flex-1 bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white placeholder-white/50 text-sm"
+                        onKeyPress={(e) => {
+                          if (e.key === 'Enter' && newComment.trim()) {
+                            addComment(selectedCampaign.id, newComment)
+                          }
+                        }}
+                      />
+                      <button
+                        onClick={() => newComment.trim() && addComment(selectedCampaign.id, newComment)}
+                        className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg transition-colors"
+                        disabled={!newComment.trim()}
+                      >
+                        <Send className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-white text-sm font-medium mb-2">
+                      Overall Feedback:
+                    </label>
+                    <textarea
+                      className="w-full bg-white/10 border border-white/20 rounded-lg p-3 text-white placeholder-white/50 resize-none"
+                      rows={3}
+                      value={clientRevisions}
+                      onChange={(e) => setClientRevisions(e.target.value)}
+                      placeholder="Enter your overall feedback and approval notes..."
+                      disabled={!isClientApprovalStatus(selectedCampaign.status)}
+                    />
+                    <p className="text-white/60 text-xs mt-1">
+                      💡 Use the design viewer above for specific location feedback
+                    </p>
+                  </div>
                       
                       {isClientApprovalStatus(selectedCampaign.status) ? (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -649,6 +966,233 @@ export function CampaignApprovalCalendar({ client }: CampaignApprovalCalendarPro
               </div>
             </CardContent>
           </Card>
+        </div>
+      )}
+
+      {/* Design Viewer Modal */}
+      {viewingDesign && (
+        <div className="fixed inset-0 bg-black/90 backdrop-blur-sm flex z-50">
+          {/* Image Container */}
+          <div className="flex-1 flex items-center justify-center p-8">
+            <div className="relative max-w-full max-h-full">
+              <img 
+                src={viewingDesign.campaign.design_files?.[viewingDesign.fileIndex]?.url}
+                alt={viewingDesign.campaign.design_files?.[viewingDesign.fileIndex]?.filename}
+                className="max-w-full max-h-full object-contain rounded-lg cursor-crosshair"
+                onClick={handleImageClick}
+              />
+              
+              {/* Existing Annotations */}
+              {viewingDesign.campaign.annotations?.map(annotation => (
+                <button
+                  key={annotation.id}
+                  className={`absolute w-6 h-6 rounded-full border-2 flex items-center justify-center text-xs font-bold transition-all ${
+                    annotation.resolved 
+                      ? 'bg-green-500/80 border-green-300 text-white' 
+                      : 'bg-red-500/80 border-red-300 text-white hover:scale-110'
+                  }`}
+                  style={{
+                    left: `${annotation.x}%`,
+                    top: `${annotation.y}%`,
+                    transform: 'translate(-50%, -50%)'
+                  }}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    // Could show annotation details in sidebar
+                  }}
+                >
+                  <MessageSquare className="h-3 w-3" />
+                </button>
+              ))}
+              
+              {/* New Annotation */}
+              {newAnnotation && (
+                <div
+                  className="absolute bg-yellow-500/80 border-2 border-yellow-300 w-6 h-6 rounded-full flex items-center justify-center"
+                  style={{
+                    left: `${newAnnotation.x}%`,
+                    top: `${newAnnotation.y}%`,
+                    transform: 'translate(-50%, -50%)'
+                  }}
+                >
+                  <Plus className="h-3 w-3 text-white" />
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Sidebar */}
+          <div className="w-96 bg-black/60 backdrop-blur-sm border-l border-white/20 flex flex-col">
+            {/* Header */}
+            <div className="p-4 border-b border-white/20">
+              <div className="flex justify-between items-center">
+                <h3 className="text-white font-semibold">Design Review</h3>
+                <button 
+                  onClick={() => {
+                    setViewingDesign(null)
+                    setNewAnnotation(null)
+                  }}
+                  className="text-white/60 hover:text-white"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+              <p className="text-white/70 text-sm mt-1">
+                {viewingDesign.campaign.title} - {viewingDesign.campaign.design_files?.[viewingDesign.fileIndex]?.filename}
+              </p>
+            </div>
+
+            {/* Instructions */}
+            <div className="p-4 border-b border-white/20">
+              <p className="text-white/70 text-sm">
+                💡 <strong>Click anywhere on the design</strong> to add location-specific feedback.
+              </p>
+            </div>
+
+            {/* New Annotation Form */}
+            {newAnnotation && (
+              <div className="p-4 border-b border-white/20 bg-yellow-500/10">
+                <h4 className="text-yellow-300 font-medium mb-2">Add Location Feedback</h4>
+                <textarea
+                  value={newAnnotation.comment}
+                  onChange={(e) => setNewAnnotation({...newAnnotation, comment: e.target.value})}
+                  className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white placeholder-white/50 resize-none"
+                  rows={3}
+                  placeholder="What needs to be changed at this location?"
+                  autoFocus
+                />
+                <div className="flex gap-2 mt-2">
+                  <button
+                    onClick={() => setNewAnnotation(null)}
+                    className="bg-gray-600/80 hover:bg-gray-600 text-white px-3 py-1 rounded text-sm"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={saveNewAnnotation}
+                    disabled={!newAnnotation.comment.trim()}
+                    className="bg-yellow-600/80 hover:bg-yellow-600 disabled:bg-yellow-600/40 text-white px-3 py-1 rounded text-sm flex items-center gap-1"
+                  >
+                    <Pin className="h-3 w-3" />
+                    Add Feedback
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Annotations List */}
+            <div className="flex-1 overflow-y-auto">
+              <div className="p-4 space-y-3">
+                <h4 className="text-white font-medium">
+                  Location Feedback ({viewingDesign.campaign.annotations?.length || 0})
+                </h4>
+                
+                {!viewingDesign.campaign.annotations || viewingDesign.campaign.annotations.length === 0 ? (
+                  <p className="text-white/60 text-sm">
+                    No location feedback yet. Click on the design to add comments.
+                  </p>
+                ) : (
+                  viewingDesign.campaign.annotations.map(annotation => (
+                    <Card 
+                      key={annotation.id}
+                      className={`bg-white/10 border-white/20 transition-colors ${
+                        annotation.resolved ? 'opacity-60' : ''
+                      }`}
+                    >
+                      <CardContent className="p-3">
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <div className={`w-3 h-3 rounded-full ${
+                              annotation.resolved ? 'bg-green-400' : 'bg-red-400'
+                            }`}></div>
+                            <span className="text-white text-sm font-medium">
+                              {annotation.author}
+                            </span>
+                          </div>
+                          <span className="text-white/60 text-xs">
+                            {annotation.created_at.toLocaleDateString()}
+                          </span>
+                        </div>
+                        
+                        <p className="text-white/80 text-sm mb-2">{annotation.comment}</p>
+                        
+                        {/* Replies */}
+                        {annotation.replies && annotation.replies.length > 0 && (
+                          <div className="ml-4 space-y-2 border-l-2 border-white/10 pl-3">
+                            {annotation.replies.map(reply => (
+                              <div key={reply.id}>
+                                <div className="flex items-center gap-2 mb-1">
+                                  <span className="text-white/80 text-xs font-medium">{reply.author}</span>
+                                  <span className="text-white/60 text-xs">
+                                    {reply.created_at.toLocaleDateString()}
+                                  </span>
+                                </div>
+                                <p className="text-white/70 text-xs">{reply.comment}</p>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        
+                        <div className="flex items-center gap-2 mt-3">
+                          <button
+                            onClick={() => resolveAnnotation(viewingDesign.campaign.id, annotation.id)}
+                            className={`px-2 py-1 rounded text-xs transition-colors ${
+                              annotation.resolved
+                                ? 'bg-green-600/30 text-green-300'
+                                : 'bg-gray-600/30 text-gray-300 hover:bg-gray-600/50'
+                            }`}
+                          >
+                            {annotation.resolved ? '✓ Resolved' : 'Mark Resolved'}
+                          </button>
+                          
+                          <button
+                            onClick={() => setReplyingTo(annotation.id)}
+                            className="text-blue-400 hover:text-blue-300 text-xs flex items-center gap-1"
+                          >
+                            <Reply className="h-3 w-3" />
+                            Reply
+                          </button>
+                        </div>
+
+                        {/* Reply Form */}
+                        {replyingTo === annotation.id && (
+                          <div className="mt-2 flex gap-2">
+                            <input
+                              type="text"
+                              placeholder="Add a reply..."
+                              className="flex-1 bg-white/10 border border-white/20 rounded px-2 py-1 text-white placeholder-white/50 text-xs"
+                              onKeyPress={(e) => {
+                                if (e.key === 'Enter' && (e.target as HTMLInputElement).value.trim()) {
+                                  addReply(viewingDesign.campaign.id, annotation.id, (e.target as HTMLInputElement).value)
+                                  ;(e.target as HTMLInputElement).value = ''
+                                }
+                              }}
+                              autoFocus
+                            />
+                            <button
+                              onClick={() => setReplyingTo(null)}
+                              className="text-gray-400 hover:text-gray-300 text-xs"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))
+                )}
+              </div>
+            </div>
+
+            {/* Summary */}
+            <div className="p-4 border-t border-white/20 bg-black/20">
+              <div className="text-white/70 text-sm space-y-1">
+                <p>Total feedback: {viewingDesign.campaign.annotations?.length || 0}</p>
+                <p>Resolved: {viewingDesign.campaign.annotations?.filter(a => a.resolved).length || 0}</p>
+                <p>Pending: {viewingDesign.campaign.annotations?.filter(a => !a.resolved).length || 0}</p>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>
