@@ -6,6 +6,102 @@ const AIRTABLE_TOKEN = process.env.AIRTABLE_TOKEN
 const AIRTABLE_TABLE_NAME = process.env.AIRTABLE_TABLE_NAME || 'Retention'  // Correct table name from discovery
 const AIRTABLE_TABLE_ID = 'tblG1qADMDrBjuX5R'  // Main retention table ID
 
+// Enhanced field mapping functions (moved outside function for strict mode)
+const getAirtableStage = (status: string): string => {
+  const stageMap: Record<string, string> = {
+    'draft': 'Content Strategy',
+    'in_progress': 'Copy',
+    'review': 'Copy QA', 
+    'client_approval': 'Ready For Client Approval',
+    'approved': 'Approved',
+    'revisions': 'Client Revisions',
+    'scheduled': 'Ready For Schedule',
+    'sent': 'Scheduled - Close',
+    'live': 'Scheduled - Close'
+  }
+  return stageMap[status] || 'Content Strategy'
+}
+
+const getAirtableClient = (clientSlug: string): string => {
+  const clientMap: Record<string, string> = {
+    'tririg': 'TriRig',
+    'hydrus': 'Hydrus', 
+    'ramrods-archery': 'Ramrods Archery',
+    'safari-pedals': 'Safari Pedals',
+    'nyan': 'nyan',
+    'montis': 'montis',
+    'brilliant-scents': 'brilliant scents',
+    'retention-harbor': 'TriRig', // Default fallback
+    // Handle brand_slug variations
+    'retention': 'TriRig',
+    'unknown-client': 'TriRig'
+  }
+  return clientMap[clientSlug?.toLowerCase().replace(/[^a-z0-9]/g, '-')] || 'TriRig'
+}
+
+const getAirtableType = (type: string): string[] => {
+  const typeMap: Record<string, string[]> = {
+    'campaign': ['Campaigns'],
+    'email': ['Campaigns'],
+    'sms': ['Campaigns'], 
+    'flow': ['Flows'],
+    'popup': ['Popup'],
+    'misc': ['Campaigns']
+  }
+  return typeMap[type] || ['Campaigns']
+}
+
+const getAirtableCampaignType = (type: string): string[] => {
+  const campaignTypeMap: Record<string, string[]> = {
+    'email': ['email'],
+    'sms': ['sms'],
+    'flow': ['email'], // Flows are email-based
+    'popup': ['email'], // Popups typically capture emails
+    'campaign': ['email'] // Default
+  }
+  return campaignTypeMap[type] || ['email']
+}
+
+const buildEnhancedNotesField = (campaign: any): string => {
+  let notes = campaign.description || ''
+  
+  // Add target audience
+  if (campaign.target_audience || campaign.audience) {
+    notes += `\n\nTarget Audience: ${campaign.target_audience || campaign.audience}`
+  }
+  
+  // Add flow-specific info
+  if (campaign.type === 'flow') {
+    if (campaign.flow_type) {
+      notes += `\n\nFlow Type: ${campaign.flow_type.replace('_', ' ')}`
+    }
+    if (campaign.trigger_criteria) {
+      notes += `\n\nTrigger: ${campaign.trigger_criteria}`
+    }
+    if (campaign.num_emails) {
+      notes += `\n\nNumber of Emails: ${campaign.num_emails}`
+    }
+  }
+  
+  // Add popup-specific info
+  if (campaign.type === 'popup' && campaign.trigger_criteria) {
+    notes += `\n\nTrigger: ${campaign.trigger_criteria}`
+  }
+  
+  // Add requirements
+  if (campaign.key_requirements?.length) {
+    notes += `\n\nRequirements: ${campaign.key_requirements.join(', ')}`
+  }
+  
+  // Add user notes
+  if (campaign.notes) {
+    notes += `\n\nAdditional Notes: ${campaign.notes}`
+  }
+  
+  notes += `\n\nSource: Unified Campaign Portal (${new Date().toISOString()})`
+  return notes.trim()
+}
+
 export async function POST(request: NextRequest) {
   try {
     // Validate required environment variables
@@ -59,102 +155,6 @@ export async function POST(request: NextRequest) {
         ...(campaign.copy_due_date && { 'Copy Due Date': campaign.copy_due_date.toISOString().split('T')[0] }),
         ...(campaign.design_due_date && { 'Design Due Date': campaign.design_due_date.toISOString().split('T')[0] }),
       }
-    }
-
-    // Enhanced field mapping functions
-    function getAirtableStage(status: string): string {
-      const stageMap: Record<string, string> = {
-        'draft': 'Content Strategy',
-        'in_progress': 'Copy',
-        'review': 'Copy QA', 
-        'client_approval': 'Ready For Client Approval',
-        'approved': 'Approved',
-        'revisions': 'Client Revisions',
-        'scheduled': 'Ready For Schedule',
-        'sent': 'Scheduled - Close',
-        'live': 'Scheduled - Close'
-      }
-      return stageMap[status] || 'Content Strategy'
-    }
-    
-    function getAirtableClient(clientSlug: string): string {
-      const clientMap: Record<string, string> = {
-        'tririg': 'TriRig',
-        'hydrus': 'Hydrus', 
-        'ramrods-archery': 'Ramrods Archery',
-        'safari-pedals': 'Safari Pedals',
-        'nyan': 'nyan',
-        'montis': 'montis',
-        'brilliant-scents': 'brilliant scents',
-        'retention-harbor': 'TriRig', // Default fallback
-        // Handle brand_slug variations
-        'retention': 'TriRig',
-        'unknown-client': 'TriRig'
-      }
-      return clientMap[clientSlug?.toLowerCase().replace(/[^a-z0-9]/g, '-')] || 'TriRig'
-    }
-    
-    function getAirtableType(type: string): string[] {
-      const typeMap: Record<string, string[]> = {
-        'campaign': ['Campaigns'],
-        'email': ['Campaigns'],
-        'sms': ['Campaigns'], 
-        'flow': ['Flows'],
-        'popup': ['Popup'],
-        'misc': ['Campaigns']
-      }
-      return typeMap[type] || ['Campaigns']
-    }
-    
-    function getAirtableCampaignType(type: string): string[] {
-      const campaignTypeMap: Record<string, string[]> = {
-        'email': ['email'],
-        'sms': ['sms'],
-        'flow': ['email'], // Flows are email-based
-        'popup': ['email'], // Popups typically capture emails
-        'campaign': ['email'] // Default
-      }
-      return campaignTypeMap[type] || ['email']
-    }
-    
-    function buildEnhancedNotesField(campaign: any): string {
-      let notes = campaign.description || ''
-      
-      // Add target audience
-      if (campaign.target_audience || campaign.audience) {
-        notes += `\n\nTarget Audience: ${campaign.target_audience || campaign.audience}`
-      }
-      
-      // Add flow-specific info
-      if (campaign.type === 'flow') {
-        if (campaign.flow_type) {
-          notes += `\n\nFlow Type: ${campaign.flow_type.replace('_', ' ')}`
-        }
-        if (campaign.trigger_criteria) {
-          notes += `\n\nTrigger: ${campaign.trigger_criteria}`
-        }
-        if (campaign.num_emails) {
-          notes += `\n\nNumber of Emails: ${campaign.num_emails}`
-        }
-      }
-      
-      // Add popup-specific info
-      if (campaign.type === 'popup' && campaign.trigger_criteria) {
-        notes += `\n\nTrigger: ${campaign.trigger_criteria}`
-      }
-      
-      // Add requirements
-      if (campaign.key_requirements?.length) {
-        notes += `\n\nRequirements: ${campaign.key_requirements.join(', ')}`
-      }
-      
-      // Add user notes
-      if (campaign.notes) {
-        notes += `\n\nAdditional Notes: ${campaign.notes}`
-      }
-      
-      notes += `\n\nSource: Unified Campaign Portal (${new Date().toISOString()})`
-      return notes.trim()
     }
 
     console.log('📤 AIRTABLE SYNC: Sending record to Airtable:', JSON.stringify(airtableRecord, null, 2))
