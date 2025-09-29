@@ -152,20 +152,17 @@ export default function AgencyAdminPage({ params }: PageProps) {
   return (
     <div className="min-h-screen relative" 
       style={{
-        background: viewMode === 'portal' 
-          ? `linear-gradient(135deg, ${agency.primary_color || '#3B82F6'} 0%, ${agency.secondary_color || '#1D4ED8'} 100%)`
-          : '#f9fafb'
+        background: `linear-gradient(135deg, ${agency.primary_color || '#3B82F6'} 0%, ${agency.secondary_color || '#1D4ED8'} 100%)`
       }}
     >
-      {/* Background Image Overlay */}
-      {viewMode === 'portal' && (
+      {/* Background Image Overlay (only if explicitly set) */}
+      {(agency.background_image_url || process.env.NEXT_PUBLIC_PORTAL_BACKGROUND_IMAGE_URL) && (
         <div 
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
           style={{
             backgroundImage: `url(${
               agency.background_image_url || 
-              process.env.NEXT_PUBLIC_PORTAL_BACKGROUND_IMAGE_URL ||
-              'https://images.unsplash.com/photo-1557804506-669a67965ba0?ixlib=rb-4.0.3&auto=format&fit=crop&w=2574&q=80'
+              process.env.NEXT_PUBLIC_PORTAL_BACKGROUND_IMAGE_URL
             })`,
             opacity: parseFloat(process.env.NEXT_PUBLIC_PORTAL_BACKGROUND_OPACITY || '0.15')
           }}
@@ -173,14 +170,7 @@ export default function AgencyAdminPage({ params }: PageProps) {
       )}
       
       {/* Header with View Toggle */}
-      <div 
-        className={viewMode === 'portal' ? 'py-6' : 'py-8'}
-        style={{
-          background: viewMode === 'portal' 
-            ? 'transparent'
-            : `linear-gradient(135deg, ${agency.primary_color || '#3B82F6'} 0%, ${agency.secondary_color || '#1D4ED8'} 100%)`
-        }}
-      >
+      <div className="py-6 relative z-10">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -209,7 +199,7 @@ export default function AgencyAdminPage({ params }: PageProps) {
       </div>
 
       {/* Content */}
-      <div className={viewMode === 'portal' ? '' : 'bg-gray-50'}>
+      <div className="relative z-10">
         {viewMode === 'analytics' ? (
           <div className="container mx-auto px-4 py-8">
             <AgencyAdminDashboard 

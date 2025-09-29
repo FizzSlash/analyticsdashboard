@@ -91,15 +91,72 @@ export function DesignFeedback({ client, userRole }: DesignFeedbackProps) {
   }
 
   const addAnnotation = async (designId: string, fileId: string, annotation: any) => {
-    console.log('💬 Added annotation to design:', designId, fileId, annotation)
-    setDesigns(prev => prev.map(design => 
-      design.id === designId 
-        ? { 
-            ...design, 
-            annotations: [...(design.annotations || []), annotation]
-          }
-        : design
-    ))
+    try {
+      console.log('💬 Saving annotation to database:', designId, fileId, annotation)
+      
+      // Get design for context
+      const design = designs.find(d => d.id === designId)
+      if (!design) return
+      
+      // Save annotation to database
+      const response = await fetch('/api/portal-annotations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          airtable_record_id: designId,
+          design_file_id: fileId,
+          client_id: client.id,
+          agency_id: client.agency_id || 'default-agency-id', // TODO: Get from client data
+          x_position: annotation.x,
+          y_position: annotation.y,
+          comment: annotation.comment,
+          author_user_id: null, // TODO: Get from auth context
+          author_name: annotation.user,
+          author_role: userRole
+        })
+      })
+      
+      const result = await response.json()
+      if (result.success) {
+        console.log('✅ Annotation saved to database:', result.annotation.id)
+        
+        // Update local state with database annotation
+        setDesigns(prev => prev.map(design => 
+          design.id === designId 
+            ? { 
+                ...design, 
+                annotations: [...(design.annotations || []), {
+                  ...annotation,
+                  id: result.annotation.id,
+                  timestamp: new Date(result.annotation.created_at)
+                }]
+              }
+            : design
+        ))
+      } else {
+        console.error('❌ Failed to save annotation:', result.error)
+        // Still update local state for user feedback
+        setDesigns(prev => prev.map(design => 
+          design.id === designId 
+            ? { 
+                ...design, 
+                annotations: [...(design.annotations || []), annotation]
+              }
+            : design
+        ))
+      }
+    } catch (error) {
+      console.error('❌ Error saving annotation:', error)
+      // Still update local state for user feedback
+      setDesigns(prev => prev.map(design => 
+        design.id === designId 
+          ? { 
+              ...design, 
+              annotations: [...(design.annotations || []), annotation]
+            }
+          : design
+      ))
+    }
   }
 
   const addFeedback = async (designId: string, feedback: string) => {
@@ -172,8 +229,9 @@ export function DesignFeedback({ client, userRole }: DesignFeedbackProps) {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {designs.map(design => (
+        <div className="max-h-[70vh] overflow-y-auto pr-2" style={{ scrollbarWidth: 'thin' }}>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {designs.map(design => (
             <Card key={design.id} className="bg-white/5 border-white/10 hover:bg-white/10 transition-colors">
               <CardContent className="p-4">
                 <div className="space-y-3">
@@ -290,6 +348,7 @@ export function DesignFeedback({ client, userRole }: DesignFeedbackProps) {
               </CardContent>
             </Card>
           ))}
+          </div>
         </div>
       )}
 

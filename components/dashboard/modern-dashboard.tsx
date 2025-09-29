@@ -40,11 +40,12 @@ import {
 interface ModernDashboardProps {
   client: any
   data?: any
+  disablePortalMode?: boolean // Disable portal toggle when used in new layout
 }
 
 type TabType = 'dashboard' | 'campaigns' | 'flows' | 'subject-lines' | 'list-growth' | 'deliverability'
 
-export function ModernDashboard({ client, data: initialData }: ModernDashboardProps) {
+export function ModernDashboard({ client, data: initialData, disablePortalMode = false }: ModernDashboardProps) {
   const [viewMode, setViewMode] = useState<ViewMode>('analytics')
   const [activeTab, setActiveTab] = useState<TabType>('dashboard')
   const [campaignTimeframe, setCampaignTimeframe] = useState(30) // Default to 30 days for campaigns
@@ -2552,11 +2553,13 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
               </p>
             </div>
             <div className="flex items-center gap-4">
-              <ViewToggle 
-                currentMode={viewMode}
-                onModeChange={setViewMode}
-              />
-              {viewMode === 'analytics' && (
+              {!disablePortalMode && (
+                <ViewToggle 
+                  currentMode={viewMode}
+                  onModeChange={setViewMode}
+                />
+              )}
+              {(disablePortalMode || viewMode === 'analytics') && (
                 <TimeframeSelector 
                   selectedTimeframe={timeframe}
                   onTimeframeChange={(days: number) => {
@@ -2635,7 +2638,7 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
         
         {!loading && (
           <>
-            {viewMode === 'analytics' ? (
+            {(disablePortalMode || viewMode === 'analytics') ? (
               // Analytics Mode - Original Dashboard Content
               <>
                 {activeTab === 'dashboard' && renderOverviewTab()}
@@ -2646,7 +2649,7 @@ export function ModernDashboard({ client, data: initialData }: ModernDashboardPr
                 {activeTab === 'deliverability' && renderDeliverabilityTab()}
               </>
             ) : (
-              // Portal Mode - Campaign Management Interface
+              // Portal Mode - Campaign Management Interface (only if not disabled)
               <PortalDashboard client={client} data={data} />
             )}
           </>
