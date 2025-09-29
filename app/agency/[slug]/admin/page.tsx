@@ -209,7 +209,7 @@ export default function AgencyAdminPage({ params }: PageProps) {
             />
           </div>
         ) : (
-          <div className="max-w-7xl mx-auto px-6 py-8">
+          <div className="px-6 py-8">
             <CleanPortalDashboard 
               user={{ agency: agency }}
               userRole="agency_admin"

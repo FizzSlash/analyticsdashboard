@@ -352,32 +352,35 @@ export function DesignFeedback({ client, userRole }: DesignFeedbackProps) {
         </div>
       )}
 
-      {/* Image Viewer Modal */}
+      {/* Image Viewer Modal - Enhanced for Long Email Designs */}
       {viewingImage && (
-        <div className="fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="relative max-w-5xl max-h-[90vh] mx-4">
+        <div className="fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="relative w-full max-w-6xl h-full max-h-[95vh] overflow-auto bg-black/20 rounded-lg">
             <button 
               onClick={() => setViewingImage(null)}
-              className="absolute top-4 right-4 bg-black/60 text-white p-2 rounded-lg hover:bg-black/80 transition-colors z-10"
+              className="sticky top-4 left-full ml-4 z-10 bg-black/60 text-white p-2 rounded-lg hover:bg-black/80 transition-colors"
             >
               <X className="h-5 w-5" />
             </button>
             
-            <img 
-              src={viewingImage.url}
-              alt={viewingImage.filename}
-              className="max-w-full max-h-full object-contain rounded-lg"
-            />
+            <div className="p-4">
+              <img 
+                src={viewingImage.url}
+                alt={viewingImage.filename}
+                className="w-full h-auto object-contain rounded-lg mx-auto"
+                style={{ maxWidth: 'none' }}
+              />
+            </div>
             
-            <div className="absolute bottom-4 left-4 bg-black/60 text-white px-3 py-2 rounded-lg">
+            <div className="sticky bottom-4 left-4 bg-black/60 text-white px-3 py-2 rounded-lg inline-block">
               <p className="text-sm font-medium">{viewingImage.filename}</p>
-              <p className="text-xs text-white/80">{(viewingImage.size / 1024).toFixed(0)} KB</p>
+              <p className="text-xs text-white/80">{(viewingImage.size / 1024).toFixed(0)} KB • Scroll to see full email</p>
             </div>
             
             <a
               href={viewingImage.url}
               download={viewingImage.filename}
-              className="absolute bottom-4 right-4 bg-black/60 hover:bg-black/80 text-white p-2 rounded-lg transition-colors"
+              className="sticky bottom-4 right-4 float-right bg-black/60 hover:bg-black/80 text-white p-2 rounded-lg transition-colors"
               title="Download image"
             >
               <Download className="h-5 w-5" />

@@ -193,7 +193,7 @@ export default function ClientDashboardPage({ params }: PageProps) {
         {viewMode === 'analytics' ? (
           <ModernDashboard client={client} data={dashboardData.data} disablePortalMode={true} hideHeader={true} />
         ) : (
-          <div className="max-w-7xl mx-auto px-6 py-8">
+          <div className="px-6 py-8">
             <CleanPortalDashboard 
               user={{ client: client }}
               userRole="client_user"
