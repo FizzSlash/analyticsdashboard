@@ -333,6 +333,7 @@ export function CampaignApprovalCalendar({ client, userRole = 'client_user' }: C
       replies: []
     }
 
+    // Update local state immediately for UX
     setCampaigns(prev => prev.map(campaign => 
       campaign.id === campaignId 
         ? { 
@@ -342,7 +343,46 @@ export function CampaignApprovalCalendar({ client, userRole = 'client_user' }: C
         : campaign
     ))
     
-    console.log('📌 Added annotation:', newAnnotation)
+    // Save to database
+    try {
+      const response = await fetch('/api/portal-annotations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          airtable_record_id: campaignId,
+          design_file_id: fileId,
+          client_id: client.id,
+          agency_id: client.agency_id,
+          x_position: annotation.x,
+          y_position: annotation.y,
+          comment: annotation.comment,
+          author_name: userRole === 'agency_admin' ? 'Agency Team' : 'Client Team',
+          author_role: userRole
+        })
+      })
+      
+      const result = await response.json()
+      if (result.success) {
+        // Update with database ID
+        setCampaigns(prev => prev.map(campaign => 
+          campaign.id === campaignId 
+            ? { 
+                ...campaign, 
+                annotations: campaign.annotations?.map(ann => 
+                  ann.id === newAnnotation.id 
+                    ? { ...ann, id: result.annotation.id }
+                    : ann
+                )
+              }
+            : campaign
+        ))
+        console.log('✅ Annotation saved to database:', result.annotation.id)
+      } else {
+        console.error('❌ Failed to save annotation:', result.error)
+      }
+    } catch (error) {
+      console.error('❌ Error saving annotation:', error)
+    }
   }
 
   const addComment = async (campaignId: string, comment: string) => {
@@ -354,6 +394,7 @@ export function CampaignApprovalCalendar({ client, userRole = 'client_user' }: C
       created_at: new Date()
     }
 
+    // Update local state immediately for UX
     setCampaigns(prev => prev.map(campaign => 
       campaign.id === campaignId 
         ? { 
@@ -364,7 +405,35 @@ export function CampaignApprovalCalendar({ client, userRole = 'client_user' }: C
     ))
     
     setNewComment('')
-    console.log('💬 Added comment:', newComment)
+    
+    // Save to database (using same annotation API with special flag for comments)
+    try {
+      const response = await fetch('/api/portal-annotations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          airtable_record_id: campaignId,
+          design_file_id: 'general-comment',
+          client_id: client.id,
+          agency_id: client.agency_id,
+          x_position: 0, // Not location-specific
+          y_position: 0,
+          comment: comment,
+          author_name: userRole === 'agency_admin' ? 'Agency Team' : 'Client Team',
+          author_role: userRole,
+          is_general_comment: true
+        })
+      })
+      
+      const result = await response.json()
+      if (result.success) {
+        console.log('✅ Comment saved to database:', result.annotation.id)
+      } else {
+        console.error('❌ Failed to save comment:', result.error)
+      }
+    } catch (error) {
+      console.error('❌ Error saving comment:', error)
+    }
   }
 
   const addReply = async (campaignId: string, annotationId: string, replyText: string) => {

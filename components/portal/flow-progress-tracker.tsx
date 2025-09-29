@@ -706,26 +706,7 @@ export function FlowProgressTracker({ client, userRole, canEdit, canCreate, canA
         </div>
       )}
 
-      {/* Status Info for Clients */}
-      {userRole === 'client_user' && (
-        <Card className="bg-gradient-to-r from-purple-500/20 to-indigo-500/20 backdrop-blur-md border-white/30 shadow-xl">
-          <CardContent className="p-6">
-            <div className="flex items-start gap-4">
-              <div className="bg-purple-500/30 p-3 rounded-xl backdrop-blur-sm border border-purple-400/30">
-                <Zap className="h-6 w-6 text-purple-300" />
-              </div>
-              <div>
-                <span className="font-bold text-white text-lg">Flow Approval Process</span>
-                <p className="text-white/80 text-sm mt-2 font-medium leading-relaxed">
-                  • <strong>Ready For Client Approval</strong> → Review and approve/request revisions<br/>
-                  • <strong>Approved</strong> → Flow is approved and ready to go live<br/>
-                  • <strong>Scheduled - Close</strong> → Flow is active and sending emails automatically
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      {/* Status Info removed for clients - they don't need explanations */}
     </div>
   )
 }

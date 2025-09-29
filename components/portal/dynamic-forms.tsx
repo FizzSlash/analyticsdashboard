@@ -172,6 +172,14 @@ export function DynamicForms({ client, userRole }: DynamicFormsProps) {
   }
 
   const filteredForms = forms.filter(form => {
+    // First filter by client assignment (clients only see their assigned forms)
+    const isAssignedToClient = userRole === 'agency_admin' || 
+      form.assigned_clients.includes(client.brand_name) || 
+      form.assigned_clients.includes(client.brand_slug)
+    
+    if (!isAssignedToClient) return false
+    
+    // Then filter by status
     if (activeFilter === 'pending') return form.status === 'active' && form.responses === 0
     if (activeFilter === 'completed') return form.status === 'completed' || form.responses > 0
     return true
@@ -186,25 +194,39 @@ export function DynamicForms({ client, userRole }: DynamicFormsProps) {
             <div className="flex items-center gap-3">
               <FileText className="h-6 w-6 text-blue-400" />
               <div>
-                <CardTitle className="text-white">Dynamic Forms</CardTitle>
-                <p className="text-white/70 text-sm mt-1">
-                  {userRole === 'agency_admin' 
-                    ? 'Create and manage client forms' 
-                    : 'Complete assigned forms and questionnaires'
-                  }
-                </p>
+                <CardTitle className="text-white">
+                  {userRole === 'agency_admin' ? 'Form Templates' : 'My Forms'}
+                </CardTitle>
+                {userRole === 'client_user' && (
+                  <p className="text-white/70 text-sm mt-1">
+                    {filteredForms.filter(f => f.status === 'active' && f.responses === 0).length > 0 
+                      ? `${filteredForms.filter(f => f.status === 'active' && f.responses === 0).length} forms pending completion`
+                      : 'All forms completed'
+                    }
+                  </p>
+                )}
               </div>
             </div>
             
-            {userRole === 'agency_admin' && (
-              <button 
-                onClick={() => setShowCreateModal(true)}
-                className="bg-blue-600/80 hover:bg-blue-600 text-white py-2 px-4 rounded-lg font-medium transition-colors flex items-center gap-2 backdrop-blur-sm"
-              >
-                <Plus className="h-4 w-4" />
-                Create Form
-              </button>
-            )}
+            <div className="flex items-center gap-3">
+              {/* Pending Forms Alert for Clients */}
+              {userRole === 'client_user' && filteredForms.filter(f => f.status === 'active' && f.responses === 0).length > 0 && (
+                <div className="bg-red-500/20 border border-red-400/30 text-red-300 px-3 py-1 rounded-lg text-sm flex items-center gap-2">
+                  <AlertCircle className="h-4 w-4" />
+                  {filteredForms.filter(f => f.status === 'active' && f.responses === 0).length} forms need attention
+                </div>
+              )}
+              
+              {userRole === 'agency_admin' && (
+                <button 
+                  onClick={() => setShowCreateModal(true)}
+                  className="bg-blue-600/80 hover:bg-blue-600 text-white py-2 px-4 rounded-lg font-medium transition-colors flex items-center gap-2 backdrop-blur-sm"
+                >
+                  <Plus className="h-4 w-4" />
+                  Create Form
+                </button>
+              )}
+            </div>
           </div>
         </CardHeader>
       </Card>
@@ -212,20 +234,29 @@ export function DynamicForms({ client, userRole }: DynamicFormsProps) {
       {/* Form Status Filters */}
       <div className="flex gap-2">
         {[
-          { id: 'all', label: 'All Forms' },
-          { id: 'pending', label: 'Pending' },
-          { id: 'completed', label: 'Completed' }
+          { id: 'all', label: 'All Forms', count: filteredForms.length },
+          { id: 'pending', label: 'Pending', count: filteredForms.filter(f => f.status === 'active' && f.responses === 0).length },
+          { id: 'completed', label: 'Completed', count: filteredForms.filter(f => f.status === 'completed' || f.responses > 0).length }
         ].map(filter => (
           <button
             key={filter.id}
             onClick={() => setActiveFilter(filter.id as any)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors border ${
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors border flex items-center gap-2 ${
               activeFilter === filter.id 
                 ? 'bg-white/20 text-white border-white/30' 
                 : 'bg-white/5 text-white/70 border-white/10 hover:bg-white/10 hover:text-white'
             }`}
           >
             {filter.label}
+            {filter.count > 0 && (
+              <span className={`px-2 py-1 rounded-full text-xs ${
+                filter.id === 'pending' && filter.count > 0 
+                  ? 'bg-red-500/30 text-red-300' 
+                  : 'bg-white/20 text-white/80'
+              }`}>
+                {filter.count}
+              </span>
+            )}
           </button>
         ))}
       </div>
@@ -489,30 +520,26 @@ export function DynamicForms({ client, userRole }: DynamicFormsProps) {
         </div>
       )}
 
-      {/* Form Templates Info */}
-      <Card className="bg-white/5 border-white/10">
-        <CardContent className="p-4">
-          <div className="flex items-start gap-3">
-            <Star className="h-5 w-5 text-yellow-400 mt-0.5" />
-            <div>
-              <span className="font-medium text-white">Dynamic Form System</span>
-              <p className="text-white/70 text-sm mt-1">
-                {userRole === 'agency_admin' ? (
-                  <>• Create custom forms for onboarding, monthly planning, and feedback<br/>
+      {/* Form Templates Info - Only for Agency Admins */}
+      {userRole === 'agency_admin' && (
+        <Card className="bg-white/5 border-white/10">
+          <CardContent className="p-4">
+            <div className="flex items-start gap-3">
+              <Star className="h-5 w-5 text-yellow-400 mt-0.5" />
+              <div>
+                <span className="font-medium text-white">Dynamic Form System</span>
+                <p className="text-white/70 text-sm mt-1">
+                  • Create custom forms for onboarding, monthly planning, and feedback<br/>
                   • Share direct links with clients for easy completion<br/>
                   • Track form responses and completion status<br/>
-                  • Templates: Onboarding, Monthly Calendar, Satisfaction Surveys</>
-                ) : (
-                  <>• Complete assigned forms when they appear in your portal<br/>
-                  • Get notified when new forms need your attention<br/>
-                  • Track your completion status and deadlines<br/>
-                  • Direct links make it easy to fill out forms anytime</>
-                )}
-              </p>
+                  • Templates: Onboarding, Monthly Calendar, Satisfaction Surveys
+                </p>
+              </div>
             </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
     </div>
   )
+}
 }

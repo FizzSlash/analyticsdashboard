@@ -76,17 +76,17 @@ export function CleanPortalDashboard({ user, client, userRole, allClients }: Cle
         <CardHeader>
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-4">
-              <div className="bg-green-500/30 p-3 rounded-xl backdrop-blur-sm border border-green-400/30">
-                <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
+              <div className="bg-blue-500/30 p-3 rounded-xl backdrop-blur-sm border border-blue-400/30">
+                <Building2 className="h-6 w-6 text-blue-300" />
               </div>
               <div>
                 <CardTitle className="text-white text-xl font-bold">
-                  {userRole === 'agency_admin' ? 'Agency Portal' : 'Client Portal'}
+                  {userRole === 'agency_admin' ? 'Agency Portal' : clientInfo.brand_name || 'Client Portal'}
                 </CardTitle>
                 <p className="text-white/80 text-sm mt-1 font-medium">
                   {userRole === 'agency_admin' 
-                    ? `Managing campaigns and flows • Auto-sync to Airtable` 
-                    : `Approve campaigns and flows • Submit requests`
+                    ? `Management Dashboard • Auto-sync to Airtable` 
+                    : `Campaign approvals and project management`
                   }
                 </p>
               </div>
@@ -207,35 +207,27 @@ export function CleanPortalDashboard({ user, client, userRole, allClients }: Cle
         )}
       </div>
 
-      {/* Status Info */}
-      <Card className="bg-gradient-to-r from-green-500/20 to-blue-500/20 backdrop-blur-md border-white/30 shadow-xl">
-        <CardContent className="p-6">
-          <div className="flex items-start gap-4">
-            <div className="bg-green-500/30 p-3 rounded-xl backdrop-blur-sm border border-green-400/30">
-              <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
-            </div>
-            <div>
-              <span className="font-bold text-white text-lg">
-                {userRole === 'agency_admin' ? 'Agency Portal - Full Management' : 'Client Portal - Approval & Requests'}
-              </span>
-              <p className="text-white/80 text-sm mt-2 font-medium leading-relaxed">
-                {userRole === 'agency_admin' ? (
-                  <>• Create and manage campaigns/flows for all clients<br/>
+      {/* Status Info - Only for Agency Admins */}
+      {userRole === 'agency_admin' && (
+        <Card className="bg-gradient-to-r from-green-500/20 to-blue-500/20 backdrop-blur-md border-white/30 shadow-xl">
+          <CardContent className="p-6">
+            <div className="flex items-start gap-4">
+              <div className="bg-green-500/30 p-3 rounded-xl backdrop-blur-sm border border-green-400/30">
+                <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
+              </div>
+              <div>
+                <span className="font-bold text-white text-lg">Agency Portal - Full Management</span>
+                <p className="text-white/80 text-sm mt-2 font-medium leading-relaxed">
+                  • Create and manage campaigns/flows for all clients<br/>
                   • Manage client Figma access and design files<br/>
                   • Create dynamic forms and track responses<br/>
-                  • All changes auto-sync to Airtable instantly<br/>
-                  • Perfect for live client collaboration</>
-                ) : (
-                  <>• Approve campaigns and flows when ready<br/>
-                  • Access your dedicated Figma design files<br/>
-                  • Submit requests for new campaigns/flows<br/>
-                  • Complete assigned forms and questionnaires</>
-                )}
-              </p>
+                  • All changes auto-sync to Airtable instantly
+                </p>
+              </div>
             </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
     </div>
   )
 }
