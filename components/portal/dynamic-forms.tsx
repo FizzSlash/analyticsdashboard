@@ -112,8 +112,8 @@ export function DynamicForms({ client, userRole }: DynamicFormsProps) {
       share_link: `https://portal.com/forms/monthly-${client.brand_slug}`,
       fields: [
         { id: 'm1', type: 'date', label: 'Target Month', required: true },
-        { id: 'm2', type: 'textarea', label: 'Upcoming Promotions', description: 'List any sales, events, or special offers' },
-        { id: 'm3', type: 'textarea', label: 'Product Launches', description: 'New products or services to highlight' },
+        { id: 'm2', type: 'textarea', label: 'Upcoming Promotions', description: 'List any sales, events, or special offers', required: false },
+        { id: 'm3', type: 'textarea', label: 'Product Launches', description: 'New products or services to highlight', required: false },
         { id: 'm4', type: 'checkbox', label: 'Campaign Types Needed', options: ['Email Campaigns', 'Social Media', 'Landing Pages', 'Flows', 'Popups'], required: false }
       ]
     },
