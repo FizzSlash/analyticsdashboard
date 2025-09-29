@@ -117,6 +117,14 @@ export default function ClientDashboardPage({ params }: PageProps) {
 
   const client = dashboardData.client
 
+  // Debug: Log the colors being used
+  console.log('🎨 CLIENT COLORS DEBUG:', {
+    primary_color: client.primary_color,
+    secondary_color: client.secondary_color,
+    using_defaults: !client.primary_color || !client.secondary_color,
+    final_gradient: `linear-gradient(135deg, ${client.primary_color || '#3B82F6'} 0%, ${client.secondary_color || '#1D4ED8'} 100%)`
+  })
+
   return (
     <div 
       className="min-h-screen relative"
