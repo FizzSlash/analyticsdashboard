@@ -485,10 +485,10 @@ export function CampaignCalendar({ client, userRole, canEdit, canCreate, canAppr
       {/* Calendar Grid */}
       <Card className="bg-white/5 border-white/10">
         <CardContent className="p-0">
-          <div className="grid grid-cols-7 gap-px bg-white/5">
+          <div className="grid grid-cols-7 gap-px bg-white/10">
             {/* Weekday headers */}
             {weekdays.map(day => (
-              <div key={day} className="p-3 bg-white/10 text-center font-semibold text-white/80 text-sm">
+              <div key={day} className="p-3 bg-white/20 text-center font-semibold text-white text-sm">
                 {day}
               </div>
             ))}

@@ -430,8 +430,8 @@ export function FlowProgressTracker({ client, userRole, canEdit, canCreate, canA
                         </div>
                         
                         {flow.assignee && (
-                          <div className="mt-2 text-xs text-gray-500">
-                            Assigned to: <span className="font-medium">{flow.assignee}</span>
+                          <div className="mt-2 text-xs text-white/50">
+                            Assigned to: <span className="font-medium text-white/70">{flow.assignee}</span>
                           </div>
                         )}
 
@@ -696,13 +696,13 @@ export function FlowProgressTracker({ client, userRole, canEdit, canCreate, canA
 
       {/* Status Info for Clients */}
       {userRole === 'client_user' && (
-        <Card className="bg-blue-50 border border-blue-200">
+        <Card className="bg-white/5 border-white/10">
           <CardContent className="p-4">
             <div className="flex items-start gap-3">
-              <Zap className="h-5 w-5 text-blue-600 mt-0.5" />
+              <Zap className="h-5 w-5 text-purple-400 mt-0.5" />
               <div>
-                <span className="font-medium text-blue-800">Flow Approval Process</span>
-                <p className="text-blue-700 text-sm mt-1">
+                <span className="font-medium text-white">Flow Approval Process</span>
+                <p className="text-white/70 text-sm mt-1">
                   • <strong>Ready for Client Approval</strong> → Review and approve/request revisions<br/>
                   • <strong>Approved</strong> → Flow is approved and ready to go live<br/>
                   • <strong>Live</strong> → Flow is active and sending emails automatically
