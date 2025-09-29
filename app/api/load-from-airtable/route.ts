@@ -65,6 +65,15 @@ export async function GET(request: NextRequest) {
       }
 
       if (type === 'flows') {
+        // Ensure flow dates are proper Date objects
+        let liveDateObj = undefined
+        if (fields['Send Date']) {
+          const parsedLiveDate = new Date(fields['Send Date'])
+          if (!isNaN(parsedLiveDate.getTime())) {
+            liveDateObj = parsedLiveDate
+          }
+        }
+        
         flows.push({
           ...baseItem,
           flow_type: extractFlowType(fields.Notes),
@@ -72,15 +81,25 @@ export async function GET(request: NextRequest) {
           num_emails: extractNumEmails(fields.Notes),
           copy_due_date: fields['Copy Due Date'] ? new Date(fields['Copy Due Date']) : undefined,
           design_due_date: fields['Design Due Date'] ? new Date(fields['Design Due Date']) : undefined,
-          live_date: fields['Send Date'] ? new Date(fields['Send Date']) : undefined
+          live_date: liveDateObj
         })
       } else {
         // Campaigns, popups, A/B tests
         const campaignType = fields['Campaign Type']?.[0] || 'email' // "email", "sms"
+        
+        // Ensure date is a proper Date object
+        let campaignDate = new Date()
+        if (fields['Send Date']) {
+          const parsedDate = new Date(fields['Send Date'])
+          if (!isNaN(parsedDate.getTime())) {
+            campaignDate = parsedDate
+          }
+        }
+        
         campaigns.push({
           ...baseItem,
           type: type === 'popup' ? 'popup' : campaignType, // email, sms, popup
-          date: fields['Send Date'] ? new Date(fields['Send Date']) : new Date(),
+          date: campaignDate, // Ensure this is always a Date object
           time: '09:00', // Default time since Airtable doesn't store time
           subject_line: fields.Offer || '', // Use Offer field as subject
           copy_due_date: fields['Copy Due Date'] ? new Date(fields['Copy Due Date']) : undefined,
@@ -90,6 +109,26 @@ export async function GET(request: NextRequest) {
     })
 
     console.log(`📥 AIRTABLE LOAD: Processed ${campaigns.length} campaigns and ${flows.length} flows`)
+    
+    // Log sample data for debugging
+    if (campaigns.length > 0) {
+      console.log('📥 Sample campaign:', {
+        id: campaigns[0].id,
+        title: campaigns[0].title,
+        date: campaigns[0].date,
+        type: campaigns[0].type,
+        status: campaigns[0].status
+      })
+    }
+    
+    if (flows.length > 0) {
+      console.log('📥 Sample flow:', {
+        id: flows[0].id,
+        title: flows[0].title,
+        flow_type: flows[0].flow_type,
+        status: flows[0].status
+      })
+    }
 
     return NextResponse.json({
       success: true,

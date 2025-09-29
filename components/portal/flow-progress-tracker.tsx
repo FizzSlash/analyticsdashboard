@@ -67,6 +67,12 @@ export function FlowProgressTracker({ client, userRole, canEdit, canCreate, canA
       
       if (result.success) {
         console.log(`📥 Loaded ${result.flows.length} flows from Airtable`)
+        
+        // Debug: Log first flow to see structure
+        if (result.flows.length > 0) {
+          console.log('📥 First flow structure:', result.flows[0])
+        }
+        
         setFlows(result.flows)
       } else {
         console.error('Failed to load flows from Airtable:', result.error)
@@ -317,14 +323,14 @@ export function FlowProgressTracker({ client, userRole, canEdit, canCreate, canA
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'draft': return 'bg-gray-100 text-gray-700 border-gray-300'
-      case 'copy': return 'bg-blue-100 text-blue-700 border-blue-300'
-      case 'design': return 'bg-purple-100 text-purple-700 border-purple-300'
-      case 'ready_for_client_approval': return 'bg-orange-100 text-orange-700 border-orange-300'
-      case 'approved': return 'bg-green-100 text-green-700 border-green-300'
-      case 'revisions': return 'bg-red-100 text-red-700 border-red-300'
-      case 'live': return 'bg-green-200 text-green-800 border-green-400'
-      default: return 'bg-gray-100 text-gray-700 border-gray-300'
+      case 'draft': return 'bg-gray-500/30 text-gray-300 border-gray-400'
+      case 'copy': return 'bg-blue-500/30 text-blue-300 border-blue-400'
+      case 'design': return 'bg-purple-500/30 text-purple-300 border-purple-400'
+      case 'ready_for_client_approval': return 'bg-orange-500/30 text-orange-300 border-orange-400'
+      case 'approved': return 'bg-green-500/30 text-green-300 border-green-400'
+      case 'revisions': return 'bg-red-500/30 text-red-300 border-red-400'
+      case 'live': return 'bg-green-500/40 text-green-200 border-green-300'
+      default: return 'bg-gray-500/30 text-gray-300 border-gray-400'
     }
   }
 
