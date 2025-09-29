@@ -2565,7 +2565,18 @@ export function ModernDashboard({ client, data: initialData, disablePortalMode =
           <div className="max-w-7xl mx-auto px-6 py-4">
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-2xl font-bold text-white">{client?.brand_name || 'Dashboard'}</h1>
+                <div className="flex items-center gap-3">
+                  {client?.logo_url && (
+                    <img 
+                      src={client.logo_url} 
+                      alt={`${client.brand_name} logo`}
+                      className="h-8 w-auto"
+                    />
+                  )}
+                  <h1 className="text-2xl font-bold text-white">
+                    {client?.portal_title || client?.brand_name || 'Dashboard'}
+                  </h1>
+                </div>
                 <p className="text-white/60 text-sm">
                   {viewMode === 'analytics' ? 'Analytics Dashboard' : 'Campaign Portal'}
                 </p>

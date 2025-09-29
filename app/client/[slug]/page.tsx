@@ -138,7 +138,7 @@ export default function ClientDashboardPage({ params }: PageProps) {
       
       {/* Header with View Toggle */}
       <div className="py-6 relative z-10">
-        <div className="container mx-auto px-4">
+        <div className="max-w-7xl mx-auto px-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               {/* Logo */}
@@ -182,7 +182,7 @@ export default function ClientDashboardPage({ params }: PageProps) {
         {viewMode === 'analytics' ? (
           <ModernDashboard client={client} data={dashboardData.data} disablePortalMode={true} hideHeader={true} />
         ) : (
-          <div className="px-6 py-8">
+          <div className="max-w-7xl mx-auto px-6 py-8">
             <CleanPortalDashboard 
               user={{ client: client }}
               userRole="client_user"

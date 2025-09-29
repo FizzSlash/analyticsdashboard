@@ -87,8 +87,18 @@ export function CleanPortalDashboard({ user, client, userRole, allClients }: Cle
                 <Building2 className="h-6 w-6 text-blue-300" />
               </div>
               <div>
-                <CardTitle className="text-white text-xl font-bold">
-                  {userRole === 'agency_admin' ? 'Agency Portal' : clientInfo.brand_name || 'Client Portal'}
+                <CardTitle className="text-white text-xl font-bold flex items-center gap-3">
+                  {clientInfo.logo_url && (
+                    <img 
+                      src={clientInfo.logo_url} 
+                      alt={`${clientInfo.brand_name} logo`}
+                      className="h-8 w-auto"
+                    />
+                  )}
+                  {userRole === 'agency_admin' 
+                    ? 'Agency Portal' 
+                    : (clientInfo.portal_title || clientInfo.brand_name || 'Client Portal')
+                  }
                 </CardTitle>
                 <p className="text-white/80 text-sm mt-1 font-medium">
                   {userRole === 'agency_admin' 

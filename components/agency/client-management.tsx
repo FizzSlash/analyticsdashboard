@@ -1054,17 +1054,98 @@ ${flowDetails.slice(0, 3).map((f: any, i: number) =>
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Logo URL
-                  </label>
-                  <input
-                    type="url"
-                    value={formData.logo_url}
-                    onChange={(e) => setFormData({ ...formData, logo_url: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="https://example.com/logo.png"
-                  />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Logo Upload */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Client Logo
+                    </label>
+                    <div className="space-y-3">
+                      {/* Logo Upload */}
+                      <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-gray-400 transition-colors">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0]
+                            if (file) {
+                              try {
+                                const uploadData = new FormData()
+                                uploadData.append('file', file)
+                                uploadData.append('clientId', editingClient?.id || '')
+                                
+                                const response = await fetch('/api/upload-design', {
+                                  method: 'POST',
+                                  body: uploadData
+                                })
+                                
+                                const result = await response.json()
+                                if (result.success) {
+                                  setFormData(prev => ({ ...prev, logo_url: result.url }))
+                                  console.log('✅ Logo uploaded:', result.url)
+                                } else {
+                                  console.error('❌ Upload failed:', result.error)
+                                }
+                              } catch (error) {
+                                console.error('❌ Upload error:', error)
+                              }
+                            }
+                          }}
+                          className="hidden"
+                          id="logo-upload"
+                        />
+                        <label 
+                          htmlFor="logo-upload"
+                          className="cursor-pointer flex flex-col items-center gap-2"
+                        >
+                          <div className="bg-gray-100 p-3 rounded-full">
+                            <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                          </div>
+                          <span className="text-sm text-gray-600">Upload logo</span>
+                          <span className="text-xs text-gray-500">PNG, SVG, JPG</span>
+                        </label>
+                      </div>
+                      
+                      {/* Logo Preview */}
+                      {formData.logo_url && (
+                        <div className="relative">
+                          <img 
+                            src={formData.logo_url} 
+                            alt="Logo preview"
+                            className="w-full h-20 object-contain bg-gray-50 rounded-lg border"
+                          />
+                          <button
+                            onClick={() => setFormData({ ...formData, logo_url: '' })}
+                            className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full hover:bg-red-600 transition-colors"
+                            title="Remove logo"
+                          >
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Portal Title */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Portal Title
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.portal_title || formData.brand_name}
+                      onChange={(e) => setFormData({ ...formData, portal_title: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="Hydrus Dashboard"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      This appears in the portal header. Defaults to brand name.
+                    </p>
+                  </div>
                 </div>
 
                 <div>
