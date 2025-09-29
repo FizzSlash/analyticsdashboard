@@ -542,4 +542,3 @@ export function DynamicForms({ client, userRole }: DynamicFormsProps) {
     </div>
   )
 }
-}
