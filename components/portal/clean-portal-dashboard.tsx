@@ -161,15 +161,12 @@ export function CleanPortalDashboard({ user, client, userRole, allClients }: Cle
         {activeTab === 'abtests' && (
           <ABTestManager 
             client={clientInfo}
-            userRole={userRole}
-            viewOnly={userRole === 'client_user'}
           />
         )}
         
         {activeTab === 'requests' && (
           <EnhancedRequests 
             client={clientInfo}
-            userRole={userRole}
           />
         )}
       </div>
