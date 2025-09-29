@@ -34,6 +34,7 @@ interface ClientFormData {
   brand_slug: string
   klaviyo_api_key: string
   logo_url: string
+  portal_title: string
   primary_color: string
   secondary_color: string
   background_image_url: string
@@ -55,6 +56,7 @@ export function ClientManagement({ agency, clients: initialClients }: ClientMana
     brand_slug: '',
     klaviyo_api_key: '',
     logo_url: '',
+    portal_title: '',
     primary_color: agency.primary_color,
     secondary_color: agency.secondary_color,
     background_image_url: ''
@@ -66,6 +68,7 @@ export function ClientManagement({ agency, clients: initialClients }: ClientMana
       brand_slug: '',
       klaviyo_api_key: '',
       logo_url: '',
+      portal_title: '',
       primary_color: agency.primary_color,
       secondary_color: agency.secondary_color,
       background_image_url: ''
@@ -82,6 +85,7 @@ export function ClientManagement({ agency, clients: initialClients }: ClientMana
       brand_slug: client.brand_slug,
       klaviyo_api_key: '', // Don't pre-fill encrypted API key
       logo_url: client.logo_url || '',
+      portal_title: (client as any).portal_title || '',
       primary_color: client.primary_color,
       secondary_color: client.secondary_color,
       background_image_url: client.background_image_url || ''
