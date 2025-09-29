@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import { ModernDashboard } from '@/components/dashboard/modern-dashboard'
+import { CleanPortalDashboard } from '@/components/portal/clean-portal-dashboard'
+import { ViewToggle, type ViewMode } from '@/components/ui/view-toggle'
 import { useRouter } from 'next/navigation'
 
 interface PageProps {
@@ -27,6 +29,7 @@ export default function ClientDashboardPage({ params }: PageProps) {
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [viewMode, setViewMode] = useState<ViewMode>('analytics')
   const router = useRouter()
 
   // Fallback timeout to prevent infinite loading
@@ -112,6 +115,82 @@ export default function ClientDashboardPage({ params }: PageProps) {
     )
   }
 
-  return <ModernDashboard client={dashboardData.client} data={dashboardData.data} />
+  const client = dashboardData.client
+
+  return (
+    <div 
+      className="min-h-screen relative"
+      style={{
+        background: viewMode === 'portal' 
+          ? `linear-gradient(135deg, ${client.primary_color || '#3B82F6'} 0%, ${client.secondary_color || '#1D4ED8'} 100%)`
+          : '#f9fafb'
+      }}
+    >
+      {/* Background Image Overlay */}
+      {viewMode === 'portal' && (
+        <div 
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          style={{
+            backgroundImage: `url(${
+              client.background_image_url || 
+              process.env.NEXT_PUBLIC_PORTAL_BACKGROUND_IMAGE_URL ||
+              'https://images.unsplash.com/photo-1557804506-669a67965ba0?ixlib=rb-4.0.3&auto=format&fit=crop&w=2574&q=80'
+            })`,
+            opacity: parseFloat(process.env.NEXT_PUBLIC_PORTAL_BACKGROUND_OPACITY || '0.15')
+          }}
+        />
+      )}
+      
+      {/* Header with View Toggle */}
+      <div 
+        className={viewMode === 'portal' ? 'py-6 relative z-10' : 'py-8'}
+        style={{
+          background: viewMode === 'portal' 
+            ? 'transparent'
+            : `linear-gradient(135deg, ${client.primary_color || '#3B82F6'} 0%, ${client.secondary_color || '#1D4ED8'} 100%)`
+        }}
+      >
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              {/* Logo */}
+              {client.logo_url && (
+                <img 
+                  src={client.logo_url} 
+                  alt={`${client.brand_name} logo`}
+                  className="h-12 w-auto"
+                />
+              )}
+              <div>
+                <h1 className="text-3xl font-bold mb-2 text-white">{client.brand_name}</h1>
+                <p className="text-blue-100 text-lg">
+                  {viewMode === 'analytics' ? 'Email Marketing Analytics Dashboard' : 'Campaign & Flow Portal'}
+                </p>
+              </div>
+            </div>
+            
+            <ViewToggle 
+              currentMode={viewMode}
+              onModeChange={setViewMode}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className={`relative z-10 ${viewMode === 'portal' ? '' : 'bg-gray-50'}`}>
+        {viewMode === 'analytics' ? (
+          <ModernDashboard client={client} data={dashboardData.data} />
+        ) : (
+          <div className="max-w-7xl mx-auto px-6 py-8">
+            <CleanPortalDashboard 
+              user={{ client: client }}
+              userRole="client_user"
+            />
+          </div>
+        )}
+      </div>
+    </div>
+  )
 }
 

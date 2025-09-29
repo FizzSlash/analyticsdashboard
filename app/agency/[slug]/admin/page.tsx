@@ -150,13 +150,28 @@ export default function AgencyAdminPage({ params }: PageProps) {
   }
 
   return (
-    <div className="min-h-screen" 
+    <div className="min-h-screen relative" 
       style={{
         background: viewMode === 'portal' 
           ? `linear-gradient(135deg, ${agency.primary_color || '#3B82F6'} 0%, ${agency.secondary_color || '#1D4ED8'} 100%)`
           : '#f9fafb'
       }}
     >
+      {/* Background Image Overlay */}
+      {viewMode === 'portal' && (
+        <div 
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          style={{
+            backgroundImage: `url(${
+              agency.background_image_url || 
+              process.env.NEXT_PUBLIC_PORTAL_BACKGROUND_IMAGE_URL ||
+              'https://images.unsplash.com/photo-1557804506-669a67965ba0?ixlib=rb-4.0.3&auto=format&fit=crop&w=2574&q=80'
+            })`,
+            opacity: parseFloat(process.env.NEXT_PUBLIC_PORTAL_BACKGROUND_OPACITY || '0.15')
+          }}
+        />
+      )}
+      
       {/* Header with View Toggle */}
       <div 
         className={viewMode === 'portal' ? 'py-6' : 'py-8'}
@@ -168,11 +183,21 @@ export default function AgencyAdminPage({ params }: PageProps) {
       >
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold mb-2 text-white">{agency.agency_name}</h1>
-              <p className="text-blue-100 text-lg">
-                {viewMode === 'analytics' ? 'Agency Management Dashboard' : 'Campaign & Flow Portal'}
-              </p>
+            <div className="flex items-center gap-4">
+              {/* Agency Logo */}
+              {agency.logo_url && (
+                <img 
+                  src={agency.logo_url} 
+                  alt={`${agency.agency_name} logo`}
+                  className="h-12 w-auto"
+                />
+              )}
+              <div>
+                <h1 className="text-3xl font-bold mb-2 text-white">{agency.agency_name}</h1>
+                <p className="text-blue-100 text-lg">
+                  {viewMode === 'analytics' ? 'Agency Management Dashboard' : 'Campaign & Flow Portal'}
+                </p>
+              </div>
             </div>
             
             <ViewToggle 
@@ -194,7 +219,7 @@ export default function AgencyAdminPage({ params }: PageProps) {
             />
           </div>
         ) : (
-          <div className="container mx-auto px-4 py-8">
+          <div className="max-w-7xl mx-auto px-6 py-8">
             <CleanPortalDashboard 
               user={{ agency: agency }}
               userRole="agency_admin"
