@@ -47,6 +47,7 @@ interface Campaign {
   copy_due_date?: Date
   design_due_date?: Date
   copy_link?: string
+  ab_test?: string // A/B test field from Airtable
   design_files?: DesignFile[] // From Airtable File field
   external_id?: string
   synced_to_external: boolean
