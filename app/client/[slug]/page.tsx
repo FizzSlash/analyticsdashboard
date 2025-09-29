@@ -130,22 +130,11 @@ export default function ClientDashboardPage({ params }: PageProps) {
     <div 
       className="min-h-screen relative"
       style={{
-        background: `linear-gradient(135deg, ${client.primary_color || '#3B82F6'} 0%, ${client.secondary_color || '#1D4ED8'} 100%)`
+        background: client.background_image_url 
+          ? `url(${client.background_image_url}) center/cover fixed, ${client.primary_color || '#3B82F6'}` // Image with color fallback
+          : `linear-gradient(135deg, ${client.primary_color || '#3B82F6'} 0%, ${client.secondary_color || '#1D4ED8'} 100%)` // Color gradient only
       }}
     >
-      {/* Background Image Overlay (only if explicitly set) */}
-      {(client.background_image_url || process.env.NEXT_PUBLIC_PORTAL_BACKGROUND_IMAGE_URL) && (
-        <div 
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-          style={{
-            backgroundImage: `url(${
-              client.background_image_url || 
-              process.env.NEXT_PUBLIC_PORTAL_BACKGROUND_IMAGE_URL
-            })`,
-            opacity: parseFloat(process.env.NEXT_PUBLIC_PORTAL_BACKGROUND_OPACITY || '0.15')
-          }}
-        />
-      )}
       
       {/* Header with View Toggle */}
       <div className="py-6 relative z-10">
