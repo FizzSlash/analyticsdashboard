@@ -14,7 +14,8 @@ import {
   Target,
   CheckCircle,
   AlertTriangle,
-  RefreshCw
+  RefreshCw,
+  Mail
 } from 'lucide-react'
 
 interface Flow {
