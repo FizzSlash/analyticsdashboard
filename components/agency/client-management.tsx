@@ -1069,15 +1069,88 @@ ${flowDetails.slice(0, 3).map((f: any, i: number) =>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Background Image URL
+                    Background Image
                   </label>
-                  <input
-                    type="url"
-                    value={formData.background_image_url}
-                    onChange={(e) => setFormData({ ...formData, background_image_url: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="https://example.com/bg.jpg"
-                  />
+                  <div className="space-y-3">
+                    {/* File Upload */}
+                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0]
+                          if (file) {
+                            try {
+                              const formData = new FormData()
+                              formData.append('file', file)
+                              formData.append('clientId', editingClient?.id || '')
+                              
+                              const response = await fetch('/api/upload-design', {
+                                method: 'POST',
+                                body: formData
+                              })
+                              
+                              const result = await response.json()
+                              if (result.success) {
+                                setFormData(prev => ({ ...prev, background_image_url: result.url }))
+                                console.log('✅ Background uploaded:', result.url)
+                              } else {
+                                console.error('❌ Upload failed:', result.error)
+                              }
+                            } catch (error) {
+                              console.error('❌ Upload error:', error)
+                            }
+                          }
+                        }}
+                        className="hidden"
+                        id="background-upload"
+                      />
+                      <label 
+                        htmlFor="background-upload"
+                        className="cursor-pointer flex flex-col items-center gap-2"
+                      >
+                        <div className="bg-gray-100 p-3 rounded-full">
+                          <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                          </svg>
+                        </div>
+                        <span className="text-sm text-gray-600">Drop background image or click to upload</span>
+                        <span className="text-xs text-gray-500">JPG, PNG up to 10MB</span>
+                      </label>
+                    </div>
+                    
+                    {/* Current Image Preview */}
+                    {formData.background_image_url && (
+                      <div className="relative">
+                        <img 
+                          src={formData.background_image_url} 
+                          alt="Background preview"
+                          className="w-full h-32 object-cover rounded-lg"
+                        />
+                        <button
+                          onClick={() => setFormData({ ...formData, background_image_url: '' })}
+                          className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full hover:bg-red-600 transition-colors"
+                          title="Remove background"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Fallback URL Input */}
+                    <details className="text-sm">
+                      <summary className="text-gray-600 cursor-pointer hover:text-gray-800">Or enter URL manually</summary>
+                      <input
+                        type="url"
+                        value={formData.background_image_url}
+                        onChange={(e) => setFormData({ ...formData, background_image_url: e.target.value })}
+                        className="w-full mt-2 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="https://example.com/bg.jpg"
+                      />
+                    </details>
+                  </div>
                 </div>
 
                 <div>

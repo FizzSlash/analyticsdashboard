@@ -18,6 +18,7 @@ import {
   Star,
   Eye
 } from 'lucide-react'
+import { getBrandColorClasses } from '@/lib/brand-colors'
 
 interface DashboardSummary {
   pendingApprovals: number
@@ -58,6 +59,9 @@ interface DashboardOverviewProps {
 export function DashboardOverview({ client, userRole, onNavigate }: DashboardOverviewProps) {
   const [summary, setSummary] = useState<DashboardSummary | null>(null)
   const [loading, setLoading] = useState(true)
+  
+  // Get brand colors for this client
+  const brandColors = getBrandColorClasses(client)
 
   useEffect(() => {
     loadDashboardSummary()
@@ -152,7 +156,10 @@ export function DashboardOverview({ client, userRole, onNavigate }: DashboardOve
         >
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
-              <div className="bg-orange-500/80 p-4 rounded-xl shadow-lg group-hover:scale-110 transition-transform">
+              <div 
+                className="p-4 rounded-xl shadow-lg group-hover:scale-110 transition-transform"
+                style={{ backgroundColor: brandColors.primary.bg80 }}
+              >
                 <Calendar className="h-6 w-6 text-white" />
               </div>
               {summary.pendingApprovals > 0 && (
@@ -177,7 +184,10 @@ export function DashboardOverview({ client, userRole, onNavigate }: DashboardOve
         >
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
-              <div className="bg-blue-500/80 p-4 rounded-xl shadow-lg group-hover:scale-110 transition-transform">
+              <div 
+                className="p-4 rounded-xl shadow-lg group-hover:scale-110 transition-transform"
+                style={{ backgroundColor: brandColors.secondary.bg80 }}
+              >
                 <FileText className="h-6 w-6 text-white" />
               </div>
               {summary.overdueForms > 0 && (
@@ -202,10 +212,16 @@ export function DashboardOverview({ client, userRole, onNavigate }: DashboardOve
         >
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
-              <div className="bg-green-500/80 p-4 rounded-xl shadow-lg group-hover:scale-110 transition-transform">
+              <div 
+                className="p-4 rounded-xl shadow-lg group-hover:scale-110 transition-transform"
+                style={{ backgroundColor: brandColors.primary.bg50 }}
+              >
                 <MessageSquare className="h-6 w-6 text-white" />
               </div>
-              <div className="bg-green-500/80 text-white text-xs font-medium px-3 py-1 rounded-full">
+              <div 
+                className="text-white text-xs font-medium px-3 py-1 rounded-full"
+                style={{ backgroundColor: brandColors.primary.bg80 }}
+              >
                 SUBMIT
               </div>
             </div>
@@ -375,7 +391,10 @@ export function DashboardOverview({ client, userRole, onNavigate }: DashboardOve
       {summary.pendingApprovals === 0 && summary.overdueForms === 0 && (
         <Card className="bg-white/10 border-white/20 backdrop-blur-sm">
           <CardContent className="p-8 text-center">
-            <div className="bg-green-500/80 p-6 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center shadow-lg">
+            <div 
+              className="p-6 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center shadow-lg"
+              style={{ backgroundColor: brandColors.status.success }}
+            >
               <CheckCircle className="h-8 w-8 text-white" />
             </div>
             <h3 className="text-white text-xl font-bold mb-2">All Caught Up!</h3>

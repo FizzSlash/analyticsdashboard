@@ -20,6 +20,7 @@ import {
   MessageSquare,
   ExternalLink
 } from 'lucide-react'
+import { getBrandColorClasses } from '@/lib/brand-colors'
 
 interface Flow {
   id: string
@@ -59,6 +60,9 @@ export function FlowProgressTracker({ client, userRole, canEdit, canCreate, canA
   const [viewingFlow, setViewingFlow] = useState<Flow | null>(null)
   const [flowComments, setFlowComments] = useState('')
   const [syncingOperations, setSyncingOperations] = useState<Set<string>>(new Set())
+  
+  // Get brand colors for this client
+  const brandColors = getBrandColorClasses(client)
 
   useEffect(() => {
     loadFlows()
@@ -284,31 +288,39 @@ export function FlowProgressTracker({ client, userRole, canEdit, canCreate, canA
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'Content Strategy': return 'bg-gray-500/30 text-gray-300 border-gray-400'
-      case 'Copy': return 'bg-blue-500/30 text-blue-300 border-blue-400'
-      case 'Copy QA': return 'bg-blue-500/40 text-blue-200 border-blue-300'
-      case 'Design': return 'bg-purple-500/30 text-purple-300 border-purple-400'
-      case 'Design QA': return 'bg-purple-500/40 text-purple-200 border-purple-300'
-      case 'Ready For Client Approval': return 'bg-orange-500/30 text-orange-300 border-orange-400'
-      case 'Client Approval': return 'bg-orange-500/30 text-orange-300 border-orange-400'
-      case 'Approved': return 'bg-green-500/30 text-green-300 border-green-400'
-      case 'Client Revisions': return 'bg-red-500/30 text-red-300 border-red-400'
-      case 'Ready For Schedule': return 'bg-teal-500/30 text-teal-300 border-teal-400'
-      case 'Ready For Imp QA': return 'bg-indigo-500/30 text-indigo-300 border-indigo-400'
-      case 'Scheduled - Close': return 'bg-green-500/40 text-green-200 border-green-300'
-      default: return 'bg-gray-500/30 text-gray-300 border-gray-400'
+      case 'Content Strategy': 
+      case 'Copy': 
+      case 'Copy QA':
+      case 'Design':
+      case 'Design QA':
+        return `text-white/80`
+      case 'Ready For Client Approval': 
+      case 'Client Approval': 
+        return 'bg-orange-500/30 text-orange-300 border-orange-400'
+      case 'Approved': 
+      case 'Scheduled - Close':
+        return 'bg-green-500/30 text-green-300 border-green-400'
+      case 'Client Revisions': 
+        return 'bg-red-500/30 text-red-300 border-red-400'
+      default: 
+        return `text-white/80`
     }
   }
 
   const getFlowTypeColor = (flowType: string) => {
+    // Use brand colors for flow types
+    const primary = `text-white/90`
+    const secondary = `text-white/90`
+    
     switch (flowType) {
-      case 'welcome': return 'bg-blue-500/20 border-blue-400 text-blue-300'
-      case 'abandoned_cart': return 'bg-orange-500/20 border-orange-400 text-orange-300'
-      case 'win_back': return 'bg-purple-500/20 border-purple-400 text-purple-300'
-      case 'post_purchase': return 'bg-green-500/20 border-green-400 text-green-300'
-      case 'browse_abandon': return 'bg-yellow-500/20 border-yellow-400 text-yellow-300'
-      case 'custom': return 'bg-gray-500/20 border-gray-400 text-gray-300'
-      default: return 'bg-gray-500/20 border-gray-400 text-gray-300'
+      case 'welcome': 
+      case 'abandoned_cart': 
+      case 'win_back': 
+      case 'post_purchase': 
+      case 'browse_abandon': 
+      case 'custom': 
+      default: 
+        return primary
     }
   }
 
@@ -343,7 +355,13 @@ export function FlowProgressTracker({ client, userRole, canEdit, canCreate, canA
                   <div>
                     <h4 className="text-white font-semibold">{flow.title}</h4>
                     <div className="flex items-center gap-2 mt-1">
-                      <span className={`px-2 py-1 rounded-full text-xs border ${getFlowTypeColor(flow.flow_type)}`}>
+                      <span 
+                        className="px-2 py-1 rounded-full text-xs text-white border"
+                        style={{ 
+                          backgroundColor: brandColors.primary.bg30,
+                          borderColor: brandColors.primary.bg50 
+                        }}
+                      >
                         {flow.flow_type.replace('_', ' ')}
                       </span>
                       <span className={`px-2 py-1 rounded-full text-xs border ${getStatusColor(flow.status)}`}>
@@ -366,7 +384,8 @@ export function FlowProgressTracker({ client, userRole, canEdit, canCreate, canA
                       href={flow.copy_link}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 text-blue-400 hover:text-blue-300 text-xs"
+                      className="inline-flex items-center gap-1 text-xs hover:opacity-80 transition-colors"
+                      style={{ color: brandColors.secondary.text }}
                     >
                       📄 View Copy
                     </a>
@@ -472,7 +491,8 @@ export function FlowProgressTracker({ client, userRole, canEdit, canCreate, canA
                         href={viewingFlow.copy_link}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 bg-blue-600/80 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors"
+                        className="inline-flex items-center gap-2 text-white px-4 py-2 rounded-lg transition-colors hover:opacity-80"
+                        style={{ backgroundColor: brandColors.secondary.bg80 }}
                       >
                         <ExternalLink className="h-4 w-4" />
                         View Email Copy
@@ -528,6 +548,10 @@ export function FlowProgressTracker({ client, userRole, canEdit, canCreate, canA
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <button
                           onClick={() => {
+                            // Save comments to flow before approving
+                            setFlows(prev => prev.map(f => 
+                              f.id === viewingFlow.id ? { ...f, client_notes: flowComments } : f
+                            ))
                             approveFlow(viewingFlow.id, true)
                             setViewingFlow(null)
                           }}
@@ -538,6 +562,10 @@ export function FlowProgressTracker({ client, userRole, canEdit, canCreate, canA
                         </button>
                         <button
                           onClick={() => {
+                            // Save comments to flow before requesting changes
+                            setFlows(prev => prev.map(f => 
+                              f.id === viewingFlow.id ? { ...f, client_notes: flowComments } : f
+                            ))
                             approveFlow(viewingFlow.id, false)
                             setViewingFlow(null)
                           }}
@@ -554,7 +582,13 @@ export function FlowProgressTracker({ client, userRole, canEdit, canCreate, canA
                   {viewingFlow.client_notes && (
                     <div>
                       <h5 className="text-white font-medium mb-2">Previous Feedback</h5>
-                      <div className="bg-blue-500/10 rounded-lg p-3 border border-blue-400/30">
+                      <div 
+                        className="rounded-lg p-3 border"
+                        style={{ 
+                          backgroundColor: brandColors.secondary.bg20,
+                          borderColor: brandColors.secondary.bg30 
+                        }}
+                      >
                         <p className="text-white/80 text-sm">{viewingFlow.client_notes}</p>
                       </div>
                     </div>
