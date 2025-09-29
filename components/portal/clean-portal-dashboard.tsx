@@ -6,12 +6,14 @@ import { CampaignCalendar } from './campaign-calendar'
 import { FlowProgressTracker } from './flow-progress-tracker'
 import { ABTestManager } from './ab-test-manager'
 import { EnhancedRequests } from './enhanced-requests'
+import { DesignFeedback } from './design-feedback'
 import { 
   Calendar, 
   Zap, 
   TestTube, 
   FileText,
-  Building2
+  Building2,
+  Image
 } from 'lucide-react'
 
 interface CleanPortalDashboardProps {
@@ -21,7 +23,7 @@ interface CleanPortalDashboardProps {
   allClients?: any[] // For agency admins to see all clients
 }
 
-type PortalTab = 'campaigns' | 'flows' | 'abtests' | 'requests'
+type PortalTab = 'campaigns' | 'flows' | 'designs' | 'abtests' | 'requests'
 
 export function CleanPortalDashboard({ user, client, userRole, allClients }: CleanPortalDashboardProps) {
   const [activeTab, setActiveTab] = useState<PortalTab>('campaigns')
@@ -46,6 +48,11 @@ export function CleanPortalDashboard({ user, client, userRole, allClients }: Cle
       id: 'flows', 
       label: userRole === 'agency_admin' ? 'Flow Progress' : 'Flow Approvals', 
       icon: Zap 
+    },
+    { 
+      id: 'designs', 
+      label: userRole === 'agency_admin' ? 'Design Center' : 'Design Feedback', 
+      icon: Image 
     },
     { 
       id: 'abtests', 
@@ -160,6 +167,13 @@ export function CleanPortalDashboard({ user, client, userRole, allClients }: Cle
           />
         )}
         
+        {activeTab === 'designs' && (
+          <DesignFeedback 
+            client={clientInfo}
+            userRole={userRole}
+          />
+        )}
+        
         {activeTab === 'abtests' && (
           <ABTestManager 
             client={clientInfo}
@@ -185,12 +199,14 @@ export function CleanPortalDashboard({ user, client, userRole, allClients }: Cle
               <p className="text-white/70 text-sm mt-1">
                 {userRole === 'agency_admin' ? (
                   <>• Create and manage campaigns/flows for all clients<br/>
+                  • View and manage all design files and feedback<br/>
                   • All changes auto-sync to Airtable instantly<br/>
                   • Perfect for live client collaboration</>
                 ) : (
                   <>• Approve campaigns and flows when ready<br/>
+                  • Review designs and provide feedback<br/>
                   • Submit requests for new campaigns/flows<br/>
-                  • Add feedback and notes on existing items</>
+                  • Like designs and add notes</>
                 )}
               </p>
             </div>

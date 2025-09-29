@@ -10,9 +10,10 @@ const AIRTABLE_TABLE_ID = 'tblG1qADMDrBjuX5R'  // Main retention table ID
 const getAirtableStage = (status: string): string => {
   const stageMap: Record<string, string> = {
     'draft': 'Content Strategy',
-    'in_progress': 'Copy',
+    'copy': 'Copy',
+    'design': 'Design',
     'review': 'Copy QA', 
-    'client_approval': 'Ready For Client Approval',
+    'ready_for_client_approval': 'Ready For Client Approval',
     'approved': 'Approved',
     'revisions': 'Client Revisions',
     'scheduled': 'Ready For Schedule',
@@ -98,8 +99,20 @@ const buildEnhancedNotesField = (campaign: any): string => {
     notes += `\n\nAdditional Notes: ${campaign.notes}`
   }
   
-  notes += `\n\nSource: Unified Campaign Portal (${new Date().toISOString()})`
+  notes += `\n\nSource: Portal (${new Date().toISOString()})`
   return notes.trim()
+}
+
+const getAssigneeEmail = (assignee: string): string => {
+  const assigneeMap: Record<string, string> = {
+    'Copy Team': 'copy@retentionharbor.com',
+    'Design Team': 'design@retentionharbor.com', 
+    'Dev Team': 'dev@retentionharbor.com',
+    'Strategy Team': 'strategy@retentionharbor.com',
+    'Reid Sickels': 'reid@retentionharbor.com',
+    'Connor Clements': 'connor@retentionharbor.com'
+  }
+  return assigneeMap[assignee] || 'reid@retentionharbor.com'
 }
 
 export async function POST(request: NextRequest) {
@@ -145,13 +158,22 @@ export async function POST(request: NextRequest) {
         // Notes - enhanced multiline text with all details
         'Notes': buildEnhancedNotesField(campaign),
         
-        // Optional fields that map to your Airtable structure
+        // Map to your existing Airtable fields exactly
+        ...(campaign.copy_link && { 'Copy Link': campaign.copy_link }),
+        ...(campaign.notes && { 'Notes': campaign.notes }),
         ...(campaign.offer && { 'Offer': campaign.offer }),
         ...(campaign.subject_line && !campaign.offer && { 'Offer': campaign.subject_line }),
         ...(campaign.ab_test && { 'A/B Test': campaign.ab_test }),
-        ...(campaign.copy_link && { 'Copy Link': campaign.copy_link }),
         
-        // Due dates (if provided)
+        // Assignee field (matches your Airtable user structure)
+        ...(campaign.assignee && { 
+          'Assignee': [getAssigneeEmail(campaign.assignee)]
+        }),
+        
+        // Client Revisions (for client feedback)
+        ...(campaign.client_notes && { 'Client Revisions': campaign.client_notes }),
+        
+        // Due dates (your existing fields)
         ...(campaign.copy_due_date && { 'Copy Due Date': campaign.copy_due_date.toISOString().split('T')[0] }),
         ...(campaign.design_due_date && { 'Design Due Date': campaign.design_due_date.toISOString().split('T')[0] }),
       }

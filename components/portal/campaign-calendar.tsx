@@ -20,6 +20,15 @@ import {
   TestTube
 } from 'lucide-react'
 
+interface DesignFile {
+  id: string
+  filename: string
+  url: string
+  thumbnail_url: string
+  type: string
+  size: number
+}
+
 interface Campaign {
   id: string
   title: string
@@ -37,6 +46,8 @@ interface Campaign {
   assignee?: string
   copy_due_date?: Date
   design_due_date?: Date
+  copy_link?: string
+  design_files?: DesignFile[] // From Airtable File field
   external_id?: string
   synced_to_external: boolean
   last_sync?: Date

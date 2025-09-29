@@ -51,17 +51,28 @@ export async function GET(request: NextRequest) {
         id: record.id, // Use Airtable record ID
         title: fields.Tasks || 'Untitled',
         client: fields.Client || 'Unknown',
-        description: extractDescription(fields.Notes),
+        description: fields.Notes || extractDescription(fields.Notes),
         audience: extractAudience(fields.Notes),
         notes: fields.Notes || '',
         external_id: record.id,
         synced_to_external: true,
         last_sync: new Date(record.createdTime),
-        assignee: extractAssignee(fields.Notes),
+        assignee: fields.Assignee?.name || extractAssignee(fields.Notes),
         status: mapAirtableStageToStatus(fields.Stage),
         offer: fields.Offer || '',
         ab_test: fields['A/B Test'] || '',
-        copy_link: fields['Copy Link'] || ''
+        copy_link: fields['Copy Link'] || '',
+        client_notes: fields['Client Revisions'] || '',
+        
+        // Extract design files from File field
+        design_files: fields.File ? fields.File.map((file: any) => ({
+          id: file.id,
+          filename: file.filename,
+          url: file.url,
+          thumbnail_url: file.thumbnails?.large?.url || file.thumbnails?.small?.url || file.url,
+          type: file.type,
+          size: file.size
+        })) : []
       }
 
       if (type === 'flows') {
