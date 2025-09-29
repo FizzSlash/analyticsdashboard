@@ -18,6 +18,7 @@ import {
 } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatCurrency, formatNumber, formatPercentage } from "@/lib/utils"
+import { getChartColors } from '@/lib/brand-colors'
 
 interface ChartProps {
   title: string
