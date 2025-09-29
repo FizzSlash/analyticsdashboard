@@ -80,61 +80,11 @@ export function DynamicForms({ client, userRole }: DynamicFormsProps) {
     }
   }
 
-  const generateMockForms = (): FormTemplate[] => [
-    {
-      id: 'form1',
-      title: 'Client Onboarding Questionnaire',
-      description: 'Initial setup questions to understand brand, goals, and preferences',
-      category: 'onboarding',
-      status: 'active',
-      created_date: new Date(2025, 9, 15),
-      responses: 0,
-      assigned_clients: [client.brand_name],
-      due_date: new Date(2025, 10, 1),
-      share_link: `https://portal.com/forms/onboarding-${client.brand_slug}`,
-      fields: [
-        { id: 'f1', type: 'text', label: 'Brand Voice Description', required: true, description: 'Describe your brand personality in 2-3 sentences' },
-        { id: 'f2', type: 'select', label: 'Industry Category', options: ['E-commerce', 'SaaS', 'Healthcare', 'Finance', 'Other'], required: true },
-        { id: 'f3', type: 'textarea', label: 'Main Business Goals', required: true, description: 'What are your top 3 business objectives?' },
-        { id: 'f4', type: 'radio', label: 'Email Frequency Preference', options: ['Daily', 'Weekly', 'Bi-weekly', 'Monthly'], required: true }
-      ]
-    },
-    {
-      id: 'form2',
-      title: 'Monthly Content Calendar Input',
-      description: 'Collect content ideas, promotions, and campaign requests for the upcoming month',
-      category: 'monthly',
-      status: 'active',
-      created_date: new Date(2025, 9, 20),
-      responses: 1,
-      assigned_clients: [client.brand_name],
-      due_date: new Date(2025, 9, 30),
-      share_link: `https://portal.com/forms/monthly-${client.brand_slug}`,
-      fields: [
-        { id: 'm1', type: 'date', label: 'Target Month', required: true },
-        { id: 'm2', type: 'textarea', label: 'Upcoming Promotions', description: 'List any sales, events, or special offers', required: false },
-        { id: 'm3', type: 'textarea', label: 'Product Launches', description: 'New products or services to highlight', required: false },
-        { id: 'm4', type: 'checkbox', label: 'Campaign Types Needed', options: ['Email Campaigns', 'Social Media', 'Landing Pages', 'Flows', 'Popups'], required: false }
-      ]
-    },
-    {
-      id: 'form3',
-      title: 'Client Satisfaction Survey',
-      description: 'Quarterly feedback on our services and areas for improvement',
-      category: 'feedback',
-      status: 'completed',
-      created_date: new Date(2025, 8, 1),
-      responses: 1,
-      assigned_clients: [client.brand_name],
-      share_link: `https://portal.com/forms/satisfaction-${client.brand_slug}`,
-      fields: [
-        { id: 's1', type: 'radio', label: 'Overall Satisfaction', options: ['Very Satisfied', 'Satisfied', 'Neutral', 'Dissatisfied', 'Very Dissatisfied'], required: true },
-        { id: 's2', type: 'number', label: 'NPS Score (0-10)', required: true, description: 'How likely are you to recommend our services?' },
-        { id: 's3', type: 'textarea', label: 'What\'s working well?', required: false },
-        { id: 's4', type: 'textarea', label: 'Areas for improvement', required: false }
-      ]
-    }
-  ]
+  const generateMockForms = (): FormTemplate[] => {
+    // TODO: Load real assigned forms from database
+    // For now, return empty array - forms will be populated via admin
+    return []
+  }
 
   const getFormStatusColor = (status: string) => {
     switch (status) {

@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { DashboardOverview } from './dashboard-overview'
-import { CommunicationHub } from './communication-hub'
 import { CampaignApprovalCalendar } from './campaign-approval-calendar'
 import { FlowProgressTracker } from './flow-progress-tracker'
 import { ABTestManager } from './ab-test-manager'
@@ -11,7 +10,6 @@ import { EnhancedRequests } from './enhanced-requests'
 import { DynamicForms } from './dynamic-forms'
 import { 
   BarChart3,
-  MessageSquare,
   Calendar, 
   Zap, 
   TestTube, 
@@ -29,7 +27,7 @@ interface CleanPortalDashboardProps {
   allClients?: any[] // For agency admins to see all clients
 }
 
-type PortalTab = 'overview' | 'campaigns' | 'flows' | 'abtests' | 'requests' | 'forms' | 'messages'
+type PortalTab = 'overview' | 'campaigns' | 'flows' | 'abtests' | 'requests' | 'forms'
 
 export function CleanPortalDashboard({ user, client, userRole, allClients }: CleanPortalDashboardProps) {
   const [activeTab, setActiveTab] = useState<PortalTab>('overview')
@@ -75,11 +73,6 @@ export function CleanPortalDashboard({ user, client, userRole, allClients }: Cle
       id: 'forms', 
       label: userRole === 'agency_admin' ? 'Form Templates' : 'Forms', 
       icon: ClipboardList 
-    },
-    { 
-      id: 'messages', 
-      label: 'Messages', 
-      icon: MessageSquare 
     }
   ]
 
@@ -223,13 +216,6 @@ export function CleanPortalDashboard({ user, client, userRole, allClients }: Cle
         
         {activeTab === 'forms' && (
           <DynamicForms 
-            client={clientInfo}
-            userRole={userRole}
-          />
-        )}
-
-        {activeTab === 'messages' && (
-          <CommunicationHub 
             client={clientInfo}
             userRole={userRole}
           />

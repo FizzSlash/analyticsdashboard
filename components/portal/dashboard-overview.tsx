@@ -75,70 +75,21 @@ export function DashboardOverview({ client, userRole, onNavigate }: DashboardOve
     }
   }
 
-  const generateMockSummary = (): DashboardSummary => ({
-    pendingApprovals: 3,
-    overdueForms: 1,
-    activeRequests: 2,
-    recentActivity: [
-      {
-        id: '1',
-        type: 'approval',
-        title: 'Black Friday Campaign',
-        description: 'Pending your approval - Ready to review',
-        timestamp: new Date(2025, 9, 28, 14, 30),
-        priority: 'high'
-      },
-      {
-        id: '2', 
-        type: 'form',
-        title: 'Monthly Content Calendar',
-        description: 'Form completed successfully',
-        timestamp: new Date(2025, 9, 27, 10, 15)
-      },
-      {
-        id: '3',
-        type: 'comment',
-        title: 'Holiday Launch Email',
-        description: 'Agency replied to your feedback',
-        timestamp: new Date(2025, 9, 26, 16, 45)
-      },
-      {
-        id: '4',
-        type: 'request',
-        title: 'Welcome Series Update',
-        description: 'Request approved and in progress',
-        timestamp: new Date(2025, 9, 25, 11, 20)
+  const generateMockSummary = (): DashboardSummary => {
+    // TODO: Replace with real API calls to get actual pending items
+    return {
+      pendingApprovals: 0, // TODO: Fetch from campaigns API
+      overdueForms: 0, // TODO: Fetch from forms API  
+      activeRequests: 0, // TODO: Fetch from requests API
+      recentActivity: [], // TODO: Fetch recent activity
+      upcomingDeadlines: [], // TODO: Fetch upcoming deadlines
+      monthlyStats: {
+        campaignsApproved: 0,
+        formsCompleted: 0,
+        requestsSubmitted: 0
       }
-    ],
-    upcomingDeadlines: [
-      {
-        id: 'd1',
-        title: 'Client Onboarding Form',
-        type: 'form',
-        dueDate: new Date(2025, 9, 29),
-        isOverdue: true
-      },
-      {
-        id: 'd2',
-        title: 'Holiday Campaign Approval',
-        type: 'campaign',
-        dueDate: new Date(2025, 9, 30),
-        isOverdue: false
-      },
-      {
-        id: 'd3',
-        title: 'Welcome Flow Review',
-        type: 'campaign',
-        dueDate: new Date(2025, 10, 2),
-        isOverdue: false
-      }
-    ],
-    monthlyStats: {
-      campaignsApproved: 12,
-      formsCompleted: 4,
-      requestsSubmitted: 6
     }
-  })
+  }
 
   const getActivityIcon = (type: string) => {
     switch (type) {
@@ -267,172 +218,156 @@ export function DashboardOverview({ client, userRole, onNavigate }: DashboardOve
         </Card>
       </div>
 
-      {/* Action Items Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Upcoming Deadlines */}
-        <Card className="bg-white/5 border-white/10">
-          <CardHeader>
-            <CardTitle className="text-white flex items-center gap-2">
-              <Clock className="h-5 w-5 text-yellow-400" />
-              Upcoming Deadlines
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {summary.upcomingDeadlines.length === 0 ? (
-              <p className="text-white/60 text-sm">No upcoming deadlines</p>
-            ) : (
-              summary.upcomingDeadlines.map(item => (
-                <div 
-                  key={item.id}
-                  className="flex items-center justify-between p-3 bg-white/5 rounded-lg hover:bg-white/10 transition-colors cursor-pointer"
-                  onClick={() => onNavigate(item.type === 'form' ? 'forms' : 'campaigns', item.id)}
-                >
-                  <div>
-                    <p className="text-white font-medium text-sm">{item.title}</p>
-                    <p className={`text-xs ${getDeadlineStatus(item)}`}>
-                      {item.isOverdue ? 'Overdue' : `Due ${item.dueDate.toLocaleDateString()}`}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className={`px-2 py-1 rounded text-xs ${
-                      item.type === 'form' ? 'bg-blue-500/20 text-blue-300' : 'bg-purple-500/20 text-purple-300'
-                    }`}>
-                      {item.type}
-                    </span>
+      {/* Pending Items - Only if there are items to show */}
+      {(summary.upcomingDeadlines.length > 0 || summary.recentActivity.length > 0) && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Only show deadlines if there are deadlines */}
+          {summary.upcomingDeadlines.length > 0 && (
+            <Card className="bg-white/5 border-white/10">
+              <CardHeader>
+                <CardTitle className="text-white flex items-center gap-2">
+                  <Clock className="h-5 w-5 text-yellow-400" />
+                  Needs Attention
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {summary.upcomingDeadlines.map(item => (
+                  <div 
+                    key={item.id}
+                    className="flex items-center justify-between p-3 bg-white/5 rounded-lg hover:bg-white/10 transition-colors cursor-pointer"
+                    onClick={() => onNavigate(item.type === 'form' ? 'forms' : 'campaigns', item.id)}
+                  >
+                    <div>
+                      <p className="text-white font-medium text-sm">{item.title}</p>
+                      <p className={`text-xs ${getDeadlineStatus(item)}`}>
+                        {item.isOverdue ? 'Overdue' : `Due ${item.dueDate.toLocaleDateString()}`}
+                      </p>
+                    </div>
                     <ArrowRight className="h-4 w-4 text-white/40" />
                   </div>
-                </div>
-              ))
-            )}
-          </CardContent>
-        </Card>
+                ))}
+              </CardContent>
+            </Card>
+          )}
 
-        {/* Recent Activity */}
+          {/* Only show recent activity if there is activity */}
+          {summary.recentActivity.length > 0 && (
+            <Card className="bg-white/5 border-white/10">
+              <CardHeader>
+                <CardTitle className="text-white flex items-center gap-2">
+                  <Activity className="h-5 w-5 text-green-400" />
+                  Recent Updates
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {summary.recentActivity.slice(0, 3).map(activity => {
+                  const Icon = getActivityIcon(activity.type)
+                  return (
+                    <div key={activity.id} className="flex items-start gap-3 p-3 bg-white/5 rounded-lg">
+                      <div className={`p-2 rounded-lg bg-white/10 ${getActivityColor(activity.type)}`}>
+                        <Icon className="h-4 w-4" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-white font-medium text-sm">{activity.title}</p>
+                        <p className="text-white/70 text-xs mt-1">{activity.description}</p>
+                        <span className="text-white/60 text-xs">{getTimeAgo(activity.timestamp)}</span>
+                      </div>
+                    </div>
+                  )
+                })}
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      )}
+
+      {/* Only show monthly progress if there's actual data */}
+      {(summary.monthlyStats.campaignsApproved > 0 || summary.monthlyStats.formsCompleted > 0 || summary.monthlyStats.requestsSubmitted > 0) && (
         <Card className="bg-white/5 border-white/10">
           <CardHeader>
             <CardTitle className="text-white flex items-center gap-2">
-              <Activity className="h-5 w-5 text-green-400" />
-              Recent Activity
+              <TrendingUp className="h-5 w-5 text-blue-400" />
+              This Month
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
-            {summary.recentActivity.length === 0 ? (
-              <p className="text-white/60 text-sm">No recent activity</p>
-            ) : (
-              summary.recentActivity.map(activity => {
-                const Icon = getActivityIcon(activity.type)
-                return (
-                  <div key={activity.id} className="flex items-start gap-3 p-3 bg-white/5 rounded-lg">
-                    <div className={`p-2 rounded-lg bg-white/10 ${getActivityColor(activity.type)}`}>
-                      <Icon className="h-4 w-4" />
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between">
-                        <p className="text-white font-medium text-sm">{activity.title}</p>
-                        <span className="text-white/60 text-xs">{getTimeAgo(activity.timestamp)}</span>
-                      </div>
-                      <p className="text-white/70 text-xs mt-1">{activity.description}</p>
-                      {activity.priority === 'high' && (
-                        <span className="inline-block mt-1 px-2 py-1 bg-red-500/20 text-red-300 text-xs rounded">
-                          High Priority
-                        </span>
-                      )}
-                    </div>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {summary.monthlyStats.campaignsApproved > 0 && (
+                <div className="text-center">
+                  <div className="bg-green-500/20 p-4 rounded-lg mb-2">
+                    <CheckCircle className="h-8 w-8 text-green-400 mx-auto" />
                   </div>
-                )
-              })
-            )}
+                  <p className="text-white text-2xl font-bold">{summary.monthlyStats.campaignsApproved}</p>
+                  <p className="text-white/70 text-sm">Campaigns Approved</p>
+                </div>
+              )}
+              {summary.monthlyStats.formsCompleted > 0 && (
+                <div className="text-center">
+                  <div className="bg-blue-500/20 p-4 rounded-lg mb-2">
+                    <FileText className="h-8 w-8 text-blue-400 mx-auto" />
+                  </div>
+                  <p className="text-white text-2xl font-bold">{summary.monthlyStats.formsCompleted}</p>
+                  <p className="text-white/70 text-sm">Forms Completed</p>
+                </div>
+              )}
+              {summary.monthlyStats.requestsSubmitted > 0 && (
+                <div className="text-center">
+                  <div className="bg-purple-500/20 p-4 rounded-lg mb-2">
+                    <MessageSquare className="h-8 w-8 text-purple-400 mx-auto" />
+                  </div>
+                  <p className="text-white text-2xl font-bold">{summary.monthlyStats.requestsSubmitted}</p>
+                  <p className="text-white/70 text-sm">Requests Submitted</p>
+                </div>
+              )}
+            </div>
           </CardContent>
         </Card>
-      </div>
+      )}
 
-      {/* Monthly Progress */}
-      <Card className="bg-white/5 border-white/10">
-        <CardHeader>
-          <CardTitle className="text-white flex items-center gap-2">
-            <TrendingUp className="h-5 w-5 text-blue-400" />
-            This Month's Progress
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="text-center">
-              <div className="bg-green-500/20 p-4 rounded-lg mb-2">
-                <CheckCircle className="h-8 w-8 text-green-400 mx-auto" />
-              </div>
-              <p className="text-white text-2xl font-bold">{summary.monthlyStats.campaignsApproved}</p>
-              <p className="text-white/70 text-sm">Campaigns Approved</p>
+      {/* Quick Actions - Only show if there are pending items */}
+      {(summary.pendingApprovals > 0 || summary.overdueForms > 0) && (
+        <Card className="bg-white/5 border-white/10">
+          <CardHeader>
+            <CardTitle className="text-white flex items-center gap-2">
+              <Zap className="h-5 w-5 text-yellow-400" />
+              Action Required
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {summary.pendingApprovals > 0 && (
+                <button
+                  onClick={() => onNavigate('campaigns')}
+                  className="bg-orange-500/20 hover:bg-orange-500/30 border border-orange-400/30 text-orange-300 p-4 rounded-lg transition-colors flex items-center justify-between"
+                >
+                  <div className="flex items-center gap-3">
+                    <Calendar className="h-5 w-5" />
+                    <span className="text-sm font-medium">Review Campaigns</span>
+                  </div>
+                  <span className="bg-orange-500/30 text-orange-200 text-xs px-2 py-1 rounded-full">
+                    {summary.pendingApprovals}
+                  </span>
+                </button>
+              )}
+              
+              {summary.overdueForms > 0 && (
+                <button
+                  onClick={() => onNavigate('forms')}
+                  className="bg-red-500/20 hover:bg-red-500/30 border border-red-400/30 text-red-300 p-4 rounded-lg transition-colors flex items-center justify-between"
+                >
+                  <div className="flex items-center gap-3">
+                    <FileText className="h-5 w-5" />
+                    <span className="text-sm font-medium">Complete Forms</span>
+                  </div>
+                  <span className="bg-red-500/30 text-red-200 text-xs px-2 py-1 rounded-full">
+                    {summary.overdueForms}
+                  </span>
+                </button>
+              )}
             </div>
-            <div className="text-center">
-              <div className="bg-blue-500/20 p-4 rounded-lg mb-2">
-                <FileText className="h-8 w-8 text-blue-400 mx-auto" />
-              </div>
-              <p className="text-white text-2xl font-bold">{summary.monthlyStats.formsCompleted}</p>
-              <p className="text-white/70 text-sm">Forms Completed</p>
-            </div>
-            <div className="text-center">
-              <div className="bg-purple-500/20 p-4 rounded-lg mb-2">
-                <MessageSquare className="h-8 w-8 text-purple-400 mx-auto" />
-              </div>
-              <p className="text-white text-2xl font-bold">{summary.monthlyStats.requestsSubmitted}</p>
-              <p className="text-white/70 text-sm">Requests Submitted</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Quick Actions */}
-      <Card className="bg-white/5 border-white/10">
-        <CardHeader>
-          <CardTitle className="text-white flex items-center gap-2">
-            <Zap className="h-5 w-5 text-yellow-400" />
-            Quick Actions
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {summary.pendingApprovals > 0 && (
-              <button
-                onClick={() => onNavigate('campaigns')}
-                className="bg-orange-500/20 hover:bg-orange-500/30 border border-orange-400/30 text-orange-300 p-4 rounded-lg transition-colors flex flex-col items-center gap-2"
-              >
-                <Calendar className="h-5 w-5" />
-                <span className="text-sm font-medium">Review Campaigns</span>
-                <span className="text-xs">{summary.pendingApprovals} pending</span>
-              </button>
-            )}
-            
-            {summary.overdueForms > 0 && (
-              <button
-                onClick={() => onNavigate('forms')}
-                className="bg-red-500/20 hover:bg-red-500/30 border border-red-400/30 text-red-300 p-4 rounded-lg transition-colors flex flex-col items-center gap-2"
-              >
-                <FileText className="h-5 w-5" />
-                <span className="text-sm font-medium">Complete Forms</span>
-                <span className="text-xs">{summary.overdueForms} overdue</span>
-              </button>
-            )}
-            
-            <button
-              onClick={() => onNavigate('requests')}
-              className="bg-blue-500/20 hover:bg-blue-500/30 border border-blue-400/30 text-blue-300 p-4 rounded-lg transition-colors flex flex-col items-center gap-2"
-            >
-              <MessageSquare className="h-5 w-5" />
-              <span className="text-sm font-medium">New Request</span>
-              <span className="text-xs">Submit project</span>
-            </button>
-
-            <button
-              onClick={() => window.open('mailto:support@youragency.com')}
-              className="bg-purple-500/20 hover:bg-purple-500/30 border border-purple-400/30 text-purple-300 p-4 rounded-lg transition-colors flex flex-col items-center gap-2"
-            >
-              <Users className="h-5 w-5" />
-              <span className="text-sm font-medium">Contact Team</span>
-              <span className="text-xs">Get help</span>
-            </button>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
 
       {/* All Caught Up State */}
       {summary.pendingApprovals === 0 && summary.overdueForms === 0 && (
