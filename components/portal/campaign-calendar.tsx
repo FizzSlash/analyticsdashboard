@@ -279,7 +279,7 @@ export function CampaignCalendar({ client, userRole, canEdit, canCreate, canAppr
       id: `${type}-${Date.now()}`,
       title: '',
       type: type,
-      status: 'draft',
+      status: 'Content Strategy', // Use real Airtable stage
       client: client.brand_name,
       date: date || new Date(),
       time: '09:00',
@@ -529,7 +529,7 @@ export function CampaignCalendar({ client, userRole, canEdit, canCreate, canAppr
                                   </div>
                                   <div className="text-white/60 text-xs">{campaign.time}</div>
                                   <div className={`inline-block px-2 py-1 rounded-full text-xs mt-1 border ${getStatusColor(campaign.status)}`}>
-                                    {campaign.status.replace('_', ' ')}
+                                    {campaign.status}
                                   </div>
                                   
                         {/* Client approval actions */}

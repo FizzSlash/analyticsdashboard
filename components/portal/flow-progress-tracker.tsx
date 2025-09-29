@@ -259,7 +259,7 @@ export function FlowProgressTracker({ client, userRole, canEdit, canCreate, canA
       id: `flow-${Date.now()}`,
       title: '',
       flow_type: 'welcome',
-      status: 'draft',
+      status: 'Content Strategy', // Use real Airtable stage
       client: client.brand_name,
       description: '',
       trigger_criteria: '',
@@ -275,13 +275,18 @@ export function FlowProgressTracker({ client, userRole, canEdit, canCreate, canA
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'draft': return 'bg-gray-500/30 text-gray-300 border-gray-400'
-      case 'copy': return 'bg-blue-500/30 text-blue-300 border-blue-400'
-      case 'design': return 'bg-purple-500/30 text-purple-300 border-purple-400'
-      case 'ready_for_client_approval': return 'bg-orange-500/30 text-orange-300 border-orange-400'
-      case 'approved': return 'bg-green-500/30 text-green-300 border-green-400'
-      case 'revisions': return 'bg-red-500/30 text-red-300 border-red-400'
-      case 'live': return 'bg-green-500/40 text-green-200 border-green-300'
+      case 'Content Strategy': return 'bg-gray-500/30 text-gray-300 border-gray-400'
+      case 'Copy': return 'bg-blue-500/30 text-blue-300 border-blue-400'
+      case 'Copy QA': return 'bg-blue-500/40 text-blue-200 border-blue-300'
+      case 'Design': return 'bg-purple-500/30 text-purple-300 border-purple-400'
+      case 'Design QA': return 'bg-purple-500/40 text-purple-200 border-purple-300'
+      case 'Ready For Client Approval': return 'bg-orange-500/30 text-orange-300 border-orange-400'
+      case 'Client Approval': return 'bg-orange-500/30 text-orange-300 border-orange-400'
+      case 'Approved': return 'bg-green-500/30 text-green-300 border-green-400'
+      case 'Client Revisions': return 'bg-red-500/30 text-red-300 border-red-400'
+      case 'Ready For Schedule': return 'bg-teal-500/30 text-teal-300 border-teal-400'
+      case 'Ready For Imp QA': return 'bg-indigo-500/30 text-indigo-300 border-indigo-400'
+      case 'Scheduled - Close': return 'bg-green-500/40 text-green-200 border-green-300'
       default: return 'bg-gray-500/30 text-gray-300 border-gray-400'
     }
   }
@@ -342,8 +347,8 @@ export function FlowProgressTracker({ client, userRole, canEdit, canCreate, canA
               <CardHeader>
                 <CardTitle className="text-lg font-semibold text-white flex items-center gap-2">
                   <div className={`w-3 h-3 rounded-full ${getStatusColor(status).includes('bg-green') ? 'bg-green-400' : getStatusColor(status).includes('bg-orange') ? 'bg-orange-400' : 'bg-gray-400'}`}></div>
-                  {status.replace('_', ' ').toUpperCase()} ({statusFlows.length})
-                  {status === 'ready_for_client_approval' && (
+                  {status.toUpperCase()} ({statusFlows.length})
+                  {(status === 'Ready For Client Approval' || status === 'Client Approval') && (
                     <span className="text-orange-400 text-sm font-normal">→ Ready for your approval</span>
                   )}
                 </CardTitle>
@@ -367,7 +372,7 @@ export function FlowProgressTracker({ client, userRole, canEdit, canCreate, canA
                             {flow.flow_type.replace('_', ' ')}
                           </span>
                           <span className={`px-2 py-1 rounded-full text-xs border ${getStatusColor(flow.status)}`}>
-                            {flow.status.replace('_', ' ')}
+                            {flow.status}
                           </span>
                         </div>
                         

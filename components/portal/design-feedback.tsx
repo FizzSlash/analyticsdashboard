@@ -35,7 +35,7 @@ interface DesignItem {
   assignee?: string
   client_feedback?: string
   agency_feedback?: string
-  annotations?: any[] // Design annotations from database
+  annotations?: any[]
 }
 
 interface DesignFeedbackProps {
@@ -57,13 +57,11 @@ export function DesignFeedback({ client, userRole }: DesignFeedbackProps) {
   const loadDesigns = async () => {
     setLoading(true)
     try {
-      // Load from Airtable and extract design files
       console.log('🎨 Loading designs from Airtable for client:', client.brand_name)
       const response = await fetch(`/api/load-from-airtable?client=${encodeURIComponent(client.brand_name)}`)
       const result = await response.json()
       
       if (result.success) {
-        // Combine campaigns and flows, filter for items with design files
         const allItems = [...result.campaigns, ...result.flows]
         const designItems = allItems
           .filter(item => item.design_files && item.design_files.length > 0)
@@ -78,9 +76,9 @@ export function DesignFeedback({ client, userRole }: DesignFeedbackProps) {
             assignee: item.assignee,
             client_feedback: item.client_notes || '',
             agency_feedback: item.notes || '',
-            annotations: [] // TODO: Load annotations from database
+            annotations: []
           }))
-          .sort((a, b) => b.created_date.getTime() - a.created_date.getTime()) // Most recent first
+          .sort((a, b) => b.created_date.getTime() - a.created_date.getTime())
         
         console.log(`🎨 Found ${designItems.length} designs with files`)
         setDesigns(designItems)
@@ -93,10 +91,7 @@ export function DesignFeedback({ client, userRole }: DesignFeedbackProps) {
   }
 
   const addAnnotation = async (designId: string, fileId: string, annotation: any) => {
-    // TODO: Save annotation to database
     console.log('💬 Added annotation to design:', designId, fileId, annotation)
-    
-    // Update local state
     setDesigns(prev => prev.map(design => 
       design.id === designId 
         ? { 
@@ -116,18 +111,16 @@ export function DesignFeedback({ client, userRole }: DesignFeedbackProps) {
           }
         : design
     ))
-    
-    // TODO: Sync feedback to Airtable Client Revisions field
     console.log('💬 Added feedback for design:', designId, feedback)
   }
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'design': return 'bg-purple-500/30 text-purple-300 border-purple-400'
-      case 'ready_for_client_approval': return 'bg-orange-500/30 text-orange-300 border-orange-400'
-      case 'approved': return 'bg-green-500/30 text-green-300 border-green-400'
-      case 'revisions': return 'bg-red-500/30 text-red-300 border-red-400'
-      case 'live': return 'bg-green-500/40 text-green-200 border-green-300'
+      case 'Design': return 'bg-purple-500/30 text-purple-300 border-purple-400'
+      case 'Ready For Client Approval': return 'bg-orange-500/30 text-orange-300 border-orange-400'
+      case 'Approved': return 'bg-green-500/30 text-green-300 border-green-400'
+      case 'Client Revisions': return 'bg-red-500/30 text-red-300 border-red-400'
+      case 'Scheduled - Close': return 'bg-green-500/40 text-green-200 border-green-300'
       default: return 'bg-gray-500/30 text-gray-300 border-gray-400'
     }
   }
@@ -189,7 +182,7 @@ export function DesignFeedback({ client, userRole }: DesignFeedbackProps) {
                     <h3 className="text-white font-semibold truncate">{design.campaign_title}</h3>
                     <div className="flex items-center justify-between mt-1">
                       <span className={`px-2 py-1 rounded-full text-xs border ${getStatusColor(design.status)}`}>
-                        {design.status.replace('_', ' ')}
+                        {design.status}
                       </span>
                       <span className="text-white/60 text-xs">
                         {design.created_date.toLocaleDateString()}
@@ -209,7 +202,6 @@ export function DesignFeedback({ client, userRole }: DesignFeedbackProps) {
                           alt={file.filename}
                           className="w-full h-32 object-cover"
                           onError={(e) => {
-                            // Fallback if image fails to load
                             (e.target as HTMLImageElement).style.display = 'none'
                           }}
                         />
@@ -286,7 +278,6 @@ export function DesignFeedback({ client, userRole }: DesignFeedbackProps) {
                       </p>
                     </div>
                   )}
-                </div>
 
                   {/* Assignee */}
                   {design.assignee && (
@@ -299,140 +290,6 @@ export function DesignFeedback({ client, userRole }: DesignFeedbackProps) {
               </CardContent>
             </Card>
           ))}
-        </div>
-      )}
-
-      {/* Feedback Modal */}
-      {selectedDesign && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
-          <Card className="bg-white/10 border-white/20 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <CardHeader>
-              <div className="flex justify-between items-center">
-                <CardTitle className="text-white">{selectedDesign.campaign_title}</CardTitle>
-                <button 
-                  onClick={() => setSelectedDesign(null)}
-                  className="text-white/60 hover:text-white"
-                >
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Design Files */}
-              <div className="space-y-3">
-                <h4 className="text-white font-medium">Design Files ({selectedDesign.design_files.length})</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {selectedDesign.design_files.map(file => (
-                    <div 
-                      key={file.id}
-                      className="bg-white/10 rounded-lg overflow-hidden cursor-pointer hover:bg-white/20 transition-colors"
-                      onClick={() => setViewingImage(file)}
-                    >
-                      <img 
-                        src={file.thumbnail_url}
-                        alt={file.filename}
-                        className="w-full h-32 object-cover"
-                      />
-                      <div className="p-3">
-                        <p className="text-white text-sm truncate">{file.filename}</p>
-                        <p className="text-white/60 text-xs">{(file.size / 1024).toFixed(0)} KB</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Feedback Section */}
-              <div className="space-y-3">
-                <h4 className="text-white font-medium">Feedback</h4>
-                
-                {/* Agency Feedback */}
-                {selectedDesign.agency_feedback && (
-                  <div className="bg-blue-500/20 border border-blue-400 rounded-lg p-3">
-                    <div className="flex items-center gap-2 mb-2">
-                      <User className="h-4 w-4 text-blue-300" />
-                      <span className="text-blue-300 text-sm font-medium">Agency Notes</span>
-                    </div>
-                    <p className="text-white/80 text-sm">{selectedDesign.agency_feedback}</p>
-                  </div>
-                )}
-
-                {/* Client Feedback */}
-                {selectedDesign.client_feedback && (
-                  <div className="bg-green-500/20 border border-green-400 rounded-lg p-3">
-                    <div className="flex items-center gap-2 mb-2">
-                      <MessageSquare className="h-4 w-4 text-green-300" />
-                      <span className="text-green-300 text-sm font-medium">Client Feedback</span>
-                    </div>
-                    <p className="text-white/80 text-sm">{selectedDesign.client_feedback}</p>
-                  </div>
-                )}
-
-                {/* Add Feedback */}
-                <div className="bg-white/10 rounded-lg p-3">
-                  <label className="block text-white text-sm font-medium mb-2">
-                    Add {userRole === 'client_user' ? 'Client' : 'Agency'} Feedback
-                  </label>
-                  <textarea
-                    className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white placeholder-white/50 resize-none"
-                    rows={3}
-                    placeholder={userRole === 'client_user' 
-                      ? 'Share your thoughts on this design...' 
-                      : 'Add internal notes about this design...'
-                    }
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && e.ctrlKey) {
-                        const feedback = e.currentTarget.value.trim()
-                        if (feedback) {
-                          addFeedback(selectedDesign.id, feedback)
-                          e.currentTarget.value = ''
-                        }
-                      }
-                    }}
-                  />
-                  <p className="text-white/50 text-xs mt-1">Press Ctrl+Enter to save feedback</p>
-                </div>
-              </div>
-
-              {/* Design Actions */}
-              <div className="flex justify-between items-center">
-                <div className="flex items-center gap-3">
-                  <button
-                    onClick={() => toggleLike(selectedDesign.id)}
-                    className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
-                      selectedDesign.user_has_liked 
-                        ? 'bg-red-500/30 text-red-300' 
-                        : 'bg-white/10 text-white/70 hover:bg-white/20'
-                    }`}
-                  >
-                    <Heart className={`h-4 w-4 ${selectedDesign.user_has_liked ? 'fill-current' : ''}`} />
-                    <span>{selectedDesign.likes}</span>
-                  </button>
-                  
-                  {selectedDesign.assignee && (
-                    <div className="flex items-center gap-2 text-white/70 text-sm">
-                      <User className="h-4 w-4" />
-                      <span>{selectedDesign.assignee}</span>
-                    </div>
-                  )}
-                </div>
-                
-                <div className="flex gap-2">
-                  {selectedDesign.copy_link && (
-                    <a
-                      href={selectedDesign.copy_link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="bg-blue-600/80 hover:bg-blue-600 text-white px-3 py-2 rounded-lg text-sm flex items-center gap-2 transition-colors"
-                    >
-                      <ExternalLink className="h-4 w-4" />
-                      View Copy
-                    </a>
-                  )}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
         </div>
       )}
 
@@ -480,7 +337,6 @@ export function DesignFeedback({ client, userRole }: DesignFeedbackProps) {
           userName={userRole === 'agency_admin' ? 'Agency Team' : 'Client'}
           onAddAnnotation={(annotation) => addAnnotation(annotatingImage.design.id, annotatingImage.file.id, annotation)}
           onUpdateAnnotation={(id, updates) => {
-            // TODO: Update annotation in database
             console.log('Updated annotation:', id, updates)
           }}
           onClose={() => setAnnotatingImage(null)}

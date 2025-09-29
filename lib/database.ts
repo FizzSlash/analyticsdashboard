@@ -309,7 +309,7 @@ export class DatabaseService {
     flowMeta.forEach((flow: any) => {
       flowAggregates[flow.flow_id] = {
         id: `${flow.flow_id}_${days}d`,
-        client_id: clientId,
+          client_id: clientId,
         flow_id: flow.flow_id,
         flow_name: flow.flow_name || `Flow ${flow.flow_id}`,
         flow_type: flow.flow_type || 'email',
@@ -319,12 +319,12 @@ export class DatabaseService {
         date_end: flow.date_start,
         
         // Default values (will be updated if weekly data exists)
-        triggered_count: 0,
-        completed_count: 0,
-        completion_rate: 0,
+          triggered_count: 0,
+          completed_count: 0,
+          completion_rate: 0,
         revenue: flow.revenue || 0,
-        orders_count: 0,
-        revenue_per_trigger: 0,
+          orders_count: 0,
+          revenue_per_trigger: 0,
         opens: flow.opens || 0,
         clicks: flow.clicks || 0,
         open_rate: flow.open_rate || 0,
