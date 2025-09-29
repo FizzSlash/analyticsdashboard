@@ -1,4 +1,4 @@
-// Brand Color System - Uses client primary/secondary colors throughout portal
+// Complete Brand Color System - Every color respects client branding
 
 interface ClientColors {
   primary: string
@@ -24,14 +24,14 @@ export function hexToRgb(hex: string): { r: number; g: number; b: number } | nul
   } : null
 }
 
-// Generate brand-aware color classes
+// Complete brand color system with semantic mappings
 export function getBrandColorClasses(client: any) {
   const colors = getBrandColors(client)
   const primaryRgb = hexToRgb(colors.primary)
   const secondaryRgb = hexToRgb(colors.secondary)
   
   return {
-    // Primary color variations
+    // Primary color variations (for main actions)
     primary: {
       solid: colors.primary,
       bg20: primaryRgb ? `rgba(${primaryRgb.r}, ${primaryRgb.g}, ${primaryRgb.b}, 0.2)` : 'rgba(0, 0, 0, 0.2)',
@@ -41,7 +41,7 @@ export function getBrandColorClasses(client: any) {
       text: colors.primary
     },
     
-    // Secondary color variations  
+    // Secondary color variations (for secondary actions)
     secondary: {
       solid: colors.secondary,
       bg20: secondaryRgb ? `rgba(${secondaryRgb.r}, ${secondaryRgb.g}, ${secondaryRgb.b}, 0.2)` : 'rgba(99, 102, 241, 0.2)',
@@ -51,13 +51,21 @@ export function getBrandColorClasses(client: any) {
       text: colors.secondary
     },
 
-    // Status colors (still semantic but tinted toward brand)
-    status: {
-      success: '#10B981', // Keep green for success
-      warning: '#F59E0B', // Keep orange for warnings  
-      error: '#EF4444',   // Keep red for errors
-      info: colors.secondary, // Use secondary color for info
-      neutral: '#6B7280'  // Keep gray for neutral
+    // Semantic actions mapped to brand colors
+    actions: {
+      // Primary actions use primary brand color
+      primary_button: colors.primary,
+      primary_bg: primaryRgb ? `rgba(${primaryRgb.r}, ${primaryRgb.g}, ${primaryRgb.b}, 0.8)` : 'rgba(0, 0, 0, 0.8)',
+      
+      // Secondary actions use secondary brand color  
+      secondary_button: colors.secondary,
+      secondary_bg: secondaryRgb ? `rgba(${secondaryRgb.r}, ${secondaryRgb.g}, ${secondaryRgb.b}, 0.8)` : 'rgba(99, 102, 241, 0.8)',
+      
+      // Keep semantic colors for specific meanings
+      success: '#10B981',      // Green for success/approval
+      warning: '#F59E0B',      // Orange for warnings/pending
+      error: '#EF4444',        // Red for errors/rejection
+      neutral: '#6B7280'       // Gray for neutral
     },
 
     // Background
@@ -65,49 +73,59 @@ export function getBrandColorClasses(client: any) {
   }
 }
 
-// Status color functions with brand awareness
-export function getStatusColor(status: string, client: any): string {
+// Semantic button styling with brand colors
+export function getBrandButton(type: 'primary' | 'secondary' | 'success' | 'warning' | 'error', client: any) {
   const brandColors = getBrandColorClasses(client)
   
-  switch (status.toLowerCase()) {
-    case 'approved':
-    case 'completed':
+  switch (type) {
+    case 'primary':
+      return {
+        className: 'text-white transition-all hover:opacity-90',
+        style: { backgroundColor: brandColors.primary.bg80 }
+      }
+    case 'secondary':
+      return {
+        className: 'text-white transition-all hover:opacity-90',
+        style: { backgroundColor: brandColors.secondary.bg80 }
+      }
     case 'success':
-      return 'bg-green-500/20 text-green-300 border-green-400/30'
-    
-    case 'pending':
-    case 'review':
-    case 'in_progress':
-      return `bg-[${brandColors.secondary.bg20}] border-[${brandColors.secondary.bg50}]`
-    
-    case 'rejected':
+      return {
+        className: 'bg-green-600/80 hover:bg-green-600 text-white transition-colors',
+        style: {}
+      }
+    case 'warning':
+      return {
+        className: 'bg-orange-600/80 hover:bg-orange-600 text-white transition-colors',
+        style: {}
+      }
     case 'error':
-    case 'overdue':
-      return 'bg-red-500/20 text-red-300 border-red-400/30'
-    
-    case 'client_approval':
-    case 'ready for client approval':
-      return 'bg-orange-500/20 text-orange-300 border-orange-400/30'
-    
+      return {
+        className: 'bg-red-600/80 hover:bg-red-600 text-white transition-colors',
+        style: {}
+      }
     default:
-      return `bg-[${brandColors.primary.bg20}] border-[${brandColors.primary.bg50}]`
+      return {
+        className: 'text-white transition-all hover:opacity-90',
+        style: { backgroundColor: brandColors.primary.bg80 }
+      }
   }
 }
 
-// Priority color functions with brand awareness
-export function getPriorityColor(priority: string, client: any): string {
-  const brandColors = getBrandColorClasses(client)
-  
-  switch (priority.toLowerCase()) {
-    case 'urgent':
-      return 'bg-red-500/20 text-red-300 border-red-400/30'
-    case 'high':
-      return 'bg-orange-500/20 text-orange-300 border-orange-400/30'
-    case 'medium':
-      return `bg-[${brandColors.secondary.bg20}] border-[${brandColors.secondary.bg50}]`
-    case 'low':
-      return 'bg-green-500/20 text-green-300 border-green-400/30'
+// Status badge colors with brand awareness
+export function getStatusBadgeClass(status: string, client: any): string {
+  switch (status.toLowerCase()) {
+    case 'approved':
+    case 'completed':
+    case 'scheduled - close':
+      return 'bg-green-500/30 text-green-300 border-green-400'
+    case 'ready for client approval':
+    case 'client approval':
+      return 'bg-orange-500/30 text-orange-300 border-orange-400'
+    case 'client revisions':
+    case 'rejected':
+      return 'bg-red-500/30 text-red-300 border-red-400'
     default:
-      return `bg-[${brandColors.primary.bg20}] border-[${brandColors.primary.bg50}]`
+      const brandColors = getBrandColorClasses(client)
+      return `text-white/80`
   }
 }

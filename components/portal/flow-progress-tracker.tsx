@@ -20,7 +20,7 @@ import {
   MessageSquare,
   ExternalLink
 } from 'lucide-react'
-import { getBrandColorClasses } from '@/lib/brand-colors'
+import { getBrandColorClasses, getBrandButton, getStatusBadgeClass } from '@/lib/brand-colors'
 
 interface Flow {
   id: string
@@ -364,7 +364,7 @@ export function FlowProgressTracker({ client, userRole, canEdit, canCreate, canA
                       >
                         {flow.flow_type.replace('_', ' ')}
                       </span>
-                      <span className={`px-2 py-1 rounded-full text-xs border ${getStatusColor(flow.status)}`}>
+                      <span className={`px-2 py-1 rounded-full text-xs border ${getStatusBadgeClass(flow.status, client)}`}>
                         {flow.status}
                       </span>
                     </div>
@@ -393,26 +393,36 @@ export function FlowProgressTracker({ client, userRole, canEdit, canCreate, canA
 
                   {/* Flow Actions */}
                   <div className="flex gap-2 pt-2">
-                    <button
-                      onClick={() => setViewingFlow(flow)}
-                      className="flex-1 bg-blue-600/80 hover:bg-blue-600 text-white py-2 px-3 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-1"
-                    >
-                      <Eye className="h-3 w-3" />
-                      View Flow
-                    </button>
+                    {(() => {
+                      const primaryBtn = getBrandButton('primary', client)
+                      return (
+                        <button
+                          onClick={() => setViewingFlow(flow)}
+                          className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium flex items-center justify-center gap-1 ${primaryBtn.className}`}
+                          style={primaryBtn.style}
+                        >
+                          <Eye className="h-3 w-3" />
+                          View Flow
+                        </button>
+                      )
+                    })()}
                     
-                    {userRole === 'client_user' && (flow.status === 'Ready For Client Approval' || flow.status === 'Client Approval') && (
-                      <button
-                        onClick={() => {
-                          setViewingFlow(flow)
-                          setFlowComments(flow.client_notes || '')
-                        }}
-                        className="bg-orange-500/80 hover:bg-orange-500 text-white py-2 px-3 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-1"
-                      >
-                        <MessageSquare className="h-3 w-3" />
-                        Review & Approve
-                      </button>
-                    )}
+                    {userRole === 'client_user' && (flow.status === 'Ready For Client Approval' || flow.status === 'Client Approval') && (() => {
+                      const secondaryBtn = getBrandButton('secondary', client)
+                      return (
+                        <button
+                          onClick={() => {
+                            setViewingFlow(flow)
+                            setFlowComments(flow.client_notes || '')
+                          }}
+                          className={`py-2 px-3 rounded-lg text-sm font-medium flex items-center justify-center gap-1 ${secondaryBtn.className}`}
+                          style={secondaryBtn.style}
+                        >
+                          <MessageSquare className="h-3 w-3" />
+                          Review & Approve
+                        </button>
+                      )
+                    })()}
                   </div>
                 </div>
               </CardContent>
@@ -430,7 +440,7 @@ export function FlowProgressTracker({ client, userRole, canEdit, canCreate, canA
                 <div className="flex items-center gap-3">
                   <Zap className="h-5 w-5 text-purple-400" />
                   <CardTitle className="text-white">{viewingFlow.title}</CardTitle>
-                  <span className={`px-3 py-1 rounded-full text-xs border ${getStatusColor(viewingFlow.status)}`}>
+                  <span className={`px-3 py-1 rounded-full text-xs border ${getStatusBadgeClass(viewingFlow.status, client)}`}>
                     {viewingFlow.status}
                   </span>
                 </div>
@@ -459,7 +469,13 @@ export function FlowProgressTracker({ client, userRole, canEdit, canCreate, canA
                   <div className="grid grid-cols-2 gap-4">
                     <div className="bg-white/10 rounded-lg p-4 border border-white/20">
                       <p className="text-white/60 text-sm">Flow Type</p>
-                      <span className={`inline-block px-2 py-1 rounded-full text-sm border ${getFlowTypeColor(viewingFlow.flow_type)}`}>
+                      <span 
+                        className="inline-block px-2 py-1 rounded-full text-sm text-white border"
+                        style={{ 
+                          backgroundColor: brandColors.primary.bg30,
+                          borderColor: brandColors.primary.bg50 
+                        }}
+                      >
                         {viewingFlow.flow_type.replace('_', ' ')}
                       </span>
                     </div>
@@ -518,7 +534,7 @@ export function FlowProgressTracker({ client, userRole, canEdit, canCreate, canA
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
                         <span className="text-white/60 text-sm">Current Status:</span>
-                        <span className={`px-2 py-1 rounded-full text-xs border ${getStatusColor(viewingFlow.status)}`}>
+                        <span className={`px-2 py-1 rounded-full text-xs border ${getStatusBadgeClass(viewingFlow.status, client)}`}>
                           {viewingFlow.status}
                         </span>
                       </div>
@@ -546,34 +562,45 @@ export function FlowProgressTracker({ client, userRole, canEdit, canCreate, canA
                       </div>
                       
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <button
-                          onClick={() => {
-                            // Save comments to flow before approving
-                            setFlows(prev => prev.map(f => 
-                              f.id === viewingFlow.id ? { ...f, client_notes: flowComments } : f
-                            ))
-                            approveFlow(viewingFlow.id, true)
-                            setViewingFlow(null)
-                          }}
-                          className="bg-green-600/80 hover:bg-green-600 text-white py-3 px-4 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
-                        >
-                          <CheckCircle className="h-4 w-4" />
-                          Approve Flow
-                        </button>
-                        <button
-                          onClick={() => {
-                            // Save comments to flow before requesting changes
-                            setFlows(prev => prev.map(f => 
-                              f.id === viewingFlow.id ? { ...f, client_notes: flowComments } : f
-                            ))
-                            approveFlow(viewingFlow.id, false)
-                            setViewingFlow(null)
-                          }}
-                          className="bg-orange-600/80 hover:bg-orange-600 text-white py-3 px-4 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
-                        >
-                          <Edit className="h-4 w-4" />
-                          Request Changes
-                        </button>
+                        {(() => {
+                          const successBtn = getBrandButton('success', client)
+                          return (
+                            <button
+                              onClick={() => {
+                                setFlows(prev => prev.map(f => 
+                                  f.id === viewingFlow.id ? { ...f, client_notes: flowComments } : f
+                                ))
+                                approveFlow(viewingFlow.id, true)
+                                setViewingFlow(null)
+                              }}
+                              className={`flex-1 py-3 px-4 rounded-lg font-medium flex items-center justify-center gap-2 ${successBtn.className}`}
+                              style={successBtn.style}
+                            >
+                              <CheckCircle className="h-4 w-4" />
+                              Approve Flow
+                            </button>
+                          )
+                        })()}
+                        
+                        {(() => {
+                          const warningBtn = getBrandButton('warning', client)
+                          return (
+                            <button
+                              onClick={() => {
+                                setFlows(prev => prev.map(f => 
+                                  f.id === viewingFlow.id ? { ...f, client_notes: flowComments } : f
+                                ))
+                                approveFlow(viewingFlow.id, false)
+                                setViewingFlow(null)
+                              }}
+                              className={`flex-1 py-3 px-4 rounded-lg font-medium flex items-center justify-center gap-2 ${warningBtn.className}`}
+                              style={warningBtn.style}
+                            >
+                              <Edit className="h-4 w-4" />
+                              Request Changes
+                            </button>
+                          )
+                        })()}
                       </div>
                     </div>
                   )}
