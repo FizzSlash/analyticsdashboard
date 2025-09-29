@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { ModernDashboard } from '@/components/dashboard/modern-dashboard'
 import { CleanPortalDashboard } from '@/components/portal/clean-portal-dashboard'
 import { ViewToggle, type ViewMode } from '@/components/ui/view-toggle'
+import { TimeframeSelector } from '@/components/ui/timeframe-selector'
 import { useRouter } from 'next/navigation'
 
 interface PageProps {
@@ -167,10 +168,22 @@ export default function ClientDashboardPage({ params }: PageProps) {
               </div>
             </div>
             
-            <ViewToggle 
-              currentMode={viewMode}
-              onModeChange={setViewMode}
-            />
+            <div className="flex items-center gap-4">
+              <ViewToggle 
+                currentMode={viewMode}
+                onModeChange={setViewMode}
+              />
+              {viewMode === 'analytics' && (
+                <TimeframeSelector 
+                  selectedTimeframe={365}
+                  onTimeframeChange={(days: number) => {
+                    console.log('🎯 Timeframe changed:', days)
+                    // Timeframe changes will be handled by ModernDashboard internally
+                  }}
+                  mode="campaign"
+                />
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -178,7 +191,7 @@ export default function ClientDashboardPage({ params }: PageProps) {
       {/* Content */}
       <div className="relative z-10">
         {viewMode === 'analytics' ? (
-          <ModernDashboard client={client} data={dashboardData.data} disablePortalMode={true} />
+          <ModernDashboard client={client} data={dashboardData.data} disablePortalMode={true} hideHeader={true} />
         ) : (
           <div className="max-w-7xl mx-auto px-6 py-8">
             <CleanPortalDashboard 

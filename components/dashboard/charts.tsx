@@ -31,6 +31,7 @@ interface LineChartProps extends ChartProps {
   yLabel?: string
   color?: string
   format?: 'currency' | 'number' | 'percentage'
+  client?: any // Add client for brand colors
 }
 
 interface BarChartProps extends ChartProps {
@@ -38,15 +39,18 @@ interface BarChartProps extends ChartProps {
   yKey: string
   color?: string
   format?: 'currency' | 'number' | 'percentage'
+  client?: any // Add client for brand colors
 }
 
 interface PieChartProps extends ChartProps {
   dataKey: string
   nameKey: string
   colors?: string[]
+  client?: any // Add client for brand colors
 }
 
-const COLORS = ['#3B82F6', '#EF4444', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899']
+// Dynamic colors based on client branding - will be passed as props
+const DEFAULT_COLORS = ['#3B82F6', '#EF4444', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899']
 
 export function CustomLineChart({ 
   title, 
@@ -54,10 +58,13 @@ export function CustomLineChart({
   xKey, 
   yKey, 
   yLabel, 
-  color = '#3B82F6',
+  color,
   format = 'number',
-  className 
+  className,
+  client
 }: LineChartProps) {
+  // Use client primary color as default, fallback to blue
+  const chartColor = color || client?.primary_color || '#3B82F6'
   const formatValue = (value: number) => {
     switch (format) {
       case 'currency':
@@ -101,10 +108,10 @@ export function CustomLineChart({
             <Line 
               type="monotone" 
               dataKey={yKey} 
-              stroke={color}
+              stroke={chartColor}
               strokeWidth={2}
-              dot={{ fill: color, strokeWidth: 2, r: 4 }}
-              activeDot={{ r: 6, stroke: color, strokeWidth: 2 }}
+              dot={{ fill: chartColor, strokeWidth: 2, r: 4 }}
+              activeDot={{ r: 6, stroke: chartColor, strokeWidth: 2 }}
             />
           </LineChart>
         </ResponsiveContainer>
@@ -118,10 +125,13 @@ export function CustomBarChart({
   data, 
   xKey, 
   yKey, 
-  color = '#3B82F6',
+  color,
   format = 'number',
-  className 
+  className,
+  client
 }: BarChartProps) {
+  // Use client primary color as default, fallback to blue
+  const chartColor = color || client?.primary_color || '#3B82F6'
   const formatValue = (value: number) => {
     switch (format) {
       case 'currency':
@@ -162,7 +172,7 @@ export function CustomBarChart({
                 borderRadius: '6px'
               }}
             />
-            <Bar dataKey={yKey} fill={color} radius={[4, 4, 0, 0]} />
+            <Bar dataKey={yKey} fill={chartColor} radius={[4, 4, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </CardContent>
@@ -175,10 +185,13 @@ export function CustomAreaChart({
   data, 
   xKey, 
   yKey, 
-  color = '#3B82F6',
+  color,
   format = 'number',
-  className 
+  className,
+  client
 }: LineChartProps) {
+  // Use client primary color as default, fallback to blue
+  const chartColor = color || client?.primary_color || '#3B82F6'
   const formatValue = (value: number) => {
     switch (format) {
       case 'currency':
@@ -201,8 +214,8 @@ export function CustomAreaChart({
           <AreaChart data={data}>
             <defs>
               <linearGradient id={`gradient-${yKey}`} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor={color} stopOpacity={0.3}/>
-                <stop offset="95%" stopColor={color} stopOpacity={0.1}/>
+                <stop offset="5%" stopColor={chartColor} stopOpacity={0.3}/>
+                <stop offset="95%" stopColor={chartColor} stopOpacity={0.1}/>
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
@@ -228,7 +241,7 @@ export function CustomAreaChart({
             <Area 
               type="monotone" 
               dataKey={yKey} 
-              stroke={color}
+              stroke={chartColor}
               strokeWidth={2}
               fill={`url(#gradient-${yKey})`}
             />
@@ -244,9 +257,16 @@ export function CustomPieChart({
   data, 
   dataKey, 
   nameKey, 
-  colors = COLORS,
-  className 
+  colors,
+  className,
+  client
 }: PieChartProps) {
+  // Use client-based colors with fallback to defaults
+  const chartColors = colors || [
+    client?.primary_color || '#3B82F6', 
+    client?.secondary_color || '#EF4444',
+    ...DEFAULT_COLORS.slice(2)
+  ]
   return (
     <Card className={className}>
       <CardHeader>
@@ -266,7 +286,7 @@ export function CustomPieChart({
               dataKey={dataKey}
             >
               {data.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
+                <Cell key={`cell-${index}`} fill={chartColors[index % chartColors.length]} />
               ))}
             </Pie>
             <Tooltip 

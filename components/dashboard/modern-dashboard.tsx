@@ -41,11 +41,12 @@ interface ModernDashboardProps {
   client: any
   data?: any
   disablePortalMode?: boolean // Disable portal toggle when used in new layout
+  hideHeader?: boolean // Hide internal header when using external layout
 }
 
 type TabType = 'dashboard' | 'campaigns' | 'flows' | 'subject-lines' | 'list-growth' | 'deliverability'
 
-export function ModernDashboard({ client, data: initialData, disablePortalMode = false }: ModernDashboardProps) {
+export function ModernDashboard({ client, data: initialData, disablePortalMode = false, hideHeader = false }: ModernDashboardProps) {
   const [viewMode, setViewMode] = useState<ViewMode>('analytics')
   const [activeTab, setActiveTab] = useState<TabType>('dashboard')
   const [campaignTimeframe, setCampaignTimeframe] = useState(30) // Default to 30 days for campaigns
@@ -2541,47 +2542,56 @@ export function ModernDashboard({ client, data: initialData, disablePortalMode =
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900">
-      {/* Header */}
-      <div className="bg-white/5 backdrop-blur-sm border-b border-white/10">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-white">{client?.brand_name || 'Dashboard'}</h1>
-              <p className="text-white/60 text-sm">
-                {viewMode === 'analytics' ? 'Analytics Dashboard' : 'Campaign Portal'}
-              </p>
-            </div>
-            <div className="flex items-center gap-4">
-              {!disablePortalMode && (
-                <ViewToggle 
-                  currentMode={viewMode}
-                  onModeChange={setViewMode}
-                />
-              )}
-              {(disablePortalMode || viewMode === 'analytics') && (
-                <TimeframeSelector 
-                  selectedTimeframe={timeframe}
-                  onTimeframeChange={(days: number) => {
-                    console.log(`🎯 TimeframeSelector changed: ${days} days (activeTab: ${activeTab})`)
-                    if (activeTab === 'campaigns' || activeTab === 'subject-lines') {
-                      console.log(`📅 Setting campaignTimeframe: ${campaignTimeframe} → ${days}`)
-                      setCampaignTimeframe(days)
-                    } else if (activeTab === 'flows') {
-                      console.log(`📅 Setting flowTimeframe: ${flowTimeframe} → ${days}`)
-                      setFlowTimeframe(days)
-                    } else {
-                      console.log(`📅 Setting campaignTimeframe (default): ${campaignTimeframe} → ${days}`)
-                      setCampaignTimeframe(days)
-                    }
-                  }}
-                  mode={activeTab === 'flows' ? 'flow' : 'campaign'}
-                />
-              )}
+    <div 
+      className="min-h-screen"
+      style={{
+        background: hideHeader 
+          ? 'transparent' // Use transparent when header is external
+          : `linear-gradient(135deg, ${client?.primary_color || '#3B82F6'} 0%, ${client?.secondary_color || '#1D4ED8'} 100%)`
+      }}
+    >
+      {/* Header - Only show if not hidden by external layout */}
+      {!hideHeader && (
+        <div className="bg-white/5 backdrop-blur-sm border-b border-white/10">
+          <div className="max-w-7xl mx-auto px-6 py-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-2xl font-bold text-white">{client?.brand_name || 'Dashboard'}</h1>
+                <p className="text-white/60 text-sm">
+                  {viewMode === 'analytics' ? 'Analytics Dashboard' : 'Campaign Portal'}
+                </p>
+              </div>
+              <div className="flex items-center gap-4">
+                {!disablePortalMode && (
+                  <ViewToggle 
+                    currentMode={viewMode}
+                    onModeChange={setViewMode}
+                  />
+                )}
+                {(disablePortalMode || viewMode === 'analytics') && (
+                  <TimeframeSelector 
+                    selectedTimeframe={timeframe}
+                    onTimeframeChange={(days: number) => {
+                      console.log(`🎯 TimeframeSelector changed: ${days} days (activeTab: ${activeTab})`)
+                      if (activeTab === 'campaigns' || activeTab === 'subject-lines') {
+                        console.log(`📅 Setting campaignTimeframe: ${campaignTimeframe} → ${days}`)
+                        setCampaignTimeframe(days)
+                      } else if (activeTab === 'flows') {
+                        console.log(`📅 Setting flowTimeframe: ${flowTimeframe} → ${days}`)
+                        setFlowTimeframe(days)
+                      } else {
+                        console.log(`📅 Setting campaignTimeframe (default): ${campaignTimeframe} → ${days}`)
+                        setCampaignTimeframe(days)
+                      }
+                    }}
+                    mode={activeTab === 'flows' ? 'flow' : 'campaign'}
+                  />
+                )}
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Navigation Tabs - Only show in Analytics mode */}
       {viewMode === 'analytics' && (
