@@ -60,10 +60,23 @@ export function FlowProgressTracker({ client, userRole, canEdit, canCreate, canA
 
   const loadFlows = async () => {
     try {
-      // TODO: Load from database
-      setFlows(generateDemoFlows())
+      // Load from Airtable first
+      console.log('📥 Loading flows from Airtable for client:', client.brand_slug)
+      const response = await fetch(`/api/load-from-airtable?client=${encodeURIComponent(client.brand_name)}`)
+      const result = await response.json()
+      
+      if (result.success) {
+        console.log(`📥 Loaded ${result.flows.length} flows from Airtable`)
+        setFlows(result.flows)
+      } else {
+        console.error('Failed to load flows from Airtable:', result.error)
+        // Fallback to demo data
+        setFlows(generateDemoFlows())
+      }
     } catch (error) {
       console.error('Error loading flows:', error)
+      // Fallback to demo data
+      setFlows(generateDemoFlows())
     }
   }
 
@@ -317,13 +330,13 @@ export function FlowProgressTracker({ client, userRole, canEdit, canCreate, canA
 
   const getFlowTypeColor = (flowType: string) => {
     switch (flowType) {
-      case 'welcome': return 'bg-blue-50 border-blue-200 text-blue-800'
-      case 'abandoned_cart': return 'bg-orange-50 border-orange-200 text-orange-800'
-      case 'win_back': return 'bg-purple-50 border-purple-200 text-purple-800'
-      case 'post_purchase': return 'bg-green-50 border-green-200 text-green-800'
-      case 'browse_abandon': return 'bg-yellow-50 border-yellow-200 text-yellow-800'
-      case 'custom': return 'bg-gray-50 border-gray-200 text-gray-800'
-      default: return 'bg-gray-50 border-gray-200 text-gray-800'
+      case 'welcome': return 'bg-blue-500/20 border-blue-400 text-blue-300'
+      case 'abandoned_cart': return 'bg-orange-500/20 border-orange-400 text-orange-300'
+      case 'win_back': return 'bg-purple-500/20 border-purple-400 text-purple-300'
+      case 'post_purchase': return 'bg-green-500/20 border-green-400 text-green-300'
+      case 'browse_abandon': return 'bg-yellow-500/20 border-yellow-400 text-yellow-300'
+      case 'custom': return 'bg-gray-500/20 border-gray-400 text-gray-300'
+      default: return 'bg-gray-500/20 border-gray-400 text-gray-300'
     }
   }
 
@@ -340,16 +353,16 @@ export function FlowProgressTracker({ client, userRole, canEdit, canCreate, canA
     <div className="space-y-6">
       {/* Quick Actions */}
       {canCreate && (
-        <Card className="bg-white border border-gray-200 shadow-sm">
+        <Card className="bg-white/5 border-white/10">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-gray-900 font-medium">Create New Flow</h3>
-                <p className="text-gray-600 text-sm">Email flows are evergreen and go live (not scheduled)</p>
+                <h3 className="text-white font-medium">Create New Flow</h3>
+                <p className="text-white/70 text-sm">Email flows are evergreen and go live (not scheduled)</p>
               </div>
               <button 
                 onClick={addFlow}
-                className="bg-purple-600 hover:bg-purple-700 text-white py-2 px-4 rounded-lg font-medium transition-colors flex items-center gap-2"
+                className="bg-purple-600/80 hover:bg-purple-600 text-white py-2 px-4 rounded-lg font-medium transition-colors flex items-center gap-2"
               >
                 <Plus className="h-4 w-4" />
                 Add Flow
@@ -366,13 +379,13 @@ export function FlowProgressTracker({ client, userRole, canEdit, canCreate, canA
           if (statusFlows.length === 0) return null
           
           return (
-            <Card key={status} className="bg-white border border-gray-200 shadow-sm">
+            <Card key={status} className="bg-white/5 border-white/10">
               <CardHeader>
-                <CardTitle className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                  <div className={`w-3 h-3 rounded-full ${getStatusColor(status).includes('bg-green') ? 'bg-green-500' : getStatusColor(status).includes('bg-orange') ? 'bg-orange-500' : 'bg-gray-400'}`}></div>
+                <CardTitle className="text-lg font-semibold text-white flex items-center gap-2">
+                  <div className={`w-3 h-3 rounded-full ${getStatusColor(status).includes('bg-green') ? 'bg-green-400' : getStatusColor(status).includes('bg-orange') ? 'bg-orange-400' : 'bg-gray-400'}`}></div>
                   {status.replace('_', ' ').toUpperCase()} ({statusFlows.length})
                   {status === 'ready_for_client_approval' && (
-                    <span className="text-orange-600 text-sm font-normal">→ Ready for your approval</span>
+                    <span className="text-orange-400 text-sm font-normal">→ Ready for your approval</span>
                   )}
                 </CardTitle>
               </CardHeader>
@@ -380,7 +393,7 @@ export function FlowProgressTracker({ client, userRole, canEdit, canCreate, canA
                 {statusFlows.map(flow => (
                   <div 
                     key={flow.id}
-                    className="p-4 border border-gray-200 rounded-lg hover:shadow-sm transition-all cursor-pointer"
+                    className="p-4 border border-white/20 rounded-lg hover:bg-white/10 transition-all cursor-pointer"
                     onClick={() => {
                       setEditingFlow(flow)
                       setShowAddModal(true)
@@ -389,8 +402,8 @@ export function FlowProgressTracker({ client, userRole, canEdit, canCreate, canA
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-2">
-                          <Zap className="h-5 w-5 text-purple-600" />
-                          <h4 className="font-semibold text-gray-900">{flow.title}</h4>
+                          <Zap className="h-5 w-5 text-purple-400" />
+                          <h4 className="font-semibold text-white">{flow.title}</h4>
                           <span className={`px-2 py-1 rounded-full text-xs border ${getFlowTypeColor(flow.flow_type)}`}>
                             {flow.flow_type.replace('_', ' ')}
                           </span>
@@ -399,9 +412,9 @@ export function FlowProgressTracker({ client, userRole, canEdit, canCreate, canA
                           </span>
                         </div>
                         
-                        <p className="text-gray-600 text-sm mb-3">{flow.description}</p>
+                        <p className="text-white/70 text-sm mb-3">{flow.description}</p>
                         
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs text-gray-500">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs text-white/60">
                           <div className="flex items-center gap-1">
                             <Target className="h-3 w-3" />
                             <span>Trigger: {flow.trigger_criteria}</span>

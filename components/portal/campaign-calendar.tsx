@@ -69,10 +69,23 @@ export function CampaignCalendar({ client, userRole, canEdit, canCreate, canAppr
 
   const loadCampaigns = async () => {
     try {
-      // TODO: Load from database
-      setCampaigns(generateDemoCampaigns())
+      // Load from Airtable first
+      console.log('📥 Loading campaigns from Airtable for client:', client.brand_slug)
+      const response = await fetch(`/api/load-from-airtable?client=${encodeURIComponent(client.brand_name)}`)
+      const result = await response.json()
+      
+      if (result.success) {
+        console.log(`📥 Loaded ${result.campaigns.length} campaigns from Airtable`)
+        setCampaigns(result.campaigns)
+      } else {
+        console.error('Failed to load from Airtable:', result.error)
+        // Fallback to demo data
+        setCampaigns(generateDemoCampaigns())
+      }
     } catch (error) {
       console.error('Error loading campaigns:', error)
+      // Fallback to demo data
+      setCampaigns(generateDemoCampaigns())
     }
   }
 
@@ -372,11 +385,11 @@ export function CampaignCalendar({ client, userRole, canEdit, canCreate, canAppr
 
   const getCampaignTypeColor = (type: string) => {
     switch (type) {
-      case 'email': return 'border-l-4 border-l-blue-500 bg-blue-50'
-      case 'sms': return 'border-l-4 border-l-yellow-500 bg-yellow-50'
-      case 'popup': return 'border-l-4 border-l-green-500 bg-green-50'
-      case 'ab_test': return 'border-l-4 border-l-purple-500 bg-purple-50'
-      default: return 'border-l-4 border-l-gray-500 bg-gray-50'
+      case 'email': return 'border-l-4 border-l-blue-400 bg-blue-500/20'
+      case 'sms': return 'border-l-4 border-l-yellow-400 bg-yellow-500/20'
+      case 'popup': return 'border-l-4 border-l-green-400 bg-green-500/20'
+      case 'ab_test': return 'border-l-4 border-l-purple-400 bg-purple-500/20'
+      default: return 'border-l-4 border-l-gray-400 bg-gray-500/20'
     }
   }
 
@@ -404,38 +417,38 @@ export function CampaignCalendar({ client, userRole, canEdit, canCreate, canAppr
     <div className="space-y-6">
       {/* Quick Actions */}
       {canCreate && (
-        <Card className="bg-white border border-gray-200 shadow-sm">
+        <Card className="bg-white/5 border-white/10">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-gray-900 font-medium">Quick Actions</h3>
-                <p className="text-gray-600 text-sm">Create new campaigns and tests</p>
+                <h3 className="text-white font-medium">Quick Actions</h3>
+                <p className="text-white/70 text-sm">Create new campaigns and tests</p>
               </div>
               <div className="flex gap-2">
                 <button 
                   onClick={() => addCampaign(undefined, 'email')}
-                  className="bg-blue-600 hover:bg-blue-700 text-white py-2 px-3 rounded-lg font-medium transition-colors flex items-center gap-2 text-sm"
+                  className="bg-blue-600/80 hover:bg-blue-600 text-white py-2 px-3 rounded-lg font-medium transition-colors flex items-center gap-2 text-sm"
                 >
                   <Mail className="h-4 w-4" />
                   Email
                 </button>
                 <button 
                   onClick={() => addCampaign(undefined, 'sms')}
-                  className="bg-yellow-600 hover:bg-yellow-700 text-white py-2 px-3 rounded-lg font-medium transition-colors flex items-center gap-2 text-sm"
+                  className="bg-yellow-600/80 hover:bg-yellow-600 text-white py-2 px-3 rounded-lg font-medium transition-colors flex items-center gap-2 text-sm"
                 >
                   <MessageSquare className="h-4 w-4" />
                   SMS
                 </button>
                 <button 
                   onClick={() => addCampaign(undefined, 'popup')}
-                  className="bg-green-600 hover:bg-green-700 text-white py-2 px-3 rounded-lg font-medium transition-colors flex items-center gap-2 text-sm"
+                  className="bg-green-600/80 hover:bg-green-600 text-white py-2 px-3 rounded-lg font-medium transition-colors flex items-center gap-2 text-sm"
                 >
                   <Target className="h-4 w-4" />
                   Popup
                 </button>
                 <button 
                   onClick={() => addCampaign(undefined, 'ab_test')}
-                  className="bg-purple-600 hover:bg-purple-700 text-white py-2 px-3 rounded-lg font-medium transition-colors flex items-center gap-2 text-sm"
+                  className="bg-purple-600/80 hover:bg-purple-600 text-white py-2 px-3 rounded-lg font-medium transition-colors flex items-center gap-2 text-sm"
                 >
                   <TestTube className="h-4 w-4" />
                   A/B Test
@@ -450,19 +463,19 @@ export function CampaignCalendar({ client, userRole, canEdit, canCreate, canAppr
       <div className="flex justify-between items-center">
         <button 
           onClick={prevMonth}
-          className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+          className="flex items-center gap-2 px-4 py-2 bg-white/10 border border-white/20 text-white rounded-lg hover:bg-white/20 transition-colors"
         >
           <ChevronLeft className="h-4 w-4" />
           Previous
         </button>
         
-        <h2 className="text-xl font-semibold text-gray-900">
+        <h2 className="text-xl font-semibold text-white">
           {currentMonth.toLocaleString('default', { month: 'long', year: 'numeric' })}
         </h2>
         
         <button 
           onClick={nextMonth}
-          className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+          className="flex items-center gap-2 px-4 py-2 bg-white/10 border border-white/20 text-white rounded-lg hover:bg-white/20 transition-colors"
         >
           Next
           <ChevronRight className="h-4 w-4" />
@@ -470,12 +483,12 @@ export function CampaignCalendar({ client, userRole, canEdit, canCreate, canAppr
       </div>
 
       {/* Calendar Grid */}
-      <Card className="bg-white border border-gray-200 shadow-sm">
+      <Card className="bg-white/5 border-white/10">
         <CardContent className="p-0">
-          <div className="grid grid-cols-7 gap-px bg-gray-200">
+          <div className="grid grid-cols-7 gap-px bg-white/5">
             {/* Weekday headers */}
             {weekdays.map(day => (
-              <div key={day} className="p-3 bg-gray-100 text-center font-semibold text-gray-700 text-sm">
+              <div key={day} className="p-3 bg-white/10 text-center font-semibold text-white/80 text-sm">
                 {day}
               </div>
             ))}
@@ -487,7 +500,7 @@ export function CampaignCalendar({ client, userRole, canEdit, canCreate, canAppr
               return (
                 <div 
                   key={index}
-                  className={`min-h-[140px] p-2 bg-white hover:bg-gray-50 transition-colors ${
+                  className={`min-h-[140px] p-2 bg-white/5 hover:bg-white/10 transition-colors ${
                     !day.isCurrentMonth ? 'opacity-50' : ''
                   } ${canCreate ? 'cursor-pointer' : ''}`}
                   onClick={() => day.date && canCreate && addCampaign(day.date)}
@@ -495,7 +508,7 @@ export function CampaignCalendar({ client, userRole, canEdit, canCreate, canAppr
                   {day.date && (
                     <>
                       <div className="flex justify-between items-center mb-2">
-                        <div className="text-sm text-gray-600 font-medium">
+                        <div className="text-sm text-white/80 font-medium">
                           {day.date.getDate()}
                         </div>
                         {canCreate && (
@@ -504,7 +517,7 @@ export function CampaignCalendar({ client, userRole, canEdit, canCreate, canAppr
                               e.stopPropagation()
                               addCampaign(day.date!)
                             }}
-                            className="text-gray-400 hover:text-blue-600 transition-colors p-1 rounded hover:bg-blue-50"
+                            className="text-white/40 hover:text-white/80 transition-colors p-1 rounded hover:bg-white/10"
                             title="Add campaign"
                           >
                             <Plus className="h-3 w-3" />
@@ -518,7 +531,7 @@ export function CampaignCalendar({ client, userRole, canEdit, canCreate, canAppr
                           return (
                             <div 
                               key={campaign.id}
-                              className={`p-2 text-xs rounded border cursor-pointer hover:shadow-sm transition-all ${getCampaignTypeColor(campaign.type)}`}
+                              className={`p-2 text-xs rounded border border-white/20 cursor-pointer hover:bg-white/10 transition-all ${getCampaignTypeColor(campaign.type)}`}
                               onClick={(e) => {
                                 e.stopPropagation()
                                 setEditingCampaign(campaign)
@@ -528,10 +541,10 @@ export function CampaignCalendar({ client, userRole, canEdit, canCreate, canAppr
                               <div className="flex items-start justify-between">
                                 <div className="flex-1 min-w-0">
                                   <div className="flex items-center gap-1 mb-1">
-                                    <Icon className="h-3 w-3 text-gray-600" />
-                                    <div className="font-semibold text-gray-800 truncate">{campaign.title}</div>
+                                    <Icon className="h-3 w-3 text-white/70" />
+                                    <div className="font-semibold text-white truncate">{campaign.title}</div>
                                   </div>
-                                  <div className="text-gray-600 text-xs">{campaign.time}</div>
+                                  <div className="text-white/60 text-xs">{campaign.time}</div>
                                   <div className={`inline-block px-2 py-1 rounded-full text-xs mt-1 border ${getStatusColor(campaign.status)}`}>
                                     {campaign.status.replace('_', ' ')}
                                   </div>

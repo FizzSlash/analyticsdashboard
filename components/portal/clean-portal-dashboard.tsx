@@ -62,16 +62,16 @@ export function CleanPortalDashboard({ user, client, userRole, allClients }: Cle
   return (
     <div className="space-y-6">
       {/* Portal Header */}
-      <Card className="bg-white border border-gray-200 shadow-sm">
+      <Card className="bg-white/5 border-white/10">
         <CardHeader>
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-3">
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
               <div>
-                <CardTitle className="text-gray-900">
+                <CardTitle className="text-white">
                   {userRole === 'agency_admin' ? 'Agency Portal' : 'Client Portal'}
                 </CardTitle>
-                <p className="text-gray-600 text-sm mt-1">
+                <p className="text-white/70 text-sm mt-1">
                   {userRole === 'agency_admin' 
                     ? `Managing campaigns and flows • Auto-sync to Airtable` 
                     : `Approve campaigns and flows • Submit requests`
@@ -83,7 +83,7 @@ export function CleanPortalDashboard({ user, client, userRole, allClients }: Cle
             {/* Client Selector (Agency Admin Only) */}
             {userRole === 'agency_admin' && allClients && (
               <div className="flex items-center gap-3">
-                <span className="text-gray-600 text-sm">Client:</span>
+                <span className="text-white/70 text-sm">Client:</span>
                 <select
                   value={selectedClient?.id || 'all'}
                   onChange={(e) => {
@@ -94,7 +94,7 @@ export function CleanPortalDashboard({ user, client, userRole, allClients }: Cle
                       setSelectedClient(selected)
                     }
                   }}
-                  className="border border-gray-300 rounded-lg px-3 py-2 text-gray-900 focus:ring-2 focus:ring-blue-500 bg-white"
+                  className="bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-blue-400"
                 >
                   <option value="all">All Clients</option>
                   {allClients.map(client => (
@@ -104,9 +104,9 @@ export function CleanPortalDashboard({ user, client, userRole, allClients }: Cle
                   ))}
                 </select>
                 {selectedClient && selectedClient.id !== 'all' && (
-                  <div className="flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2">
-                    <Building2 className="h-4 w-4 text-blue-600" />
-                    <span className="text-blue-800 font-medium text-sm">{selectedClient.brand_name}</span>
+                  <div className="flex items-center gap-2 bg-white/10 border border-white/20 rounded-lg px-3 py-2">
+                    <Building2 className="h-4 w-4 text-white/80" />
+                    <span className="text-white font-medium text-sm">{selectedClient.brand_name}</span>
                   </div>
                 )}
               </div>
@@ -123,11 +123,13 @@ export function CleanPortalDashboard({ user, client, userRole, allClients }: Cle
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as PortalTab)}
-              className={`px-4 py-3 rounded-lg font-medium transition-colors flex items-center gap-2 ${
-                activeTab === tab.id 
-                  ? 'bg-blue-600 text-white shadow-md' 
-                  : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-              }`}
+              className={`
+                flex items-center gap-2 px-6 py-3 rounded-lg text-sm font-medium transition-all duration-200
+                ${activeTab === tab.id 
+                  ? 'bg-white/20 text-white shadow-lg' 
+                  : 'text-white/70 hover:text-white hover:bg-white/10'
+                }
+              `}
             >
               <Icon className="h-4 w-4" />
               {tab.label}
@@ -172,15 +174,15 @@ export function CleanPortalDashboard({ user, client, userRole, allClients }: Cle
       </div>
 
       {/* Status Info */}
-      <Card className="bg-green-50 border border-green-200">
+      <Card className="bg-white/5 border-white/10">
         <CardContent className="p-4">
           <div className="flex items-start gap-3">
-            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse mt-2"></div>
+            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse mt-2"></div>
             <div>
-              <span className="font-medium text-green-700">
+              <span className="font-medium text-white">
                 {userRole === 'agency_admin' ? 'Agency Portal - Full Management' : 'Client Portal - Approval & Requests'}
               </span>
-              <p className="text-green-600 text-sm mt-1">
+              <p className="text-white/70 text-sm mt-1">
                 {userRole === 'agency_admin' ? (
                   <>• Create and manage campaigns/flows for all clients<br/>
                   • All changes auto-sync to Airtable instantly<br/>
