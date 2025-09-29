@@ -75,14 +75,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setSupabase(client)
         }
         
-        // Get initial session
+        // Get initial session with longer timeout
         console.log('AUTH PROVIDER: Getting initial session')
         let session = null
         try {
           const sessionResponse = await Promise.race([
             client.auth.getSession(),
             new Promise((_, reject) => 
-              setTimeout(() => reject(new Error('Session timeout after 5 seconds')), 5000)
+              setTimeout(() => reject(new Error('Session timeout after 15 seconds')), 15000)
             )
           ])
           
@@ -111,14 +111,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           await updateUserAndProfile(client, session)
         }
         
-        // Set up auth state listener
+        // Set up auth state listener with debounce protection
         console.log('AUTH PROVIDER: Setting up auth state listener')
+        let authTimeout: NodeJS.Timeout | null = null
         const { data: { subscription: authSubscription } } = client.auth.onAuthStateChange(
           async (event: any, newSession: any) => {
             console.log('AUTH PROVIDER: Auth state changed:', event)
-            if (mounted) {
-              await updateUserAndProfile(client, newSession)
+            
+            // Debounce rapid auth state changes
+            if (authTimeout) {
+              clearTimeout(authTimeout)
             }
+            
+            authTimeout = setTimeout(async () => {
+              if (mounted) {
+                await updateUserAndProfile(client, newSession)
+              }
+            }, 100) // 100ms debounce
           }
         )
         subscription = authSubscription

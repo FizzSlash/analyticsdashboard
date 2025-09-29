@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useAuth } from '@/components/auth/auth-provider'
@@ -18,13 +18,17 @@ export default function LoginPage() {
   const redirectTo = searchParams.get('redirectTo') || null
   const { user, supabase, initialized } = useAuth()
   
+  // Prevent multiple redirects
+  const redirectInProgress = useRef(false)
+  
   // Redirect if already logged in
   useEffect(() => {
-    if (initialized && user) {
+    if (initialized && user && !redirecting && !redirectInProgress.current) {
       console.log('LOGIN: User already authenticated, redirecting')
+      redirectInProgress.current = true
       handleRedirectAfterAuth()
     }
-  }, [initialized, user, redirectTo, router])
+  }, [initialized, user])
 
   const handleRedirectAfterAuth = async () => {
     if (!supabase || !user) return
@@ -119,11 +123,16 @@ export default function LoginPage() {
 
     } catch (error) {
       console.error('LOGIN: Error during redirect logic:', error)
+      // Reset flag and redirecting state on error
+      redirectInProgress.current = false
+      setRedirecting(false)
+      
       // Fallback redirect - try agency admin first since that's most common
       console.log('LOGIN: Using fallback redirect to agency admin dashboard')
       router.push(redirectTo || '/agency/retention-harbor/admin')
     } finally {
       setRedirecting(false)
+      redirectInProgress.current = false
     }
   }
 
@@ -147,17 +156,19 @@ export default function LoginPage() {
       if (error) {
         console.error('LOGIN: Auth error:', error)
         setError(error.message)
+        redirectInProgress.current = false // Reset flag on auth error
         return
       }
 
       if (data.user) {
-        console.log('LOGIN: Authentication successful, determining redirect...')
-        // Trigger the redirect logic immediately after successful login
-        await handleRedirectAfterAuth()
+        console.log('LOGIN: Authentication successful - redirect will be handled by useEffect')
+        // Don't call handleRedirectAfterAuth here - let the useEffect handle it
+        // This prevents duplicate calls and infinite loops
       }
     } catch (err) {
       console.error('LOGIN: Unexpected error:', err)
       setError('An unexpected error occurred')
+      redirectInProgress.current = false // Reset flag on error
     } finally {
       setLoading(false)
     }
