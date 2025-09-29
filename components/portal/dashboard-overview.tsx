@@ -393,7 +393,7 @@ export function DashboardOverview({ client, userRole, onNavigate }: DashboardOve
           <CardContent className="p-8 text-center">
             <div 
               className="p-6 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center shadow-lg"
-              style={{ backgroundColor: brandColors.status.success }}
+              style={{ backgroundColor: brandColors.actions.success }}
             >
               <CheckCircle className="h-8 w-8 text-white" />
             </div>
