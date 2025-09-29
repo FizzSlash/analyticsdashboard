@@ -159,8 +159,16 @@ export function ClientManagement({ agency, clients: initialClients }: ClientMana
         brand_name: formData.brand_name,
         brand_slug: cleanSlug,
         logo_url: formData.logo_url || undefined,
+        portal_title: formData.portal_title || undefined,
         primary_color: formData.primary_color,
         secondary_color: formData.secondary_color,
+        accent_color: formData.accent_color,
+        success_color: formData.success_color,
+        warning_color: formData.warning_color,
+        error_color: formData.error_color,
+        chart_color_1: formData.chart_color_1,
+        chart_color_2: formData.chart_color_2,
+        chart_color_3: formData.chart_color_3,
         background_image_url: formData.background_image_url || undefined,
         is_active: true
       }
