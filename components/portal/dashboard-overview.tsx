@@ -145,14 +145,25 @@ export function DashboardOverview({ client, userRole, onNavigate }: DashboardOve
     return 'text-green-400'
   }
 
-  const getTimeAgo = (date: Date) => {
-    const now = new Date()
-    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60))
+  const getTimeAgo = (date: Date | string | null | undefined) => {
+    if (!date) return 'Unknown'
     
-    if (diffInHours < 1) return 'Just now'
-    if (diffInHours < 24) return `${diffInHours}h ago`
-    const diffInDays = Math.floor(diffInHours / 24)
-    return `${diffInDays}d ago`
+    try {
+      const now = new Date()
+      const dateObj = typeof date === 'string' ? new Date(date) : date
+      
+      if (isNaN(dateObj.getTime())) return 'Unknown'
+      
+      const diffInHours = Math.floor((now.getTime() - dateObj.getTime()) / (1000 * 60 * 60))
+      
+      if (diffInHours < 1) return 'Just now'
+      if (diffInHours < 24) return `${diffInHours}h ago`
+      const diffInDays = Math.floor(diffInHours / 24)
+      return `${diffInDays}d ago`
+    } catch (error) {
+      console.warn('Error calculating time ago:', error)
+      return 'Unknown'
+    }
   }
 
   if (loading) {
@@ -298,7 +309,7 @@ export function DashboardOverview({ client, userRole, onNavigate }: DashboardOve
                       <div className="flex-1">
                         <p className="text-white font-medium text-sm">{activity.title}</p>
                         <p className="text-white/70 text-xs mt-1">{activity.description}</p>
-                        <span className="text-white/60 text-xs">{getTimeAgo(activity.timestamp)}</span>
+                        <span className="text-white/60 text-xs">{getTimeAgo((activity as any).date || (activity as any).timestamp)}</span>
                       </div>
                     </div>
                   )
