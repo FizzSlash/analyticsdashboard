@@ -1378,13 +1378,7 @@ ${flowDetails.slice(0, 3).map((f: any, i: number) =>
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
-                    {client.logo_url && (
-                      <img 
-                        src={client.logo_url} 
-                        alt={`${client.brand_name} logo`}
-                        className="h-12 w-12 rounded object-cover"
-                      />
-                    )}
+                    {/* Client logo removed - simplified client list */}
                     <div>
                       <h3 className="text-lg font-semibold text-gray-900">
                         {client.brand_name}

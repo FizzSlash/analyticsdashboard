@@ -632,29 +632,40 @@ export function ModernDashboard({ client, data: initialData, disablePortalMode =
       if (!client?.brand_slug) return
       
       setLoading(true)
+      console.log(`🔄 Fetching dashboard data for ${timeframe} days (activeTab: ${activeTab})`)
+      
       try {
         const response = await fetch(`/api/dashboard?clientSlug=${client.brand_slug}&timeframe=${timeframe}`)
         const result = await response.json()
         
         if (response.ok) {
           setData(result.data)
-          console.log(`Dashboard data refreshed for ${timeframe} days:`, result.data)
+          console.log(`✅ Dashboard data refreshed for ${timeframe} days:`, result.data?.summary)
+        } else {
+          console.error('❌ Dashboard API error:', result.error)
         }
       } catch (error) {
-        console.error('Error fetching dashboard data:', error)
+        console.error('❌ Error fetching dashboard data:', error)
       } finally {
         setLoading(false)
       }
     }
 
-    // Always fetch when timeframe changes (skip only on first load with matching data)
-    if (!initialData || timeframe !== initialTimeframe) {
-      console.log(`🔄 Fetching data for timeframe: ${timeframe} days (initial was ${initialTimeframe})`)
+    // Always fetch when timeframe actually changes, except on initial load if data matches
+    const isInitialLoad = initialData && timeframe === initialTimeframe
+    
+    if (!isInitialLoad) {
+      console.log(`🎯 Timeframe changed to ${timeframe} days - fetching new data`)
       fetchData()
     } else {
-      console.log(`⏭️ Skipping fetch - using initial data for timeframe: ${timeframe} days`)
+      console.log(`⏭️ Using initial data for timeframe: ${timeframe} days`)
     }
-  }, [timeframe, campaignTimeframe, flowTimeframe, client?.brand_slug, initialData, initialTimeframe])
+  }, [timeframe, client?.brand_slug])
+
+  // Separate effect to handle tab switching and ensure correct timeframe
+  useEffect(() => {
+    console.log(`🔄 Tab changed to: ${activeTab}, current timeframe: ${timeframe}`)
+  }, [activeTab, timeframe])
 
   const renderOverviewTab = () => (
     <div className="space-y-6">
@@ -2206,22 +2217,18 @@ export function ModernDashboard({ client, data: initialData, disablePortalMode =
                       {/* Single net growth bar - green if positive, red if negative */}
                       <Bar 
                         dataKey="net_growth" 
-                        fill={accentColor}
-                        name="net_growth"
-                        radius={[4, 4, 0, 0]}
+                        radius={[4, 4, 4, 4]}
                         shape={(props: any) => {
                           const { x, y, width, height, payload } = props
                           const isPositive = payload.net_growth >= 0
                           const color = isPositive ? accentColor : errorColor
-                          const actualY = isPositive ? y : y
-                          const actualHeight = Math.abs(height)
                           
                           return (
                             <rect
                               x={x}
-                              y={actualY}
+                              y={y}
                               width={width}
-                              height={actualHeight}
+                              height={Math.abs(height)}
                               fill={color}
                               rx={4}
                               ry={4}

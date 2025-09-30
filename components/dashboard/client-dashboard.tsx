@@ -167,13 +167,7 @@ export function ClientDashboard({ client, data: providedData }: ClientDashboardP
               <h1 className="text-3xl font-bold mb-2">{client.brand_name}</h1>
               <p className="text-blue-100 text-lg">Email Marketing Analytics Dashboard</p>
             </div>
-            {client.logo_url && (
-              <img 
-                src={client.logo_url} 
-                alt={`${client.brand_name} logo`}
-                className="h-16 w-auto"
-              />
-            )}
+            {/* Client logo removed - only agency branding now */}
           </div>
           {client.last_sync && (
             <p className="text-blue-200 text-sm mt-4">

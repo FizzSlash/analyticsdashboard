@@ -21,42 +21,33 @@ import {
 import { getBrandColorClasses } from '@/lib/brand-colors'
 
 interface DashboardSummary {
-  pendingApprovals: number
-  overdueForms: number
-  activeRequests: number
-  recentActivity: ActivityItem[]
-  upcomingDeadlines: DeadlineItem[]
-  monthlyStats: {
-    campaignsApproved: number
-    formsCompleted: number
-    requestsSubmitted: number
+  // Real analytics metrics instead of pending items
+  totalRevenue: number
+  totalSubscribers: number
+  avgOpenRate: number
+  avgClickRate: number
+  netGrowth: number
+  revenueGrowthRate: number
+  monthlyMetrics: {
+    campaignsSent: number
+    emailsDelivered: number  
+    totalClicks: number
   }
-}
-
-interface ActivityItem {
-  id: string
-  type: 'approval' | 'form' | 'request' | 'comment'
-  title: string
-  description: string
-  timestamp: Date
-  priority?: 'high' | 'medium' | 'low'
-}
-
-interface DeadlineItem {
-  id: string
-  title: string
-  type: 'campaign' | 'form' | 'request'
-  dueDate: Date
-  isOverdue: boolean
+  topPerformers: {
+    bestCampaign?: any
+    bestFlow?: any
+    topRevenue: number
+  }
 }
 
 interface DashboardOverviewProps {
   client: any
+  data: any // Real analytics data passed from parent
   userRole: 'client_user' | 'agency_admin'
   onNavigate: (tab: string, itemId?: string) => void
 }
 
-export function DashboardOverview({ client, userRole, onNavigate }: DashboardOverviewProps) {
+export function DashboardOverview({ client, data, userRole, onNavigate }: DashboardOverviewProps) {
   const [summary, setSummary] = useState<DashboardSummary | null>(null)
   const [loading, setLoading] = useState(true)
   
@@ -65,35 +56,97 @@ export function DashboardOverview({ client, userRole, onNavigate }: DashboardOve
 
   useEffect(() => {
     loadDashboardSummary()
-  }, [client])
+  }, [client, data])
 
   const loadDashboardSummary = async () => {
     setLoading(true)
     try {
-      // TODO: Fetch real data from APIs
-      setSummary(generateMockSummary())
+      // Use real analytics data instead of mock pending items
+      setSummary(processAnalyticsData(data))
     } catch (error) {
-      console.error('Error loading dashboard summary:', error)
+      console.error('Error processing dashboard data:', error)
     } finally {
       setLoading(false)
     }
   }
 
-  const generateMockSummary = (): DashboardSummary => {
-    // TODO: Replace with real API calls to get actual pending items
+  const processAnalyticsData = (data: any): DashboardSummary => {
+    if (!data) return getEmptyDashboard()
+    
+    // Extract real metrics from analytics data
+    const campaigns = data.campaigns || []
+    const flows = data.flows || []
+    const summary = data.summary || {}
+    const audience = data.audience || []
+    
+    // Calculate key metrics
+    const totalRevenue = summary.revenue?.total_revenue || 0
+    const totalSubscribers = summary.audience?.total_subscribers || 0
+    const avgOpenRate = summary.campaigns?.avg_open_rate || 0
+    const avgClickRate = summary.campaigns?.avg_click_rate || 0
+    
+    // Calculate growth metrics
+    const netGrowth = summary.audience?.net_growth || 0
+    const previousRevenue = summary.revenue?.previous_period_revenue || totalRevenue
+    const revenueGrowthRate = previousRevenue > 0 
+      ? ((totalRevenue - previousRevenue) / previousRevenue) * 100 
+      : 0
+    
+    // Monthly activity metrics
+    const campaignsSent = campaigns.length
+    const emailsDelivered = campaigns.reduce((sum: number, c: any) => sum + (c.recipients_count || 0), 0)
+    const totalClicks = campaigns.reduce((sum: number, c: any) => sum + (c.clicked_count || 0), 0)
+    
+    // Find top performers
+    const bestCampaign = campaigns
+      .filter((c: any) => c.revenue > 0)
+      .sort((a: any, b: any) => b.revenue - a.revenue)[0]
+    
+    const bestFlow = flows
+      .filter((f: any) => f.revenue > 0)
+      .sort((a: any, b: any) => b.revenue - a.revenue)[0]
+    
+    const topRevenue = Math.max(
+      bestCampaign?.revenue || 0,
+      bestFlow?.revenue || 0
+    )
+    
     return {
-      pendingApprovals: 0, // TODO: Fetch from campaigns API
-      overdueForms: 0, // TODO: Fetch from forms API  
-      activeRequests: 0, // TODO: Fetch from requests API
-      recentActivity: [], // TODO: Fetch recent activity
-      upcomingDeadlines: [], // TODO: Fetch upcoming deadlines
-      monthlyStats: {
-        campaignsApproved: 0,
-        formsCompleted: 0,
-        requestsSubmitted: 0
+      totalRevenue,
+      totalSubscribers,
+      avgOpenRate,
+      avgClickRate,
+      netGrowth,
+      revenueGrowthRate,
+      monthlyMetrics: {
+        campaignsSent,
+        emailsDelivered,
+        totalClicks
+      },
+      topPerformers: {
+        bestCampaign,
+        bestFlow,
+        topRevenue
       }
     }
   }
+
+  const getEmptyDashboard = (): DashboardSummary => ({
+    totalRevenue: 0,
+    totalSubscribers: 0,
+    avgOpenRate: 0,
+    avgClickRate: 0,
+    netGrowth: 0,
+    revenueGrowthRate: 0,
+    monthlyMetrics: {
+      campaignsSent: 0,
+      emailsDelivered: 0,
+      totalClicks: 0
+    },
+    topPerformers: {
+      topRevenue: 0
+    }
+  })
 
   const getActivityIcon = (type: string) => {
     switch (type) {
@@ -148,86 +201,179 @@ export function DashboardOverview({ client, userRole, onNavigate }: DashboardOve
 
   return (
     <div className="space-y-6">
-      {/* Clean Stats Grid - Readable and Professional */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card 
-          className="bg-white/10 border-white/20 hover:bg-white/15 transition-all duration-300 cursor-pointer group backdrop-blur-sm shadow-lg hover:shadow-xl"
-          onClick={() => onNavigate('campaigns')}
-        >
+      {/* Performance Metrics Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {/* Total Revenue */}
+        <Card className="bg-white/10 border-white/20 hover:bg-white/15 transition-all duration-300 backdrop-blur-sm shadow-lg hover:shadow-xl">
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
-              <div className="bg-white/20 backdrop-blur-sm p-4 rounded-xl shadow-lg group-hover:scale-110 transition-transform border border-white/30">
-                <Calendar className="h-6 w-6 text-white" />
+              <div className="bg-white/20 backdrop-blur-sm p-4 rounded-xl shadow-lg border border-white/30">
+                <TrendingUp className="h-6 w-6 text-white" />
               </div>
-              {summary.pendingApprovals > 0 && (
-                <div className="bg-red-500 text-white text-xs font-bold px-3 py-1 rounded-full">
-                  {summary.pendingApprovals} PENDING
+              {summary.revenueGrowthRate !== 0 && (
+                <div className={`text-xs font-medium px-3 py-1 rounded-full ${
+                  summary.revenueGrowthRate > 0 
+                    ? 'bg-green-500/20 text-green-300' 
+                    : 'bg-red-500/20 text-red-300'
+                }`}>
+                  {summary.revenueGrowthRate > 0 ? '+' : ''}{summary.revenueGrowthRate.toFixed(1)}%
                 </div>
               )}
             </div>
             <div className="space-y-1">
-              <p className="text-white/70 text-sm font-medium">Campaign Approvals</p>
-              <p className="text-white text-3xl font-bold">{summary.pendingApprovals}</p>
+              <p className="text-white/70 text-sm font-medium">Total Revenue</p>
+              <p className="text-white text-3xl font-bold">
+                ${summary.totalRevenue.toLocaleString()}
+              </p>
               <p className="text-white/60 text-sm">
-                {summary.pendingApprovals > 0 ? 'Click to review campaigns' : 'All campaigns approved'}
+                From campaigns & flows
               </p>
             </div>
           </CardContent>
         </Card>
 
-        <Card 
-          className="bg-white/10 border-white/20 hover:bg-white/15 transition-all duration-300 cursor-pointer group backdrop-blur-sm shadow-lg hover:shadow-xl"
-          onClick={() => onNavigate('forms')}
-        >
+        {/* Total Subscribers */}
+        <Card className="bg-white/10 border-white/20 hover:bg-white/15 transition-all duration-300 backdrop-blur-sm shadow-lg hover:shadow-xl">
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
-              <div className="bg-white/20 backdrop-blur-sm p-4 rounded-xl shadow-lg group-hover:scale-110 transition-transform border border-white/30">
-                <FileText className="h-6 w-6 text-white" />
+              <div className="bg-white/20 backdrop-blur-sm p-4 rounded-xl shadow-lg border border-white/30">
+                <Users className="h-6 w-6 text-white" />
               </div>
-              {summary.overdueForms > 0 && (
-                <div className="bg-red-500 text-white text-xs font-bold px-3 py-1 rounded-full">
-                  {summary.overdueForms} DUE
+              {summary.netGrowth !== 0 && (
+                <div className={`text-xs font-medium px-3 py-1 rounded-full ${
+                  summary.netGrowth > 0 
+                    ? 'bg-green-500/20 text-green-300' 
+                    : 'bg-red-500/20 text-red-300'
+                }`}>
+                  {summary.netGrowth > 0 ? '+' : ''}{summary.netGrowth.toLocaleString()}
                 </div>
               )}
             </div>
             <div className="space-y-1">
-              <p className="text-white/70 text-sm font-medium">Forms To Complete</p>
-              <p className="text-white text-3xl font-bold">{summary.overdueForms}</p>
+              <p className="text-white/70 text-sm font-medium">Total Subscribers</p>
+              <p className="text-white text-3xl font-bold">
+                {summary.totalSubscribers.toLocaleString()}
+              </p>
               <p className="text-white/60 text-sm">
-                {summary.overdueForms > 0 ? 'Forms need completion' : 'All forms completed'}
+                Active email list
               </p>
             </div>
           </CardContent>
         </Card>
 
-        <Card 
-          className="bg-white/10 border-white/20 hover:bg-white/15 transition-all duration-300 cursor-pointer group backdrop-blur-sm shadow-lg hover:shadow-xl"
-          onClick={() => onNavigate('requests')}
-        >
+        {/* Engagement Rate */}
+        <Card className="bg-white/10 border-white/20 hover:bg-white/15 transition-all duration-300 backdrop-blur-sm shadow-lg hover:shadow-xl">
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
-              <div className="bg-white/20 backdrop-blur-sm p-4 rounded-xl shadow-lg group-hover:scale-110 transition-transform border border-white/30">
-                <MessageSquare className="h-6 w-6 text-white" />
+              <div className="bg-white/20 backdrop-blur-sm p-4 rounded-xl shadow-lg border border-white/30">
+                <Eye className="h-6 w-6 text-white" />
               </div>
               <div className="bg-white/20 backdrop-blur-sm text-white text-xs font-medium px-3 py-1 rounded-full border border-white/30">
-                SUBMIT
+                AVG
               </div>
             </div>
             <div className="space-y-1">
-              <p className="text-white/70 text-sm font-medium">Project Requests</p>
-              <p className="text-white text-3xl font-bold">{summary.activeRequests}</p>
+              <p className="text-white/70 text-sm font-medium">Open Rate</p>
+              <p className="text-white text-3xl font-bold">
+                {summary.avgOpenRate.toFixed(1)}%
+              </p>
               <p className="text-white/60 text-sm">
-                Submit new projects here
+                Click: {summary.avgClickRate.toFixed(1)}%
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Monthly Activity */}
+        <Card className="bg-white/10 border-white/20 hover:bg-white/15 transition-all duration-300 backdrop-blur-sm shadow-lg hover:shadow-xl">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="bg-white/20 backdrop-blur-sm p-4 rounded-xl shadow-lg border border-white/30">
+                <Activity className="h-6 w-6 text-white" />
+              </div>
+              <div className="bg-white/20 backdrop-blur-sm text-white text-xs font-medium px-3 py-1 rounded-full border border-white/30">
+                30D
+              </div>
+            </div>
+            <div className="space-y-1">
+              <p className="text-white/70 text-sm font-medium">Campaigns Sent</p>
+              <p className="text-white text-3xl font-bold">
+                {summary.monthlyMetrics.campaignsSent}
+              </p>
+              <p className="text-white/60 text-sm">
+                {summary.monthlyMetrics.emailsDelivered.toLocaleString()} emails delivered
               </p>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Pending Items - Only if there are items to show */}
-      {(summary.upcomingDeadlines.length > 0 || summary.recentActivity.length > 0) && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Only show deadlines if there are deadlines */}
+      {/* Performance Insights */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Top Performers */}
+        <Card className="bg-white/10 border-white/20 backdrop-blur-sm shadow-lg">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-white flex items-center gap-2">
+              <Star className="h-5 w-5" />
+              Top Performers
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {summary.topPerformers.topRevenue > 0 ? (
+              <div className="space-y-4">
+                {summary.topPerformers.bestCampaign && (
+                  <div className="bg-white/5 p-4 rounded-lg border border-white/10">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-white font-medium">Best Campaign</p>
+                        <p className="text-white/70 text-sm">
+                          {summary.topPerformers.bestCampaign.subject_line || 'Untitled Campaign'}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-green-300 font-bold">
+                          ${(summary.topPerformers.bestCampaign.revenue || 0).toLocaleString()}
+                        </p>
+                        <p className="text-white/60 text-xs">
+                          {(summary.topPerformers.bestCampaign.open_rate || 0).toFixed(1)}% open
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
+                {summary.topPerformers.bestFlow && (
+                  <div className="bg-white/5 p-4 rounded-lg border border-white/10">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-white font-medium">Best Flow</p>
+                        <p className="text-white/70 text-sm">
+                          {summary.topPerformers.bestFlow.flow_name || 'Untitled Flow'}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-green-300 font-bold">
+                          ${(summary.topPerformers.bestFlow.revenue || 0).toLocaleString()}
+                        </p>
+                        <p className="text-white/60 text-xs">
+                          {(summary.topPerformers.bestFlow.conversion_rate || 0).toFixed(1)}% convert
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="text-center py-6">
+                <Zap className="w-10 h-10 text-white/30 mx-auto mb-3" />
+                <p className="text-white/60">No performance data yet</p>
+                <p className="text-white/40 text-sm">Launch campaigns to see results</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Quick Actions */}
           {summary.upcomingDeadlines.length > 0 && (
             <Card className="bg-white/5 border-white/10">
               <CardHeader>
