@@ -78,20 +78,27 @@ export async function POST(request: NextRequest) {
 
     console.log('✅ USER INVITE: User profile created:', profile.id)
 
-    // Step 3: Send password reset email (acts as invitation)
-    const { error: resetError } = await supabaseAdmin.auth.admin.generateLink({
-      type: 'invite',
+    // Step 3: Generate magic link for invitation
+    const { data: linkData, error: resetError } = await supabaseAdmin.auth.admin.generateLink({
+      type: 'magiclink',
       email: email,
       options: {
         redirectTo: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/login`
       }
     })
 
+    let invitationLink = null
+    let emailSent = false
+
     if (resetError) {
-      console.warn('⚠️ USER INVITE: Failed to send invitation email:', resetError)
-      // Don't fail the whole operation - user can be manually invited later
+      console.warn('⚠️ USER INVITE: Failed to generate invitation link:', resetError)
     } else {
-      console.log('✅ USER INVITE: Invitation email sent to:', email)
+      invitationLink = linkData.properties?.action_link || null
+      console.log('✅ USER INVITE: Invitation link generated:', invitationLink ? 'YES' : 'NO')
+      
+      // Note: Email will only send if Supabase SMTP is configured
+      // If not configured, the link is returned in the response instead
+      emailSent = linkData.properties?.email_otp ? true : false
     }
 
     return NextResponse.json({
@@ -103,6 +110,13 @@ export async function POST(request: NextRequest) {
         last_name: last_name,
         role: 'client_user',
         client_id: client_id
+      },
+      invitation: {
+        link: invitationLink,
+        emailSent: emailSent,
+        message: emailSent 
+          ? 'Invitation email sent successfully'
+          : 'Email not configured. Copy the invitation link below and send to user manually.'
       }
     })
 

@@ -89,7 +89,14 @@ export function UserManagement({ agency, clients, clientUsers: initialUsers }: U
         throw new Error(result.error || 'Failed to send invitation')
       }
 
-      setSuccess('Invitation sent successfully! The user will receive an email to set their password.')
+      // Check if email was sent or if we need to show the magic link
+      if (result.invitation?.emailSent) {
+        setSuccess('✅ Invitation email sent successfully! The user will receive an email to set their password.')
+      } else if (result.invitation?.link) {
+        setSuccess(`⚠️ Email not configured. Send this link to the user:\n\n${result.invitation.link}\n\nThey can click it to set their password and access the dashboard.`)
+      } else {
+        setSuccess('✅ User created! Ask them to use "Forgot Password" at login with their email.')
+      }
       
       // Refresh user list (simplified for now)
       resetForm()
