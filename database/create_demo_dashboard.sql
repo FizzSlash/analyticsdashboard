@@ -254,12 +254,146 @@ BEGIN
   END LOOP;
 END $$;
 
+-- Step 7: Create Demo Portal Requests
+INSERT INTO portal_requests (
+  client_id,
+  agency_id,
+  title,
+  description,
+  request_type,
+  priority,
+  status,
+  requested_date,
+  desired_completion_date,
+  target_audience,
+  campaign_objectives
+) VALUES
+  ('00000000-0000-0000-0000-000000000001', '975c9d1e-e781-4a48-be9c-cb05df4a5077', 
+   'Black Friday Email Campaign', 
+   'Need a high-converting email campaign for Black Friday with strong CTAs and countdown timer',
+   'email_campaign', 'urgent', 'in_progress',
+   CURRENT_DATE - 5, CURRENT_DATE + 10,
+   'All active subscribers', 
+   ARRAY['Increase revenue', 'Clear inventory', 'Boost engagement']),
+   
+  ('00000000-0000-0000-0000-000000000001', '975c9d1e-e781-4a48-be9c-cb05df4a5077',
+   'Welcome Flow Optimization',
+   'Update welcome flow with new product images and improved copy',
+   'email_flow', 'high', 'submitted',
+   CURRENT_DATE - 3, CURRENT_DATE + 14,
+   'New subscribers',
+   ARRAY['Improve onboarding', 'Showcase best products', 'Drive first purchase']),
+   
+  ('00000000-0000-0000-0000-000000000001', '975c9d1e-e781-4a48-be9c-cb05df4a5077',
+   'Subject Line A/B Test',
+   'Test emoji vs non-emoji subject lines for weekly newsletter',
+   'ab_test', 'medium', 'approved',
+   CURRENT_DATE - 7, CURRENT_DATE + 7,
+   'Engaged subscribers (30 days)',
+   ARRAY['Optimize open rates', 'Test messaging approach']),
+   
+  ('00000000-0000-0000-0000-000000000001', '975c9d1e-e781-4a48-be9c-cb05df4a5077',
+   'Holiday Campaign Series',
+   'Create 5-email holiday campaign series with festive designs',
+   'email_campaign', 'high', 'in_review',
+   CURRENT_DATE - 2, CURRENT_DATE + 21,
+   'All subscribers',
+   ARRAY['Drive holiday sales', 'Build brand awareness', 'Increase AOV'])
+ON CONFLICT DO NOTHING;
+
+-- Step 8: Create Demo A/B Test Results
+INSERT INTO ab_test_results (
+  client_id,
+  agency_id,
+  airtable_record_id,
+  test_name,
+  test_type,
+  start_date,
+  end_date,
+  variant_a_name,
+  variant_a_sent,
+  variant_a_opens,
+  variant_a_clicks,
+  variant_a_revenue,
+  variant_b_name,
+  variant_b_sent,
+  variant_b_opens,
+  variant_b_clicks,
+  variant_b_revenue,
+  winner_variant,
+  confidence_score,
+  statistical_significance,
+  insights,
+  learnings
+) VALUES
+  ('00000000-0000-0000-0000-000000000001', '975c9d1e-e781-4a48-be9c-cb05df4a5077',
+   'AB_TEST_001', 'Subject Line: Emoji vs No Emoji',
+   'subject_line', CURRENT_DATE - 14, CURRENT_DATE - 7,
+   '🎉 Special Offer Inside!', 5000, 2850, 185, 1250.50,
+   'Special Offer Inside', 5000, 2350, 142, 980.25,
+   'variant_a', 0.89, true,
+   'Emoji in subject line increased open rate by 21% and revenue by 27%',
+   'Consider using emojis for promotional campaigns. Test showed statistical significance with 89% confidence.'),
+   
+  ('00000000-0000-0000-0000-000000000001', '975c9d1e-e781-4a48-be9c-cb05df4a5077',
+   'AB_TEST_002', 'Send Time: Morning vs Evening',
+   'send_time', CURRENT_DATE - 21, CURRENT_DATE - 14,
+   'Morning (9 AM)', 7500, 3225, 245, 2150.75,
+   'Evening (7 PM)', 7500, 4125, 412, 3425.50,
+   'variant_b', 0.95, true,
+   'Evening sends performed 28% better on open rate and 59% better on revenue',
+   'Our audience is more engaged in the evening. Shift promotional emails to 6-8 PM window.'),
+   
+  ('00000000-0000-0000-0000-000000000001', '975c9d1e-e781-4a48-be9c-cb05df4a5077',
+   'AB_TEST_003', 'Content: Long-form vs Short-form',
+   'content', CURRENT_DATE - 10, CURRENT_DATE - 3,
+   'Long-form (detailed)', 4200, 2310, 189, 1575.25,
+   'Short-form (concise)', 4200, 2520, 252, 2100.80,
+   'variant_b', 0.82, true,
+   'Short-form content drove 33% more clicks and 33% more revenue',
+   'Keep emails concise and action-focused. Long explanations reduce engagement.')
+ON CONFLICT DO NOTHING;
+
+-- Step 9: Create Demo Design Annotations
+-- Note: These reference fake Airtable records for demo purposes
+INSERT INTO design_annotations (
+  client_id,
+  agency_id,
+  airtable_record_id,
+  design_file_id,
+  x_position,
+  y_position,
+  comment,
+  author_name,
+  author_role,
+  resolved
+) VALUES
+  ('00000000-0000-0000-0000-000000000001', '975c9d1e-e781-4a48-be9c-cb05df4a5077',
+   'DEMO_CAMPAIGN_001', 'DEMO_DESIGN_001',
+   25.5, 35.2,
+   'Can we make the CTA button larger? It gets lost in the design.',
+   'Demo Client User', 'client_user', false),
+   
+  ('00000000-0000-0000-0000-000000000001', '975c9d1e-e781-4a48-be9c-cb05df4a5077',
+   'DEMO_CAMPAIGN_001', 'DEMO_DESIGN_001',
+   60.8, 72.4,
+   'Love the product image! Can we use this style for all campaigns?',
+   'Demo Agency Admin', 'agency_admin', true),
+   
+  ('00000000-0000-0000-0000-000000000001', '975c9d1e-e781-4a48-be9c-cb05df4a5077',
+   'DEMO_CAMPAIGN_002', 'DEMO_DESIGN_002',
+   45.0, 15.8,
+   'The headline could be more benefit-focused. Currently it''s too feature-heavy.',
+   'Demo Client User', 'client_user', false)
+ON CONFLICT DO NOTHING;
+
 -- =====================================================
 -- DEMO DASHBOARD READY!
 -- Access at: http://localhost:3000/client/demo
+-- Includes: Analytics + Portal Features
 -- =====================================================
 
--- Optional: Verify data was created
+-- Optional: Verify all data was created
 SELECT 
   'Campaigns' as data_type, 
   COUNT(*) as count 
@@ -282,4 +416,22 @@ SELECT
   'List Growth' as data_type, 
   COUNT(*) as count 
 FROM list_growth_metrics 
+WHERE client_id = '00000000-0000-0000-0000-000000000001'
+UNION ALL
+SELECT 
+  'Portal Requests' as data_type, 
+  COUNT(*) as count 
+FROM portal_requests 
+WHERE client_id = '00000000-0000-0000-0000-000000000001'
+UNION ALL
+SELECT 
+  'A/B Test Results' as data_type, 
+  COUNT(*) as count 
+FROM ab_test_results 
+WHERE client_id = '00000000-0000-0000-0000-000000000001'
+UNION ALL
+SELECT 
+  'Design Annotations' as data_type, 
+  COUNT(*) as count 
+FROM design_annotations 
 WHERE client_id = '00000000-0000-0000-0000-000000000001';

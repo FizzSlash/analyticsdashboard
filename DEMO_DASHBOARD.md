@@ -23,6 +23,9 @@ This creates:
 - ✅ 5 flows with 8 weeks of performance data each
 - ✅ 60 days of revenue attribution metrics
 - ✅ 60 days of list growth data
+- ✅ 4 portal requests (various statuses)
+- ✅ 3 A/B test results (completed with winners)
+- ✅ 3 design annotations (client feedback)
 
 ### **Step 2: Access the Dashboard**
 
@@ -143,6 +146,29 @@ WHERE client_id = '00000000-0000-0000-0000-000000000001';
 - Flow Messages: 40 (5 flows × 8 weeks)
 - Revenue Attribution: 60
 - List Growth: 60
+- Portal Requests: 4
+- A/B Test Results: 3
+- Design Annotations: 3
+
+---
+
+### **Portal Features (7 items total)**
+
+#### **Portal Requests (4 requests)**
+- Black Friday Email Campaign (urgent, in progress)
+- Welcome Flow Optimization (high priority, submitted)
+- Subject Line A/B Test (medium priority, approved)
+- Holiday Campaign Series (high priority, in review)
+
+#### **A/B Test Results (3 completed tests)**
+1. **Emoji vs No Emoji** - Emoji won with 89% confidence (+27% revenue)
+2. **Morning vs Evening Send** - Evening won with 95% confidence (+59% revenue)
+3. **Long-form vs Short-form** - Short-form won with 82% confidence (+33% revenue)
+
+#### **Design Annotations (3 annotations)**
+- CTA button size feedback (unresolved)
+- Product image style approval (resolved)
+- Headline benefit-focus suggestion (unresolved)
 
 ---
 
@@ -150,13 +176,24 @@ WHERE client_id = '00000000-0000-0000-0000-000000000001';
 
 With the demo dashboard, you can test:
 
+### **Analytics Mode:**
 ✅ **Timeframe Selector** - All ranges (7/30/60/90/180/365 days)  
 ✅ **All 6 Analytics Tabs** - Overview, Campaigns, Flows, Subject Lines, List Growth, Deliverability
-✅ **Portal Mode** - Campaign management interface
 ✅ **Charts & Visualizations** - All chart types with realistic data
 ✅ **Filtering & Sorting** - Campaign/flow tables
+✅ **Data Accuracy** - No fake data, only realistic mock data
+
+### **Portal Mode:**
+✅ **Campaign Requests** - View and manage client requests
+✅ **A/B Test Manager** - See completed test results with winners
+✅ **Design Feedback** - View annotations and feedback on designs
+✅ **Campaign Calendar** - Visual campaign planning
+✅ **Flow Progress Tracker** - Monitor flow performance
+
+### **General:**
 ✅ **Responsive Design** - Mobile, tablet, desktop views
 ✅ **Brand Customization** - Colors, styling, theming
+✅ **Mode Switching** - Analytics ↔ Portal toggle
 
 ---
 
