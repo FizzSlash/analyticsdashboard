@@ -359,7 +359,7 @@ export function DashboardOverview({ client, userRole, onNavigate }: DashboardOve
       )}
 
       {/* Quick Actions - Only show if there are pending items */}
-      {(summary.pendingApprovals > 0 || summary.overdueForms > 0) && (
+      {(summary.pendingApprovals > 0 || (summary.unresolvedAnnotations || 0) > 0) && (
         <Card className="bg-white/5 border-white/10">
           <CardHeader>
             <CardTitle className="text-white flex items-center gap-2">
