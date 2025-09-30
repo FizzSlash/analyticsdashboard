@@ -40,9 +40,34 @@ export async function GET(request: NextRequest) {
 
     console.log(`✅ PORTAL REQUESTS: Found ${requests.length} requests`)
 
+    // Transform database structure to match component expectations
+    const transformedRequests = requests.map((req: any) => ({
+      id: req.id,
+      title: req.title,
+      type: req.request_type === 'email_campaign' ? 'campaign' 
+           : req.request_type === 'email_flow' ? 'flow'
+           : req.request_type === 'ab_test' ? 'misc'
+           : req.request_type,
+      subtype: req.request_type, // Keep original type as subtype
+      priority: req.priority,
+      status: req.status,
+      requestedBy: 'Client User', // Default since we don't have user names
+      requestDate: req.requested_date,
+      desiredLaunchDate: req.desired_completion_date,
+      description: req.description || '',
+      objectives: req.campaign_objectives || [],
+      targetAudience: req.target_audience || '',
+      keyRequirements: req.description ? req.description.split('\n').filter((line: string) => line.trim()) : [],
+      budget: req.budget,
+      notes: req.notes || '',
+      assignedTo: req.assigned_to_user_id ? 'Agency Team' : undefined,
+      estimatedHours: 0,
+      actualHours: 0
+    }))
+
     return NextResponse.json({
       success: true,
-      requests
+      requests: transformedRequests
     })
 
   } catch (error) {

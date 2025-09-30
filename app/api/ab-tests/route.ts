@@ -34,32 +34,48 @@ export async function GET(request: NextRequest) {
 
     // Transform database structure to match component expectations
     const transformedTests = tests.map((test: any) => ({
-      ...test,
-      // Add variants array for component compatibility
+      id: test.id,
+      name: test.test_name || 'Untitled Test',
+      status: 'completed', // All database tests are completed
+      type: test.test_type || 'subject_line',
+      startDate: test.start_date,
+      endDate: test.end_date,
+      winner: test.winner_variant,
+      confidence: test.confidence_score || 0,
+      notes: test.insights || test.learnings || '',
+      // Component expects variants with nested metrics object
       variants: [
         {
           id: 'variant_a',
           name: test.variant_a_name || 'Variant A',
-          sent: test.variant_a_sent || 0,
-          opens: test.variant_a_opens || 0,
-          clicks: test.variant_a_clicks || 0,
-          revenue: test.variant_a_revenue || 0,
-          openRate: test.variant_a_sent > 0 ? (test.variant_a_opens / test.variant_a_sent) * 100 : 0,
-          clickRate: test.variant_a_sent > 0 ? (test.variant_a_clicks / test.variant_a_sent) * 100 : 0
+          description: '',
+          metrics: {
+            sent: test.variant_a_sent || 0,
+            opens: test.variant_a_opens || 0,
+            clicks: test.variant_a_clicks || 0,
+            conversions: 0, // Not in database
+            revenue: test.variant_a_revenue || 0,
+            openRate: test.variant_a_sent > 0 ? (test.variant_a_opens / test.variant_a_sent) * 100 : 0,
+            clickRate: test.variant_a_sent > 0 ? (test.variant_a_clicks / test.variant_a_sent) * 100 : 0,
+            conversionRate: 0 // Not in database
+          }
         },
         {
           id: 'variant_b',
           name: test.variant_b_name || 'Variant B',
-          sent: test.variant_b_sent || 0,
-          opens: test.variant_b_opens || 0,
-          clicks: test.variant_b_clicks || 0,
-          revenue: test.variant_b_revenue || 0,
-          openRate: test.variant_b_sent > 0 ? (test.variant_b_opens / test.variant_b_sent) * 100 : 0,
-          clickRate: test.variant_b_sent > 0 ? (test.variant_b_clicks / test.variant_b_sent) * 100 : 0
+          description: '',
+          metrics: {
+            sent: test.variant_b_sent || 0,
+            opens: test.variant_b_opens || 0,
+            clicks: test.variant_b_clicks || 0,
+            conversions: 0, // Not in database
+            revenue: test.variant_b_revenue || 0,
+            openRate: test.variant_b_sent > 0 ? (test.variant_b_opens / test.variant_b_sent) * 100 : 0,
+            clickRate: test.variant_b_sent > 0 ? (test.variant_b_clicks / test.variant_b_sent) * 100 : 0,
+            conversionRate: 0 // Not in database
+          }
         }
-      ],
-      winner: test.winner_variant,
-      status: 'completed' // Since all tests in database are completed
+      ]
     }))
 
     return NextResponse.json({
