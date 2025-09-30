@@ -147,14 +147,7 @@ export default function ClientDashboardPage({ params }: PageProps) {
         <div className="max-w-7xl mx-auto px-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              {/* Logo - Only show in Analytics mode */}
-              {viewMode === 'analytics' && client.logo_url && (
-                <img 
-                  src={client.logo_url} 
-                  alt={`${client.brand_name} logo`}
-                  className="h-12 w-auto"
-                />
-              )}
+              {/* Logo removed per user request */}
               <div>
                 <h1 className="text-3xl font-bold mb-2 text-white">{client.brand_name}</h1>
                 <p className="text-blue-100 text-lg">

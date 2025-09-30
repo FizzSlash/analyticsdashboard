@@ -701,12 +701,6 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
                   ${(timeframeSummary?.revenueAttributionSummary?.total_revenue || 0).toLocaleString()}
                 </span>
               </div>
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-white/70">Total Orders</span>
-                <span className="text-white/90">
-                  {(timeframeSummary?.revenueAttributionSummary?.total_orders || 0).toLocaleString()}
-                </span>
-              </div>
               {(timeframeSummary?.revenueAttributionSummary?.days_with_data || 0) > 0 && (
                 <div className="text-xs text-white/50 text-center pt-2 border-t border-white/10">
                   Data from {timeframeSummary?.revenueAttributionSummary?.days_with_data} days
@@ -2182,25 +2176,22 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
                           day: 'numeric' 
                         })}
                       />
-                      {/* Single net growth bar - green if positive, red if negative */}
+                      {/* Net growth bar - green if positive, red if negative */}
                       <Bar 
                         dataKey="net_growth" 
-                        fill={accentColor}
-                        name="net_growth"
                         radius={[4, 4, 0, 0]}
                         shape={(props: any) => {
                           const { x, y, width, height, payload } = props
-                          const isPositive = payload.net_growth >= 0
+                          const value = payload.net_growth || 0
+                          const isPositive = value >= 0
                           const color = isPositive ? accentColor : errorColor
-                          const actualY = isPositive ? y : y
-                          const actualHeight = Math.abs(height)
                           
                           return (
                             <rect
                               x={x}
-                              y={actualY}
+                              y={y}
                               width={width}
-                              height={actualHeight}
+                              height={height}
                               fill={color}
                               rx={4}
                               ry={4}
