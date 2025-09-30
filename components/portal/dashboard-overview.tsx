@@ -138,11 +138,21 @@ export function DashboardOverview({ client, userRole, onNavigate }: DashboardOve
   }
 
   const getDeadlineStatus = (item: DeadlineItem) => {
-    if (item.isOverdue) return 'text-red-400'
-    const daysUntilDue = Math.ceil((item.dueDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
-    if (daysUntilDue <= 1) return 'text-orange-400'
-    if (daysUntilDue <= 3) return 'text-yellow-400'
-    return 'text-green-400'
+    try {
+      if (item.isOverdue) return 'text-red-400'
+      if (!item.dueDate) return 'text-gray-400'
+      
+      const dueDateObj = typeof item.dueDate === 'string' ? new Date(item.dueDate) : item.dueDate
+      if (isNaN(dueDateObj.getTime())) return 'text-gray-400'
+      
+      const daysUntilDue = Math.ceil((dueDateObj.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
+      if (daysUntilDue <= 1) return 'text-orange-400'
+      if (daysUntilDue <= 3) return 'text-yellow-400'
+      return 'text-green-400'
+    } catch (error) {
+      console.warn('Error calculating deadline status:', error)
+      return 'text-gray-400'
+    }
   }
 
   const getTimeAgo = (date: Date | string | null | undefined) => {
