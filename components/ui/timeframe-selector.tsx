@@ -63,7 +63,7 @@ export function TimeframeSelector({ selectedTimeframe, onTimeframeChange, classN
 
   // No longer need click outside handler - backdrop handles it
 
-  const dropdown = isOpen && (
+  const dropdown = isOpen && createPortal(
     <>
       {/* Invisible backdrop to prevent outside clicks */}
       <div 
@@ -77,8 +77,13 @@ export function TimeframeSelector({ selectedTimeframe, onTimeframeChange, classN
       
       {/* Dropdown menu */}
       <div 
-        className="absolute top-full left-0 mt-2 w-48 bg-slate-900 border border-slate-600 rounded-lg shadow-2xl"
-        style={{ zIndex: 999999 }}
+        className="fixed bg-slate-900 border border-slate-600 rounded-lg shadow-2xl"
+        style={{ 
+          zIndex: 99999,
+          top: dropdownPosition.top,
+          left: dropdownPosition.left,
+          minWidth: '192px'
+        }}
         onClick={(e) => {
           console.log(`📋 TimeframeSelector dropdown clicked (should not close) - ID: ${componentId.current}`)
           e.stopPropagation()
@@ -107,18 +112,20 @@ export function TimeframeSelector({ selectedTimeframe, onTimeframeChange, classN
           ))}
         </div>
       </div>
-    </>
+    </>,
+    document.body
   )
 
   return (
-    <div className={`relative ${className}`} style={{ zIndex: 1000 }}>
+    <div className={`relative ${className}`} style={{ zIndex: 9999 }}>
       <button
         ref={buttonRef}
         onClick={() => {
           console.log(`🔘 TimeframeSelector button clicked - isOpen: ${isOpen} → ${!isOpen} - ID: ${componentId.current}`)
           setIsOpen(!isOpen)
         }}
-        className="flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-md border border-white/20 rounded-lg hover:bg-white/20 transition-all duration-200 text-white"
+        className="flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-md border border-white/20 rounded-lg hover:bg-white/20 transition-all duration-200 text-white relative"
+        style={{ zIndex: 9999 }}
       >
         <Calendar className="w-4 h-4" />
         <span className="text-sm font-medium">{selectedOption.label}</span>

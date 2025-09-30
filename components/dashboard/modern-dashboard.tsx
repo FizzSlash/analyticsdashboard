@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { TimeframeSelector } from '@/components/ui/timeframe-selector'
 import { ViewToggle, type ViewMode } from '@/components/ui/view-toggle'
@@ -62,14 +62,12 @@ export function ModernDashboard({ client, data: initialData, disablePortalMode =
   const [loading, setLoading] = useState(false)
   const [initialTimeframe] = useState(365) // Track the initial timeframe (365 from client page)
   
-  // Get current timeframe based on active tab
-  const getCurrentTimeframe = () => {
-    if (activeTab === 'campaigns' || activeTab === 'subject-lines') return campaignTimeframe
-    if (activeTab === 'flows') return flowTimeframe
-    return campaignTimeframe // Default for other tabs
-  }
-  
-  const timeframe = getCurrentTimeframe()
+  // Get current timeframe based on active tab - memoized for stability
+  const timeframe = useMemo(() => {
+    const currentTimeframe = activeTab === 'flows' ? flowTimeframe : campaignTimeframe
+    console.log(`🎯 Current timeframe calculated: ${currentTimeframe} days for tab: ${activeTab}`)
+    return currentTimeframe
+  }, [activeTab, campaignTimeframe, flowTimeframe])
   const [sortField, setSortField] = useState('send_date')
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc')
   const [expandedFlows, setExpandedFlows] = useState<Set<string>>(new Set())
@@ -661,32 +659,32 @@ export function ModernDashboard({ client, data: initialData, disablePortalMode =
       {/* Key Metrics Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <MetricCard
-          title="Total Revenue"
-          value={`$${(data?.summary?.revenue?.total_revenue || 0).toLocaleString()}`}
-          change="+12.5%"
+          title="Email Revenue %"
+          value={`${(data?.revenueAttributionSummary?.avg_email_percentage || 0).toFixed(1)}%`}
+          change={`${(data?.revenueAttributionSummary?.avg_email_percentage || 0) > 45 ? '+' : ''}${((data?.revenueAttributionSummary?.avg_email_percentage || 0) - 45).toFixed(1)}%`}
           icon={DollarSign}
-          trend="up"
+          trend={(data?.revenueAttributionSummary?.avg_email_percentage || 0) > 45 ? "up" : "down"}
         />
         <MetricCard
-          title="Total Subscribers"
-          value={(data?.summary?.audience?.total_subscribers || 0).toLocaleString()}
-          change={`${(data?.summary?.audience?.growth_rate || 0).toFixed(1)}%`}
+          title="List Growth"
+          value={`${(data?.summary?.audience?.net_growth || 0) > 0 ? '+' : ''}${(data?.summary?.audience?.net_growth || 0).toLocaleString()}`}
+          change={`${(((data?.summary?.audience?.net_growth || 0) / (data?.summary?.audience?.total_subscribers || 1)) * 100).toFixed(1)}%`}
           icon={Users}
-          trend="up"
+          trend={(data?.summary?.audience?.net_growth || 0) > 0 ? "up" : "down"}
         />
         <MetricCard
           title="Avg Open Rate"
           value={`${(data?.summary?.campaigns?.avg_open_rate || 0).toFixed(1)}%`}
-          change="+2.1%"
+          change={`${(data?.summary?.campaigns?.avg_open_rate || 0) > 25 ? '+' : ''}${((data?.summary?.campaigns?.avg_open_rate || 0) - 25).toFixed(1)}%`}
           icon={Eye}
-          trend="up"
+          trend={(data?.summary?.campaigns?.avg_open_rate || 0) > 25 ? "up" : "down"}
         />
         <MetricCard
           title="Avg Click Rate"
           value={`${(data?.summary?.campaigns?.avg_click_rate || 0).toFixed(1)}%`}
-          change="+0.8%"
+          change={`${(data?.summary?.campaigns?.avg_click_rate || 0) > 3 ? '+' : ''}${((data?.summary?.campaigns?.avg_click_rate || 0) - 3).toFixed(1)}%`}
           icon={MousePointer}
-          trend="up"
+          trend={(data?.summary?.campaigns?.avg_click_rate || 0) > 3 ? "up" : "down"}
         />
       </div>
 
@@ -747,32 +745,31 @@ export function ModernDashboard({ client, data: initialData, disablePortalMode =
         <Card className="bg-white/10 backdrop-blur-md border-white/20">
           <CardHeader>
             <CardTitle className="text-white flex items-center gap-2">
-              <TrendingUp className="w-5 h-5" />
-              Growth Metrics
+              <Target className="w-5 h-5" />
+              Campaign Performance
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
               <div className="flex justify-between items-center">
-                <span className="text-white/80">📈 Net List Growth</span>
+                <span className="text-white/80">📊 Total Campaigns</span>
                 <div className="text-right">
                   <span className="text-white font-semibold">
-                    {(data?.summary?.audience?.net_growth || 0) > 0 ? '+' : ''}
-                    {(data?.summary?.audience?.net_growth || 0).toLocaleString()}
+                    {data?.summary?.campaigns?.total_sent || 0}
                   </span>
                   <div className="text-xs text-white/60">
-                    {(((data?.summary?.audience?.net_growth || 0) / (data?.summary?.audience?.total_subscribers || 1)) * 100).toFixed(1)}% growth rate
+                    campaigns sent
                   </div>
                 </div>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-white/80">💰 Email Revenue %</span>
+                <span className="text-white/80">⚡ Active Flows</span>
                 <div className="text-right">
                   <span className="text-white font-semibold">
-                    {(data?.revenueAttributionSummary?.avg_email_percentage || 0).toFixed(1)}%
+                    {data?.summary?.flows?.active_flows || 0}
                   </span>
                   <div className="text-xs text-white/60">
-                    of total revenue
+                    automations running
                   </div>
                 </div>
               </div>
