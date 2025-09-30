@@ -60,18 +60,23 @@ export function CampaignRequests({ client }: CampaignRequestsProps) {
   const fetchCampaignRequests = async () => {
     setLoading(true)
     try {
-      // TODO: Replace with actual API call
-      setRequests(generateMockRequests())
+      console.log('📥 CAMPAIGN REQUESTS: Fetching from Supabase for client:', client?.id)
+      const response = await fetch(`/api/portal-requests?clientId=${client?.id}`)
+      const result = await response.json()
+      
+      if (result.success) {
+        console.log(`✅ CAMPAIGN REQUESTS: Loaded ${result.requests.length} requests`)
+        setRequests(result.requests)
+      } else {
+        console.error('❌ CAMPAIGN REQUESTS: Failed to load:', result.error)
+        setRequests([])
+      }
     } catch (error) {
-      console.error('Error fetching campaign requests:', error)
+      console.error('❌ CAMPAIGN REQUESTS: Error fetching requests:', error)
+      setRequests([])
     } finally {
       setLoading(false)
     }
-  }
-
-  const generateMockRequests = (): CampaignRequest[] => {
-    // TODO: Load real campaign requests from database
-    return []
   }
 
   const getPriorityColor = (priority: string) => {
