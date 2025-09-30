@@ -169,7 +169,6 @@ export default function ClientDashboardPage({ params }: PageProps) {
                     console.log('🎯 Timeframe changed:', days)
                     // Timeframe changes will be handled by ModernDashboard internally
                   }}
-                  mode="campaign"
                 />
               )}
             </div>
