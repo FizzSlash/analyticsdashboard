@@ -337,171 +337,110 @@ export function DashboardOverview({ client, data, userRole, onNavigate }: Dashbo
           </CardContent>
         </Card>
 
-        {/* Quick Actions */}
-          {summary.upcomingDeadlines.length > 0 && (
-            <Card className="bg-white/5 border-white/10">
-              <CardHeader>
-                <CardTitle className="text-white flex items-center gap-2">
-                  <Clock className="h-5 w-5 text-yellow-400" />
-                  Needs Attention
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {summary.upcomingDeadlines.map(item => (
-                  <div 
-                    key={item.id}
-                    className="flex items-center justify-between p-3 bg-white/5 rounded-lg hover:bg-white/10 transition-colors cursor-pointer"
-                    onClick={() => onNavigate(item.type === 'form' ? 'forms' : 'campaigns', item.id)}
-                  >
-                    <div>
-                      <p className="text-white font-medium text-sm">{item.title}</p>
-                      <p className={`text-xs ${getDeadlineStatus(item)}`}>
-                        {item.isOverdue ? 'Overdue' : `Due ${item.dueDate.toLocaleDateString()}`}
-                      </p>
-                    </div>
-                    <ArrowRight className="h-4 w-4 text-white/40" />
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Only show recent activity if there is activity */}
-          {summary.recentActivity.length > 0 && (
-            <Card className="bg-white/5 border-white/10">
-              <CardHeader>
-                <CardTitle className="text-white flex items-center gap-2">
-                  <Activity className="h-5 w-5 text-green-400" />
-                  Recent Updates
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {summary.recentActivity.slice(0, 3).map(activity => {
-                  const Icon = getActivityIcon(activity.type)
-                  return (
-                    <div key={activity.id} className="flex items-start gap-3 p-3 bg-white/5 rounded-lg">
-                      <div className={`p-2 rounded-lg bg-white/10 ${getActivityColor(activity.type)}`}>
-                        <Icon className="h-4 w-4" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-white font-medium text-sm">{activity.title}</p>
-                        <p className="text-white/70 text-xs mt-1">{activity.description}</p>
-                        <span className="text-white/60 text-xs">{getTimeAgo(activity.timestamp)}</span>
-                      </div>
-                    </div>
-                  )
-                })}
-              </CardContent>
-            </Card>
-          )}
-        </div>
-      )}
-
-      {/* Only show monthly progress if there's actual data */}
-      {(summary.monthlyStats.campaignsApproved > 0 || summary.monthlyStats.formsCompleted > 0 || summary.monthlyStats.requestsSubmitted > 0) && (
-        <Card className="bg-white/5 border-white/10">
-          <CardHeader>
+        {/* Monthly Insights */}
+        <Card className="bg-white/10 border-white/20 backdrop-blur-sm shadow-lg">
+          <CardHeader className="pb-3">
             <CardTitle className="text-white flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-blue-400" />
-              This Month
+              <BarChart3 className="h-5 w-5" />
+              Campaign Insights
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {summary.monthlyStats.campaignsApproved > 0 && (
-                <div className="text-center">
-                  <div className="bg-green-500/20 p-4 rounded-lg mb-2">
-                    <CheckCircle className="h-8 w-8 text-green-400 mx-auto" />
+            <div className="space-y-4">
+              <div className="bg-white/5 p-4 rounded-lg border border-white/10">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-white font-medium">Campaigns Sent</p>
+                    <p className="text-white/70 text-sm">Last 30 days</p>
                   </div>
-                  <p className="text-white text-2xl font-bold">{summary.monthlyStats.campaignsApproved}</p>
-                  <p className="text-white/70 text-sm">Campaigns Approved</p>
+                  <p className="text-white text-2xl font-bold">
+                    {summary.monthlyMetrics.campaignsSent}
+                  </p>
                 </div>
-              )}
-              {summary.monthlyStats.formsCompleted > 0 && (
-                <div className="text-center">
-                  <div className="bg-blue-500/20 p-4 rounded-lg mb-2">
-                    <FileText className="h-8 w-8 text-blue-400 mx-auto" />
-                  </div>
-                  <p className="text-white text-2xl font-bold">{summary.monthlyStats.formsCompleted}</p>
-                  <p className="text-white/70 text-sm">Forms Completed</p>
-                </div>
-              )}
-              {summary.monthlyStats.requestsSubmitted > 0 && (
-                <div className="text-center">
-                  <div className="bg-purple-500/20 p-4 rounded-lg mb-2">
-                    <MessageSquare className="h-8 w-8 text-purple-400 mx-auto" />
-                  </div>
-                  <p className="text-white text-2xl font-bold">{summary.monthlyStats.requestsSubmitted}</p>
-                  <p className="text-white/70 text-sm">Requests Submitted</p>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Quick Actions - Only show if there are pending items */}
-      {(summary.pendingApprovals > 0 || summary.overdueForms > 0) && (
-        <Card className="bg-white/5 border-white/10">
-          <CardHeader>
-            <CardTitle className="text-white flex items-center gap-2">
-              <Zap className="h-5 w-5 text-yellow-400" />
-              Action Required
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {summary.pendingApprovals > 0 && (
-                <button
-                  onClick={() => onNavigate('campaigns')}
-                  className="bg-orange-500/20 hover:bg-orange-500/30 border border-orange-400/30 text-orange-300 p-4 rounded-lg transition-colors flex items-center justify-between"
-                >
-                  <div className="flex items-center gap-3">
-                    <Calendar className="h-5 w-5" />
-                    <span className="text-sm font-medium">Review Campaigns</span>
-                  </div>
-                  <span className="bg-orange-500/30 text-orange-200 text-xs px-2 py-1 rounded-full">
-                    {summary.pendingApprovals}
-                  </span>
-                </button>
-              )}
+              </div>
               
-              {summary.overdueForms > 0 && (
-                <button
-                  onClick={() => onNavigate('forms')}
-                  className="bg-red-500/20 hover:bg-red-500/30 border border-red-400/30 text-red-300 p-4 rounded-lg transition-colors flex items-center justify-between"
-                >
-                  <div className="flex items-center gap-3">
-                    <FileText className="h-5 w-5" />
-                    <span className="text-sm font-medium">Complete Forms</span>
+              <div className="bg-white/5 p-4 rounded-lg border border-white/10">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-white font-medium">Emails Delivered</p>
+                    <p className="text-white/70 text-sm">Total reach</p>
                   </div>
-                  <span className="bg-red-500/30 text-red-200 text-xs px-2 py-1 rounded-full">
-                    {summary.overdueForms}
-                  </span>
-                </button>
-              )}
+                  <p className="text-white text-2xl font-bold">
+                    {summary.monthlyMetrics.emailsDelivered.toLocaleString()}
+                  </p>
+                </div>
+              </div>
+              
+              <div className="bg-white/5 p-4 rounded-lg border border-white/10">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-white font-medium">Total Clicks</p>
+                    <p className="text-white/70 text-sm">Engagement metric</p>
+                  </div>
+                  <p className="text-white text-2xl font-bold">
+                    {summary.monthlyMetrics.totalClicks.toLocaleString()}
+                  </p>
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>
-      )}
+      </div>
 
-      {/* All Caught Up State - Clean Success */}
-      {summary.pendingApprovals === 0 && summary.overdueForms === 0 && (
-        <Card className="bg-white/10 border-white/20 backdrop-blur-sm">
-          <CardContent className="p-8 text-center">
-            <div 
-              className="p-6 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center shadow-lg"
-              style={{ backgroundColor: brandColors.actions.success }}
+      {/* Quick Actions */}
+      <Card className="bg-white/10 border-white/20 backdrop-blur-sm shadow-lg">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-white flex items-center gap-2">
+            <Zap className="h-5 w-5" />
+            Quick Actions
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <button
+              onClick={() => onNavigate('campaigns')}
+              className="bg-white/10 hover:bg-white/15 border border-white/20 p-4 rounded-lg transition-all duration-300 text-left group"
             >
-              <CheckCircle className="h-8 w-8 text-white" />
-            </div>
-            <h3 className="text-white text-xl font-bold mb-2">All Caught Up!</h3>
-            <p className="text-white/70 text-sm">
-              You've completed all pending items. Great work!
-            </p>
-          </CardContent>
-        </Card>
-      )}
+              <div className="flex items-center gap-3">
+                <Calendar className="h-5 w-5 text-white group-hover:scale-110 transition-transform" />
+                <div>
+                  <p className="text-white font-medium">View Campaigns</p>
+                  <p className="text-white/60 text-sm">Review performance</p>
+                </div>
+                <ArrowRight className="h-4 w-4 text-white/60 ml-auto group-hover:translate-x-1 transition-transform" />
+              </div>
+            </button>
+            
+            <button
+              onClick={() => onNavigate('flows')}
+              className="bg-white/10 hover:bg-white/15 border border-white/20 p-4 rounded-lg transition-all duration-300 text-left group"
+            >
+              <div className="flex items-center gap-3">
+                <Zap className="h-5 w-5 text-white group-hover:scale-110 transition-transform" />
+                <div>
+                  <p className="text-white font-medium">Check Flows</p>
+                  <p className="text-white/60 text-sm">Automated sequences</p>
+                </div>
+                <ArrowRight className="h-4 w-4 text-white/60 ml-auto group-hover:translate-x-1 transition-transform" />
+              </div>
+            </button>
+            
+            <button
+              onClick={() => onNavigate('requests')}
+              className="bg-white/10 hover:bg-white/15 border border-white/20 p-4 rounded-lg transition-all duration-300 text-left group"
+            >
+              <div className="flex items-center gap-3">
+                <MessageSquare className="h-5 w-5 text-white group-hover:scale-110 transition-transform" />
+                <div>
+                  <p className="text-white font-medium">New Request</p>
+                  <p className="text-white/60 text-sm">Submit project</p>
+                </div>
+                <ArrowRight className="h-4 w-4 text-white/60 ml-auto group-hover:translate-x-1 transition-transform" />
+              </div>
+            </button>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   )
 }
