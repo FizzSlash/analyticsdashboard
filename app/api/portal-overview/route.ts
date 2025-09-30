@@ -39,27 +39,27 @@ export async function GET(request: NextRequest) {
     const annotations = annotationsResult.data || []
 
     // Calculate stats
-    const pendingApprovals = requests.filter(r => r.status === 'in_review' || r.status === 'submitted').length
-    const activeRequests = requests.filter(r => r.status === 'in_progress' || r.status === 'in_review').length
-    const unresolvedAnnotations = annotations.filter(a => !a.resolved).length
+    const pendingApprovals = requests.filter((r: any) => r.status === 'in_review' || r.status === 'submitted').length
+    const activeRequests = requests.filter((r: any) => r.status === 'in_progress' || r.status === 'in_review').length
+    const unresolvedAnnotations = annotations.filter((a: any) => !a.resolved).length
 
     // Recent activity (last 10 items)
     const recentActivity = [
-      ...requests.slice(0, 5).map(r => ({
+      ...requests.slice(0, 5).map((r: any) => ({
         id: r.id,
         type: 'request',
         title: r.title,
         date: r.requested_date,
         status: r.status
       })),
-      ...abTests.slice(0, 3).map(t => ({
+      ...abTests.slice(0, 3).map((t: any) => ({
         id: t.id,
         type: 'ab_test',
         title: t.test_name,
         date: t.end_date,
         winner: t.winner_variant
       })),
-      ...annotations.slice(0, 2).map(a => ({
+      ...annotations.slice(0, 2).map((a: any) => ({
         id: a.id,
         type: 'annotation',
         title: a.comment.substring(0, 50) + '...',
@@ -71,10 +71,10 @@ export async function GET(request: NextRequest) {
     // Upcoming deadlines
     const now = new Date()
     const upcomingDeadlines = requests
-      .filter(r => r.desired_completion_date && new Date(r.desired_completion_date) > now)
-      .sort((a, b) => new Date(a.desired_completion_date).getTime() - new Date(b.desired_completion_date).getTime())
+      .filter((r: any) => r.desired_completion_date && new Date(r.desired_completion_date) > now)
+      .sort((a: any, b: any) => new Date(a.desired_completion_date).getTime() - new Date(b.desired_completion_date).getTime())
       .slice(0, 5)
-      .map(r => ({
+      .map((r: any) => ({
         id: r.id,
         title: r.title,
         dueDate: r.desired_completion_date,
@@ -83,13 +83,13 @@ export async function GET(request: NextRequest) {
 
     // Monthly stats (current month)
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
-    const completedThisMonth = requests.filter(r => 
+    const completedThisMonth = requests.filter((r: any) => 
       r.status === 'completed' && 
       r.actual_completion_date && 
       new Date(r.actual_completion_date) >= monthStart
     ).length
 
-    const testsThisMonth = abTests.filter(t =>
+    const testsThisMonth = abTests.filter((t: any) =>
       t.end_date &&
       new Date(t.end_date) >= monthStart
     ).length
@@ -104,7 +104,7 @@ export async function GET(request: NextRequest) {
         campaignsApproved: 0, // Would need campaign approval data
         requestsCompleted: completedThisMonth,
         abTestsCompleted: testsThisMonth,
-        annotationsResolved: annotations.filter(a => 
+        annotationsResolved: annotations.filter((a: any) => 
           a.resolved_at && 
           new Date(a.resolved_at) >= monthStart
         ).length
