@@ -33,7 +33,6 @@ interface ClientFormData {
   brand_name: string
   brand_slug: string
   klaviyo_api_key: string
-  logo_url: string
   portal_title: string
   primary_color: string
   secondary_color: string
@@ -62,7 +61,6 @@ export function ClientManagement({ agency, clients: initialClients }: ClientMana
     brand_name: '',
     brand_slug: '',
     klaviyo_api_key: '',
-    logo_url: '',
     portal_title: '',
     primary_color: agency.primary_color,
     secondary_color: agency.secondary_color,
@@ -81,7 +79,6 @@ export function ClientManagement({ agency, clients: initialClients }: ClientMana
       brand_name: '',
       brand_slug: '',
       klaviyo_api_key: '',
-      logo_url: '',
       portal_title: '',
       primary_color: agency.primary_color,
       secondary_color: agency.secondary_color,
@@ -105,7 +102,6 @@ export function ClientManagement({ agency, clients: initialClients }: ClientMana
       brand_name: client.brand_name,
       brand_slug: client.brand_slug,
       klaviyo_api_key: '', // Don't pre-fill encrypted API key
-      logo_url: client.logo_url || '',
       portal_title: (client as any).portal_title || '',
       primary_color: client.primary_color,
       secondary_color: client.secondary_color,
@@ -158,7 +154,6 @@ export function ClientManagement({ agency, clients: initialClients }: ClientMana
         agency_id: agency.id,
         brand_name: formData.brand_name,
         brand_slug: cleanSlug,
-        logo_url: formData.logo_url || undefined,
         portal_title: formData.portal_title || undefined,
         primary_color: formData.primary_color,
         secondary_color: formData.secondary_color,
@@ -183,7 +178,6 @@ export function ClientManagement({ agency, clients: initialClients }: ClientMana
           brand_name: formData.brand_name,
           brand_slug: cleanSlug,
           agency_id: agency.id,
-          logo_url: formData.logo_url || undefined,
           portal_title: formData.portal_title || undefined,
           primary_color: formData.primary_color,
           secondary_color: formData.secondary_color,
@@ -217,14 +211,19 @@ export function ClientManagement({ agency, clients: initialClients }: ClientMana
           throw new Error(result.error || 'Failed to update client')
         }
 
-        // Update local state
+        // Update local state with fresh data from API response
         setClients(clients.map(c => 
           c.id === editingClient.id 
-            ? { ...c, ...clientData }
+            ? { ...c, ...result.client }
             : c
         ))
 
-        setSuccess('Client updated successfully!')
+        setSuccess('✅ Client updated successfully! Colors and settings saved.')
+        
+        // Auto-refresh after 2 seconds to ensure UI reflects changes
+        setTimeout(() => {
+          window.location.reload()
+        }, 2000)
       } else {
         // Create new client
         console.log('Step 8: Starting encryption...')
@@ -250,7 +249,6 @@ export function ClientManagement({ agency, clients: initialClients }: ClientMana
             brand_slug: cleanSlug,
             klaviyo_api_key: formData.klaviyo_api_key,
             agency_id: agency.id,
-            logo_url: formData.logo_url || undefined,
             primary_color: formData.primary_color,
             secondary_color: formData.secondary_color,
             background_image_url: formData.background_image_url || undefined
@@ -1102,46 +1100,21 @@ ${flowDetails.slice(0, 3).map((f: any, i: number) =>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Logo URL (Simple and Working) */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Client Logo URL
-                    </label>
-                    <input
-                      type="url"
-                      value={formData.logo_url}
-                      onChange={(e) => setFormData({ ...formData, logo_url: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="https://example.com/logo.png"
-                    />
-                    {formData.logo_url && (
-                      <div className="mt-2">
-                        <img 
-                          src={formData.logo_url} 
-                          alt="Logo preview"
-                          className="h-16 w-auto object-contain bg-gray-50 rounded border p-2"
-                        />
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Portal Title */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Portal Title
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.portal_title || formData.brand_name}
-                      onChange={(e) => setFormData({ ...formData, portal_title: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="Hydrus Dashboard"
-                    />
-                    <p className="text-xs text-gray-500 mt-1">
-                      This appears in the portal header. Defaults to brand name.
-                    </p>
-                  </div>
+                {/* Portal Title */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Portal Title
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.portal_title || formData.brand_name}
+                    onChange={(e) => setFormData({ ...formData, portal_title: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Hydrus Dashboard"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    This appears in the portal header. Defaults to brand name.
+                  </p>
                 </div>
 
                 <div>

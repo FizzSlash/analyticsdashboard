@@ -72,17 +72,18 @@ export function AgencySettings({ agency: initialAgency }: AgencySettingsProps) {
       }
 
       // Update local state
+      // Update local state with the returned data
       setAgency({
         ...agency,
-        agency_name: formData.agency_name,
-        logo_url: formData.logo_url || undefined,
-        primary_color: formData.primary_color,
-        secondary_color: formData.secondary_color,
-        background_image_url: formData.background_image_url || undefined,
-        custom_domain: formData.custom_domain || undefined
+        ...result.agency
       })
 
       setSuccess('Settings updated successfully!')
+      
+      // Force page refresh to update header logos, etc.
+      setTimeout(() => {
+        window.location.reload()
+      }, 1000)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred')
     } finally {

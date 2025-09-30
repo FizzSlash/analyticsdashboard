@@ -19,7 +19,6 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     const updateData: any = {
       brand_name: body.brand_name,
       brand_slug: body.brand_slug,
-      logo_url: body.logo_url || undefined,
       portal_title: body.portal_title || undefined,
       primary_color: body.primary_color,
       secondary_color: body.secondary_color,
