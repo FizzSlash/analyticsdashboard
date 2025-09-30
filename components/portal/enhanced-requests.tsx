@@ -63,18 +63,23 @@ export function EnhancedRequests({ client }: EnhancedRequestsProps) {
   const fetchRequests = async () => {
     setLoading(true)
     try {
-      // TODO: Fetch from database
-      setRequests(generateMockRequests())
+      console.log('📋 REQUESTS: Fetching from API for client:', client?.brand_slug || client?.id)
+      const response = await fetch(`/api/portal-requests?clientSlug=${client?.brand_slug || ''}&clientId=${client?.id || ''}`)
+      const result = await response.json()
+      
+      if (response.ok && result.success) {
+        console.log('📋 REQUESTS: Loaded', result.requests?.length || 0, 'requests from database')
+        setRequests(result.requests || [])
+      } else {
+        console.error('📋 REQUESTS: API error:', result.error)
+        setRequests([])
+      }
     } catch (error) {
-      console.error('Error fetching requests:', error)
+      console.error('📋 REQUESTS: Network error:', error)
+      setRequests([])
     } finally {
       setLoading(false)
     }
-  }
-
-  const generateMockRequests = (): EnhancedRequest[] => {
-    // TODO: Load real requests from database
-    return []
   }
 
   const getRequestTypeIcon = (type: string) => {

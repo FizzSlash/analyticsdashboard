@@ -63,18 +63,23 @@ export function ABTestManager({ client }: ABTestManagerProps) {
   const fetchABTests = async () => {
     setLoading(true)
     try {
-      // TODO: Replace with actual API call
-      setTests(generateMockABTests())
+      console.log('🧪 AB TESTS: Fetching from API for client:', client?.brand_slug || client?.id)
+      const response = await fetch(`/api/ab-tests?clientSlug=${client?.brand_slug || ''}&clientId=${client?.id || ''}`)
+      const result = await response.json()
+      
+      if (response.ok && result.success) {
+        console.log('🧪 AB TESTS: Loaded', result.tests?.length || 0, 'tests from database')
+        setTests(result.tests || [])
+      } else {
+        console.error('🧪 AB TESTS: API error:', result.error)
+        setTests([])
+      }
     } catch (error) {
-      console.error('Error fetching A/B tests:', error)
+      console.error('🧪 AB TESTS: Network error:', error)
+      setTests([])
     } finally {
       setLoading(false)
     }
-  }
-
-  const generateMockABTests = (): ABTest[] => {
-    // TODO: Load real A/B test data from database
-    return []
   }
 
   const getStatusColor = (status: string) => {
