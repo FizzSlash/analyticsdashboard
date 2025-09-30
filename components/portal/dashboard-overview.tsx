@@ -94,7 +94,13 @@ export function DashboardOverview({ client, userRole, onNavigate }: DashboardOve
           monthlyStats: {
             campaignsApproved: 0,
             requestsCompleted: 0,
-            abTestsCompleted: 0
+            abTestsCompleted: 0,
+            annotationsResolved: 0
+          },
+          totals: {
+            totalRequests: 0,
+            totalABTests: 0,
+            totalAnnotations: 0
           }
         })
       }
@@ -206,17 +212,17 @@ export function DashboardOverview({ client, userRole, onNavigate }: DashboardOve
               <div className="bg-white/20 backdrop-blur-sm p-4 rounded-xl shadow-lg group-hover:scale-110 transition-transform border border-white/30">
                 <FileText className="h-6 w-6 text-white" />
               </div>
-              {summary.overdueForms > 0 && (
+              {(summary.unresolvedAnnotations || 0) > 0 && (
                 <div className="bg-red-500 text-white text-xs font-bold px-3 py-1 rounded-full">
-                  {summary.overdueForms} DUE
+                  {summary.unresolvedAnnotations || 0} DUE
                 </div>
               )}
             </div>
             <div className="space-y-1">
               <p className="text-white/70 text-sm font-medium">Forms To Complete</p>
-              <p className="text-white text-3xl font-bold">{summary.overdueForms}</p>
+              <p className="text-white text-3xl font-bold">{summary.unresolvedAnnotations || 0}</p>
               <p className="text-white/60 text-sm">
-                {summary.overdueForms > 0 ? 'Forms need completion' : 'All forms completed'}
+                {(summary.unresolvedAnnotations || 0) > 0 ? 'Annotations need review' : 'All annotations resolved'}
               </p>
             </div>
           </CardContent>
@@ -310,7 +316,7 @@ export function DashboardOverview({ client, userRole, onNavigate }: DashboardOve
       )}
 
       {/* Only show monthly progress if there's actual data */}
-      {(summary.monthlyStats.campaignsApproved > 0 || summary.monthlyStats.formsCompleted > 0 || summary.monthlyStats.requestsSubmitted > 0) && (
+            {(summary.monthlyStats.campaignsApproved > 0 || summary.monthlyStats.requestsCompleted > 0 || summary.monthlyStats.abTestsCompleted > 0) && (
         <Card className="bg-white/5 border-white/10">
           <CardHeader>
             <CardTitle className="text-white flex items-center gap-2">
@@ -329,22 +335,22 @@ export function DashboardOverview({ client, userRole, onNavigate }: DashboardOve
                   <p className="text-white/70 text-sm">Campaigns Approved</p>
                 </div>
               )}
-              {summary.monthlyStats.formsCompleted > 0 && (
+              {summary.monthlyStats.requestsCompleted > 0 && (
                 <div className="text-center">
                   <div className="bg-blue-500/20 p-4 rounded-lg mb-2">
-                    <FileText className="h-8 w-8 text-blue-400 mx-auto" />
+                    <CheckCircle className="h-8 w-8 text-blue-400 mx-auto" />
                   </div>
-                  <p className="text-white text-2xl font-bold">{summary.monthlyStats.formsCompleted}</p>
-                  <p className="text-white/70 text-sm">Forms Completed</p>
+                  <p className="text-white text-2xl font-bold">{summary.monthlyStats.requestsCompleted}</p>
+                  <p className="text-white/70 text-sm">Requests Completed</p>
                 </div>
               )}
-              {summary.monthlyStats.requestsSubmitted > 0 && (
+              {summary.monthlyStats.abTestsCompleted > 0 && (
                 <div className="text-center">
                   <div className="bg-purple-500/20 p-4 rounded-lg mb-2">
-                    <MessageSquare className="h-8 w-8 text-purple-400 mx-auto" />
+                    <Activity className="h-8 w-8 text-purple-400 mx-auto" />
                   </div>
-                  <p className="text-white text-2xl font-bold">{summary.monthlyStats.requestsSubmitted}</p>
-                  <p className="text-white/70 text-sm">Requests Submitted</p>
+                  <p className="text-white text-2xl font-bold">{summary.monthlyStats.abTestsCompleted}</p>
+                  <p className="text-white/70 text-sm">A/B Tests Completed</p>
                 </div>
               )}
             </div>
@@ -378,7 +384,7 @@ export function DashboardOverview({ client, userRole, onNavigate }: DashboardOve
                 </button>
               )}
               
-              {summary.overdueForms > 0 && (
+              {(summary.unresolvedAnnotations || 0) > 0 && (
                 <button
                   onClick={() => onNavigate('forms')}
                   className="bg-red-500/20 hover:bg-red-500/30 border border-red-400/30 text-red-300 p-4 rounded-lg transition-colors flex items-center justify-between"
@@ -388,7 +394,7 @@ export function DashboardOverview({ client, userRole, onNavigate }: DashboardOve
                     <span className="text-sm font-medium">Complete Forms</span>
                   </div>
                   <span className="bg-red-500/30 text-red-200 text-xs px-2 py-1 rounded-full">
-                    {summary.overdueForms}
+                    {summary.unresolvedAnnotations || 0}
                   </span>
                 </button>
               )}
@@ -398,7 +404,7 @@ export function DashboardOverview({ client, userRole, onNavigate }: DashboardOve
       )}
 
       {/* All Caught Up State - Clean Success */}
-      {summary.pendingApprovals === 0 && summary.overdueForms === 0 && (
+            {summary.pendingApprovals === 0 && (summary.unresolvedAnnotations || 0) === 0 && (
         <Card className="bg-white/10 border-white/20 backdrop-blur-sm">
           <CardContent className="p-8 text-center">
             <div 
