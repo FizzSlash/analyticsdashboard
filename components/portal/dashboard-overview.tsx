@@ -70,28 +70,44 @@ export function DashboardOverview({ client, userRole, onNavigate }: DashboardOve
   const loadDashboardSummary = async () => {
     setLoading(true)
     try {
-      // TODO: Fetch real data from APIs
-      setSummary(generateMockSummary())
+      console.log('📊 DASHBOARD OVERVIEW: Fetching portal stats from Supabase for client:', client?.id)
+      const response = await fetch(`/api/portal-overview?clientId=${client?.id}`)
+      const result = await response.json()
+      
+      if (result.success) {
+        console.log('✅ DASHBOARD OVERVIEW: Loaded portal stats:', result.summary)
+        setSummary(result.summary)
+      } else {
+        console.error('❌ DASHBOARD OVERVIEW: Failed to load:', result.error)
+        setSummary({
+          pendingApprovals: 0,
+          activeRequests: 0,
+          unresolvedAnnotations: 0,
+          recentActivity: [],
+          upcomingDeadlines: [],
+          monthlyStats: {
+            campaignsApproved: 0,
+            requestsCompleted: 0,
+            abTestsCompleted: 0
+          }
+        })
+      }
     } catch (error) {
-      console.error('Error loading dashboard summary:', error)
+      console.error('❌ DASHBOARD OVERVIEW: Error loading summary:', error)
+      setSummary({
+        pendingApprovals: 0,
+        activeRequests: 0,
+        unresolvedAnnotations: 0,
+        recentActivity: [],
+        upcomingDeadlines: [],
+        monthlyStats: {
+          campaignsApproved: 0,
+          requestsCompleted: 0,
+          abTestsCompleted: 0
+        }
+      })
     } finally {
       setLoading(false)
-    }
-  }
-
-  const generateMockSummary = (): DashboardSummary => {
-    // TODO: Replace with real API calls to get actual pending items
-    return {
-      pendingApprovals: 0, // TODO: Fetch from campaigns API
-      overdueForms: 0, // TODO: Fetch from forms API  
-      activeRequests: 0, // TODO: Fetch from requests API
-      recentActivity: [], // TODO: Fetch recent activity
-      upcomingDeadlines: [], // TODO: Fetch upcoming deadlines
-      monthlyStats: {
-        campaignsApproved: 0,
-        formsCompleted: 0,
-        requestsSubmitted: 0
-      }
     }
   }
 

@@ -63,18 +63,23 @@ export function EnhancedRequests({ client }: EnhancedRequestsProps) {
   const fetchRequests = async () => {
     setLoading(true)
     try {
-      // TODO: Fetch from database
-      setRequests(generateMockRequests())
+      console.log('📥 REQUESTS: Fetching from Supabase for client:', client?.id)
+      const response = await fetch(`/api/portal-requests?clientId=${client?.id}`)
+      const result = await response.json()
+      
+      if (result.success) {
+        console.log(`✅ REQUESTS: Loaded ${result.requests.length} requests`)
+        setRequests(result.requests)
+      } else {
+        console.error('❌ REQUESTS: Failed to load:', result.error)
+        setRequests([])
+      }
     } catch (error) {
-      console.error('Error fetching requests:', error)
+      console.error('❌ REQUESTS: Error fetching requests:', error)
+      setRequests([])
     } finally {
       setLoading(false)
     }
-  }
-
-  const generateMockRequests = (): EnhancedRequest[] => {
-    // TODO: Load real requests from database
-    return []
   }
 
   const getRequestTypeIcon = (type: string) => {
