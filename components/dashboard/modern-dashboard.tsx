@@ -6,7 +6,7 @@ import { TimeframeSelector } from '@/components/ui/timeframe-selector'
 import { ViewToggle, type ViewMode } from '@/components/ui/view-toggle'
 import { PortalDashboard } from '@/components/portal/portal-dashboard'
 import { CustomLineChart, CustomBarChart } from './charts'
-import { filterAndAggregateData, calculateTimeframeSummary } from '@/lib/timeframe-utils'
+import { filterAndAggregateData, calculateTimeframeSummary, removeOutliers, getSmartYAxisDomain } from '@/lib/timeframe-utils'
 import { 
   LineChart, 
   Line, 
@@ -658,7 +658,7 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
     // ✅ FIX: Calculate filtered data and timeframe-specific summaries
     const filteredData = {
       campaigns: filterAndAggregateData.campaigns(data?.campaigns || [], timeframe),
-      flows: filterAndAggregateData.flows(data?.flowMessages || [], timeframe),
+      flows: filterAndAggregateData.flows(data?.flows || [], timeframe),
       revenueAttribution: filterAndAggregateData.revenueAttribution(data?.revenueAttributionMetrics || [], timeframe),
       listGrowth: filterAndAggregateData.listGrowth(data?.listGrowthMetrics || [], timeframe)
     }
@@ -700,8 +700,9 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
           />
       </div>
 
-      {/* Revenue Breakdown */}
-      <div className="max-w-4xl mx-auto">
+      {/* Revenue Breakdown & Flow Performance Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Revenue Attribution */}
         <Card className="bg-white/10 backdrop-blur-md border-white/20">
           <CardHeader>
             <CardTitle className="text-white flex items-center gap-2">
@@ -715,10 +716,10 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
                 <span className="text-white/80">📧 Email Revenue</span>
                 <div className="text-right">
                   <span className="text-white font-semibold">
-                    ${(data?.revenueAttributionSummary?.total_email_revenue || 0).toLocaleString()}
+                    ${(timeframeSummary?.revenueAttributionSummary?.total_email_revenue || 0).toLocaleString()}
                   </span>
                   <div className="text-xs text-white/60">
-                    {(data?.revenueAttributionSummary?.avg_email_percentage || 0).toFixed(1)}% of total
+                    {(timeframeSummary?.revenueAttributionSummary?.avg_email_percentage || 0).toFixed(1)}% of total
                   </div>
                 </div>
               </div>
@@ -726,30 +727,84 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
                 <span className="text-white/80">📱 SMS Revenue</span>
                 <div className="text-right">
                   <span className="text-white font-semibold">
-                    ${(data?.revenueAttributionSummary?.total_sms_revenue || 0).toLocaleString()}
+                    ${(timeframeSummary?.revenueAttributionSummary?.total_sms_revenue || 0).toLocaleString()}
                   </span>
                   <div className="text-xs text-white/60">
-                    {(data?.revenueAttributionSummary?.avg_sms_percentage || 0).toFixed(1)}% of total
+                    {(timeframeSummary?.revenueAttributionSummary?.avg_sms_percentage || 0).toFixed(1)}% of total
                   </div>
                 </div>
               </div>
               <div className="flex justify-between items-center border-t border-white/20 pt-4">
                 <span className="text-white font-medium">💰 Total Store Revenue</span>
                 <span className="text-white font-bold text-lg">
-                  ${(data?.revenueAttributionSummary?.total_revenue || 0).toLocaleString()}
+                  ${(timeframeSummary?.revenueAttributionSummary?.total_revenue || 0).toLocaleString()}
                 </span>
               </div>
               <div className="flex justify-between items-center text-sm">
                 <span className="text-white/70">Total Orders</span>
                 <span className="text-white/90">
-                  {(data?.revenueAttributionSummary?.total_orders || 0).toLocaleString()}
+                  {(timeframeSummary?.revenueAttributionSummary?.total_orders || 0).toLocaleString()}
                 </span>
               </div>
-              {data?.revenueAttributionSummary?.days_with_data > 0 && (
+              {(timeframeSummary?.revenueAttributionSummary?.days_with_data || 0) > 0 && (
                 <div className="text-xs text-white/50 text-center pt-2 border-t border-white/10">
-                  Data from {data.revenueAttributionSummary.days_with_data} days
+                  Data from {timeframeSummary?.revenueAttributionSummary?.days_with_data} days
                 </div>
               )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Campaign vs Flow Revenue Breakdown */}
+        <Card className="bg-white/10 backdrop-blur-md border-white/20">
+          <CardHeader>
+            <CardTitle className="text-white flex items-center gap-2">
+              <BarChart3 className="w-5 h-5" />
+              Campaign vs Flow Revenue
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <span className="text-white/80">📧 Campaign Revenue</span>
+                <div className="text-right">
+                  <span className="text-white font-semibold">
+                    ${(timeframeSummary?.campaigns?.total_revenue || 0).toLocaleString()}
+                  </span>
+                  <div className="text-xs text-white/60">
+                    {timeframeSummary?.campaigns?.total_campaigns || 0} campaigns
+                  </div>
+                </div>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-white/80">⚡ Flow Revenue</span>
+                <div className="text-right">
+                  <span className="text-white font-semibold">
+                    ${(timeframeSummary?.flows?.total_revenue || 0).toLocaleString()}
+                  </span>
+                  <div className="text-xs text-white/60">
+                    {timeframeSummary?.flows?.active_flows || 0} active flows
+                  </div>
+                </div>
+              </div>
+              <div className="flex justify-between items-center border-t border-white/20 pt-4">
+                <span className="text-white font-medium">📊 Campaign Performance</span>
+                <div className="text-right">
+                  <span className="text-white font-bold">
+                    {(timeframeSummary?.campaigns?.avg_open_rate || 0).toFixed(1)}%
+                  </span>
+                  <div className="text-xs text-white/60">avg open rate</div>
+                </div>
+              </div>
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-white/70">⚡ Flow Performance</span>
+                <div className="text-right">
+                  <span className="text-white/90">
+                    {((timeframeSummary?.flows?.avg_completion_rate || 0) * 100).toFixed(1)}%
+                  </span>
+                  <div className="text-xs text-white/60">avg completion rate</div>
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -1712,12 +1767,16 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
   }
 
   const renderFlowsTab = () => {
-    // ✅ FIX: Use flow_message_metrics and filter/aggregate by timeframe  
-    const flowMessages = data?.flowMessages || []
-    const flows = filterAndAggregateData.flows(flowMessages, timeframe)
+    // ✅ FIX: Use already-aggregated flows data from backend (properly joins flow_metrics + flow_message_metrics)
+    const allFlows = data?.flows || []
+    console.log('🔍 FLOWS DEBUG: Raw flows data:', allFlows.length, allFlows.slice(0, 2))
+    
+    const flows = filterAndAggregateData.flows(allFlows, timeframe)
+    console.log('🔍 FLOWS DEBUG: Filtered flows data:', flows.length, flows.slice(0, 2))
     
     // Calculate total flow revenue from properly filtered data
     const totalFlowRevenue = flows.reduce((sum: number, flow: any) => sum + (flow.revenue || 0), 0)
+    console.log('🔍 FLOWS DEBUG: Total flow revenue:', totalFlowRevenue)
     
     // Get dynamic comparison label for table headers
     const getComparisonLabel = () => {
@@ -2120,27 +2179,35 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
   }
 
   const renderListGrowthTab = () => {
-    const listGrowth = data?.listGrowthMetrics || []
+    // ✅ FIX: Apply timeframe filtering to list growth data
+    const allListGrowth = data?.listGrowthMetrics || []
+    const filteredListGrowth = filterAndAggregateData.listGrowth(allListGrowth, timeframe)
     const summary = data?.listGrowthSummary || {}
     
-    // Calculate total metrics from summary
-    const totalEmailSubscriptions = summary.total_email_subscriptions || 0
-    const totalEmailUnsubscribes = summary.total_email_unsubscribes || 0
-    const totalSmsSubscriptions = summary.total_sms_subscriptions || 0
-    const totalFormSubmissions = summary.total_form_submissions || 0
-    const netGrowth = summary.net_growth || 0
-    const averageGrowthRate = summary.average_growth_rate || 0
-    const averageChurnRate = summary.average_churn_rate || 0
+    // Calculate total metrics from filtered data instead of summary
+    const totalEmailSubscriptions = filteredListGrowth.reduce((sum, lg) => sum + (lg.email_subscriptions || 0), 0)
+    const totalEmailUnsubscribes = filteredListGrowth.reduce((sum, lg) => sum + (lg.email_unsubscribes || 0), 0)
+    const totalSmsSubscriptions = filteredListGrowth.reduce((sum, lg) => sum + (lg.sms_subscriptions || 0), 0)
+    const totalFormSubmissions = filteredListGrowth.reduce((sum, lg) => sum + (lg.form_submissions || 0), 0)
+    const netGrowth = filteredListGrowth.reduce((sum, lg) => sum + (lg.overall_net_growth || 0), 0)
+    const averageGrowthRate = filteredListGrowth.length > 0 ? 
+      filteredListGrowth.reduce((sum, lg) => sum + (lg.growth_rate || 0), 0) / filteredListGrowth.length : 0
+    const averageChurnRate = filteredListGrowth.length > 0 ?
+      filteredListGrowth.reduce((sum, lg) => sum + (lg.churn_rate || 0), 0) / filteredListGrowth.length : 0
     
-    // Prepare chart data from list growth metrics
-    const chartData = listGrowth.map((point: any) => ({
+    // Prepare chart data from list growth metrics with outlier detection
+    const rawChartData = filteredListGrowth.map((point: any) => ({
       date: point.date_recorded,
       email_subscriptions: point.email_subscriptions || 0,
       email_unsubscribes: point.email_unsubscribes || 0,
-      net_growth: point.email_net_growth || 0,
+      net_growth: point.overall_net_growth || 0, // Use overall_net_growth, not email_net_growth
       sms_subscriptions: point.sms_subscriptions || 0,
       form_submissions: point.form_submissions || 0
     })).reverse() // Reverse for chronological order
+    
+    // ✅ FIX: Remove outliers that throw off chart scaling
+    const chartData = removeOutliers(rawChartData, 'net_growth')
+    const yAxisDomain = getSmartYAxisDomain(chartData, 'net_growth')
     
     return (
       <div className="space-y-6">
@@ -2231,7 +2298,11 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
                         fontSize={12}
                         tickFormatter={(value: any) => new Date(value).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                       />
-                      <YAxis stroke="rgba(255,255,255,0.6)" fontSize={12} />
+                      <YAxis 
+                        stroke="rgba(255,255,255,0.6)" 
+                        fontSize={12}
+                        domain={yAxisDomain}
+                      />
                       <Tooltip 
                         contentStyle={{ 
                           backgroundColor: 'rgba(30, 41, 59, 0.95)', 

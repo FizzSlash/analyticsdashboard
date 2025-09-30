@@ -66,7 +66,8 @@ export async function GET(request: NextRequest) {
         listGrowthMetrics,
         listGrowthSummary,
         revenueAttributionMetrics,
-        revenueAttributionSummary
+        revenueAttributionSummary,
+        // Note: flows already contains properly aggregated data from getRecentFlowMetrics
       }
     })
 

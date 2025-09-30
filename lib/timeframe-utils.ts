@@ -27,85 +27,33 @@ export const filterAndAggregateData = {
   },
 
   /**
-   * Flows: Filter flow_message_metrics by week_date, then aggregate by flow_id
-   * This is the correct data source for flow performance analytics
+   * Flows: Use already-aggregated flows data from DatabaseService.getRecentFlowMetrics
+   * The backend already properly joins flow_metrics and flow_message_metrics
    */
-  flows: (flowMessages: any[], days: number) => {
-    const cutoff = subDays(new Date(), days)
+  flows: (flows: any[], days: number) => {
+    // Flows are already aggregated and filtered by the backend DatabaseService
+    // Just return them as-is since they're already properly calculated
+    // The backend getRecentFlowMetrics handles the timeframe filtering
+    console.log('🔍 TIMEFRAME-UTILS: Processing flows:', flows.length)
+    console.log('🔍 TIMEFRAME-UTILS: Sample flow data:', flows.slice(0, 1))
     
-    // 1. Filter flow messages by week_date within timeframe
-    const filteredMessages = flowMessages.filter(msg => {
-      if (!msg.week_date) return false
-      
-      try {
-        const weekDate = new Date(msg.week_date)
-        return weekDate >= cutoff && !isNaN(weekDate.getTime())
-      } catch (error) {
-        console.warn('Invalid week_date format:', msg.week_date)
-        return false
-      }
+    const filteredFlows = flows.filter(flow => {
+      // ✅ FIX: Less strict filtering - include flows with any activity
+      const hasActivity = flow && (
+        (flow.revenue && flow.revenue > 0) || 
+        (flow.weeklyRevenue && flow.weeklyRevenue > 0) ||
+        (flow.opens && flow.opens > 0) || 
+        (flow.weeklyOpens && flow.weeklyOpens > 0) ||
+        (flow.clicks && flow.clicks > 0) ||
+        (flow.weeklyClicks && flow.weeklyClicks > 0) ||
+        (flow.weeklyRecipients && flow.weeklyRecipients > 0)
+      )
+      console.log(`🔍 Flow ${flow?.flow_name}: hasActivity=${hasActivity}, revenue=${flow?.revenue}, weeklyRevenue=${flow?.weeklyRevenue}`)
+      return hasActivity
     })
     
-    // 2. Aggregate by flow_id to get flow-level metrics
-    const aggregated = filteredMessages.reduce((acc: any, msg: any) => {
-      const flowId = msg.flow_id
-      if (!acc[flowId]) {
-        acc[flowId] = {
-          flow_id: flowId,
-          flow_name: msg.flow_name || 'Unknown Flow',
-          flow_type: 'email',
-          revenue: 0,
-          opens: 0,
-          clicks: 0,
-          recipients: 0,
-          conversions: 0,
-          conversion_value: 0,
-          delivered: 0,
-          bounced: 0,
-          unsubscribes: 0,
-          messages_count: 0,
-          // Calculated fields
-          open_rate: 0,
-          click_rate: 0,
-          conversion_rate: 0,
-          revenue_per_recipient: 0,
-          average_order_value: 0
-        }
-      }
-      
-      // Sum up all metrics
-      acc[flowId].revenue += msg.revenue || 0
-      acc[flowId].opens += msg.opens || 0
-      acc[flowId].clicks += msg.clicks || 0
-      acc[flowId].recipients += msg.recipients || 0
-      acc[flowId].conversions += msg.conversions || 0
-      acc[flowId].conversion_value += msg.conversion_value || 0
-      acc[flowId].delivered += msg.delivered || 0
-      acc[flowId].bounced += msg.bounced || 0
-      acc[flowId].unsubscribes += msg.unsubscribes || 0
-      acc[flowId].messages_count += 1
-      
-      return acc
-    }, {})
-    
-    // 3. Calculate derived metrics for each flow
-    return Object.values(aggregated).map((flow: any) => {
-      if (flow.recipients > 0) {
-        flow.open_rate = flow.opens / flow.recipients
-        flow.click_rate = flow.clicks / flow.recipients
-        flow.revenue_per_recipient = flow.revenue / flow.recipients
-      }
-      
-      if (flow.conversions > 0) {
-        flow.average_order_value = flow.revenue / flow.conversions
-      }
-      
-      if (flow.recipients > 0) {
-        flow.conversion_rate = flow.conversions / flow.recipients
-      }
-      
-      return flow
-    })
+    console.log('🔍 TIMEFRAME-UTILS: Filtered flows:', filteredFlows.length)
+    return filteredFlows
   },
 
   /**
@@ -275,4 +223,44 @@ export const getTimeframeLabel = (days: number): string => {
     case 365: return 'Last 365 days'
     default: return `Last ${days} days`
   }
+}
+
+/**
+ * Detect and filter outliers from chart data to improve visualization
+ */
+export const removeOutliers = (data: any[], valueKey: string, threshold: number = 2.5) => {
+  if (data.length === 0) return data
+  
+  // Calculate mean and standard deviation
+  const values = data.map(item => Math.abs(item[valueKey] || 0))
+  const mean = values.reduce((sum, val) => sum + val, 0) / values.length
+  const variance = values.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / values.length
+  const stdDev = Math.sqrt(variance)
+  
+  // Filter out values more than N standard deviations from mean
+  return data.filter(item => {
+    const value = Math.abs(item[valueKey] || 0)
+    const isOutlier = Math.abs(value - mean) > threshold * stdDev
+    if (isOutlier) {
+      console.log(`📊 OUTLIER REMOVED: ${item[valueKey]} (mean: ${mean.toFixed(0)}, threshold: ${(threshold * stdDev).toFixed(0)})`)
+    }
+    return !isOutlier
+  })
+}
+
+/**
+ * Calculate smart Y-axis domain for charts with mixed positive/negative values
+ */
+export const getSmartYAxisDomain = (data: any[], valueKey: string): [number, number] => {
+  if (data.length === 0) return [0, 100]
+  
+  const values = data.map(item => item[valueKey] || 0)
+  const min = Math.min(...values)
+  const max = Math.max(...values)
+  
+  // Add 10% padding to both ends
+  const range = Math.abs(max - min)
+  const padding = Math.max(range * 0.1, 1) // At least 1 unit padding
+  
+  return [min - padding, max + padding]
 }

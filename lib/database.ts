@@ -336,6 +336,7 @@ export class DatabaseService {
         weeklyRevenue: 0,
         weeklyDelivered: 0,
         weeklyRecipients: 0,
+        weeklyConversions: 0,
         averageOrderValue: 0,
         revenuePerRecipient: 0,
         created_at: flow.date_start
@@ -364,10 +365,19 @@ export class DatabaseService {
           existing.opens = existing.weeklyOpens
           existing.clicks = existing.weeklyClicks
           existing.revenue = existing.weeklyRevenue
-          existing.open_rate = existing.weeklyOpens > 0 ? (existing.weeklyClicks / existing.weeklyOpens) * 100 : 0
-          existing.click_rate = existing.weeklyClicks > 0 ? (existing.weeklyClicks / existing.weeklyOpens) * 100 : 0
-          existing.averageOrderValue = record.average_order_value || 0
-          existing.revenuePerRecipient = record.revenue_per_recipient || 0
+          
+          // ✅ FIX: Calculate proper rates from aggregated totals
+          existing.open_rate = existing.weeklyRecipients > 0 ? (existing.weeklyOpens / existing.weeklyRecipients) : 0
+          existing.click_rate = existing.weeklyRecipients > 0 ? (existing.weeklyClicks / existing.weeklyRecipients) : 0
+          
+          // ✅ FIX: Calculate proper revenue per recipient from aggregated totals
+          existing.revenuePerRecipient = existing.weeklyRecipients > 0 ? (existing.weeklyRevenue / existing.weeklyRecipients) : 0
+          
+          // Add weekly conversions tracking
+          existing.weeklyConversions += record.conversions || 0
+          
+          // ✅ FIX: Calculate average order value from total aggregated data
+          existing.averageOrderValue = existing.weeklyConversions > 0 ? (existing.weeklyRevenue / existing.weeklyConversions) : 0
         }
       })
       console.log(`📊 DATABASE: Enhanced ${Object.keys(flowAggregates).length} flows with weekly data`)
