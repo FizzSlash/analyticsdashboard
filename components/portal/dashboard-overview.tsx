@@ -206,18 +206,18 @@ export function DashboardOverview({ client, userRole, onNavigate }: DashboardOve
               <div className="bg-white/20 backdrop-blur-sm p-4 rounded-xl shadow-lg group-hover:scale-110 transition-transform border border-white/30">
                 <FileText className="h-6 w-6 text-white" />
               </div>
-              {summary.overdueForms > 0 && (
+              {(summary.unresolvedAnnotations || 0) > 0 && (
                 <div className="bg-red-500 text-white text-xs font-bold px-3 py-1 rounded-full">
-                  {summary.overdueForms} DUE
+                  {summary.unresolvedAnnotations} NEW
                 </div>
               )}
             </div>
             <div className="space-y-1">
               <p className="text-white/70 text-sm font-medium">Forms To Complete</p>
-              <p className="text-white text-3xl font-bold">{summary.overdueForms}</p>
-              <p className="text-white/60 text-sm">
-                {summary.overdueForms > 0 ? 'Forms need completion' : 'All forms completed'}
-              </p>
+                <p className="text-white text-3xl font-bold">{summary.unresolvedAnnotations || 0}</p>
+                <p className="text-white/60 text-sm">
+                  {(summary.unresolvedAnnotations || 0) > 0 ? 'Annotations pending' : 'All feedback addressed'}
+                </p>
             </div>
           </CardContent>
         </Card>
@@ -310,7 +310,7 @@ export function DashboardOverview({ client, userRole, onNavigate }: DashboardOve
       )}
 
       {/* Only show monthly progress if there's actual data */}
-      {(summary.monthlyStats.campaignsApproved > 0 || summary.monthlyStats.formsCompleted > 0 || summary.monthlyStats.requestsSubmitted > 0) && (
+            {(summary.monthlyStats.campaignsApproved > 0 || (summary.monthlyStats.requestsCompleted || 0) > 0 || (summary.monthlyStats.abTestsCompleted || 0) > 0) && (
         <Card className="bg-white/5 border-white/10">
           <CardHeader>
             <CardTitle className="text-white flex items-center gap-2">
@@ -353,7 +353,7 @@ export function DashboardOverview({ client, userRole, onNavigate }: DashboardOve
       )}
 
       {/* Quick Actions - Only show if there are pending items */}
-      {(summary.pendingApprovals > 0 || summary.overdueForms > 0) && (
+            {(summary.pendingApprovals > 0 || (summary.unresolvedAnnotations || 0) > 0) && (
         <Card className="bg-white/5 border-white/10">
           <CardHeader>
             <CardTitle className="text-white flex items-center gap-2">
