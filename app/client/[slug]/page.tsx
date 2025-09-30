@@ -57,7 +57,7 @@ export default function ClientDashboardPage({ params }: PageProps) {
       console.log('CLIENT DASHBOARD: Starting dashboard data fetch for slug:', params.slug)
       
       try {
-        const response = await fetch(`/api/dashboard?clientSlug=${params.slug}&timeframe=365`)
+        const response = await fetch(`/api/dashboard?clientSlug=${params.slug}&timeframe=365`) // Load comprehensive dataset for client-side filtering
         const result = await response.json()
 
         console.log('CLIENT DASHBOARD: API response:', result)
@@ -172,8 +172,9 @@ export default function ClientDashboardPage({ params }: PageProps) {
                 <TimeframeSelector 
                   selectedTimeframe={selectedTimeframe}
                   onTimeframeChange={(days: number) => {
-                    console.log('🎯 Timeframe changed:', days)
+                    console.log('🎯 CLIENT PAGE: Timeframe changed from', selectedTimeframe, 'to', days)
                     setSelectedTimeframe(days)
+                    console.log('🎯 CLIENT PAGE: State updated, will trigger ModernDashboard re-render')
                   }}
                 />
               )}

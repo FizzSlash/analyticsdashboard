@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { createPortal } from 'react-dom'
 import { Calendar, ChevronDown } from 'lucide-react'
 
 interface TimeframeSelectorProps {
@@ -22,58 +21,22 @@ const timeframeOptions = [
 
 export function TimeframeSelector({ selectedTimeframe, onTimeframeChange, className }: TimeframeSelectorProps) {
   const [isOpen, setIsOpen] = useState(false)
-  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 })
   const buttonRef = useRef<HTMLButtonElement>(null)
   
   const selectedOption = timeframeOptions.find(option => option.value === selectedTimeframe) || timeframeOptions[1]
 
-  // Update dropdown position when opened and on scroll/resize
-  useEffect(() => {
-    const updatePosition = () => {
-      if (isOpen && buttonRef.current) {
-        const rect = buttonRef.current.getBoundingClientRect()
-        const dropdownWidth = 192 // w-48 = 192px
-        const dropdownHeight = 240 // Approximate height for 6 options
-        
-        // Calculate position with viewport bounds checking
-        let top = rect.bottom + 8
-        let left = rect.left
-        
-        // Adjust if dropdown would go off right edge
-        if (left + dropdownWidth > window.innerWidth) {
-          left = rect.right - dropdownWidth
-        }
-        
-        // Adjust if dropdown would go off bottom edge  
-        if (top + dropdownHeight > window.innerHeight) {
-          top = rect.top - dropdownHeight - 8 // Show above button instead
-        }
-        
-        setDropdownPosition({ top, left })
-      }
-    }
-
-    if (isOpen) {
-      updatePosition()
-      window.addEventListener('scroll', updatePosition, true)
-      window.addEventListener('resize', updatePosition)
-      return () => {
-        window.removeEventListener('scroll', updatePosition, true)
-        window.removeEventListener('resize', updatePosition)
-      }
-    }
-  }, [isOpen])
-
   // Handle clicks outside dropdown and escape key
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (buttonRef.current && !buttonRef.current.contains(event.target as Node)) {
+      if (buttonRef.current && !buttonRef.current.parentElement?.contains(event.target as Node)) {
+        console.log('🔘 Clicking outside - closing dropdown')
         setIsOpen(false)
       }
     }
 
     const handleEscapeKey = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
+        console.log('🔘 Escape key - closing dropdown')
         setIsOpen(false)
       }
     }
@@ -97,36 +60,35 @@ export function TimeframeSelector({ selectedTimeframe, onTimeframeChange, classN
   }
 
   return (
-    <>
-      <div className={`relative ${className}`}>
-        <button
-          ref={buttonRef}
-          onClick={() => {
-            console.log(`🔘 Timeframe button clicked, isOpen: ${isOpen} → ${!isOpen}`)
-            setIsOpen(!isOpen)
-          }}
-          className="flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-md border border-white/20 rounded-lg hover:bg-white/20 transition-all duration-200 text-white"
-        >
-          <Calendar className="w-4 h-4" />
-          <span className="text-sm font-medium">{selectedOption.label}</span>
-          <ChevronDown className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-        </button>
-      </div>
+    <div className={`relative ${className}`} style={{ zIndex: 9999 }}>
+      <button
+        ref={buttonRef}
+        onClick={() => {
+          console.log(`🔘 Timeframe button clicked, isOpen: ${isOpen} → ${!isOpen}`)
+          setIsOpen(!isOpen)
+        }}
+        className="flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-md border border-white/20 rounded-lg hover:bg-white/20 transition-all duration-200 text-white"
+      >
+        <Calendar className="w-4 h-4" />
+        <span className="text-sm font-medium">{selectedOption.label}</span>
+        <ChevronDown className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+      </button>
 
-      {isOpen && typeof window !== 'undefined' && createPortal(
+      {isOpen && (
         <div 
-          className="fixed w-48 bg-slate-900 border border-slate-600 rounded-lg shadow-2xl backdrop-blur-sm"
+          className="absolute top-full left-0 mt-2 w-48 bg-slate-900 border border-slate-600 rounded-lg shadow-2xl"
           style={{
-            top: dropdownPosition.top,
-            left: dropdownPosition.left,
-            zIndex: 2147483647 // Maximum safe z-index - completely escapes all stacking contexts
+            zIndex: 999999 // Very high z-index
           }}
         >
           <div className="py-2">
             {timeframeOptions.map((option) => (
               <button
                 key={option.value}
-                onClick={() => handleOptionClick(option.value)}
+                onClick={() => {
+                  console.log(`🔘 Option ${option.value} clicked`)
+                  handleOptionClick(option.value)
+                }}
                 className={`w-full text-left px-4 py-2 text-sm hover:bg-slate-800 transition-colors cursor-pointer ${
                   option.value === selectedTimeframe 
                     ? 'bg-slate-800 text-white font-medium' 
@@ -137,9 +99,8 @@ export function TimeframeSelector({ selectedTimeframe, onTimeframeChange, classN
               </button>
             ))}
           </div>
-        </div>,
-        document.body
+        </div>
       )}
-    </>
+    </div>
   )
 }

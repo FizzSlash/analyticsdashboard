@@ -620,37 +620,44 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
     setSelectedCategory(null)
   }, [analysisTab])
 
-  // Fetch data when timeframe changes (only when no external timeframe is provided)
+  // Fetch data when timeframe changes
   useEffect(() => {
-    // Skip data fetching when external timeframe is provided (client-side filtering mode)
-    if (externalTimeframe) {
-      console.log(`🎯 Using external timeframe: ${externalTimeframe} days - skipping API fetch`)
-      return
-    }
-
     const fetchData = async () => {
       if (!client?.brand_slug) return
       
       setLoading(true)
       try {
+        console.log(`🔄 FETCHING: New data for timeframe: ${timeframe} days`)
         const response = await fetch(`/api/dashboard?clientSlug=${client.brand_slug}&timeframe=${timeframe}`)
         const result = await response.json()
         
         if (response.ok) {
           setData(result.data)
-          console.log(`Dashboard data refreshed for ${timeframe} days:`, result.data)
+          console.log(`✅ FETCHED: Dashboard data refreshed for ${timeframe} days`, {
+            campaigns: result.data.campaigns?.length || 0,
+            flows: result.data.flows?.length || 0,
+            revenueRecords: result.data.revenueAttributionMetrics?.length || 0
+          })
+        } else {
+          console.error('❌ FETCH ERROR:', result)
         }
       } catch (error) {
-        console.error('Error fetching dashboard data:', error)
+        console.error('❌ FETCH NETWORK ERROR:', error)
       } finally {
         setLoading(false)
       }
     }
 
-    // Only fetch when no initial data or timeframe changed (standalone mode only)
-    if (!initialData) {
-      console.log(`🔄 Fetching data for timeframe: ${timeframe} days`)
+    if (externalTimeframe) {
+      // External timeframe mode: Fetch data when external timeframe changes
+      console.log(`🎯 MODERN DASHBOARD: External timeframe mode - ${externalTimeframe} days (internal: ${internalTimeframe})`)
       fetchData()
+    } else if (!initialData) {
+      // Standalone mode: Fetch data when internal timeframe changes
+      console.log(`🔄 MODERN DASHBOARD: Standalone mode - fetching data for ${timeframe} days`)
+      fetchData()
+    } else {
+      console.log(`⏭️ MODERN DASHBOARD: Using initial data, timeframe: ${timeframe}, external: ${externalTimeframe}`)
     }
   }, [timeframe, client?.brand_slug, initialData, externalTimeframe])
 
