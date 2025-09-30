@@ -148,43 +148,7 @@ export function DashboardOverview({ client, data, userRole, onNavigate }: Dashbo
     }
   })
 
-  const getActivityIcon = (type: string) => {
-    switch (type) {
-      case 'approval': return Calendar
-      case 'form': return FileText
-      case 'request': return MessageSquare
-      case 'comment': return MessageSquare
-      default: return Activity
-    }
-  }
-
-  const getActivityColor = (type: string) => {
-    switch (type) {
-      case 'approval': return 'text-orange-400'
-      case 'form': return 'text-blue-400'
-      case 'request': return 'text-green-400'
-      case 'comment': return 'text-purple-400'
-      default: return 'text-gray-400'
-    }
-  }
-
-  const getDeadlineStatus = (item: DeadlineItem) => {
-    if (item.isOverdue) return 'text-red-400'
-    const daysUntilDue = Math.ceil((item.dueDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
-    if (daysUntilDue <= 1) return 'text-orange-400'
-    if (daysUntilDue <= 3) return 'text-yellow-400'
-    return 'text-green-400'
-  }
-
-  const getTimeAgo = (date: Date) => {
-    const now = new Date()
-    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60))
-    
-    if (diffInHours < 1) return 'Just now'
-    if (diffInHours < 24) return `${diffInHours}h ago`
-    const diffInDays = Math.floor(diffInHours / 24)
-    return `${diffInDays}d ago`
-  }
+  // Utility functions removed - no longer needed with new analytics-focused dashboard
 
   if (loading) {
     return (
