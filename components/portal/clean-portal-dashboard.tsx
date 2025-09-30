@@ -43,6 +43,11 @@ export function CleanPortalDashboard({ user, client, userRole, allClients }: Cle
         ...client
       }
 
+  // Agency info for logo display
+  const agencyInfo = userRole === 'agency_admin' 
+    ? { logo_url: user?.agency?.logo_url }
+    : { logo_url: user?.agency?.logo_url || client?.agency?.logo_url }
+
   const portalTabs = [
     { 
       id: 'overview', 
@@ -88,13 +93,6 @@ export function CleanPortalDashboard({ user, client, userRole, allClients }: Cle
               </div>
               <div>
                 <CardTitle className="text-white text-xl font-bold flex items-center gap-3">
-                  {clientInfo.logo_url && (
-                    <img 
-                      src={clientInfo.logo_url} 
-                      alt={`${clientInfo.brand_name} logo`}
-                      className="h-8 w-auto"
-                    />
-                  )}
                   {userRole === 'agency_admin' 
                     ? 'Agency Portal' 
                     : (clientInfo.portal_title || clientInfo.brand_name || 'Client Portal')
@@ -111,6 +109,18 @@ export function CleanPortalDashboard({ user, client, userRole, allClients }: Cle
             
             {/* Action Buttons */}
             <div className="flex items-center gap-3">
+              {/* Agency Logo - Shows on all client boards */}
+              {agencyInfo.logo_url && (
+                <div className="bg-white/15 backdrop-blur-sm p-2 rounded-lg border border-white/30">
+                  <img 
+                    src={agencyInfo.logo_url} 
+                    alt="Agency logo"
+                    className="h-6 w-auto opacity-90"
+                    title="Powered by your agency"
+                  />
+                </div>
+              )}
+
               {/* Figma Button */}
               {clientInfo.figma_url && (
                 <a

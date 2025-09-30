@@ -378,51 +378,30 @@ export function FlowProgressTracker({ client, userRole, canEdit, canCreate, canA
                     )}
                   </div>
 
-                  {/* Copy Link */}
-                  {flow.copy_link && (
-                    <a
-                      href={flow.copy_link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 text-xs hover:opacity-80 transition-colors"
-                      style={{ color: brandColors.secondary.text }}
-                    >
-                      📄 View Copy
-                    </a>
-                  )}
+                  {/* Copy link removed per user request */}
 
-                  {/* Flow Actions */}
+                  {/* Flow Actions - Glassmorphism Style */}
                   <div className="flex gap-2 pt-2">
-                    {(() => {
-                      const primaryBtn = getBrandButton('primary', client)
-                      return (
-                        <button
-                          onClick={() => setViewingFlow(flow)}
-                          className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium flex items-center justify-center gap-1 ${primaryBtn.className}`}
-                          style={primaryBtn.style}
-                        >
-                          <Eye className="h-3 w-3" />
-                          View Flow
-                        </button>
-                      )
-                    })()}
+                    <button
+                      onClick={() => setViewingFlow(flow)}
+                      className="flex-1 py-2 px-3 rounded-lg text-sm font-medium flex items-center justify-center gap-1 bg-white/15 backdrop-blur-sm border border-white/30 text-white hover:bg-white/20 transition-all"
+                    >
+                      <Eye className="h-3 w-3" />
+                      View Flow
+                    </button>
                     
-                    {userRole === 'client_user' && (flow.status === 'Ready For Client Approval' || flow.status === 'Client Approval') && (() => {
-                      const secondaryBtn = getBrandButton('secondary', client)
-                      return (
-                        <button
-                          onClick={() => {
-                            setViewingFlow(flow)
-                            setFlowComments(flow.client_notes || '')
-                          }}
-                          className={`py-2 px-3 rounded-lg text-sm font-medium flex items-center justify-center gap-1 ${secondaryBtn.className}`}
-                          style={secondaryBtn.style}
-                        >
-                          <MessageSquare className="h-3 w-3" />
-                          Review & Approve
-                        </button>
-                      )
-                    })()}
+                    {userRole === 'client_user' && (flow.status === 'Ready For Client Approval' || flow.status === 'Client Approval') && (
+                      <button
+                        onClick={() => {
+                          setViewingFlow(flow)
+                          setFlowComments(flow.client_notes || '')
+                        }}
+                        className="py-2 px-3 rounded-lg text-sm font-medium flex items-center justify-center gap-1 bg-white/15 backdrop-blur-sm border border-white/30 text-white hover:bg-white/20 transition-all"
+                      >
+                        <MessageSquare className="h-3 w-3" />
+                        Review & Approve
+                      </button>
+                    )}
                   </div>
                 </div>
               </CardContent>
