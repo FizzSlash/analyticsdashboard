@@ -23,6 +23,11 @@ interface DashboardData {
     revenue: any[]
     topCampaigns: any[]
     topFlows: any[]
+    // Add new data fields for comprehensive timeframe filtering
+    flowMessages: any[]
+    revenueAttributionMetrics: any[]
+    listGrowthMetrics: any[]
+    flowWeeklyTrends: any[]
   }
 }
 
@@ -31,6 +36,7 @@ export default function ClientDashboardPage({ params }: PageProps) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [viewMode, setViewMode] = useState<ViewMode>('analytics')
+  const [selectedTimeframe, setSelectedTimeframe] = useState<number>(30) // Default to 30 days
   const router = useRouter()
 
   // Fallback timeout to prevent infinite loading
@@ -164,10 +170,10 @@ export default function ClientDashboardPage({ params }: PageProps) {
               />
               {viewMode === 'analytics' && (
                 <TimeframeSelector 
-                  selectedTimeframe={365}
+                  selectedTimeframe={selectedTimeframe}
                   onTimeframeChange={(days: number) => {
                     console.log('🎯 Timeframe changed:', days)
-                    // Timeframe changes will be handled by ModernDashboard internally
+                    setSelectedTimeframe(days)
                   }}
                 />
               )}
@@ -179,7 +185,13 @@ export default function ClientDashboardPage({ params }: PageProps) {
       {/* Content */}
       <div className="relative z-10">
         {viewMode === 'analytics' ? (
-          <ModernDashboard client={client} data={dashboardData.data} disablePortalMode={true} hideHeader={true} />
+          <ModernDashboard 
+            client={client} 
+            data={dashboardData.data} 
+            timeframe={selectedTimeframe}
+            disablePortalMode={true} 
+            hideHeader={true} 
+          />
         ) : (
           <div className="max-w-7xl mx-auto px-6 py-8">
             <CleanPortalDashboard 

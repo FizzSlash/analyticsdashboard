@@ -5,6 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { TimeframeSelector } from '@/components/ui/timeframe-selector'
 import { ViewToggle, type ViewMode } from '@/components/ui/view-toggle'
 import { PortalDashboard } from '@/components/portal/portal-dashboard'
+import { CustomLineChart, CustomBarChart } from './charts'
+import { filterAndAggregateData, calculateTimeframeSummary } from '@/lib/timeframe-utils'
 import { 
   LineChart, 
   Line, 
@@ -40,13 +42,14 @@ import {
 interface ModernDashboardProps {
   client: any
   data?: any
+  timeframe?: number // External timeframe prop for client-side filtering
   disablePortalMode?: boolean // Disable portal toggle when used in new layout
   hideHeader?: boolean // Hide internal header when using external layout
 }
 
 type TabType = 'dashboard' | 'campaigns' | 'flows' | 'subject-lines' | 'list-growth' | 'deliverability'
 
-export function ModernDashboard({ client, data: initialData, disablePortalMode = false, hideHeader = false }: ModernDashboardProps) {
+export function ModernDashboard({ client, data: initialData, timeframe: externalTimeframe, disablePortalMode = false, hideHeader = false }: ModernDashboardProps) {
   const [viewMode, setViewMode] = useState<ViewMode>('analytics')
   const [activeTab, setActiveTab] = useState<TabType>('dashboard')
 
@@ -56,11 +59,11 @@ export function ModernDashboard({ client, data: initialData, disablePortalMode =
   const accentColor = '#34D399' // Green for positive metrics
   const warningColor = '#F59E0B' // Orange for neutral/warning
   const errorColor = '#EF4444' // Red for negative metrics
-  // ONE SIMPLE TIMEFRAME FOR ALL TABS
-  const [timeframe, setTimeframe] = useState(30) // Default to 30 days for all tabs
+  // TIMEFRAME MANAGEMENT - Use external timeframe when provided, otherwise internal state
+  const [internalTimeframe, setInternalTimeframe] = useState(30) // Default to 30 days for internal use
+  const timeframe = externalTimeframe || internalTimeframe // Use external timeframe when provided
   const [data, setData] = useState(initialData)
   const [loading, setLoading] = useState(false)
-  const [initialTimeframe] = useState(365) // Track the initial timeframe (365 from client page)
   const [sortField, setSortField] = useState('send_date')
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc')
   const [expandedFlows, setExpandedFlows] = useState<Set<string>>(new Set())
@@ -617,8 +620,14 @@ export function ModernDashboard({ client, data: initialData, disablePortalMode =
     setSelectedCategory(null)
   }, [analysisTab])
 
-  // Fetch data when timeframe changes
+  // Fetch data when timeframe changes (only when no external timeframe is provided)
   useEffect(() => {
+    // Skip data fetching when external timeframe is provided (client-side filtering mode)
+    if (externalTimeframe) {
+      console.log(`🎯 Using external timeframe: ${externalTimeframe} days - skipping API fetch`)
+      return
+    }
+
     const fetchData = async () => {
       if (!client?.brand_slug) return
       
@@ -638,47 +647,57 @@ export function ModernDashboard({ client, data: initialData, disablePortalMode =
       }
     }
 
-    // Always fetch when timeframe changes (skip only on first load with matching data)
-    if (!initialData || timeframe !== initialTimeframe) {
-      console.log(`🔄 Fetching data for timeframe: ${timeframe} days (initial was ${initialTimeframe})`)
+    // Only fetch when no initial data or timeframe changed (standalone mode only)
+    if (!initialData) {
+      console.log(`🔄 Fetching data for timeframe: ${timeframe} days`)
       fetchData()
-    } else {
-      console.log(`⏭️ Skipping fetch - using initial data for timeframe: ${timeframe} days`)
     }
-  }, [timeframe, client?.brand_slug, initialData, initialTimeframe])
+  }, [timeframe, client?.brand_slug, initialData, externalTimeframe])
 
-  const renderOverviewTab = () => (
-    <div className="space-y-6">
-      {/* Key Metrics Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <MetricCard
-          title="Email Revenue %"
-          value={`${(data?.revenueAttributionSummary?.avg_email_percentage || 0).toFixed(1)}%`}
-          change={`${(data?.revenueAttributionSummary?.avg_email_percentage || 0) > 45 ? '+' : ''}${((data?.revenueAttributionSummary?.avg_email_percentage || 0) - 45).toFixed(1)}%`}
-          icon={DollarSign}
-          trend={(data?.revenueAttributionSummary?.avg_email_percentage || 0) > 45 ? "up" : "down"}
-        />
-        <MetricCard
-          title="List Growth"
-          value={`${(data?.listGrowthSummary?.net_growth || 0) > 0 ? '+' : ''}${(data?.listGrowthSummary?.net_growth || 0).toLocaleString()}`}
-          change={`${(data?.listGrowthSummary?.average_growth_rate || 0).toFixed(1)}%`}
-          icon={Users}
-          trend={(data?.listGrowthSummary?.net_growth || 0) > 0 ? "up" : "down"}
-        />
-        <MetricCard
-          title="Avg Open Rate"
-          value={`${(data?.summary?.campaigns?.avg_open_rate || 0).toFixed(1)}%`}
-          change={`${(data?.summary?.campaigns?.avg_open_rate || 0) > 25 ? '+' : ''}${((data?.summary?.campaigns?.avg_open_rate || 0) - 25).toFixed(1)}%`}
-          icon={Eye}
-          trend={(data?.summary?.campaigns?.avg_open_rate || 0) > 25 ? "up" : "down"}
-        />
-        <MetricCard
-          title="Avg Click Rate"
-          value={`${(data?.summary?.campaigns?.avg_click_rate || 0).toFixed(1)}%`}
-          change={`${(data?.summary?.campaigns?.avg_click_rate || 0) > 3 ? '+' : ''}${((data?.summary?.campaigns?.avg_click_rate || 0) - 3).toFixed(1)}%`}
-          icon={MousePointer}
-          trend={(data?.summary?.campaigns?.avg_click_rate || 0) > 3 ? "up" : "down"}
-        />
+  const renderOverviewTab = () => {
+    // ✅ FIX: Calculate filtered data and timeframe-specific summaries
+    const filteredData = {
+      campaigns: filterAndAggregateData.campaigns(data?.campaigns || [], timeframe),
+      flows: filterAndAggregateData.flows(data?.flowMessages || [], timeframe),
+      revenueAttribution: filterAndAggregateData.revenueAttribution(data?.revenueAttributionMetrics || [], timeframe),
+      listGrowth: filterAndAggregateData.listGrowth(data?.listGrowthMetrics || [], timeframe)
+    }
+    
+    // Calculate timeframe-specific summary metrics
+    const timeframeSummary = calculateTimeframeSummary(filteredData)
+    
+    return (
+      <div className="space-y-6">
+        {/* Key Metrics Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <MetricCard
+            title="Email Revenue %"
+            value={`${(timeframeSummary?.revenueAttributionSummary?.avg_email_percentage || 0).toFixed(1)}%`}
+            change={`${(timeframeSummary?.revenueAttributionSummary?.avg_email_percentage || 0) > 45 ? '+' : ''}${((timeframeSummary?.revenueAttributionSummary?.avg_email_percentage || 0) - 45).toFixed(1)}%`}
+            icon={DollarSign}
+            trend={(timeframeSummary?.revenueAttributionSummary?.avg_email_percentage || 0) > 45 ? "up" : "down"}
+          />
+          <MetricCard
+            title="List Growth"
+            value={`${(timeframeSummary?.listGrowthSummary?.net_growth || 0) > 0 ? '+' : ''}${(timeframeSummary?.listGrowthSummary?.net_growth || 0).toLocaleString()}`}
+            change={`${(timeframeSummary?.listGrowthSummary?.average_growth_rate || 0).toFixed(1)}%`}
+            icon={Users}
+            trend={(timeframeSummary?.listGrowthSummary?.net_growth || 0) > 0 ? "up" : "down"}
+          />
+          <MetricCard
+            title="Avg Open Rate"
+            value={`${(timeframeSummary?.campaigns?.avg_open_rate || 0).toFixed(1)}%`}
+            change={`${(timeframeSummary?.campaigns?.avg_open_rate || 0) > 25 ? '+' : ''}${((timeframeSummary?.campaigns?.avg_open_rate || 0) - 25).toFixed(1)}%`}
+            icon={Eye}
+            trend={(timeframeSummary?.campaigns?.avg_open_rate || 0) > 25 ? "up" : "down"}
+          />
+          <MetricCard
+            title="Avg Click Rate"
+            value={`${(timeframeSummary?.campaigns?.avg_click_rate || 0).toFixed(1)}%`}
+            change={`${(timeframeSummary?.campaigns?.avg_click_rate || 0) > 3 ? '+' : ''}${((timeframeSummary?.campaigns?.avg_click_rate || 0) - 3).toFixed(1)}%`}
+            icon={MousePointer}
+            trend={(timeframeSummary?.campaigns?.avg_click_rate || 0) > 3 ? "up" : "down"}
+          />
       </div>
 
       {/* Revenue Breakdown */}
@@ -736,6 +755,61 @@ export function ModernDashboard({ client, data: initialData, disablePortalMode =
         </Card>
       </div>
 
+      {/* Performance Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Campaign Performance Chart */}
+        <Card className="bg-white/10 backdrop-blur-md border-white/20">
+          <CardHeader>
+            <CardTitle className="text-white flex items-center gap-2">
+              <BarChart3 className="w-5 h-5" />
+              Recent Campaign Performance
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-64">
+              <CustomBarChart
+                title=""
+                data={filteredData.campaigns.slice(0, 8).map((campaign: any) => ({
+                  name: campaign.campaign_name?.substring(0, 15) + '...' || 'Campaign',
+                  revenue: campaign.revenue || 0,
+                  open_rate: (campaign.open_rate * 100) || 0
+                }))}
+                xKey="name"
+                yKey="revenue"
+                format="currency"
+                client={client}
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Flow Revenue Trends */}
+        <Card className="bg-white/10 backdrop-blur-md border-white/20">
+          <CardHeader>
+            <CardTitle className="text-white flex items-center gap-2">
+              <TrendingUp className="w-5 h-5" />
+              Flow Revenue Trends
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-64">
+              <CustomLineChart
+                title=""
+                data={filteredData.flows.slice(0, 10).map((flow: any, index: number) => ({
+                  date: `Flow ${index + 1}`,
+                  revenue: flow.revenue || 0,
+                  emails: flow.recipients || 0
+                }))}
+                xKey="date"
+                yKey="revenue"
+                format="currency"
+                client={client}
+              />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
       {/* Top Performers */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="bg-white/10 backdrop-blur-md border-white/20">
@@ -747,14 +821,17 @@ export function ModernDashboard({ client, data: initialData, disablePortalMode =
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {(data?.topCampaigns || []).slice(0, 5).map((campaign: any, index: number) => (
-                <div key={campaign.id} className="flex items-center justify-between py-2 border-b border-white/10 last:border-b-0">
+              {filteredData.campaigns
+                .sort((a: any, b: any) => (b.open_rate || 0) - (a.open_rate || 0))
+                .slice(0, 5)
+                .map((campaign: any, index: number) => (
+                <div key={campaign.id || index} className="flex items-center justify-between py-2 border-b border-white/10 last:border-b-0">
                   <div className="flex-1">
                     <p className="text-white font-medium text-sm truncate">{campaign.campaign_name}</p>
                     <p className="text-white/60 text-xs">{campaign.subject_line}</p>
                   </div>
                   <div className="text-right ml-4">
-                    <p className="text-white font-semibold text-sm">{(campaign.open_rate * 100).toFixed(1)}%</p>
+                    <p className="text-white font-semibold text-sm">{((campaign.open_rate || 0) * 100).toFixed(1)}%</p>
                     <p className="text-white/60 text-xs">Open Rate</p>
                   </div>
                 </div>
@@ -772,14 +849,17 @@ export function ModernDashboard({ client, data: initialData, disablePortalMode =
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {(data?.topFlows || []).slice(0, 5).map((flow: any, index: number) => (
-                <div key={flow.id} className="flex items-center justify-between py-2 border-b border-white/10 last:border-b-0">
+              {filteredData.flows
+                .sort((a: any, b: any) => (b.revenue || 0) - (a.revenue || 0))
+                .slice(0, 5)
+                .map((flow: any, index: number) => (
+                <div key={flow.flow_id || index} className="flex items-center justify-between py-2 border-b border-white/10 last:border-b-0">
                   <div className="flex-1">
                     <p className="text-white font-medium text-sm truncate">{flow.flow_name}</p>
-                    <p className="text-white/60 text-xs">{flow.flow_type}</p>
+                    <p className="text-white/60 text-xs">{flow.flow_type || 'email'}</p>
                   </div>
                   <div className="text-right ml-4">
-                    <p className="text-white font-semibold text-sm">${flow.revenue?.toLocaleString()}</p>
+                    <p className="text-white font-semibold text-sm">${(flow.revenue || 0).toLocaleString()}</p>
                     <p className="text-white/60 text-xs">Revenue</p>
                   </div>
                 </div>
@@ -789,13 +869,15 @@ export function ModernDashboard({ client, data: initialData, disablePortalMode =
         </Card>
       </div>
     </div>
-  )
+    )
+  }
 
   const renderSubjectLinesTab = () => {
-    const campaigns = data?.campaigns || []
+    // ✅ FIX: Use filtered campaigns (sent only, within timeframe)
+    const campaigns = filterAndAggregateData.campaigns(data?.campaigns || [], timeframe)
     const subjectInsights = getSubjectLineInsights(campaigns)
     
-    // Sort ALL campaigns by open rate (not just filtered ones)
+    // Sort filtered campaigns by open rate  
     const allCampaigns = [...campaigns]
       .filter((c: any) => c.subject_line)
       .sort((a: any, b: any) => (b.open_rate || 0) - (a.open_rate || 0))
@@ -917,9 +999,11 @@ export function ModernDashboard({ client, data: initialData, disablePortalMode =
   }
 
   const renderCampaignsTab = () => {
-    const campaigns = data?.campaigns || []
+    // ✅ FIX: Filter out drafts and apply timeframe filtering
+    const allCampaigns = data?.campaigns || []
+    const campaigns = filterAndAggregateData.campaigns(allCampaigns, timeframe)
     
-    // Calculate total campaign revenue
+    // Calculate total campaign revenue from filtered data (sent campaigns only)
     const totalRevenue = campaigns.reduce((sum: number, campaign: any) => sum + (campaign.revenue || 0), 0)
     
     // Sort campaigns
@@ -1628,9 +1712,11 @@ export function ModernDashboard({ client, data: initialData, disablePortalMode =
   }
 
   const renderFlowsTab = () => {
-    const flows = data?.flows || []
+    // ✅ FIX: Use flow_message_metrics and filter/aggregate by timeframe  
+    const flowMessages = data?.flowMessages || []
+    const flows = filterAndAggregateData.flows(flowMessages, timeframe)
     
-    // Calculate total flow revenue
+    // Calculate total flow revenue from properly filtered data
     const totalFlowRevenue = flows.reduce((sum: number, flow: any) => sum + (flow.revenue || 0), 0)
     
     // Get dynamic comparison label for table headers
@@ -2539,12 +2625,12 @@ export function ModernDashboard({ client, data: initialData, disablePortalMode =
                     onModeChange={setViewMode}
                   />
                 )}
-                {(disablePortalMode || viewMode === 'analytics') && (
+                {(disablePortalMode || viewMode === 'analytics') && !externalTimeframe && (
                   <TimeframeSelector 
                     selectedTimeframe={timeframe}
                     onTimeframeChange={(days: number) => {
                       console.log(`🎯 Timeframe changed: ${timeframe} → ${days} days`)
-                      setTimeframe(days)
+                      setInternalTimeframe(days)
                     }}
                   />
                 )}

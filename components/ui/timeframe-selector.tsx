@@ -41,14 +41,19 @@ export function TimeframeSelector({ selectedTimeframe, onTimeframeChange, classN
 
   const handleOptionClick = (value: number) => {
     console.log(`🎯 Timeframe selected: ${value} days`)
+    console.log(`🔄 Current selected: ${selectedTimeframe} → New: ${value}`)
     onTimeframeChange(value)
     setIsOpen(false)
+    console.log(`✅ Dropdown closed, state updated`)
   }
 
   return (
     <div ref={dropdownRef} className={`relative ${className}`}>
       <button
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={() => {
+          console.log(`🔘 Timeframe button clicked, isOpen: ${isOpen} → ${!isOpen}`)
+          setIsOpen(!isOpen)
+        }}
         className="flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-md border border-white/20 rounded-lg hover:bg-white/20 transition-all duration-200 text-white"
       >
         <Calendar className="w-4 h-4" />
