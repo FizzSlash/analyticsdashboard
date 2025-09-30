@@ -1,189 +1,215 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 
+// GET - Fetch portal requests for a client
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const clientId = searchParams.get('clientId')
-    const clientSlug = searchParams.get('clientSlug')
-    
-    let client_id = clientId
+    const status = searchParams.get('status') // Optional filter
 
-    // If slug provided, get client ID
-    if (clientSlug && !clientId) {
-      const { data: client } = await supabaseAdmin
-        .from('clients')
-        .select('id')
-        .eq('brand_slug', clientSlug)
-        .single()
-      
-      if (!client) {
-        return NextResponse.json({ error: 'Client not found' }, { status: 404 })
-      }
-      client_id = client.id
+    if (!clientId) {
+      return NextResponse.json(
+        { success: false, error: 'Client ID is required' },
+        { status: 400 }
+      )
     }
 
-    if (!client_id) {
-      return NextResponse.json({ error: 'Client ID or slug is required' }, { status: 400 })
-    }
+    console.log('📥 PORTAL REQUESTS: Loading requests for client:', clientId)
 
-    console.log(`PORTAL REQUESTS API: Fetching requests for client: ${client_id}`)
-
-    // Fetch portal requests from Supabase
-    const { data, error } = await supabaseAdmin
+    let query = supabaseAdmin
       .from('portal_requests')
       .select('*')
-      .eq('client_id', client_id)
+      .eq('client_id', clientId)
       .order('created_at', { ascending: false })
 
-    if (error) {
-      console.error('PORTAL REQUESTS API: Error fetching requests:', error)
-      return NextResponse.json({ error: error.message }, { status: 500 })
+    // Optional status filter
+    if (status && status !== 'all') {
+      query = query.eq('status', status)
     }
 
-    console.log(`PORTAL REQUESTS API: Found ${data?.length || 0} requests`)
+    const { data: requests, error } = await query
+
+    if (error) {
+      console.error('❌ PORTAL REQUESTS: Database error:', error)
+      return NextResponse.json(
+        { success: false, error: 'Failed to load requests' },
+        { status: 500 }
+      )
+    }
+
+    console.log(`✅ PORTAL REQUESTS: Found ${requests.length} requests`)
 
     return NextResponse.json({
       success: true,
-      requests: data || []
+      requests
     })
 
-  } catch (error: any) {
-    console.error('PORTAL REQUESTS API: Error:', error)
-    return NextResponse.json({
-      error: 'Failed to fetch portal requests',
-      message: error.message
-    }, { status: 500 })
+  } catch (error) {
+    console.error('❌ PORTAL REQUESTS: Error:', error)
+    return NextResponse.json(
+      { success: false, error: 'Internal server error' },
+      { status: 500 }
+    )
   }
 }
 
+// POST - Create new portal request
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { client_id, agency_id, title, description, request_type, priority, target_audience, campaign_objectives } = body
+    const {
+      client_id,
+      agency_id,
+      title,
+      description,
+      request_type,
+      priority,
+      target_audience,
+      campaign_objectives,
+      desired_completion_date
+    } = body
 
-    if (!client_id || !agency_id || !title) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+    console.log('📝 PORTAL REQUESTS: Creating new request:', title)
+
+    // Validate required fields
+    if (!client_id || !agency_id || !title || !request_type) {
+      return NextResponse.json(
+        { success: false, error: 'Missing required fields' },
+        { status: 400 }
+      )
     }
 
-    console.log(`PORTAL REQUESTS API: Creating request for client: ${client_id}`)
-
-    // Insert new request
-    const { data, error } = await supabaseAdmin
+    // Create request
+    const { data: newRequest, error } = await supabaseAdmin
       .from('portal_requests')
       .insert({
         client_id,
         agency_id,
         title,
         description,
-        request_type: request_type || 'email_campaign',
+        request_type,
         priority: priority || 'medium',
         status: 'submitted',
         target_audience,
         campaign_objectives,
-        requested_date: new Date().toISOString()
+        desired_completion_date
       })
-      .select()
+      .select('*')
       .single()
 
     if (error) {
-      console.error('PORTAL REQUESTS API: Error creating request:', error)
-      return NextResponse.json({ error: error.message }, { status: 500 })
+      console.error('❌ PORTAL REQUESTS: Create error:', error)
+      return NextResponse.json(
+        { success: false, error: 'Failed to create request' },
+        { status: 500 }
+      )
     }
 
-    console.log(`PORTAL REQUESTS API: Request created:`, data)
+    console.log('✅ PORTAL REQUESTS: Successfully created request:', newRequest.id)
 
     return NextResponse.json({
       success: true,
-      request: data
+      request: newRequest
     })
 
-  } catch (error: any) {
-    console.error('PORTAL REQUESTS API: Error:', error)
-    return NextResponse.json({
-      error: 'Failed to create portal request',
-      message: error.message
-    }, { status: 500 })
+  } catch (error) {
+    console.error('❌ PORTAL REQUESTS: Error:', error)
+    return NextResponse.json(
+      { success: false, error: 'Internal server error' },
+      { status: 500 }
+    )
   }
 }
 
+// PATCH - Update existing request
 export async function PATCH(request: NextRequest) {
   try {
     const body = await request.json()
     const { id, ...updates } = body
 
     if (!id) {
-      return NextResponse.json({ error: 'Request ID is required' }, { status: 400 })
+      return NextResponse.json(
+        { success: false, error: 'Request ID is required' },
+        { status: 400 }
+      )
     }
 
-    console.log(`PORTAL REQUESTS API: Updating request: ${id}`)
+    console.log('✏️ PORTAL REQUESTS: Updating request:', id)
 
-    // Update request
-    const { data, error } = await supabaseAdmin
+    const { data: updatedRequest, error } = await supabaseAdmin
       .from('portal_requests')
       .update({
         ...updates,
         updated_at: new Date().toISOString()
       })
       .eq('id', id)
-      .select()
+      .select('*')
       .single()
 
     if (error) {
-      console.error('PORTAL REQUESTS API: Error updating request:', error)
-      return NextResponse.json({ error: error.message }, { status: 500 })
+      console.error('❌ PORTAL REQUESTS: Update error:', error)
+      return NextResponse.json(
+        { success: false, error: 'Failed to update request' },
+        { status: 500 }
+      )
     }
 
-    console.log(`PORTAL REQUESTS API: Request updated:`, data)
+    console.log('✅ PORTAL REQUESTS: Successfully updated request:', id)
 
     return NextResponse.json({
       success: true,
-      request: data
+      request: updatedRequest
     })
 
-  } catch (error: any) {
-    console.error('PORTAL REQUESTS API: Error:', error)
-    return NextResponse.json({
-      error: 'Failed to update portal request',
-      message: error.message
-    }, { status: 500 })
+  } catch (error) {
+    console.error('❌ PORTAL REQUESTS: Error:', error)
+    return NextResponse.json(
+      { success: false, error: 'Internal server error' },
+      { status: 500 }
+    )
   }
 }
 
+// DELETE - Delete request
 export async function DELETE(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')
 
     if (!id) {
-      return NextResponse.json({ error: 'Request ID is required' }, { status: 400 })
+      return NextResponse.json(
+        { success: false, error: 'Request ID is required' },
+        { status: 400 }
+      )
     }
 
-    console.log(`PORTAL REQUESTS API: Deleting request: ${id}`)
+    console.log('🗑️ PORTAL REQUESTS: Deleting request:', id)
 
-    // Delete request
     const { error } = await supabaseAdmin
       .from('portal_requests')
       .delete()
       .eq('id', id)
 
     if (error) {
-      console.error('PORTAL REQUESTS API: Error deleting request:', error)
-      return NextResponse.json({ error: error.message }, { status: 500 })
+      console.error('❌ PORTAL REQUESTS: Delete error:', error)
+      return NextResponse.json(
+        { success: false, error: 'Failed to delete request' },
+        { status: 500 }
+      )
     }
 
-    console.log(`PORTAL REQUESTS API: Request deleted`)
+    console.log('✅ PORTAL REQUESTS: Successfully deleted request:', id)
 
     return NextResponse.json({
-      success: true,
-      message: 'Request deleted successfully'
+      success: true
     })
 
-  } catch (error: any) {
-    console.error('PORTAL REQUESTS API: Error:', error)
-    return NextResponse.json({
-      error: 'Failed to delete portal request',
-      message: error.message
-    }, { status: 500 })
+  } catch (error) {
+    console.error('❌ PORTAL REQUESTS: Error:', error)
+    return NextResponse.json(
+      { success: false, error: 'Internal server error' },
+      { status: 500 }
+    )
   }
 }

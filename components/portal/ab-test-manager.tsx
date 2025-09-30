@@ -63,19 +63,19 @@ export function ABTestManager({ client }: ABTestManagerProps) {
   const fetchABTests = async () => {
     setLoading(true)
     try {
-      console.log('🧪 AB TESTS: Fetching from API for client:', client?.brand_slug || client?.id)
-      const response = await fetch(`/api/ab-tests?clientSlug=${client?.brand_slug || ''}&clientId=${client?.id || ''}`)
+      console.log('📥 AB TESTS: Fetching from Supabase for client:', client?.id)
+      const response = await fetch(`/api/ab-tests?clientId=${client?.id}`)
       const result = await response.json()
       
-      if (response.ok && result.success) {
-        console.log('🧪 AB TESTS: Loaded', result.tests?.length || 0, 'tests from database')
-        setTests(result.tests || [])
+      if (result.success) {
+        console.log(`✅ AB TESTS: Loaded ${result.tests.length} tests`)
+        setTests(result.tests)
       } else {
-        console.error('🧪 AB TESTS: API error:', result.error)
+        console.error('❌ AB TESTS: Failed to load:', result.error)
         setTests([])
       }
     } catch (error) {
-      console.error('🧪 AB TESTS: Network error:', error)
+      console.error('❌ AB TESTS: Error fetching tests:', error)
       setTests([])
     } finally {
       setLoading(false)

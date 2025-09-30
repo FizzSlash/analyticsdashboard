@@ -28,8 +28,7 @@ INSERT INTO clients (
   true,
   NOW()
 ) ON CONFLICT (id) DO UPDATE SET
-  brand_name = EXCLUDED.brand_name,
-  updated_at = NOW();
+  brand_name = EXCLUDED.brand_name;
 
 -- Step 2: Create Demo Campaign Metrics (Last 60 days of realistic data)
 DO $$

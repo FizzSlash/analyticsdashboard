@@ -1,153 +1,206 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 
+// GET - Fetch A/B test results for a client
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const clientId = searchParams.get('clientId')
-    const clientSlug = searchParams.get('clientSlug')
-    
-    let client_id = clientId
 
-    // If slug provided, get client ID
-    if (clientSlug && !clientId) {
-      const { data: client } = await supabaseAdmin
-        .from('clients')
-        .select('id')
-        .eq('brand_slug', clientSlug)
-        .single()
-      
-      if (!client) {
-        return NextResponse.json({ error: 'Client not found' }, { status: 404 })
-      }
-      client_id = client.id
+    if (!clientId) {
+      return NextResponse.json(
+        { success: false, error: 'Client ID is required' },
+        { status: 400 }
+      )
     }
 
-    if (!client_id) {
-      return NextResponse.json({ error: 'Client ID or slug is required' }, { status: 400 })
-    }
+    console.log('📥 AB TESTS: Loading A/B tests for client:', clientId)
 
-    console.log(`AB TESTS API: Fetching A/B tests for client: ${client_id}`)
-
-    // Fetch A/B test results from Supabase
-    const { data, error } = await supabaseAdmin
+    const { data: tests, error } = await supabaseAdmin
       .from('ab_test_results')
       .select('*')
-      .eq('client_id', client_id)
+      .eq('client_id', clientId)
       .order('created_at', { ascending: false })
 
     if (error) {
-      console.error('AB TESTS API: Error fetching tests:', error)
-      return NextResponse.json({ error: error.message }, { status: 500 })
+      console.error('❌ AB TESTS: Database error:', error)
+      return NextResponse.json(
+        { success: false, error: 'Failed to load A/B tests' },
+        { status: 500 }
+      )
     }
 
-    console.log(`AB TESTS API: Found ${data?.length || 0} A/B tests`)
+    console.log(`✅ AB TESTS: Found ${tests.length} tests`)
 
     return NextResponse.json({
       success: true,
-      tests: data || []
+      tests
     })
 
-  } catch (error: any) {
-    console.error('AB TESTS API: Error:', error)
-    return NextResponse.json({
-      error: 'Failed to fetch A/B tests',
-      message: error.message
-    }, { status: 500 })
+  } catch (error) {
+    console.error('❌ AB TESTS: Error:', error)
+    return NextResponse.json(
+      { success: false, error: 'Internal server error' },
+      { status: 500 }
+    )
   }
 }
 
+// POST - Create new A/B test
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { 
-      client_id, agency_id, airtable_record_id, test_name, test_type,
-      variant_a_name, variant_b_name, start_date, end_date
+    const {
+      client_id,
+      agency_id,
+      airtable_record_id,
+      test_name,
+      test_type,
+      start_date,
+      end_date,
+      variant_a_name,
+      variant_b_name
     } = body
 
-    if (!client_id || !agency_id || !test_name) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+    console.log('📝 AB TESTS: Creating new test:', test_name)
+
+    // Validate required fields
+    if (!client_id || !agency_id || !test_name || !test_type) {
+      return NextResponse.json(
+        { success: false, error: 'Missing required fields' },
+        { status: 400 }
+      )
     }
 
-    console.log(`AB TESTS API: Creating A/B test for client: ${client_id}`)
-
-    // Insert new A/B test
-    const { data, error } = await supabaseAdmin
+    // Create test
+    const { data: newTest, error } = await supabaseAdmin
       .from('ab_test_results')
       .insert({
         client_id,
         agency_id,
-        airtable_record_id: airtable_record_id || `AB_TEST_${Date.now()}`,
+        airtable_record_id: airtable_record_id || `TEST_${Date.now()}`,
         test_name,
-        test_type: test_type || 'subject_line',
-        variant_a_name: variant_a_name || 'Variant A',
-        variant_b_name: variant_b_name || 'Variant B',
+        test_type,
         start_date,
-        end_date
+        end_date,
+        variant_a_name: variant_a_name || 'Variant A',
+        variant_b_name: variant_b_name || 'Variant B'
       })
-      .select()
+      .select('*')
       .single()
 
     if (error) {
-      console.error('AB TESTS API: Error creating test:', error)
-      return NextResponse.json({ error: error.message }, { status: 500 })
+      console.error('❌ AB TESTS: Create error:', error)
+      return NextResponse.json(
+        { success: false, error: 'Failed to create test' },
+        { status: 500 }
+      )
     }
 
-    console.log(`AB TESTS API: Test created:`, data)
+    console.log('✅ AB TESTS: Successfully created test:', newTest.id)
 
     return NextResponse.json({
       success: true,
-      test: data
+      test: newTest
     })
 
-  } catch (error: any) {
-    console.error('AB TESTS API: Error:', error)
-    return NextResponse.json({
-      error: 'Failed to create A/B test',
-      message: error.message
-    }, { status: 500 })
+  } catch (error) {
+    console.error('❌ AB TESTS: Error:', error)
+    return NextResponse.json(
+      { success: false, error: 'Internal server error' },
+      { status: 500 }
+    )
   }
 }
 
+// PATCH - Update test results
 export async function PATCH(request: NextRequest) {
   try {
     const body = await request.json()
     const { id, ...updates } = body
 
     if (!id) {
-      return NextResponse.json({ error: 'Test ID is required' }, { status: 400 })
+      return NextResponse.json(
+        { success: false, error: 'Test ID is required' },
+        { status: 400 }
+      )
     }
 
-    console.log(`AB TESTS API: Updating test: ${id}`)
+    console.log('✏️ AB TESTS: Updating test:', id)
 
-    // Update A/B test
-    const { data, error } = await supabaseAdmin
+    const { data: updatedTest, error } = await supabaseAdmin
       .from('ab_test_results')
       .update({
         ...updates,
         updated_at: new Date().toISOString()
       })
       .eq('id', id)
-      .select()
+      .select('*')
       .single()
 
     if (error) {
-      console.error('AB TESTS API: Error updating test:', error)
-      return NextResponse.json({ error: error.message }, { status: 500 })
+      console.error('❌ AB TESTS: Update error:', error)
+      return NextResponse.json(
+        { success: false, error: 'Failed to update test' },
+        { status: 500 }
+      )
     }
 
-    console.log(`AB TESTS API: Test updated:`, data)
+    console.log('✅ AB TESTS: Successfully updated test:', id)
 
     return NextResponse.json({
       success: true,
-      test: data
+      test: updatedTest
     })
 
-  } catch (error: any) {
-    console.error('AB TESTS API: Error:', error)
+  } catch (error) {
+    console.error('❌ AB TESTS: Error:', error)
+    return NextResponse.json(
+      { success: false, error: 'Internal server error' },
+      { status: 500 }
+    )
+  }
+}
+
+// DELETE - Delete test
+export async function DELETE(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url)
+    const id = searchParams.get('id')
+
+    if (!id) {
+      return NextResponse.json(
+        { success: false, error: 'Test ID is required' },
+        { status: 400 }
+      )
+    }
+
+    console.log('🗑️ AB TESTS: Deleting test:', id)
+
+    const { error } = await supabaseAdmin
+      .from('ab_test_results')
+      .delete()
+      .eq('id', id)
+
+    if (error) {
+      console.error('❌ AB TESTS: Delete error:', error)
+      return NextResponse.json(
+        { success: false, error: 'Failed to delete test' },
+        { status: 500 }
+      )
+    }
+
+    console.log('✅ AB TESTS: Successfully deleted test:', id)
+
     return NextResponse.json({
-      error: 'Failed to update A/B test',
-      message: error.message
-    }, { status: 500 })
+      success: true
+    })
+
+  } catch (error) {
+    console.error('❌ AB TESTS: Error:', error)
+    return NextResponse.json(
+      { success: false, error: 'Internal server error' },
+      { status: 500 }
+    )
   }
 }
