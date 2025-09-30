@@ -73,16 +73,16 @@ BEGIN
         ELSE 'New Products You''ll Love'
       END,
       campaign_date,
-      10000 + FLOOR(RANDOM() * 40000), -- 10k-50k recipients
-      9500 + FLOOR(RANDOM() * 39000),  -- ~95% delivered
-      4000 + FLOOR(RANDOM() * 20000),  -- 40-240% open rate (some campaigns have multiple opens)
-      200 + FLOOR(RANDOM() * 1000),     -- 2-10% click rate
-      5 + FLOOR(RANDOM() * 50),         -- 5-55 unsubscribes
-      10 + FLOOR(RANDOM() * 40),        -- 10-50 bounces
-      0.35 + (RANDOM() * 0.35),        -- 35-70% open rate
-      0.015 + (RANDOM() * 0.045),      -- 1.5-6% click rate
-      500 + FLOOR(RANDOM() * 5000),    -- $500-$5500 revenue
-      5 + FLOOR(RANDOM() * 45),        -- 5-50 orders
+      (10000 + FLOOR(RANDOM() * 40000))::INTEGER, -- 10k-50k recipients
+      (9500 + FLOOR(RANDOM() * 39000))::INTEGER,  -- ~95% delivered
+      (4000 + FLOOR(RANDOM() * 20000))::INTEGER,  -- Opens count
+      (200 + FLOOR(RANDOM() * 1000))::INTEGER,    -- Clicks count
+      (5 + FLOOR(RANDOM() * 50))::INTEGER,        -- Unsubscribes
+      (10 + FLOOR(RANDOM() * 40))::INTEGER,       -- Bounces
+      (0.35 + (RANDOM() * 0.35))::NUMERIC,        -- 35-70% open rate
+      (0.015 + (RANDOM() * 0.045))::NUMERIC,      -- 1.5-6% click rate
+      (500 + FLOOR(RANDOM() * 5000))::NUMERIC,    -- $500-$5500 revenue
+      (5 + FLOOR(RANDOM() * 45))::INTEGER,        -- 5-50 orders
       'Sent'
     );
   END LOOP;
@@ -150,17 +150,17 @@ BEGIN
         week_date,
         week_date,
         CASE flow_id_val
-          WHEN 'DEMO_FLOW_002' THEN 800 + FLOOR(RANDOM() * 1200) -- Cart recovery: high revenue
-          WHEN 'DEMO_FLOW_003' THEN 200 + FLOOR(RANDOM() * 400)
-          ELSE 100 + FLOOR(RANDOM() * 200)
+          WHEN 'DEMO_FLOW_002' THEN (800 + FLOOR(RANDOM() * 1200))::NUMERIC -- Cart recovery: high revenue
+          WHEN 'DEMO_FLOW_003' THEN (200 + FLOOR(RANDOM() * 400))::NUMERIC
+          ELSE (100 + FLOOR(RANDOM() * 200))::NUMERIC
         END,
-        300 + FLOOR(RANDOM() * 500), -- Opens
-        30 + FLOOR(RANDOM() * 70),   -- Clicks
-        500 + FLOOR(RANDOM() * 300), -- Recipients
-        5 + FLOOR(RANDOM() * 15),    -- Conversions
-        480 + FLOOR(RANDOM() * 290), -- Delivered
-        0.45 + (RANDOM() * 0.25),    -- Open rate: 45-70%
-        0.05 + (RANDOM() * 0.10)     -- Click rate: 5-15%
+        (300 + FLOOR(RANDOM() * 500))::INTEGER, -- Opens
+        (30 + FLOOR(RANDOM() * 70))::INTEGER,   -- Clicks
+        (500 + FLOOR(RANDOM() * 300))::INTEGER, -- Recipients
+        (5 + FLOOR(RANDOM() * 15))::INTEGER,    -- Conversions
+        (480 + FLOOR(RANDOM() * 290))::INTEGER, -- Delivered
+        (0.45 + (RANDOM() * 0.25))::NUMERIC,    -- Open rate: 45-70%
+        (0.05 + (RANDOM() * 0.10))::NUMERIC     -- Click rate: 5-15%
       );
     END LOOP;
   END LOOP;
@@ -194,14 +194,14 @@ BEGIN
     ) VALUES (
       demo_client_id,
       day_date,
-      1000 + FLOOR(RANDOM() * 3000),  -- Email revenue: $1k-$4k per day
-      FLOOR(RANDOM() * 500),           -- SMS revenue: $0-$500 per day
-      2000 + FLOOR(RANDOM() * 5000),  -- Total store revenue: $2k-$7k per day
-      10 + FLOOR(RANDOM() * 30),       -- Email orders: 10-40
-      FLOOR(RANDOM() * 10),            -- SMS orders: 0-10
-      15 + FLOOR(RANDOM() * 40),       -- Total orders: 15-55
-      35 + (RANDOM() * 30),            -- Email %: 35-65%
-      0 + (RANDOM() * 15)              -- SMS %: 0-15%
+      (1000 + FLOOR(RANDOM() * 3000))::NUMERIC,  -- Email revenue: $1k-$4k per day
+      (FLOOR(RANDOM() * 500))::NUMERIC,           -- SMS revenue: $0-$500 per day
+      (2000 + FLOOR(RANDOM() * 5000))::NUMERIC,  -- Total store revenue: $2k-$7k per day
+      (10 + FLOOR(RANDOM() * 30))::INTEGER,       -- Email orders: 10-40
+      (FLOOR(RANDOM() * 10))::INTEGER,            -- SMS orders: 0-10
+      (15 + FLOOR(RANDOM() * 40))::INTEGER,       -- Total orders: 15-55
+      (35 + (RANDOM() * 30))::NUMERIC,            -- Email %: 35-65%
+      (0 + (RANDOM() * 15))::NUMERIC              -- SMS %: 0-15%
     );
   END LOOP;
 END $$;
@@ -239,17 +239,17 @@ BEGIN
     ) VALUES (
       demo_client_id,
       day_date,
-      20 + FLOOR(RANDOM() * 40),      -- Email subs: 20-60
-      10 + FLOOR(RANDOM() * 30),      -- Email unsubs: 10-40
+      (20 + FLOOR(RANDOM() * 40))::INTEGER,      -- Email subs: 20-60
+      (10 + FLOOR(RANDOM() * 30))::INTEGER,      -- Email unsubs: 10-40
       growth_val,
-      2 + FLOOR(RANDOM() * 8),        -- SMS subs: 2-10
-      FLOOR(RANDOM() * 3),            -- SMS unsubs: 0-3
-      1 + FLOOR(RANDOM() * 6),        -- SMS net: 1-7
-      25 + FLOOR(RANDOM() * 50),      -- Total new: 25-75
-      12 + FLOOR(RANDOM() * 35),      -- Total unsubs: 12-47
+      (2 + FLOOR(RANDOM() * 8))::INTEGER,        -- SMS subs: 2-10
+      (FLOOR(RANDOM() * 3))::INTEGER,            -- SMS unsubs: 0-3
+      (1 + FLOOR(RANDOM() * 6))::INTEGER,        -- SMS net: 1-7
+      (25 + FLOOR(RANDOM() * 50))::INTEGER,      -- Total new: 25-75
+      (12 + FLOOR(RANDOM() * 35))::INTEGER,      -- Total unsubs: 12-47
       growth_val,
-      CASE WHEN growth_val > 0 THEN 0.4 + (RANDOM() * 0.4) ELSE 0 END, -- Growth rate: 0.4-0.8 when positive
-      CASE WHEN growth_val < 0 THEN 0.3 + (RANDOM() * 0.5) ELSE 0.1 + (RANDOM() * 0.2) END -- Churn rate
+      CASE WHEN growth_val > 0 THEN (0.4 + (RANDOM() * 0.4))::NUMERIC ELSE 0 END, -- Growth rate
+      CASE WHEN growth_val < 0 THEN (0.3 + (RANDOM() * 0.5))::NUMERIC ELSE (0.1 + (RANDOM() * 0.2))::NUMERIC END -- Churn rate
     );
   END LOOP;
 END $$;
