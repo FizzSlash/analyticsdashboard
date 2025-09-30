@@ -215,64 +215,18 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
   }
 
   const getFlowRecapWithMoM = (flows: any[]) => {
-    // For flow-specific MoM, we need individual flow weekly data from flow_message_metrics
-    // Since we don't have per-flow weekly breakdowns in the current data structure,
-    // we'll calculate MoM based on the aggregated flow data vs timeframe comparison
-    
-    // Determine exact comparison period based on timeframe selection
-    const getComparisonPeriod = () => {
-      if (timeframe === 28) return { period: 'week', label: 'WoW', compare: 4 } // 4 weeks vs previous 4 weeks
-      if (timeframe === 56) return { period: 'week', label: 'WoW', compare: 8 } // 8 weeks vs previous 8 weeks
-      if (timeframe === 90) return { period: 'month', label: 'MoM', compare: 3 } // 3 months vs previous 3 months
-      if (timeframe === 180) return { period: 'month', label: 'MoM', compare: 6 } // 6 months vs previous 6 months  
-      if (timeframe === 365) return { period: 'quarter', label: 'QoQ', compare: 4 } // 4 quarters vs previous 4 quarters
-      return { period: 'quarter', label: 'QoQ', compare: 8 } // All time - 8 quarters
-    }
-    
-    const comparisonConfig = getComparisonPeriod()
-    
-    console.log(`📊 FLOW MoM: Using ${comparisonConfig.label} comparison for ${timeframe} day timeframe (${comparisonConfig.compare} ${comparisonConfig.period}s)`)
-    
-    // Calculate flow-specific changes based on timeframe and performance characteristics
-    return flows.map((flow: any, index: number) => {
-      // Use flow performance and timeframe to calculate realistic variations
-      const flowRevenue = flow.revenue || 0
-      const flowOpenRate = flow.open_rate || 0
-      const flowClickRate = flow.click_rate || 0
-      const flowOpens = flow.opens || 0
-      
-      // Timeframe-adjusted base calculations
-      const timeframeMultiplier = timeframe <= 56 ? 0.5 : timeframe <= 180 ? 1.0 : 1.5
-      
-      // Performance-based variations with timeframe consideration
-      const revenueMoM = (flowRevenue > 50000 ? 15.3 : flowRevenue > 10000 ? -8.7 : -25.2) + 
-                         (index * 2.1 * timeframeMultiplier) + 
-                         (Math.random() * 10 - 5) // Some randomness for variety
-                         
-      const openRateMoM = (flowOpenRate > 0.5 ? 12.4 : flowOpenRate > 0.3 ? -5.6 : -18.3) + 
-                          (index * 1.2 * timeframeMultiplier) +
-                          (Math.random() * 8 - 4)
-                          
-      const clickRateMoM = (flowClickRate > 0.05 ? 23.7 : flowClickRate > 0.02 ? -12.1 : -31.4) + 
-                           (index * 1.8 * timeframeMultiplier) +
-                           (Math.random() * 12 - 6)
-                           
-      const opensMoM = (flowOpens > 1000 ? 8.9 : flowOpens > 500 ? -6.2 : -19.7) + 
-                       (index * 1.4 * timeframeMultiplier) +
-                       (Math.random() * 6 - 3)
-                       
-      const clicksMoM = clickRateMoM * 0.85 // Clicks correlate with click rate
-      const recipientsMoM = opensMoM * 0.92 // Recipients correlate with opens
-      
+    // ✅ REMOVED ALL FAKE DATA: No more Math.random() generated comparison data
+    // Return flows without any fake WoW/MoM/QoQ percentages
+    return flows.map((flow: any) => {
       return {
         ...flow,
-        comparisonLabel: comparisonConfig.label,
-        revenueMoM: Number(revenueMoM.toFixed(1)),
-        opensMoM: Number(opensMoM.toFixed(1)), 
-        clicksMoM: Number(clicksMoM.toFixed(1)),
-        recipientsMoM: Number(recipientsMoM.toFixed(1)),
-        openRateMoM: Number(openRateMoM.toFixed(1)),
-        clickRateMoM: Number(clickRateMoM.toFixed(1))
+        comparisonLabel: '',
+        revenueMoM: null, // No fake data
+        opensMoM: null,
+        clicksMoM: null,
+        recipientsMoM: null,
+        openRateMoM: null,
+        clickRateMoM: null
       }
     })
   }
@@ -1741,13 +1695,7 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
     const totalFlowRevenue = flows.reduce((sum: number, flow: any) => sum + (flow.revenue || 0), 0)
     console.log('🔍 FLOWS DEBUG: Total flow revenue:', totalFlowRevenue)
     
-    // Get dynamic comparison label for table headers
-    const getComparisonLabel = () => {
-      if (timeframe <= 30) return 'WoW' // Week over Week
-      if (timeframe <= 90) return 'MoM' // Month over Month  
-      return 'QoQ' // Quarter over Quarter
-    }
-    const comparisonLabel = getComparisonLabel()
+    // ✅ REMOVED: Comparison labels (no longer showing WoW/MoM/QoQ fake data)
     
     const toggleFlowExpansion = async (flowId: string) => {
       const newExpanded = new Set(expandedFlows)
@@ -1983,19 +1931,13 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
               <table className="w-full text-xs">
                 <thead>
                   <tr className="border-b border-white/20">
-                    <th className="text-left text-white/80 font-medium py-3 px-1 min-w-[200px]">Flows</th>
-                    <th className="text-right text-white/80 font-medium py-3 px-1 min-w-[100px]">Revenue</th>
-                    <th className="text-right text-blue-300 font-medium py-3 px-1 min-w-[80px]">Revenue {comparisonLabel}<br/>% Change</th>
-                    <th className="text-right text-white/80 font-medium py-3 px-1 min-w-[80px]">Open Rate</th>
-                    <th className="text-right text-blue-300 font-medium py-3 px-1 min-w-[80px]">Open Rate {comparisonLabel}<br/>% Change</th>
-                    <th className="text-right text-white/80 font-medium py-3 px-1 min-w-[80px]">Click Rate</th>
-                    <th className="text-right text-blue-300 font-medium py-3 px-1 min-w-[80px]">Click Rate {comparisonLabel}<br/>% Change</th>
-                    <th className="text-right text-white/80 font-medium py-3 px-1 min-w-[80px]">Recipients</th>
-                    <th className="text-right text-blue-300 font-medium py-3 px-1 min-w-[80px]">Recipients {comparisonLabel}<br/>% Change</th>
-                    <th className="text-right text-white/80 font-medium py-3 px-1 min-w-[80px]">Opens</th>
-                    <th className="text-right text-blue-300 font-medium py-3 px-1 min-w-[80px]">Opens {comparisonLabel}<br/>% Change</th>
-                    <th className="text-right text-white/80 font-medium py-3 px-1 min-w-[80px]">Clicks</th>
-                    <th className="text-right text-blue-300 font-medium py-3 px-1 min-w-[80px]">Clicks {comparisonLabel}<br/>% Change</th>
+                    <th className="text-left text-white/80 font-medium py-3 px-2 min-w-[200px]">Flows</th>
+                    <th className="text-right text-white/80 font-medium py-3 px-2 min-w-[110px]">Revenue</th>
+                    <th className="text-right text-white/80 font-medium py-3 px-2 min-w-[90px]">Open Rate</th>
+                    <th className="text-right text-white/80 font-medium py-3 px-2 min-w-[90px]">Click Rate</th>
+                    <th className="text-right text-white/80 font-medium py-3 px-2 min-w-[100px]">Recipients</th>
+                    <th className="text-right text-white/80 font-medium py-3 px-2 min-w-[90px]">Opens</th>
+                    <th className="text-right text-white/80 font-medium py-3 px-2 min-w-[90px]">Clicks</th>
                   </tr>
                 </thead>
                                  <tbody>
@@ -2022,66 +1964,18 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
                            </div>
                          </div>
                        </td>
-                        <td className="text-right text-white text-sm py-3 px-1">${(flow.revenue || 0).toLocaleString()}</td>
-                        <td className="text-right text-sm py-3 px-1">
-                          <span className={`${
-                            flow.revenueMoM > 0 ? 'text-green-300' : 
-                            flow.revenueMoM < 0 ? 'text-red-300' : 'text-white/60'
-                          }`}>
-                            {flow.revenueMoM > 0 ? '+' : ''}{flow.revenueMoM.toFixed(1)}%
-                        </span>
-                      </td>
-                        <td className="text-right text-white text-sm py-3 px-1">{(flow.open_rate * 100 || 0).toFixed(1)}%</td>
-                        <td className="text-right text-sm py-3 px-1">
-                          <span className={`${
-                            flow.openRateMoM > 0 ? 'text-green-300' : 
-                            flow.openRateMoM < 0 ? 'text-red-300' : 'text-white/60'
-                          }`}>
-                            {flow.openRateMoM > 0 ? '+' : ''}{flow.openRateMoM.toFixed(1)}%
-                          </span>
-                      </td>
-                        <td className="text-right text-white text-sm py-3 px-1">{(flow.click_rate * 100 || 0).toFixed(1)}%</td>
-                        <td className="text-right text-sm py-3 px-1">
-                        <span className={`${
-                            flow.clickRateMoM > 0 ? 'text-green-300' : 
-                            flow.clickRateMoM < 0 ? 'text-red-300' : 'text-white/60'
-                        }`}>
-                            {flow.clickRateMoM > 0 ? '+' : ''}{flow.clickRateMoM.toFixed(1)}%
-                        </span>
-                      </td>
-                        <td className="text-right text-white text-sm py-3 px-1">{(flow.recipients || 0).toLocaleString()}</td>
-                        <td className="text-right text-sm py-3 px-1">
-                        <span className={`${
-                            flow.recipientsMoM > 0 ? 'text-green-300' : 
-                            flow.recipientsMoM < 0 ? 'text-red-300' : 'text-white/60'
-                        }`}>
-                            {flow.recipientsMoM > 0 ? '+' : ''}{flow.recipientsMoM.toFixed(1)}%
-                        </span>
-                      </td>
-                        <td className="text-right text-white text-sm py-3 px-1">{(flow.opens || 0).toLocaleString()}</td>
-                        <td className="text-right text-sm py-3 px-1">
-                                     <span className={`${
-                            flow.opensMoM > 0 ? 'text-green-300' : 
-                            flow.opensMoM < 0 ? 'text-red-300' : 'text-white/60'
-                                     }`}>
-                            {flow.opensMoM > 0 ? '+' : ''}{flow.opensMoM.toFixed(1)}%
-                                     </span>
-                        </td>
-                        <td className="text-right text-white text-sm py-3 px-1">{(flow.clicks || 0).toLocaleString()}</td>
-                        <td className="text-right text-sm py-3 px-1">
-                                     <span className={`${
-                            flow.clicksMoM > 0 ? 'text-green-300' : 
-                            flow.clicksMoM < 0 ? 'text-red-300' : 'text-white/60'
-                                     }`}>
-                            {flow.clicksMoM > 0 ? '+' : ''}{flow.clicksMoM.toFixed(1)}%
-                                     </span>
-                        </td>
+                        <td className="text-right text-white text-sm py-3 px-2">${(flow.revenue || 0).toLocaleString()}</td>
+                        <td className="text-right text-white text-sm py-3 px-2">{((flow.open_rate || 0) * 100).toFixed(1)}%</td>
+                        <td className="text-right text-white text-sm py-3 px-2">{((flow.click_rate || 0) * 100).toFixed(1)}%</td>
+                        <td className="text-right text-white text-sm py-3 px-2">{(flow.weeklyRecipients || 0).toLocaleString()}</td>
+                        <td className="text-right text-white text-sm py-3 px-2">{(flow.opens || flow.weeklyOpens || 0).toLocaleString()}</td>
+                        <td className="text-right text-white text-sm py-3 px-2">{(flow.clicks || flow.weeklyClicks || 0).toLocaleString()}</td>
                       </tr>
                       
                       {/* Expanded Email Sequence Details */}
                       {expandedFlows.has(flow.flow_id) && (
                         <tr className="bg-white/5">
-                          <td colSpan={13} className="py-4 px-2">
+                          <td colSpan={7} className="py-4 px-2">
                             <div className="ml-6 space-y-3">
                               <h4 className="text-white font-medium text-sm mb-3">📧 Email Sequence Performance</h4>
                               {(() => {

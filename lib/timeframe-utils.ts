@@ -250,17 +250,24 @@ export const removeOutliers = (data: any[], valueKey: string, threshold: number 
 
 /**
  * Calculate smart Y-axis domain for charts with mixed positive/negative values
+ * Returns nice, rounded numbers suitable for display
  */
 export const getSmartYAxisDomain = (data: any[], valueKey: string): [number, number] => {
-  if (data.length === 0) return [0, 100]
+  if (data.length === 0) return [-100, 100]
   
   const values = data.map(item => item[valueKey] || 0)
-  const min = Math.min(...values)
-  const max = Math.max(...values)
+  const min = Math.min(...values, 0) // Always include 0
+  const max = Math.max(...values, 0) // Always include 0
   
-  // Add 10% padding to both ends
-  const range = Math.abs(max - min)
-  const padding = Math.max(range * 0.1, 1) // At least 1 unit padding
+  // If all values are positive, start from 0
+  if (min >= 0) {
+    const padding = Math.ceil(max * 0.1)
+    return [0, max + padding]
+  }
   
-  return [min - padding, max + padding]
+  // If we have negative values, center around 0 with symmetric padding
+  const absMax = Math.max(Math.abs(min), Math.abs(max))
+  const roundedMax = Math.ceil(absMax * 1.1 / 10) * 10 // Round to nearest 10
+  
+  return [-roundedMax, roundedMax]
 }
