@@ -364,11 +364,11 @@ export function EnhancedRequests({ client }: EnhancedRequestsProps) {
                     <h5 className="text-white font-medium mb-3">Request Details</h5>
                     <div className="space-y-2 text-sm">
                       <p className="text-white/80">
-                        <span className="text-white/60">Requested:</span> {selectedRequest.requestDate.toLocaleDateString()}
+                        <span className="text-white/60">Requested:</span> {selectedRequest.requestDate ? new Date(selectedRequest.requestDate).toLocaleDateString() : 'No date'}
                       </p>
                       {selectedRequest.desiredLaunchDate && (
                         <p className="text-white/80">
-                          <span className="text-white/60">Launch Date:</span> {selectedRequest.desiredLaunchDate.toLocaleDateString()}
+                          <span className="text-white/60">Launch Date:</span> {new Date(selectedRequest.desiredLaunchDate).toLocaleDateString()}
                         </p>
                       )}
                       <p className="text-white/80">
