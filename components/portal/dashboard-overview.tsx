@@ -22,14 +22,20 @@ import { getBrandColorClasses } from '@/lib/brand-colors'
 
 interface DashboardSummary {
   pendingApprovals: number
-  overdueForms: number
   activeRequests: number
+  unresolvedAnnotations?: number
   recentActivity: ActivityItem[]
   upcomingDeadlines: DeadlineItem[]
   monthlyStats: {
     campaignsApproved: number
-    formsCompleted: number
-    requestsSubmitted: number
+    requestsCompleted: number
+    abTestsCompleted: number
+    annotationsResolved?: number
+  }
+  totals?: {
+    totalRequests: number
+    totalABTests: number
+    totalAnnotations: number
   }
 }
 
