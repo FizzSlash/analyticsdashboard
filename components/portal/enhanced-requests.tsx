@@ -63,23 +63,18 @@ export function EnhancedRequests({ client }: EnhancedRequestsProps) {
   const fetchRequests = async () => {
     setLoading(true)
     try {
-      console.log('📥 REQUESTS: Fetching from Supabase for client:', client?.id)
-      const response = await fetch(`/api/portal-requests?clientId=${client?.id}`)
-      const result = await response.json()
-      
-      if (result.success) {
-        console.log(`✅ REQUESTS: Loaded ${result.requests.length} requests`)
-        setRequests(result.requests)
-      } else {
-        console.error('❌ REQUESTS: Failed to load:', result.error)
-        setRequests([])
-      }
+      // TODO: Fetch from database
+      setRequests(generateMockRequests())
     } catch (error) {
-      console.error('❌ REQUESTS: Error fetching requests:', error)
-      setRequests([])
+      console.error('Error fetching requests:', error)
     } finally {
       setLoading(false)
     }
+  }
+
+  const generateMockRequests = (): EnhancedRequest[] => {
+    // TODO: Load real requests from database
+    return []
   }
 
   const getRequestTypeIcon = (type: string) => {
@@ -268,10 +263,10 @@ export function EnhancedRequests({ client }: EnhancedRequestsProps) {
 
                   <div className="text-xs text-white/60">
                     <p>By: {request.requestedBy}</p>
-                              <p>Requested: {request.requestDate ? new Date(request.requestDate).toLocaleDateString() : 'No date'}</p>
-                              {request.desiredLaunchDate && (
-                                <p>Launch: {new Date(request.desiredLaunchDate).toLocaleDateString()}</p>
-                              )}
+                    <p>Requested: {request.requestDate.toLocaleDateString()}</p>
+                    {request.desiredLaunchDate && (
+                      <p>Launch: {request.desiredLaunchDate.toLocaleDateString()}</p>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -364,11 +359,11 @@ export function EnhancedRequests({ client }: EnhancedRequestsProps) {
                     <h5 className="text-white font-medium mb-3">Request Details</h5>
                     <div className="space-y-2 text-sm">
                       <p className="text-white/80">
-                        <span className="text-white/60">Requested:</span> {selectedRequest.requestDate ? new Date(selectedRequest.requestDate).toLocaleDateString() : 'No date'}
+                        <span className="text-white/60">Requested:</span> {selectedRequest.requestDate.toLocaleDateString()}
                       </p>
                       {selectedRequest.desiredLaunchDate && (
                         <p className="text-white/80">
-                          <span className="text-white/60">Launch Date:</span> {new Date(selectedRequest.desiredLaunchDate).toLocaleDateString()}
+                          <span className="text-white/60">Launch Date:</span> {selectedRequest.desiredLaunchDate.toLocaleDateString()}
                         </p>
                       )}
                       <p className="text-white/80">

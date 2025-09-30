@@ -63,23 +63,18 @@ export function ABTestManager({ client }: ABTestManagerProps) {
   const fetchABTests = async () => {
     setLoading(true)
     try {
-      console.log('📥 AB TESTS: Fetching from Supabase for client:', client?.id)
-      const response = await fetch(`/api/ab-tests?clientId=${client?.id}`)
-      const result = await response.json()
-      
-      if (result.success) {
-        console.log(`✅ AB TESTS: Loaded ${result.tests.length} tests`)
-        setTests(result.tests)
-      } else {
-        console.error('❌ AB TESTS: Failed to load:', result.error)
-        setTests([])
-      }
+      // TODO: Replace with actual API call
+      setTests(generateMockABTests())
     } catch (error) {
-      console.error('❌ AB TESTS: Error fetching tests:', error)
-      setTests([])
+      console.error('Error fetching A/B tests:', error)
     } finally {
       setLoading(false)
     }
+  }
+
+  const generateMockABTests = (): ABTest[] => {
+    // TODO: Load real A/B test data from database
+    return []
   }
 
   const getStatusColor = (status: string) => {

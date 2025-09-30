@@ -22,20 +22,14 @@ import { getBrandColorClasses } from '@/lib/brand-colors'
 
 interface DashboardSummary {
   pendingApprovals: number
+  overdueForms: number
   activeRequests: number
-  unresolvedAnnotations?: number
   recentActivity: ActivityItem[]
   upcomingDeadlines: DeadlineItem[]
   monthlyStats: {
     campaignsApproved: number
-    requestsCompleted?: number
-    abTestsCompleted?: number
-    annotationsResolved?: number
-  }
-  totals?: {
-    totalRequests: number
-    totalABTests: number
-    totalAnnotations: number
+    formsCompleted: number
+    requestsSubmitted: number
   }
 }
 
@@ -76,44 +70,28 @@ export function DashboardOverview({ client, userRole, onNavigate }: DashboardOve
   const loadDashboardSummary = async () => {
     setLoading(true)
     try {
-      console.log('📊 DASHBOARD OVERVIEW: Fetching portal stats from Supabase for client:', client?.id)
-      const response = await fetch(`/api/portal-overview?clientId=${client?.id}`)
-      const result = await response.json()
-      
-      if (result.success) {
-        console.log('✅ DASHBOARD OVERVIEW: Loaded portal stats:', result.summary)
-        setSummary(result.summary)
-      } else {
-        console.error('❌ DASHBOARD OVERVIEW: Failed to load:', result.error)
-        setSummary({
-          pendingApprovals: 0,
-          activeRequests: 0,
-          unresolvedAnnotations: 0,
-          recentActivity: [],
-          upcomingDeadlines: [],
-          monthlyStats: {
-            campaignsApproved: 0,
-            requestsCompleted: 0,
-            abTestsCompleted: 0
-          }
-        })
-      }
+      // TODO: Fetch real data from APIs
+      setSummary(generateMockSummary())
     } catch (error) {
-      console.error('❌ DASHBOARD OVERVIEW: Error loading summary:', error)
-      setSummary({
-        pendingApprovals: 0,
-        activeRequests: 0,
-        unresolvedAnnotations: 0,
-        recentActivity: [],
-        upcomingDeadlines: [],
-        monthlyStats: {
-          campaignsApproved: 0,
-          requestsCompleted: 0,
-          abTestsCompleted: 0
-        }
-      })
+      console.error('Error loading dashboard summary:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const generateMockSummary = (): DashboardSummary => {
+    // TODO: Replace with real API calls to get actual pending items
+    return {
+      pendingApprovals: 0, // TODO: Fetch from campaigns API
+      overdueForms: 0, // TODO: Fetch from forms API  
+      activeRequests: 0, // TODO: Fetch from requests API
+      recentActivity: [], // TODO: Fetch recent activity
+      upcomingDeadlines: [], // TODO: Fetch upcoming deadlines
+      monthlyStats: {
+        campaignsApproved: 0,
+        formsCompleted: 0,
+        requestsSubmitted: 0
+      }
     }
   }
 
@@ -138,42 +116,21 @@ export function DashboardOverview({ client, userRole, onNavigate }: DashboardOve
   }
 
   const getDeadlineStatus = (item: DeadlineItem) => {
-    try {
-      if (item.isOverdue) return 'text-red-400'
-      if (!item.dueDate) return 'text-gray-400'
-      
-      const dueDateObj = typeof item.dueDate === 'string' ? new Date(item.dueDate) : item.dueDate
-      if (isNaN(dueDateObj.getTime())) return 'text-gray-400'
-      
-      const daysUntilDue = Math.ceil((dueDateObj.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
-      if (daysUntilDue <= 1) return 'text-orange-400'
-      if (daysUntilDue <= 3) return 'text-yellow-400'
-      return 'text-green-400'
-    } catch (error) {
-      console.warn('Error calculating deadline status:', error)
-      return 'text-gray-400'
-    }
+    if (item.isOverdue) return 'text-red-400'
+    const daysUntilDue = Math.ceil((item.dueDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
+    if (daysUntilDue <= 1) return 'text-orange-400'
+    if (daysUntilDue <= 3) return 'text-yellow-400'
+    return 'text-green-400'
   }
 
-  const getTimeAgo = (date: Date | string | null | undefined) => {
-    if (!date) return 'Unknown'
+  const getTimeAgo = (date: Date) => {
+    const now = new Date()
+    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60))
     
-    try {
-      const now = new Date()
-      const dateObj = typeof date === 'string' ? new Date(date) : date
-      
-      if (isNaN(dateObj.getTime())) return 'Unknown'
-      
-      const diffInHours = Math.floor((now.getTime() - dateObj.getTime()) / (1000 * 60 * 60))
-      
-      if (diffInHours < 1) return 'Just now'
-      if (diffInHours < 24) return `${diffInHours}h ago`
-      const diffInDays = Math.floor(diffInHours / 24)
-      return `${diffInDays}d ago`
-    } catch (error) {
-      console.warn('Error calculating time ago:', error)
-      return 'Unknown'
-    }
+    if (diffInHours < 1) return 'Just now'
+    if (diffInHours < 24) return `${diffInHours}h ago`
+    const diffInDays = Math.floor(diffInHours / 24)
+    return `${diffInDays}d ago`
   }
 
   if (loading) {
@@ -227,18 +184,18 @@ export function DashboardOverview({ client, userRole, onNavigate }: DashboardOve
               <div className="bg-white/20 backdrop-blur-sm p-4 rounded-xl shadow-lg group-hover:scale-110 transition-transform border border-white/30">
                 <FileText className="h-6 w-6 text-white" />
               </div>
-              {(summary.unresolvedAnnotations || 0) > 0 && (
+              {summary.overdueForms > 0 && (
                 <div className="bg-red-500 text-white text-xs font-bold px-3 py-1 rounded-full">
-                  {summary.unresolvedAnnotations} NEW
+                  {summary.overdueForms} DUE
                 </div>
               )}
             </div>
             <div className="space-y-1">
               <p className="text-white/70 text-sm font-medium">Forms To Complete</p>
-                <p className="text-white text-3xl font-bold">{summary.unresolvedAnnotations || 0}</p>
-                <p className="text-white/60 text-sm">
-                  {(summary.unresolvedAnnotations || 0) > 0 ? 'Annotations pending' : 'All feedback addressed'}
-                </p>
+              <p className="text-white text-3xl font-bold">{summary.overdueForms}</p>
+              <p className="text-white/60 text-sm">
+                {summary.overdueForms > 0 ? 'Forms need completion' : 'All forms completed'}
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -319,7 +276,7 @@ export function DashboardOverview({ client, userRole, onNavigate }: DashboardOve
                       <div className="flex-1">
                         <p className="text-white font-medium text-sm">{activity.title}</p>
                         <p className="text-white/70 text-xs mt-1">{activity.description}</p>
-                        <span className="text-white/60 text-xs">{getTimeAgo((activity as any).date || (activity as any).timestamp)}</span>
+                        <span className="text-white/60 text-xs">{getTimeAgo(activity.timestamp)}</span>
                       </div>
                     </div>
                   )
@@ -331,7 +288,7 @@ export function DashboardOverview({ client, userRole, onNavigate }: DashboardOve
       )}
 
       {/* Only show monthly progress if there's actual data */}
-            {(summary.monthlyStats.campaignsApproved > 0 || (summary.monthlyStats.requestsCompleted || 0) > 0 || (summary.monthlyStats.abTestsCompleted || 0) > 0) && (
+      {(summary.monthlyStats.campaignsApproved > 0 || summary.monthlyStats.formsCompleted > 0 || summary.monthlyStats.requestsSubmitted > 0) && (
         <Card className="bg-white/5 border-white/10">
           <CardHeader>
             <CardTitle className="text-white flex items-center gap-2">
@@ -350,22 +307,22 @@ export function DashboardOverview({ client, userRole, onNavigate }: DashboardOve
                   <p className="text-white/70 text-sm">Campaigns Approved</p>
                 </div>
               )}
-              {(summary.monthlyStats.abTestsCompleted || 0) > 0 && (
+              {summary.monthlyStats.formsCompleted > 0 && (
                 <div className="text-center">
                   <div className="bg-blue-500/20 p-4 rounded-lg mb-2">
-                    <Activity className="h-8 w-8 text-blue-400 mx-auto" />
+                    <FileText className="h-8 w-8 text-blue-400 mx-auto" />
                   </div>
-                  <p className="text-white text-2xl font-bold">{summary.monthlyStats.abTestsCompleted}</p>
-                  <p className="text-white/70 text-sm">A/B Tests Completed</p>
+                  <p className="text-white text-2xl font-bold">{summary.monthlyStats.formsCompleted}</p>
+                  <p className="text-white/70 text-sm">Forms Completed</p>
                 </div>
               )}
-              {(summary.monthlyStats.requestsCompleted || 0) > 0 && (
+              {summary.monthlyStats.requestsSubmitted > 0 && (
                 <div className="text-center">
                   <div className="bg-purple-500/20 p-4 rounded-lg mb-2">
                     <MessageSquare className="h-8 w-8 text-purple-400 mx-auto" />
                   </div>
-                  <p className="text-white text-2xl font-bold">{summary.monthlyStats.requestsCompleted}</p>
-                  <p className="text-white/70 text-sm">Requests Completed</p>
+                  <p className="text-white text-2xl font-bold">{summary.monthlyStats.requestsSubmitted}</p>
+                  <p className="text-white/70 text-sm">Requests Submitted</p>
                 </div>
               )}
             </div>
@@ -374,7 +331,7 @@ export function DashboardOverview({ client, userRole, onNavigate }: DashboardOve
       )}
 
       {/* Quick Actions - Only show if there are pending items */}
-            {(summary.pendingApprovals > 0 || (summary.unresolvedAnnotations || 0) > 0) && (
+      {(summary.pendingApprovals > 0 || summary.overdueForms > 0) && (
         <Card className="bg-white/5 border-white/10">
           <CardHeader>
             <CardTitle className="text-white flex items-center gap-2">
@@ -399,17 +356,17 @@ export function DashboardOverview({ client, userRole, onNavigate }: DashboardOve
                 </button>
               )}
               
-              {(summary.unresolvedAnnotations || 0) > 0 && (
+              {summary.overdueForms > 0 && (
                 <button
-                  onClick={() => onNavigate('campaigns')}
-                  className="bg-orange-500/20 hover:bg-orange-500/30 border border-orange-400/30 text-orange-300 p-4 rounded-lg transition-colors flex items-center justify-between"
+                  onClick={() => onNavigate('forms')}
+                  className="bg-red-500/20 hover:bg-red-500/30 border border-red-400/30 text-red-300 p-4 rounded-lg transition-colors flex items-center justify-between"
                 >
                   <div className="flex items-center gap-3">
-                    <MessageSquare className="h-5 w-5" />
-                    <span className="text-sm font-medium">Review Feedback</span>
+                    <FileText className="h-5 w-5" />
+                    <span className="text-sm font-medium">Complete Forms</span>
                   </div>
-                  <span className="bg-orange-500/30 text-orange-200 text-xs px-2 py-1 rounded-full">
-                    {summary.unresolvedAnnotations}
+                  <span className="bg-red-500/30 text-red-200 text-xs px-2 py-1 rounded-full">
+                    {summary.overdueForms}
                   </span>
                 </button>
               )}
@@ -419,7 +376,7 @@ export function DashboardOverview({ client, userRole, onNavigate }: DashboardOve
       )}
 
       {/* All Caught Up State - Clean Success */}
-      {summary.pendingApprovals === 0 && (summary.unresolvedAnnotations || 0) === 0 && (
+      {summary.pendingApprovals === 0 && summary.overdueForms === 0 && (
         <Card className="bg-white/10 border-white/20 backdrop-blur-sm">
           <CardContent className="p-8 text-center">
             <div 
