@@ -156,10 +156,7 @@ export function DashboardOverview({ client, userRole, onNavigate }: DashboardOve
         >
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
-              <div 
-                className="p-4 rounded-xl shadow-lg group-hover:scale-110 transition-transform"
-                style={{ backgroundColor: brandColors.primary.bg80 }}
-              >
+              <div className="bg-white/20 backdrop-blur-sm p-4 rounded-xl shadow-lg group-hover:scale-110 transition-transform border border-white/30">
                 <Calendar className="h-6 w-6 text-white" />
               </div>
               {summary.pendingApprovals > 0 && (
@@ -184,10 +181,7 @@ export function DashboardOverview({ client, userRole, onNavigate }: DashboardOve
         >
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
-              <div 
-                className="p-4 rounded-xl shadow-lg group-hover:scale-110 transition-transform"
-                style={{ backgroundColor: brandColors.secondary.bg80 }}
-              >
+              <div className="bg-white/20 backdrop-blur-sm p-4 rounded-xl shadow-lg group-hover:scale-110 transition-transform border border-white/30">
                 <FileText className="h-6 w-6 text-white" />
               </div>
               {summary.overdueForms > 0 && (
@@ -212,16 +206,10 @@ export function DashboardOverview({ client, userRole, onNavigate }: DashboardOve
         >
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
-              <div 
-                className="p-4 rounded-xl shadow-lg group-hover:scale-110 transition-transform"
-                style={{ backgroundColor: brandColors.primary.bg50 }}
-              >
+              <div className="bg-white/20 backdrop-blur-sm p-4 rounded-xl shadow-lg group-hover:scale-110 transition-transform border border-white/30">
                 <MessageSquare className="h-6 w-6 text-white" />
               </div>
-              <div 
-                className="text-white text-xs font-medium px-3 py-1 rounded-full"
-                style={{ backgroundColor: brandColors.primary.bg80 }}
-              >
+              <div className="bg-white/20 backdrop-blur-sm text-white text-xs font-medium px-3 py-1 rounded-full border border-white/30">
                 SUBMIT
               </div>
             </div>

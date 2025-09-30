@@ -348,7 +348,7 @@ export function FlowProgressTracker({ client, userRole, canEdit, canCreate, canA
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {flows.map(flow => (
-            <Card key={flow.id} className="bg-white/5 border-white/10 hover:bg-white/10 transition-colors">
+            <Card key={flow.id} className="bg-white/10 backdrop-blur-sm border-white/20 hover:bg-white/15 transition-colors shadow-lg">
               <CardContent className="p-4">
                 <div className="space-y-3">
                   {/* Flow Header */}

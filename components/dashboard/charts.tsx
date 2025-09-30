@@ -266,11 +266,9 @@ export function CustomPieChart({
   client
 }: PieChartProps) {
   // Use client-based colors with fallback to defaults
-  const chartColors = colors || [
-    client?.primary_color || '#3B82F6', 
-    client?.secondary_color || '#EF4444',
-    ...DEFAULT_COLORS.slice(2)
-  ]
+  // Use client chart colors for consistent branding
+  const clientChartColors = getChartColors(client)
+  const chartColors = colors || [...clientChartColors, ...DEFAULT_COLORS.slice(3)]
   return (
     <Card className={className}>
       <CardHeader>
