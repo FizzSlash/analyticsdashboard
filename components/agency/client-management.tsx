@@ -1376,10 +1376,9 @@ ${flowDetails.slice(0, 3).map((f: any, i: number) =>
           clients.map((client) => (
             <Card key={client.id}>
               <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    {/* Client logo removed - simplified client list */}
-                    <div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div>
                       <h3 className="text-lg font-semibold text-gray-900">
                         {client.brand_name}
                       </h3>

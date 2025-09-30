@@ -142,7 +142,13 @@ export default function ClientDashboardPage({ params }: PageProps) {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               {/* Logo */}
-              {/* Client logo removed - only agency branding now */}
+              {client.logo_url && (
+                <img 
+                  src={client.logo_url} 
+                  alt={`${client.brand_name} logo`}
+                  className="h-12 w-auto"
+                />
+              )}
               <div>
                 <h1 className="text-3xl font-bold mb-2 text-white">{client.brand_name}</h1>
                 <p className="text-blue-100 text-lg">
@@ -179,7 +185,6 @@ export default function ClientDashboardPage({ params }: PageProps) {
           <div className="max-w-7xl mx-auto px-6 py-8">
             <CleanPortalDashboard 
               user={{ client: client }}
-              data={dashboardData.data}
               userRole="client_user"
             />
           </div>

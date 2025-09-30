@@ -175,7 +175,17 @@ export function CustomBarChart({
                 borderRadius: '6px'
               }}
             />
-            <Bar dataKey={yKey} fill={chartColor} radius={[4, 4, 0, 0]} />
+            <Bar 
+              dataKey={yKey} 
+              radius={[4, 4, 0, 0]}
+            >
+              {data.map((entry: any, index: number) => (
+                <Cell 
+                  key={`cell-${index}`} 
+                  fill={entry[yKey] < 0 ? '#EF4444' : chartColor} 
+                />
+              ))}
+            </Bar>
           </BarChart>
         </ResponsiveContainer>
       </CardContent>

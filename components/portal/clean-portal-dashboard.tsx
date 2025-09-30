@@ -23,14 +23,13 @@ import {
 interface CleanPortalDashboardProps {
   user: any
   client?: any // For agency admins managing specific clients
-  data?: any // Analytics data for dashboard overview
   userRole: 'client_user' | 'agency_admin'
   allClients?: any[] // For agency admins to see all clients
 }
 
 type PortalTab = 'overview' | 'campaigns' | 'flows' | 'abtests' | 'requests' | 'forms'
 
-export function CleanPortalDashboard({ user, client, data, userRole, allClients }: CleanPortalDashboardProps) {
+export function CleanPortalDashboard({ user, client, userRole, allClients }: CleanPortalDashboardProps) {
   const [activeTab, setActiveTab] = useState<PortalTab>('overview')
   const [selectedClient, setSelectedClient] = useState<any>(client || allClients?.[0] || null)
 
@@ -201,7 +200,6 @@ export function CleanPortalDashboard({ user, client, data, userRole, allClients 
         {activeTab === 'overview' && (
           <DashboardOverview 
             client={clientInfo}
-            data={data}
             userRole={userRole}
             onNavigate={(tab, itemId) => setActiveTab(tab as PortalTab)}
           />

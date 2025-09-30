@@ -203,7 +203,13 @@ export function AgencyAdminDashboard({ agency, clients, clientUsers }: AgencyAdm
                     {clients.slice(0, 5).map((client) => (
                       <div key={client.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                         <div className="flex items-center gap-3">
-                          {/* Client logo removed - simplified client view */}
+                          {client.logo_url && (
+                            <img 
+                              src={client.logo_url} 
+                              alt={`${client.brand_name} logo`}
+                              className="h-8 w-8 rounded"
+                            />
+                          )}
                           <div>
                             <div className="font-medium">{client.brand_name}</div>
                             <div className="text-sm text-gray-600">/{client.brand_slug}</div>

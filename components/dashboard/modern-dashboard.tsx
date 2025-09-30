@@ -632,40 +632,29 @@ export function ModernDashboard({ client, data: initialData, disablePortalMode =
       if (!client?.brand_slug) return
       
       setLoading(true)
-      console.log(`🔄 Fetching dashboard data for ${timeframe} days (activeTab: ${activeTab})`)
-      
       try {
         const response = await fetch(`/api/dashboard?clientSlug=${client.brand_slug}&timeframe=${timeframe}`)
         const result = await response.json()
         
         if (response.ok) {
           setData(result.data)
-          console.log(`✅ Dashboard data refreshed for ${timeframe} days:`, result.data?.summary)
-        } else {
-          console.error('❌ Dashboard API error:', result.error)
+          console.log(`Dashboard data refreshed for ${timeframe} days:`, result.data)
         }
       } catch (error) {
-        console.error('❌ Error fetching dashboard data:', error)
+        console.error('Error fetching dashboard data:', error)
       } finally {
         setLoading(false)
       }
     }
 
-    // Always fetch when timeframe actually changes, except on initial load if data matches
-    const isInitialLoad = initialData && timeframe === initialTimeframe
-    
-    if (!isInitialLoad) {
-      console.log(`🎯 Timeframe changed to ${timeframe} days - fetching new data`)
+    // Always fetch when timeframe changes (skip only on first load with matching data)
+    if (!initialData || timeframe !== initialTimeframe) {
+      console.log(`🔄 Fetching data for timeframe: ${timeframe} days (initial was ${initialTimeframe})`)
       fetchData()
     } else {
-      console.log(`⏭️ Using initial data for timeframe: ${timeframe} days`)
+      console.log(`⏭️ Skipping fetch - using initial data for timeframe: ${timeframe} days`)
     }
-  }, [timeframe, client?.brand_slug])
-
-  // Separate effect to handle tab switching and ensure correct timeframe
-  useEffect(() => {
-    console.log(`🔄 Tab changed to: ${activeTab}, current timeframe: ${timeframe}`)
-  }, [activeTab, timeframe])
+  }, [timeframe, campaignTimeframe, flowTimeframe, client?.brand_slug, initialData, initialTimeframe])
 
   const renderOverviewTab = () => (
     <div className="space-y-6">
@@ -758,28 +747,43 @@ export function ModernDashboard({ client, data: initialData, disablePortalMode =
         <Card className="bg-white/10 backdrop-blur-md border-white/20">
           <CardHeader>
             <CardTitle className="text-white flex items-center gap-2">
-              <Activity className="w-5 h-5" />
-              Engagement Overview
+              <TrendingUp className="w-5 h-5" />
+              Growth Metrics
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
               <div className="flex justify-between items-center">
-                <span className="text-white/80">Campaigns Sent</span>
-                <span className="text-white font-semibold">
-                  {data?.summary?.campaigns?.total_sent || 0}
-                </span>
+                <span className="text-white/80">📈 Net List Growth</span>
+                <div className="text-right">
+                  <span className="text-white font-semibold">
+                    {(data?.summary?.audience?.net_growth || 0) > 0 ? '+' : ''}
+                    {(data?.summary?.audience?.net_growth || 0).toLocaleString()}
+                  </span>
+                  <div className="text-xs text-white/60">
+                    {(((data?.summary?.audience?.net_growth || 0) / (data?.summary?.audience?.total_subscribers || 1)) * 100).toFixed(1)}% growth rate
+                  </div>
+                </div>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-white/80">Active Flows</span>
-                <span className="text-white font-semibold">
-                  {data?.summary?.flows?.active_flows || 0}
-                </span>
+                <span className="text-white/80">💰 Email Revenue %</span>
+                <div className="text-right">
+                  <span className="text-white font-semibold">
+                    {(data?.revenueAttributionSummary?.avg_email_percentage || 0).toFixed(1)}%
+                  </span>
+                  <div className="text-xs text-white/60">
+                    of total revenue
+                  </div>
+                </div>
               </div>
               <div className="flex justify-between items-center border-t border-white/20 pt-4">
-                <span className="text-white font-medium">Engagement Rate</span>
+                <span className="text-white font-medium">💵 Revenue per Subscriber</span>
                 <span className="text-white font-bold">
-                  {(data?.summary?.audience?.engagement_rate || 0).toFixed(1)}%
+                  $
+                  {(
+                    (data?.summary?.revenue?.total_revenue || 0) / 
+                    (data?.summary?.audience?.total_subscribers || 1)
+                  ).toFixed(2)}
                 </span>
               </div>
             </div>
@@ -2217,18 +2221,22 @@ export function ModernDashboard({ client, data: initialData, disablePortalMode =
                       {/* Single net growth bar - green if positive, red if negative */}
                       <Bar 
                         dataKey="net_growth" 
-                        radius={[4, 4, 4, 4]}
+                        fill={accentColor}
+                        name="net_growth"
+                        radius={[4, 4, 0, 0]}
                         shape={(props: any) => {
                           const { x, y, width, height, payload } = props
                           const isPositive = payload.net_growth >= 0
                           const color = isPositive ? accentColor : errorColor
+                          const actualY = isPositive ? y : y
+                          const actualHeight = Math.abs(height)
                           
                           return (
                             <rect
                               x={x}
-                              y={y}
+                              y={actualY}
                               width={width}
-                              height={Math.abs(height)}
+                              height={actualHeight}
                               fill={color}
                               rx={4}
                               ry={4}
@@ -2590,7 +2598,7 @@ export function ModernDashboard({ client, data: initialData, disablePortalMode =
                   <TimeframeSelector 
                     selectedTimeframe={timeframe}
                     onTimeframeChange={(days: number) => {
-                      console.log(`🎯 TimeframeSelector changed: ${days} days (activeTab: ${activeTab})`)
+                      console.log(`🎯 Timeframe changed: ${timeframe} → ${days} days (activeTab: ${activeTab})`)
                       if (activeTab === 'campaigns' || activeTab === 'subject-lines') {
                         console.log(`📅 Setting campaignTimeframe: ${campaignTimeframe} → ${days}`)
                         setCampaignTimeframe(days)
@@ -2601,6 +2609,7 @@ export function ModernDashboard({ client, data: initialData, disablePortalMode =
                         console.log(`📅 Setting campaignTimeframe (default): ${campaignTimeframe} → ${days}`)
                         setCampaignTimeframe(days)
                       }
+                      console.log(`✅ New timeframe state - campaign: ${activeTab === 'campaigns' || activeTab === 'subject-lines' ? days : campaignTimeframe}, flow: ${activeTab === 'flows' ? days : flowTimeframe}`)
                     }}
                     mode={activeTab === 'flows' ? 'flow' : 'campaign'}
                   />
