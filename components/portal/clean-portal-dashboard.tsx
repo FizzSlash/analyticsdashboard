@@ -37,10 +37,11 @@ export function CleanPortalDashboard({ user, client, userRole, allClients }: Cle
   const clientInfo = userRole === 'agency_admin' 
     ? selectedClient 
     : { 
-        brand_name: user.client?.brand_name || 'Your Brand',
-        brand_slug: user.client?.brand_slug || 'unknown',
-        figma_url: user.client?.figma_url || client?.figma_url,
-        ...client
+        ...client,  // Spread client first to get all fields including id
+        ...user.client,  // Override with user.client data if available
+        brand_name: user.client?.brand_name || client?.brand_name || 'Your Brand',
+        brand_slug: user.client?.brand_slug || client?.brand_slug || 'unknown',
+        figma_url: user.client?.figma_url || client?.figma_url
       }
 
   // Agency info for logo display
