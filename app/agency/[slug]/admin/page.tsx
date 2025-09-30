@@ -170,7 +170,7 @@ export default function AgencyAdminPage({ params }: PageProps) {
       )}
       
       {/* Header with View Toggle */}
-      <div className="py-6 relative z-10">
+      <div className="py-6 relative z-50">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">

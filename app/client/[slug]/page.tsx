@@ -143,7 +143,7 @@ export default function ClientDashboardPage({ params }: PageProps) {
     >
       
       {/* Header with View Toggle */}
-      <div className="py-6 relative z-10">
+      <div className="py-6 relative z-50">
         <div className="max-w-7xl mx-auto px-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
