@@ -734,7 +734,7 @@ export function ModernDashboard({ client, data: initialData, disablePortalMode =
             </div>
           </CardContent>
         </Card>
-
+      </div>
 
       {/* Top Performers */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
