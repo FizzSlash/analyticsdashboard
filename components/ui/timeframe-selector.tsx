@@ -7,10 +7,10 @@ interface TimeframeSelectorProps {
   selectedTimeframe: number
   onTimeframeChange: (days: number) => void
   className?: string
-  mode?: 'campaign' | 'flow'
 }
 
-const campaignTimeframeOptions = [
+// ONE SET OF OPTIONS FOR ALL TABS
+const timeframeOptions = [
   { label: 'Last 7 days', value: 7 },
   { label: 'Last 30 days', value: 30 },
   { label: 'Last 60 days', value: 60 },
@@ -19,21 +19,10 @@ const campaignTimeframeOptions = [
   { label: 'Last 365 days', value: 365 }
 ]
 
-const flowTimeframeOptions = [
-  { label: 'Last 4 weeks', value: 28 },
-  { label: 'Last 8 weeks', value: 56 },
-  { label: 'Last 3 months', value: 90 },
-  { label: 'Last 6 months', value: 180 },
-  { label: 'Last 12 months', value: 365 },
-  { label: 'All time', value: 9999 }
-]
-
-export function TimeframeSelector({ selectedTimeframe, onTimeframeChange, className, mode = 'campaign' }: TimeframeSelectorProps) {
+export function TimeframeSelector({ selectedTimeframe, onTimeframeChange, className }: TimeframeSelectorProps) {
   const [isOpen, setIsOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
   
-  // Get options based on mode
-  const timeframeOptions = mode === 'flow' ? flowTimeframeOptions : campaignTimeframeOptions
   const selectedOption = timeframeOptions.find(option => option.value === selectedTimeframe) || timeframeOptions[1]
 
   // Handle clicks outside dropdown

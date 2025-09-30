@@ -56,18 +56,11 @@ export function ModernDashboard({ client, data: initialData, disablePortalMode =
   const accentColor = '#34D399' // Green for positive metrics
   const warningColor = '#F59E0B' // Orange for neutral/warning
   const errorColor = '#EF4444' // Red for negative metrics
-  const [campaignTimeframe, setCampaignTimeframe] = useState(30) // Default to 30 days for campaigns
-  const [flowTimeframe, setFlowTimeframe] = useState(90) // Default to 3 months for flows  
+  // ONE SIMPLE TIMEFRAME FOR ALL TABS
+  const [timeframe, setTimeframe] = useState(30) // Default to 30 days for all tabs
   const [data, setData] = useState(initialData)
   const [loading, setLoading] = useState(false)
   const [initialTimeframe] = useState(365) // Track the initial timeframe (365 from client page)
-  
-  // Get current timeframe based on active tab - memoized for stability
-  const timeframe = useMemo(() => {
-    const currentTimeframe = activeTab === 'flows' ? flowTimeframe : campaignTimeframe
-    console.log(`🎯 Current timeframe calculated: ${currentTimeframe} days for tab: ${activeTab}`)
-    return currentTimeframe
-  }, [activeTab, campaignTimeframe, flowTimeframe])
   const [sortField, setSortField] = useState('send_date')
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc')
   const [expandedFlows, setExpandedFlows] = useState<Set<string>>(new Set())
@@ -652,7 +645,7 @@ export function ModernDashboard({ client, data: initialData, disablePortalMode =
     } else {
       console.log(`⏭️ Skipping fetch - using initial data for timeframe: ${timeframe} days`)
     }
-  }, [timeframe, campaignTimeframe, flowTimeframe, client?.brand_slug, initialData, initialTimeframe])
+  }, [timeframe, client?.brand_slug, initialData, initialTimeframe])
 
   const renderOverviewTab = () => (
     <div className="space-y-6">
@@ -689,7 +682,7 @@ export function ModernDashboard({ client, data: initialData, disablePortalMode =
       </div>
 
       {/* Revenue Breakdown */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="max-w-4xl mx-auto">
         <Card className="bg-white/10 backdrop-blur-md border-white/20">
           <CardHeader>
             <CardTitle className="text-white flex items-center gap-2">
@@ -742,51 +735,6 @@ export function ModernDashboard({ client, data: initialData, disablePortalMode =
           </CardContent>
         </Card>
 
-        <Card className="bg-white/10 backdrop-blur-md border-white/20">
-          <CardHeader>
-            <CardTitle className="text-white flex items-center gap-2">
-              <Target className="w-5 h-5" />
-              Campaign Performance
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <span className="text-white/80">📊 Total Campaigns</span>
-                <div className="text-right">
-                  <span className="text-white font-semibold">
-                    {data?.summary?.campaigns?.total_sent || 0}
-                  </span>
-                  <div className="text-xs text-white/60">
-                    campaigns sent
-                  </div>
-                </div>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-white/80">⚡ Active Flows</span>
-                <div className="text-right">
-                  <span className="text-white font-semibold">
-                    {data?.summary?.flows?.active_flows || 0}
-                  </span>
-                  <div className="text-xs text-white/60">
-                    automations running
-                  </div>
-                </div>
-              </div>
-              <div className="flex justify-between items-center border-t border-white/20 pt-4">
-                <span className="text-white font-medium">💵 Revenue per Subscriber</span>
-                <span className="text-white font-bold">
-                  $
-                  {(
-                    (data?.revenueAttributionSummary?.total_email_revenue || data?.summary?.revenue?.total_revenue || 0) / 
-                    (data?.summary?.audience?.total_subscribers || 1)
-                  ).toFixed(2)}
-                </span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
 
       {/* Top Performers */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -2595,20 +2543,9 @@ export function ModernDashboard({ client, data: initialData, disablePortalMode =
                   <TimeframeSelector 
                     selectedTimeframe={timeframe}
                     onTimeframeChange={(days: number) => {
-                      console.log(`🎯 Timeframe changed: ${timeframe} → ${days} days (activeTab: ${activeTab})`)
-                      if (activeTab === 'campaigns' || activeTab === 'subject-lines') {
-                        console.log(`📅 Setting campaignTimeframe: ${campaignTimeframe} → ${days}`)
-                        setCampaignTimeframe(days)
-                      } else if (activeTab === 'flows') {
-                        console.log(`📅 Setting flowTimeframe: ${flowTimeframe} → ${days}`)
-                        setFlowTimeframe(days)
-                      } else {
-                        console.log(`📅 Setting campaignTimeframe (default): ${campaignTimeframe} → ${days}`)
-                        setCampaignTimeframe(days)
-                      }
-                      console.log(`✅ New timeframe state - campaign: ${activeTab === 'campaigns' || activeTab === 'subject-lines' ? days : campaignTimeframe}, flow: ${activeTab === 'flows' ? days : flowTimeframe}`)
+                      console.log(`🎯 Timeframe changed: ${timeframe} → ${days} days`)
+                      setTimeframe(days)
                     }}
-                    mode={activeTab === 'flows' ? 'flow' : 'campaign'}
                   />
                 )}
               </div>
