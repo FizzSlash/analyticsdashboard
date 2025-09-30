@@ -23,8 +23,13 @@ export async function GET(request: NextRequest) {
 
     console.log('📥 AIRTABLE LOAD: Loading campaigns and flows for client:', client)
 
+    // Map demo client name back to Airtable client name
+    const airtableClientName = client === 'Demo Brand' ? 'Hydrus' : client
+
+    console.log('📥 AIRTABLE LOAD: Using Airtable client filter:', airtableClientName)
+
     // Fetch all records from Airtable Retention table
-    const airtableUrl = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${AIRTABLE_TABLE_ID}${client ? `?filterByFormula=Client='${client}'` : ''}`
+    const airtableUrl = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${AIRTABLE_TABLE_ID}${airtableClientName ? `?filterByFormula=Client='${airtableClientName}'` : ''}`
     const response = await fetch(airtableUrl, {
       headers: {
         'Authorization': `Bearer ${AIRTABLE_TOKEN}`
