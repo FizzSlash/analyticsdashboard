@@ -667,10 +667,10 @@ export function ModernDashboard({ client, data: initialData, disablePortalMode =
         />
         <MetricCard
           title="List Growth"
-          value={`${(data?.summary?.audience?.net_growth || 0) > 0 ? '+' : ''}${(data?.summary?.audience?.net_growth || 0).toLocaleString()}`}
-          change={`${(((data?.summary?.audience?.net_growth || 0) / (data?.summary?.audience?.total_subscribers || 1)) * 100).toFixed(1)}%`}
+          value={`${(data?.listGrowthSummary?.net_growth || 0) > 0 ? '+' : ''}${(data?.listGrowthSummary?.net_growth || 0).toLocaleString()}`}
+          change={`${(data?.listGrowthSummary?.average_growth_rate || 0).toFixed(1)}%`}
           icon={Users}
-          trend={(data?.summary?.audience?.net_growth || 0) > 0 ? "up" : "down"}
+          trend={(data?.listGrowthSummary?.net_growth || 0) > 0 ? "up" : "down"}
         />
         <MetricCard
           title="Avg Open Rate"
@@ -778,7 +778,7 @@ export function ModernDashboard({ client, data: initialData, disablePortalMode =
                 <span className="text-white font-bold">
                   $
                   {(
-                    (data?.summary?.revenue?.total_revenue || 0) / 
+                    (data?.revenueAttributionSummary?.total_email_revenue || data?.summary?.revenue?.total_revenue || 0) / 
                     (data?.summary?.audience?.total_subscribers || 1)
                   ).toFixed(2)}
                 </span>
