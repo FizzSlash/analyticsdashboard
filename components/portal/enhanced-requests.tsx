@@ -268,10 +268,10 @@ export function EnhancedRequests({ client }: EnhancedRequestsProps) {
 
                   <div className="text-xs text-white/60">
                     <p>By: {request.requestedBy}</p>
-                    <p>Requested: {request.requestDate.toLocaleDateString()}</p>
-                    {request.desiredLaunchDate && (
-                      <p>Launch: {request.desiredLaunchDate.toLocaleDateString()}</p>
-                    )}
+                              <p>Requested: {request.requestDate ? new Date(request.requestDate).toLocaleDateString() : 'No date'}</p>
+                              {request.desiredLaunchDate && (
+                                <p>Launch: {new Date(request.desiredLaunchDate).toLocaleDateString()}</p>
+                              )}
                   </div>
                 </CardContent>
               </Card>
