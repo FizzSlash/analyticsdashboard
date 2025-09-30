@@ -774,99 +774,55 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
             <div className="space-y-4">
               <div className="flex justify-between items-center">
                 <span className="text-white/80">📧 Campaign Revenue</span>
-                <div className="text-right">
-                  <span className="text-white font-semibold">
-                    ${(timeframeSummary?.campaigns?.total_revenue || 0).toLocaleString()}
-                  </span>
-                  <div className="text-xs text-white/60">
-                    {timeframeSummary?.campaigns?.total_campaigns || 0} campaigns
-                  </div>
-                </div>
+                <span className="text-white font-semibold text-lg">
+                  ${(timeframeSummary?.campaigns?.total_revenue || 0).toLocaleString()}
+                </span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-white/80">⚡ Flow Revenue</span>
-                <div className="text-right">
-                  <span className="text-white font-semibold">
-                    ${(timeframeSummary?.flows?.total_revenue || 0).toLocaleString()}
-                  </span>
-                  <div className="text-xs text-white/60">
-                    {timeframeSummary?.flows?.active_flows || 0} active flows
-                  </div>
-                </div>
+                <span className="text-white font-semibold text-lg">
+                  ${(timeframeSummary?.flows?.total_revenue || 0).toLocaleString()}
+                </span>
               </div>
-              <div className="flex justify-between items-center border-t border-white/20 pt-4">
-                <span className="text-white font-medium">📊 Campaign Performance</span>
-                <div className="text-right">
-                  <span className="text-white font-bold">
-                    {(timeframeSummary?.campaigns?.avg_open_rate || 0).toFixed(1)}%
-                  </span>
-                  <div className="text-xs text-white/60">avg open rate</div>
-                </div>
+              
+              {/* Revenue Comparison Bar Chart */}
+              <div className="h-48 mt-4">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart 
+                    data={[
+                      { type: 'Campaigns', revenue: timeframeSummary?.campaigns?.total_revenue || 0 },
+                      { type: 'Flows', revenue: timeframeSummary?.flows?.total_revenue || 0 }
+                    ]}
+                    margin={{ top: 10, right: 10, left: 10, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+                    <XAxis 
+                      dataKey="type" 
+                      stroke="rgba(255,255,255,0.6)"
+                      fontSize={12}
+                    />
+                    <YAxis 
+                      stroke="rgba(255,255,255,0.6)" 
+                      fontSize={12}
+                      tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
+                    />
+                    <Tooltip 
+                      contentStyle={{ 
+                        backgroundColor: 'rgba(30, 41, 59, 0.95)', 
+                        border: '1px solid rgba(255,255,255,0.2)',
+                        borderRadius: '8px',
+                        color: 'white'
+                      }}
+                      formatter={(value: any) => [`$${value.toLocaleString()}`, 'Revenue']}
+                    />
+                    <Bar 
+                      dataKey="revenue" 
+                      fill={primaryColor}
+                      radius={[8, 8, 0, 0]}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
               </div>
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-white/70">⚡ Flow Performance</span>
-                <div className="text-right">
-                  <span className="text-white/90">
-                    {((timeframeSummary?.flows?.avg_completion_rate || 0) * 100).toFixed(1)}%
-                  </span>
-                  <div className="text-xs text-white/60">avg completion rate</div>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Performance Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Campaign Performance Chart */}
-        <Card className="bg-white/10 backdrop-blur-md border-white/20">
-          <CardHeader>
-            <CardTitle className="text-white flex items-center gap-2">
-              <BarChart3 className="w-5 h-5" />
-              Recent Campaign Performance
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-64">
-              <CustomBarChart
-                title=""
-                data={filteredData.campaigns.slice(0, 8).map((campaign: any) => ({
-                  name: campaign.campaign_name?.substring(0, 15) + '...' || 'Campaign',
-                  revenue: campaign.revenue || 0,
-                  open_rate: (campaign.open_rate * 100) || 0
-                }))}
-                xKey="name"
-                yKey="revenue"
-                format="currency"
-                client={client}
-              />
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Flow Revenue Trends */}
-        <Card className="bg-white/10 backdrop-blur-md border-white/20">
-          <CardHeader>
-            <CardTitle className="text-white flex items-center gap-2">
-              <TrendingUp className="w-5 h-5" />
-              Flow Revenue Trends
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-64">
-              <CustomLineChart
-                title=""
-                data={filteredData.flows.slice(0, 10).map((flow: any, index: number) => ({
-                  date: `Flow ${index + 1}`,
-                  revenue: flow.revenue || 0,
-                  emails: flow.recipients || 0
-                }))}
-                xKey="date"
-                yKey="revenue"
-                format="currency"
-                client={client}
-              />
             </div>
           </CardContent>
         </Card>
@@ -2203,14 +2159,19 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
       filteredListGrowth.reduce((sum, lg) => sum + (lg.churn_rate || 0), 0) / filteredListGrowth.length : 0
     
     // Prepare chart data from list growth metrics with outlier detection
-    const rawChartData = filteredListGrowth.map((point: any) => ({
+    // ✅ FIX: Sort by date to ensure chronological order (oldest on left, newest on right)
+    const sortedListGrowth = [...filteredListGrowth].sort((a: any, b: any) => {
+      return new Date(a.date_recorded).getTime() - new Date(b.date_recorded).getTime()
+    })
+    
+    const rawChartData = sortedListGrowth.map((point: any) => ({
       date: point.date_recorded,
       email_subscriptions: point.email_subscriptions || 0,
       email_unsubscribes: point.email_unsubscribes || 0,
       net_growth: point.overall_net_growth || 0, // Use overall_net_growth, not email_net_growth
       sms_subscriptions: point.sms_subscriptions || 0,
       form_submissions: point.form_submissions || 0
-    })).reverse() // Reverse for chronological order
+    }))
     
     // ✅ FIX: Remove outliers that throw off chart scaling
     const chartData = removeOutliers(rawChartData, 'net_growth')
