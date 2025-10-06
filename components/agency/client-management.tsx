@@ -1192,28 +1192,41 @@ ${flowDetails.slice(0, 3).map((f: any, i: number) =>
                       <Sparkles className="h-4 w-4" />
                     </button>
 
-                    {/* Unified Sync Button - Syncs All Data Types */}
+                    {/* Individual Sync Buttons for Testing */}
                     <button
-                      onClick={async () => {
-                        setLoading(true)
-                        setError('')
-                        try {
-                          await triggerCampaignSync(client)
-                          await triggerFlowSync(client)
-                          await triggerListGrowthSync(client)
-                          await triggerRevenueAttributionSync(client)
-                          setSuccess(`✅ Complete sync finished for ${client.brand_name}!`)
-                        } catch (err) {
-                          setError(err instanceof Error ? err.message : 'Sync failed')
-                        } finally {
-                          setLoading(false)
-                        }
-                      }}
+                      onClick={() => triggerCampaignSync(client)}
                       disabled={loading}
                       className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
-                      title="Sync All Data (Campaigns, Flows, List Growth, Revenue)"
+                      title="Sync Campaigns"
                     >
-                      <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+                      <Mail className="h-4 w-4" />
+                    </button>
+                    
+                    <button
+                      onClick={() => triggerFlowSync(client)}
+                      disabled={loading}
+                      className="p-2 text-gray-600 hover:text-purple-600 hover:bg-purple-50 rounded-md transition-colors"
+                      title="Sync Flows"
+                    >
+                      <Zap className="h-4 w-4" />
+                    </button>
+                    
+                    <button
+                      onClick={() => triggerListGrowthSync(client)}
+                      disabled={loading}
+                      className="p-2 text-gray-600 hover:text-green-600 hover:bg-green-50 rounded-md transition-colors"
+                      title="Sync List Growth"
+                    >
+                      <TrendingUp className="h-4 w-4" />
+                    </button>
+                    
+                    <button
+                      onClick={() => triggerRevenueAttributionSync(client)}
+                      disabled={loading}
+                      className="p-2 text-gray-600 hover:text-yellow-600 hover:bg-yellow-50 rounded-md transition-colors"
+                      title="Sync Revenue Attribution"
+                    >
+                      <DollarSign className="h-4 w-4" />
                     </button>
                     
                     <a 
