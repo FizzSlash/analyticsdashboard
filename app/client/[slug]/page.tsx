@@ -38,7 +38,82 @@ export default function ClientDashboardPage({ params }: PageProps) {
   const [error, setError] = useState<string | null>(null)
   const [viewMode, setViewMode] = useState<ViewMode>('analytics')
   const [selectedTimeframe, setSelectedTimeframe] = useState<number>(30) // Default to 30 days
+  const [syncing, setSyncing] = useState(false)
+  const [syncMessage, setSyncMessage] = useState<string | null>(null)
+  const [canSync, setCanSync] = useState(true)
   const router = useRouter()
+
+  // Check if client can sync (once per day limit)
+  const checkSyncEligibility = () => {
+    const lastSyncKey = `lastSync_${params.slug}`
+    const lastSync = localStorage.getItem(lastSyncKey)
+    
+    if (!lastSync) return true
+    
+    const lastSyncTime = new Date(lastSync)
+    const now = new Date()
+    const hoursSinceLastSync = (now.getTime() - lastSyncTime.getTime()) / (1000 * 60 * 60)
+    
+    return hoursSinceLastSync >= 24 // Can sync if 24+ hours
+  }
+
+  const getNextSyncTime = () => {
+    const lastSyncKey = `lastSync_${params.slug}`
+    const lastSync = localStorage.getItem(lastSyncKey)
+    
+    if (!lastSync) return null
+    
+    const lastSyncTime = new Date(lastSync)
+    const nextSyncTime = new Date(lastSyncTime.getTime() + 24 * 60 * 60 * 1000)
+    
+    return nextSyncTime
+  }
+
+  const handleSync = async () => {
+    if (!checkSyncEligibility()) {
+      const nextSync = getNextSyncTime()
+      setSyncMessage(`⏱️ You can sync again after ${nextSync?.toLocaleString()}`)
+      setTimeout(() => setSyncMessage(null), 5000)
+      return
+    }
+
+    setSyncing(true)
+    setSyncMessage(null)
+    
+    try {
+      const response = await fetch('/api/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ clientId: params.slug })
+      })
+
+      if (!response.ok) {
+        throw new Error('Sync failed')
+      }
+
+      // Update last sync time
+      const lastSyncKey = `lastSync_${params.slug}`
+      localStorage.setItem(lastSyncKey, new Date().toISOString())
+      setCanSync(false) // Disable sync button for 24 hours
+      
+      setSyncMessage('✅ Sync completed! Refreshing dashboard...')
+      
+      // Refresh the page to show new data
+      setTimeout(() => {
+        window.location.reload()
+      }, 2000)
+    } catch (err) {
+      setSyncMessage('❌ Sync failed. Please try again later.')
+      setTimeout(() => setSyncMessage(null), 5000)
+    } finally {
+      setSyncing(false)
+    }
+  }
+
+  // Check sync eligibility on load
+  useEffect(() => {
+    setCanSync(checkSyncEligibility())
+  }, [])
 
   // Fallback timeout to prevent infinite loading
   useEffect(() => {
@@ -179,6 +254,22 @@ export default function ClientDashboardPage({ params }: PageProps) {
                       console.log('🎯 CLIENT PAGE: State updated, will trigger ModernDashboard re-render')
                     }}
                   />
+                  {/* Sync Button with Once-Per-Day Limit */}
+                  <button
+                    onClick={handleSync}
+                    disabled={syncing || !canSync}
+                    className={`px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-medium transition-colors ${
+                      canSync 
+                        ? 'bg-blue-500/20 hover:bg-blue-500/30 text-white border border-blue-400/30' 
+                        : 'bg-white/10 text-white/50 cursor-not-allowed'
+                    }`}
+                    title={canSync ? 'Sync all data from Klaviyo (once per day)' : 'Sync limit reached (once per 24 hours)'}
+                  >
+                    <svg className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    {syncing ? 'Syncing...' : canSync ? 'Sync Data' : 'Synced'}
+                  </button>
                   {/* Clear Cache Button (Debug Tool) */}
                   <button
                     onClick={() => {
@@ -196,6 +287,13 @@ export default function ClientDashboardPage({ params }: PageProps) {
                 </>
               )}
             </div>
+            
+            {/* Sync Message Toast */}
+            {syncMessage && (
+              <div className="absolute top-20 right-6 z-50 bg-white/95 backdrop-blur-sm border border-white/30 rounded-lg shadow-xl px-4 py-3 max-w-md">
+                <p className="text-sm font-medium text-gray-900">{syncMessage}</p>
+              </div>
+            )}
           </div>
         </div>
       </div>
