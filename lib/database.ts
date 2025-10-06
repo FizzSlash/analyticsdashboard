@@ -19,6 +19,22 @@ export class DatabaseService {
     return data
   }
 
+  static async getAgencyById(id: string): Promise<Agency | null> {
+    const { data, error } = await supabaseAdmin
+      .from('agencies')
+      .select('*')
+      .eq('id', id)
+      .eq('is_active', true)
+      .single()
+
+    if (error) {
+      console.error('Error fetching agency:', error)
+      return null
+    }
+
+    return data
+  }
+
   static async createAgency(agency: Omit<Agency, 'id' | 'created_at'>): Promise<Agency | null> {
     const { data, error } = await supabaseAdmin
       .from('agencies')

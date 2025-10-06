@@ -19,6 +19,13 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Client not found' }, { status: 404 })
     }
 
+    // Get agency data for branding (colors, background, logo)
+    const agency = await DatabaseService.getAgencyById(client.agency_id)
+    if (!agency) {
+      console.warn(`DASHBOARD API: Agency not found for client ${clientSlug}`)
+    }
+    console.log(`DASHBOARD API: Fetched agency branding:`, agency?.agency_name)
+
     // Fetch all dashboard data in parallel with dynamic timeframe
     const [
       summary,
@@ -54,6 +61,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: true,
       client,
+      agency, // Include agency branding data
       timeframe,
       data: {
         summary,

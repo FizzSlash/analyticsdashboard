@@ -34,16 +34,6 @@ interface ClientFormData {
   brand_slug: string
   klaviyo_api_key: string
   portal_title: string
-  primary_color: string
-  secondary_color: string
-  accent_color: string
-  success_color: string
-  warning_color: string
-  error_color: string
-  chart_color_1: string
-  chart_color_2: string
-  chart_color_3: string
-  background_image_url: string
 }
 
 export function ClientManagement({ agency, clients: initialClients }: ClientManagementProps) {
@@ -61,17 +51,7 @@ export function ClientManagement({ agency, clients: initialClients }: ClientMana
     brand_name: '',
     brand_slug: '',
     klaviyo_api_key: '',
-    portal_title: '',
-    primary_color: agency.primary_color,
-    secondary_color: agency.secondary_color,
-    accent_color: '#6366F1', // Default accent
-    success_color: '#10B981', // Default success
-    warning_color: '#F59E0B', // Default warning  
-    error_color: '#EF4444', // Default error
-    chart_color_1: agency.primary_color,
-    chart_color_2: agency.secondary_color,
-    chart_color_3: '#6366F1', // Default third chart color
-    background_image_url: ''
+    portal_title: ''
   })
 
   const resetForm = () => {
@@ -79,17 +59,7 @@ export function ClientManagement({ agency, clients: initialClients }: ClientMana
       brand_name: '',
       brand_slug: '',
       klaviyo_api_key: '',
-      portal_title: '',
-      primary_color: agency.primary_color,
-      secondary_color: agency.secondary_color,
-      accent_color: '#6366F1',
-      success_color: '#10B981',
-      warning_color: '#F59E0B',
-      error_color: '#EF4444',
-      chart_color_1: agency.primary_color,
-      chart_color_2: agency.secondary_color,
-      chart_color_3: '#6366F1',
-      background_image_url: ''
+      portal_title: ''
     })
     setEditingClient(null)
     setShowForm(false)
@@ -102,17 +72,7 @@ export function ClientManagement({ agency, clients: initialClients }: ClientMana
       brand_name: client.brand_name,
       brand_slug: client.brand_slug,
       klaviyo_api_key: '', // Don't pre-fill encrypted API key
-      portal_title: (client as any).portal_title || '',
-      primary_color: client.primary_color,
-      secondary_color: client.secondary_color,
-      accent_color: (client as any).accent_color || '#6366F1',
-      success_color: (client as any).success_color || '#10B981',
-      warning_color: (client as any).warning_color || '#F59E0B',
-      error_color: (client as any).error_color || '#EF4444',
-      chart_color_1: (client as any).chart_color_1 || client.primary_color,
-      chart_color_2: (client as any).chart_color_2 || client.secondary_color,
-      chart_color_3: (client as any).chart_color_3 || '#6366F1',
-      background_image_url: client.background_image_url || ''
+      portal_title: (client as any).portal_title || ''
     })
     setEditingClient(client)
     setShowForm(true)
@@ -155,16 +115,6 @@ export function ClientManagement({ agency, clients: initialClients }: ClientMana
         brand_name: formData.brand_name,
         brand_slug: cleanSlug,
         portal_title: formData.portal_title || undefined,
-        primary_color: formData.primary_color,
-        secondary_color: formData.secondary_color,
-        accent_color: formData.accent_color,
-        success_color: formData.success_color,
-        warning_color: formData.warning_color,
-        error_color: formData.error_color,
-        chart_color_1: formData.chart_color_1,
-        chart_color_2: formData.chart_color_2,
-        chart_color_3: formData.chart_color_3,
-        background_image_url: formData.background_image_url || undefined,
         is_active: true
       }
       
@@ -178,17 +128,7 @@ export function ClientManagement({ agency, clients: initialClients }: ClientMana
           brand_name: formData.brand_name,
           brand_slug: cleanSlug,
           agency_id: agency.id,
-          portal_title: formData.portal_title || undefined,
-          primary_color: formData.primary_color,
-          secondary_color: formData.secondary_color,
-          accent_color: formData.accent_color,
-          success_color: formData.success_color,
-          warning_color: formData.warning_color,
-          error_color: formData.error_color,
-          chart_color_1: formData.chart_color_1,
-          chart_color_2: formData.chart_color_2,
-          chart_color_3: formData.chart_color_3,
-          background_image_url: formData.background_image_url || undefined
+          portal_title: formData.portal_title || undefined
         }
         
         // Only include API key if provided
@@ -248,10 +188,7 @@ export function ClientManagement({ agency, clients: initialClients }: ClientMana
             brand_name: formData.brand_name,
             brand_slug: cleanSlug,
             klaviyo_api_key: formData.klaviyo_api_key,
-            agency_id: agency.id,
-            primary_color: formData.primary_color,
-            secondary_color: formData.secondary_color,
-            background_image_url: formData.background_image_url || undefined
+            agency_id: agency.id
           })
         })
         
@@ -1101,9 +1038,9 @@ ${flowDetails.slice(0, 3).map((f: any, i: number) =>
                 </div>
 
                 {/* Portal Title */}
-                <div>
+                <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Portal Title
+                    Portal Title (Optional)
                   </label>
                   <input
                     type="text"
@@ -1117,216 +1054,20 @@ ${flowDetails.slice(0, 3).map((f: any, i: number) =>
                   </p>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Background Image
-                  </label>
-                  <div className="space-y-3">
-                    {/* File Upload */}
-                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={async (e) => {
-                          const file = e.target.files?.[0]
-                          if (file) {
-                            try {
-                              const formData = new FormData()
-                              formData.append('file', file)
-                              formData.append('clientId', editingClient?.id || '')
-                              
-                              const response = await fetch('/api/upload-design', {
-                                method: 'POST',
-                                body: formData
-                              })
-                              
-                              const result = await response.json()
-                              if (result.success) {
-                                setFormData(prev => ({ ...prev, background_image_url: result.url }))
-                                console.log('✅ Background uploaded:', result.url)
-                              } else {
-                                console.error('❌ Upload failed:', result.error)
-                              }
-                            } catch (error) {
-                              console.error('❌ Upload error:', error)
-                            }
-                          }
-                        }}
-                        className="hidden"
-                        id="background-upload"
-                      />
-                      <label 
-                        htmlFor="background-upload"
-                        className="cursor-pointer flex flex-col items-center gap-2"
-                      >
-                        <div className="bg-gray-100 p-3 rounded-full">
-                          <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                          </svg>
-                        </div>
-                        <span className="text-sm text-gray-600">Drop background image or click to upload</span>
-                        <span className="text-xs text-gray-500">JPG, PNG up to 10MB</span>
-                      </label>
+                {/* Note about branding */}
+                <div className="md:col-span-2 bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <div className="flex items-start gap-3">
+                    <div className="bg-blue-100 p-2 rounded-lg">
+                      <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
                     </div>
-                    
-                    {/* Current Image Preview */}
-                    {formData.background_image_url && (
-                      <div className="relative">
-                        <img 
-                          src={formData.background_image_url} 
-                          alt="Background preview"
-                          className="w-full h-32 object-cover rounded-lg"
-                        />
-                        <button
-                          onClick={() => setFormData({ ...formData, background_image_url: '' })}
-                          className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full hover:bg-red-600 transition-colors"
-                          title="Remove background"
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                          </svg>
-                        </button>
-                      </div>
-                    )}
-
-                    {/* Fallback URL Input */}
-                    <details className="text-sm">
-                      <summary className="text-gray-600 cursor-pointer hover:text-gray-800">Or enter URL manually</summary>
-                      <input
-                        type="url"
-                        value={formData.background_image_url}
-                        onChange={(e) => setFormData({ ...formData, background_image_url: e.target.value })}
-                        className="w-full mt-2 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder="https://example.com/bg.jpg"
-                      />
-                    </details>
-                  </div>
-                </div>
-
-                {/* Brand Colors Section */}
-                <div className="md:col-span-2">
-                  <h4 className="text-lg font-semibold text-gray-900 mb-4 border-b border-gray-200 pb-2">
-                    Brand Colors - Complete Control
-                  </h4>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Primary Color
-                      </label>
-                      <div className="space-y-2">
-                        <input
-                          type="color"
-                          value={formData.primary_color}
-                          onChange={(e) => setFormData({ ...formData, primary_color: e.target.value })}
-                          className="w-full h-10 border border-gray-300 rounded-md"
-                        />
-                        <p className="text-xs text-gray-500">Main buttons, icons</p>
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Secondary Color
-                      </label>
-                      <div className="space-y-2">
-                        <input
-                          type="color"
-                          value={formData.secondary_color}
-                          onChange={(e) => setFormData({ ...formData, secondary_color: e.target.value })}
-                          className="w-full h-10 border border-gray-300 rounded-md"
-                        />
-                        <p className="text-xs text-gray-500">Secondary actions</p>
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Accent Color
-                      </label>
-                      <div className="space-y-2">
-                        <input
-                          type="color"
-                          value={formData.accent_color}
-                          onChange={(e) => setFormData({ ...formData, accent_color: e.target.value })}
-                          className="w-full h-10 border border-gray-300 rounded-md"
-                        />
-                        <p className="text-xs text-gray-500">Highlights, links</p>
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Success Color
-                      </label>
-                      <div className="space-y-2">
-                        <input
-                          type="color"
-                          value={formData.success_color}
-                          onChange={(e) => setFormData({ ...formData, success_color: e.target.value })}
-                          className="w-full h-10 border border-gray-300 rounded-md"
-                        />
-                        <p className="text-xs text-gray-500">Approve buttons</p>
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Warning Color
-                      </label>
-                      <div className="space-y-2">
-                        <input
-                          type="color"
-                          value={formData.warning_color}
-                          onChange={(e) => setFormData({ ...formData, warning_color: e.target.value })}
-                          className="w-full h-10 border border-gray-300 rounded-md"
-                        />
-                        <p className="text-xs text-gray-500">Pending, revisions</p>
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Error Color
-                      </label>
-                      <div className="space-y-2">
-                        <input
-                          type="color"
-                          value={formData.error_color}
-                          onChange={(e) => setFormData({ ...formData, error_color: e.target.value })}
-                          className="w-full h-10 border border-gray-300 rounded-md"
-                        />
-                        <p className="text-xs text-gray-500">Reject, errors</p>
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Chart Color 1
-                      </label>
-                      <div className="space-y-2">
-                        <input
-                          type="color"
-                          value={formData.chart_color_1}
-                          onChange={(e) => setFormData({ ...formData, chart_color_1: e.target.value })}
-                          className="w-full h-10 border border-gray-300 rounded-md"
-                        />
-                        <p className="text-xs text-gray-500">Main chart color</p>
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Chart Color 2
-                      </label>
-                      <div className="space-y-2">
-                        <input
-                          type="color"
-                          value={formData.chart_color_2}
-                          onChange={(e) => setFormData({ ...formData, chart_color_2: e.target.value })}
-                          className="w-full h-10 border border-gray-300 rounded-md"
-                        />
-                        <p className="text-xs text-gray-500">Secondary charts</p>
-                      </div>
+                      <h4 className="text-sm font-semibold text-blue-900 mb-1">Branding Inheritance</h4>
+                      <p className="text-xs text-blue-800">
+                        All clients inherit colors and background images from <strong>{agency.agency_name}</strong>. 
+                        To customize branding, update the agency settings instead.
+                      </p>
                     </div>
                   </div>
                 </div>

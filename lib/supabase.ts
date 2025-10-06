@@ -75,6 +75,13 @@ export interface Agency {
   owner_id: string
   primary_color: string
   secondary_color: string
+  accent_color?: string
+  success_color?: string
+  warning_color?: string
+  error_color?: string
+  chart_color_1?: string
+  chart_color_2?: string
+  chart_color_3?: string
   logo_url?: string
   background_image_url?: string
   custom_domain?: string
@@ -98,9 +105,6 @@ export interface Client {
   brand_slug: string
   klaviyo_api_key: string
   logo_url?: string
-  primary_color: string
-  secondary_color: string
-  background_image_url?: string
   agency_id: string
   created_at: string
   last_sync: string | null

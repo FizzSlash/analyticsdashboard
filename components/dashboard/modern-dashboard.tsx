@@ -7,6 +7,7 @@ import { ViewToggle, type ViewMode } from '@/components/ui/view-toggle'
 import { PortalDashboard } from '@/components/portal/portal-dashboard'
 import { CustomLineChart, CustomBarChart } from './charts'
 import { filterAndAggregateData, calculateTimeframeSummary, removeOutliers, getSmartYAxisDomain } from '@/lib/timeframe-utils'
+import { calculatePeriodComparison, formatComparison, getComparisonIcon, getComparisonColorClass, getPreviousPeriodData } from '@/lib/comparison-utils'
 import { 
   LineChart, 
   Line, 
@@ -17,7 +18,8 @@ import {
   ResponsiveContainer,
   BarChart,
   Bar,
-  ComposedChart
+  ComposedChart,
+  Cell
 } from 'recharts'
 import { 
   BarChart3, 
@@ -282,11 +284,21 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
   }
 
   const getSubjectLineInsights = (campaigns: any[]) => {
+    // ✅ BRAND-RELATIVE THRESHOLDS: Calculate based on this brand's average
+    const totalLength = campaigns.reduce((sum, c) => sum + (c.subject_line?.length || 0), 0)
+    const brandAvgLength = campaigns.length > 0 ? totalLength / campaigns.length : 45
+    
+    // Dynamic thresholds: 30% below/above brand average
+    const shortThreshold = Math.max(20, brandAvgLength * 0.7)  // At least 20 chars
+    const longThreshold = Math.min(70, brandAvgLength * 1.3)   // At most 70 chars
+    
+    console.log(`📏 SUBJECT LINE THRESHOLDS: Brand avg=${brandAvgLength.toFixed(0)} chars, short<${shortThreshold.toFixed(0)}, long>${longThreshold.toFixed(0)}`)
+    
     const insights = {
       withEmoji: { count: 0, avgOpenRate: 0, avgClickRate: 0, totalOpens: 0, totalClicks: 0, campaigns: [] as any[] },
       withoutEmoji: { count: 0, avgOpenRate: 0, avgClickRate: 0, totalOpens: 0, totalClicks: 0, campaigns: [] as any[] },
-      shortLines: { count: 0, avgOpenRate: 0, avgClickRate: 0, totalOpens: 0, totalClicks: 0, campaigns: [] as any[] }, // <30 chars
-      longLines: { count: 0, avgOpenRate: 0, avgClickRate: 0, totalOpens: 0, totalClicks: 0, campaigns: [] as any[] },  // >50 chars
+      shortLines: { count: 0, avgOpenRate: 0, avgClickRate: 0, totalOpens: 0, totalClicks: 0, campaigns: [] as any[], threshold: shortThreshold },
+      longLines: { count: 0, avgOpenRate: 0, avgClickRate: 0, totalOpens: 0, totalClicks: 0, campaigns: [] as any[], threshold: longThreshold },
       withPersonalization: { count: 0, avgOpenRate: 0, avgClickRate: 0, totalOpens: 0, totalClicks: 0, campaigns: [] as any[] },
       withUrgency: { count: 0, avgOpenRate: 0, avgClickRate: 0, totalOpens: 0, totalClicks: 0, campaigns: [] as any[] },
       withNumbers: { count: 0, avgOpenRate: 0, avgClickRate: 0, totalOpens: 0, totalClicks: 0, campaigns: [] as any[] },
@@ -320,15 +332,15 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
         insights.withoutEmoji.campaigns.push(campaign)
       }
 
-      // Length analysis
-      if (originalSubject.length < 30) {
+      // Length analysis - BRAND-RELATIVE thresholds
+      if (originalSubject.length < shortThreshold) {
         insights.shortLines.count++
         insights.shortLines.avgOpenRate += openRate
         insights.shortLines.avgClickRate += clickRate
         insights.shortLines.totalOpens += opens
         insights.shortLines.totalClicks += clicks
         insights.shortLines.campaigns.push(campaign)
-      } else if (originalSubject.length > 50) {
+      } else if (originalSubject.length > longThreshold) {
         insights.longLines.count++
         insights.longLines.avgOpenRate += openRate
         insights.longLines.avgClickRate += clickRate
@@ -645,6 +657,12 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
       revenueAttribution: filterAndAggregateData.revenueAttribution(data?.revenueAttributionMetrics || [], timeframe),
       listGrowth: filterAndAggregateData.listGrowth(data?.listGrowthMetrics || [], timeframe)
     }
+    
+    // ✅ REAL COMPARISONS: Calculate period-over-period growth for overview metrics
+    const previousCampaigns = getPreviousPeriodData(data?.campaigns || [], 'send_date', timeframe)
+    const previousRevenue = getPreviousPeriodData(data?.revenueAttributionMetrics || [], 'date', timeframe)
+    const campaignRevenueComparison = calculatePeriodComparison(filteredData.campaigns, previousCampaigns, 'revenue')
+    const totalRevenueComparison = calculatePeriodComparison(filteredData.revenueAttribution, previousRevenue, 'total_revenue')
     
     // Calculate timeframe-specific summary metrics
     const timeframeSummary = calculateTimeframeSummary(filteredData)
@@ -1711,7 +1729,9 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
     const totalFlowRevenue = flows.reduce((sum: number, flow: any) => sum + (flow.revenue || 0), 0)
     console.log('🔍 FLOWS DEBUG: Total flow revenue:', totalFlowRevenue)
     
-    // ✅ REMOVED: Comparison labels (no longer showing WoW/MoM/QoQ fake data)
+    // ✅ REAL COMPARISON: Calculate period-over-period growth
+    const previousPeriodFlows = getPreviousPeriodData(allFlows, 'date_start', timeframe)
+    const revenueComparison = calculatePeriodComparison(flows, previousPeriodFlows, 'revenue')
     
     const toggleFlowExpansion = async (flowId: string) => {
       const newExpanded = new Set(expandedFlows)
@@ -1784,9 +1804,18 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
                 <div>
                   <p className="text-white/60 text-sm font-medium">Total Flow Revenue</p>
                   <p className="text-2xl font-bold text-white mt-1">${totalFlowRevenue.toLocaleString()}</p>
-                  <p className="text-white/60 text-xs mt-1">
-                    From {flows.length} active flow{flows.length !== 1 ? 's' : ''}
-                  </p>
+                  {revenueComparison.previousValue > 0 ? (
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className={`text-xs ${getComparisonColorClass(revenueComparison)}`}>
+                        {getComparisonIcon(revenueComparison)} {formatComparison(revenueComparison)}
+                      </span>
+                      <span className="text-white/40 text-xs">vs previous period</span>
+                    </div>
+                  ) : (
+                    <p className="text-white/60 text-xs mt-1">
+                      From {flows.length} active flow{flows.length !== 1 ? 's' : ''}
+                    </p>
+                  )}
                 </div>
                 <div className="bg-white/10 p-3 rounded-lg">
                   <DollarSign className="w-6 h-6 text-white" />
@@ -2211,11 +2240,13 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
                         dataKey="date" 
                         stroke="rgba(255,255,255,0.6)"
                         fontSize={12}
+                        tick={{ fill: 'rgba(255,255,255,0.8)' }}
                         tickFormatter={(value: any) => new Date(value).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                       />
                       <YAxis 
                         stroke="rgba(255,255,255,0.6)" 
                         fontSize={12}
+                        tick={{ fill: 'rgba(255,255,255,0.8)' }}
                         domain={yAxisDomain}
                       />
                       <Tooltip 
@@ -2235,29 +2266,17 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
                           day: 'numeric' 
                         })}
                       />
-                      {/* Net growth bar - green if positive, red if negative */}
+                      {/* Net growth bar - green if positive, red if negative - FIXED for negative values */}
                       <Bar 
                         dataKey="net_growth" 
                         radius={[4, 4, 0, 0]}
-                        shape={(props: any) => {
-                          const { x, y, width, height, payload } = props
-                          const value = payload.net_growth || 0
-                          const isPositive = value >= 0
-                          const color = isPositive ? accentColor : errorColor
-                          
-                          return (
-                            <rect
-                              x={x}
-                              y={y}
-                              width={width}
-                              height={height}
-                              fill={color}
-                              rx={4}
-                              ry={4}
-                            />
-                          )
-                        }}
-                      />
+                      >
+                        {chartData.map((entry: any, index: number) => {
+                          const value = entry.net_growth || 0
+                          const color = value >= 0 ? accentColor : errorColor
+                          return <Cell key={`cell-${index}`} fill={color} />
+                        })}
+                      </Bar>
                     </BarChart>
                   </ResponsiveContainer>
                 </div>

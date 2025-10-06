@@ -15,6 +15,7 @@ interface PageProps {
 
 interface DashboardData {
   client: any
+  agency: any // Agency branding data
   data: {
     summary: any
     campaigns: any[]
@@ -123,22 +124,29 @@ export default function ClientDashboardPage({ params }: PageProps) {
   }
 
   const client = dashboardData.client
+  const agency = dashboardData.agency
+
+  // Use agency branding (colors, background)
+  const primaryColor = agency?.primary_color || '#3B82F6'
+  const secondaryColor = agency?.secondary_color || '#1D4ED8'
+  const backgroundImage = agency?.background_image_url
 
   // Debug: Log the colors being used
-  console.log('🎨 CLIENT COLORS DEBUG:', {
-    primary_color: client.primary_color,
-    secondary_color: client.secondary_color,
-    using_defaults: !client.primary_color || !client.secondary_color,
-    final_gradient: `linear-gradient(135deg, ${client.primary_color || '#3B82F6'} 0%, ${client.secondary_color || '#1D4ED8'} 100%)`
+  console.log('🎨 AGENCY BRANDING DEBUG:', {
+    agency_name: agency?.agency_name,
+    primary_color: primaryColor,
+    secondary_color: secondaryColor,
+    background_image: backgroundImage,
+    final_gradient: `linear-gradient(135deg, ${primaryColor} 0%, ${secondaryColor} 100%)`
   })
 
   return (
     <div 
       className="min-h-screen relative"
       style={{
-        background: client.background_image_url 
-          ? `url(${client.background_image_url}) center/cover fixed, ${client.primary_color || '#3B82F6'}` // Image with color fallback
-          : `linear-gradient(135deg, ${client.primary_color || '#3B82F6'} 0%, ${client.secondary_color || '#1D4ED8'} 100%)` // Color gradient only
+        background: backgroundImage 
+          ? `url(${backgroundImage}) center/cover fixed, ${primaryColor}` // Image with color fallback
+          : `linear-gradient(135deg, ${primaryColor} 0%, ${secondaryColor} 100%)` // Color gradient only
       }}
     >
       
@@ -162,14 +170,30 @@ export default function ClientDashboardPage({ params }: PageProps) {
                 onModeChange={setViewMode}
               />
               {viewMode === 'analytics' && (
-                <TimeframeSelector 
-                  selectedTimeframe={selectedTimeframe}
-                  onTimeframeChange={(days: number) => {
-                    console.log('🎯 CLIENT PAGE: Timeframe changed from', selectedTimeframe, 'to', days)
-                    setSelectedTimeframe(days)
-                    console.log('🎯 CLIENT PAGE: State updated, will trigger ModernDashboard re-render')
-                  }}
-                />
+                <>
+                  <TimeframeSelector 
+                    selectedTimeframe={selectedTimeframe}
+                    onTimeframeChange={(days: number) => {
+                      console.log('🎯 CLIENT PAGE: Timeframe changed from', selectedTimeframe, 'to', days)
+                      setSelectedTimeframe(days)
+                      console.log('🎯 CLIENT PAGE: State updated, will trigger ModernDashboard re-render')
+                    }}
+                  />
+                  {/* Clear Cache Button (Debug Tool) */}
+                  <button
+                    onClick={() => {
+                      console.log('🗑️ Clearing dashboard cache and reloading')
+                      window.location.reload()
+                    }}
+                    className="bg-white/10 hover:bg-white/20 text-white px-3 py-2 rounded-lg flex items-center gap-2 text-sm font-medium transition-colors"
+                    title="Clear cache and reload data"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    Clear Cache
+                  </button>
+                </>
               )}
             </div>
           </div>
@@ -180,7 +204,7 @@ export default function ClientDashboardPage({ params }: PageProps) {
       <div className="relative z-10">
         {viewMode === 'analytics' ? (
           <ModernDashboard 
-            client={client} 
+            client={{ ...client, ...agency }} // Merge client data with agency branding
             data={dashboardData.data} 
             timeframe={selectedTimeframe}
             disablePortalMode={true} 
