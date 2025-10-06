@@ -6,6 +6,7 @@ import { TimeframeSelector } from '@/components/ui/timeframe-selector'
 import { ViewToggle, type ViewMode } from '@/components/ui/view-toggle'
 import { PortalDashboard } from '@/components/portal/portal-dashboard'
 import { CustomLineChart, CustomBarChart } from './charts'
+import { AuditTab } from './audit-tab'
 import { filterAndAggregateData, calculateTimeframeSummary, removeOutliers, getSmartYAxisDomain } from '@/lib/timeframe-utils'
 import { calculatePeriodComparison, formatComparison, getComparisonIcon, getComparisonColorClass, getPreviousPeriodData } from '@/lib/comparison-utils'
 import { 
@@ -51,7 +52,7 @@ interface ModernDashboardProps {
   hideHeader?: boolean // Hide internal header when using external layout
 }
 
-type TabType = 'dashboard' | 'campaigns' | 'flows' | 'subject-lines' | 'list-growth' | 'deliverability'
+type TabType = 'dashboard' | 'campaigns' | 'flows' | 'subject-lines' | 'list-growth' | 'deliverability' | 'audit'
 
 export function ModernDashboard({ client, data: initialData, timeframe: externalTimeframe, disablePortalMode = false, hideHeader = false }: ModernDashboardProps) {
   const [viewMode, setViewMode] = useState<ViewMode>('analytics')
@@ -577,13 +578,15 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
   }
 
 
+  // Conditionally include Audit tab if enabled for this client
   const tabs = [
     { id: 'dashboard', label: 'Overview', icon: BarChart3 },
     { id: 'campaigns', label: 'Campaigns', icon: Mail },
     { id: 'flows', label: 'Flows', icon: Zap },
     { id: 'subject-lines', label: 'Subject Lines', icon: Eye },
     { id: 'list-growth', label: 'List Growth', icon: Users },
-    { id: 'deliverability', label: 'Deliverability', icon: Shield }
+    { id: 'deliverability', label: 'Deliverability', icon: Shield },
+    ...(client?.audit_enabled ? [{ id: 'audit', label: 'AI Audit', icon: MessageSquare }] : [])
   ]
 
   // Reset selected category when analysis tab changes
@@ -2704,6 +2707,7 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
                 {activeTab === 'subject-lines' && renderSubjectLinesTab()}
                 {activeTab === 'list-growth' && renderListGrowthTab()}
                 {activeTab === 'deliverability' && renderDeliverabilityTab()}
+                {activeTab === 'audit' && <AuditTab client={client} timeframe={timeframe} />}
               </>
             ) : (
               // Portal Mode - Campaign Management Interface (only if not disabled)

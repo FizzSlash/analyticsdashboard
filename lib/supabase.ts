@@ -109,6 +109,7 @@ export interface Client {
   created_at: string
   last_sync: string | null
   is_active: boolean
+  audit_enabled?: boolean
 }
 
 export interface CampaignMetric {

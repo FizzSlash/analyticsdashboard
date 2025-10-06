@@ -21,7 +21,8 @@ import {
   TrendingUp,
   DollarSign,
   RefreshCw,
-  Link
+  Link,
+  Sparkles
 } from 'lucide-react'
 
 interface ClientManagementProps {
@@ -76,6 +77,36 @@ export function ClientManagement({ agency, clients: initialClients }: ClientMana
     })
     setEditingClient(client)
     setShowForm(true)
+  }
+
+  const toggleAudit = async (client: Client) => {
+    try {
+      const response = await fetch(`/api/clients/${client.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          brand_name: client.brand_name,
+          brand_slug: client.brand_slug,
+          audit_enabled: !client.audit_enabled
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to toggle audit')
+      }
+
+      // Update local state
+      setClients(clients.map(c => 
+        c.id === client.id 
+          ? { ...c, audit_enabled: !c.audit_enabled }
+          : c
+      ))
+
+      setSuccess(`AI Audit ${!client.audit_enabled ? 'enabled' : 'disabled'} for ${client.brand_name}`)
+      setTimeout(() => setSuccess(''), 3000)
+    } catch (err) {
+      setError('Failed to toggle audit')
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -1060,8 +1091,8 @@ ${flowDetails.slice(0, 3).map((f: any, i: number) =>
                     <div className="bg-blue-100 p-2 rounded-lg">
                       <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                    </div>
+                          </svg>
+                        </div>
                     <div>
                       <h4 className="text-sm font-semibold text-blue-900 mb-1">Branding Inheritance</h4>
                       <p className="text-xs text-blue-800">
@@ -1132,6 +1163,12 @@ ${flowDetails.slice(0, 3).map((f: any, i: number) =>
                         }`}>
                           {client.is_active ? 'Active' : 'Inactive'}
                         </span>
+                        {client.audit_enabled && (
+                          <span className="inline-flex items-center gap-1 bg-purple-100 text-purple-700 px-2 py-1 rounded-full text-xs font-medium">
+                            <Sparkles className="h-3 w-3" />
+                            AI Audit
+                          </span>
+                        )}
                         {client.last_sync && (
                           <span>
                             Last sync: {new Date(client.last_sync).toLocaleDateString()}

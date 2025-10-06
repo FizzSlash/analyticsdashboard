@@ -19,7 +19,8 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     const updateData: any = {
       brand_name: body.brand_name,
       brand_slug: body.brand_slug,
-      logo_url: body.logo_url || undefined
+      logo_url: body.logo_url || undefined,
+      audit_enabled: body.audit_enabled !== undefined ? body.audit_enabled : undefined
     }
 
     // Only update API key if provided
