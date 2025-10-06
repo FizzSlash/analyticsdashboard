@@ -1179,6 +1179,19 @@ ${flowDetails.slice(0, 3).map((f: any, i: number) =>
                   </div>
 
                   <div className="flex items-center gap-2">
+                    {/* AI Audit Toggle */}
+                    <button
+                      onClick={() => toggleAudit(client)}
+                      className={`p-2 rounded-md transition-colors ${
+                        client.audit_enabled
+                          ? 'text-purple-600 bg-purple-50 hover:bg-purple-100'
+                          : 'text-gray-400 hover:text-gray-600 hover:bg-gray-50'
+                      }`}
+                      title={client.audit_enabled ? 'AI Audit Enabled - Click to disable' : 'AI Audit Disabled - Click to enable'}
+                    >
+                      <Sparkles className="h-4 w-4" />
+                    </button>
+
                     {/* Unified Sync Button - Syncs All Data Types */}
                     <button
                       onClick={async () => {
