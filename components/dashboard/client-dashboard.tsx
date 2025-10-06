@@ -1,7 +1,11 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Client } from '@/lib/supabase'
+/**
+ * @deprecated This component is no longer used. Use ModernDashboard instead.
+ * Kept for backwards compatibility only.
+ */
+
 import { DatabaseService } from '@/lib/database'
 import { MetricCard } from './metric-card'
 import { CustomLineChart, CustomBarChart, CustomAreaChart } from './charts'
@@ -21,7 +25,7 @@ import { formatCurrency, formatNumber, formatPercentage, aggregateMetricsByDate 
 import { UnifiedCampaignPortal } from '../portal/unified-campaign-portal'
 
 interface ClientDashboardProps {
-  client: Client
+  client: any // Changed from Client to any since this component is deprecated
   data?: {
     summary: any
     campaigns: any[]
