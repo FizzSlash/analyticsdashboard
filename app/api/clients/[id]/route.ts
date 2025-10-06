@@ -15,21 +15,11 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     
     console.log('PATCH CLIENT: Updating client:', clientId, body)
 
-    // Prepare update data with all brand customization fields
+    // Prepare update data (colors now inherited from agency)
     const updateData: any = {
       brand_name: body.brand_name,
       brand_slug: body.brand_slug,
-      portal_title: body.portal_title || undefined,
-      primary_color: body.primary_color,
-      secondary_color: body.secondary_color,
-      accent_color: body.accent_color,
-      success_color: body.success_color,
-      warning_color: body.warning_color,
-      error_color: body.error_color,
-      chart_color_1: body.chart_color_1,
-      chart_color_2: body.chart_color_2,
-      chart_color_3: body.chart_color_3,
-      background_image_url: body.background_image_url || undefined,
+      logo_url: body.logo_url || undefined
     }
 
     // Only update API key if provided

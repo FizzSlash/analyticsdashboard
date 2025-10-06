@@ -13,8 +13,7 @@ export async function GET() {
       brand_name: client.brand_name,
       brand_slug: client.brand_slug,
       logo_url: client.logo_url,
-      primary_color: client.primary_color,
-      secondary_color: client.secondary_color,
+      agency_id: client.agency_id,
       created_at: client.created_at,
       last_sync: client.last_sync,
       is_active: client.is_active
@@ -51,18 +50,8 @@ export async function POST(request: NextRequest) {
       brand_name,
       brand_slug: brand_slug.toLowerCase().replace(/[^a-z0-9-]/g, ''),
       klaviyo_api_key: encryptedApiKey,
-      portal_title: body.portal_title || undefined,
-      primary_color: body.primary_color || '#3B82F6',
-      secondary_color: body.secondary_color || '#EF4444',
-      accent_color: body.accent_color || '#6366F1',
-      success_color: body.success_color || '#10B981',
-      warning_color: body.warning_color || '#F59E0B',
-      error_color: body.error_color || '#EF4444',
-      chart_color_1: body.chart_color_1 || body.primary_color || '#3B82F6',
-      chart_color_2: body.chart_color_2 || body.secondary_color || '#EF4444',
-      chart_color_3: body.chart_color_3 || '#6366F1',
-      background_image_url: body.background_image_url || undefined,
-      last_sync: null, // Add missing required field
+      logo_url: body.logo_url || undefined,
+      last_sync: null,
       is_active: true
     }
 
@@ -81,8 +70,7 @@ export async function POST(request: NextRequest) {
       brand_name: client.brand_name,
       brand_slug: client.brand_slug,
       logo_url: client.logo_url,
-      primary_color: client.primary_color,
-      secondary_color: client.secondary_color,
+      agency_id: client.agency_id,
       created_at: client.created_at,
       is_active: client.is_active
     }

@@ -45,6 +45,10 @@ interface DashboardData {
 }
 
 export function ClientDashboard({ client, data: providedData }: ClientDashboardProps) {
+  // Safety: Ensure colors exist (inherited from agency or defaults)
+  const primaryColor = client.primary_color || '#3B82F6'
+  const secondaryColor = client.secondary_color || '#1D4ED8'
+  
   const [data, setData] = useState<DashboardData>({
     summary: null,
     campaigns: [],
@@ -158,7 +162,7 @@ export function ClientDashboard({ client, data: providedData }: ClientDashboardP
       <div 
         className="bg-gradient-to-r from-blue-600 to-blue-700 text-white py-8"
         style={{
-          background: `linear-gradient(135deg, ${client.primary_color} 0%, ${client.secondary_color} 100%)`
+          background: `linear-gradient(135deg, ${primaryColor} 0%, ${secondaryColor} 100%)`
         }}
       >
         <div className="container mx-auto px-4">
@@ -253,7 +257,7 @@ export function ClientDashboard({ client, data: providedData }: ClientDashboardP
             xKey="date"
             yKey="total_revenue"
             format="currency"
-            color={client.primary_color}
+            color={primaryColor}
           />
           
           <CustomLineChart
@@ -262,7 +266,7 @@ export function ClientDashboard({ client, data: providedData }: ClientDashboardP
             xKey="date"
             yKey="subscribers"
             format="number"
-            color={client.secondary_color}
+            color={secondaryColor}
           />
           
           <CustomBarChart
@@ -271,7 +275,7 @@ export function ClientDashboard({ client, data: providedData }: ClientDashboardP
             xKey="date"
             yKey="open_rate"
             format="percentage"
-            color={client.primary_color}
+            color={primaryColor}
           />
           
           <CustomLineChart
@@ -280,7 +284,7 @@ export function ClientDashboard({ client, data: providedData }: ClientDashboardP
             xKey="date"
             yKey="total_revenue"
             format="currency"
-            color={client.secondary_color}
+            color={secondaryColor}
           />
         </div>
 
@@ -322,7 +326,7 @@ export function ClientDashboard({ client, data: providedData }: ClientDashboardP
                 <div className="border-t pt-2">
                   <div className="flex justify-between items-center">
                     <span className="text-sm font-medium">Total Revenue</span>
-                    <span className="text-lg font-bold" style={{ color: client.primary_color }}>
+                    <span className="text-lg font-bold" style={{ color: primaryColor }}>
                       {formatCurrency(data.summary?.revenue?.total_revenue || 0)}
                     </span>
                   </div>
