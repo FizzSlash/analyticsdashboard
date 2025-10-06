@@ -27,18 +27,18 @@ export const filterAndAggregateData = {
   },
 
   /**
-   * Flows: Use already-aggregated flows data from DatabaseService.getRecentFlowMetrics
-   * The backend already properly joins flow_metrics and flow_message_metrics
+   * Flows: Filter flows to show only those with activity
+   * Note: Timeframe filtering is already done by DatabaseService.getRecentFlowMetrics
+   * This only removes flows with zero activity across all metrics
    */
-  flows: (flows: any[], days: number) => {
-    // Flows are already aggregated and filtered by the backend DatabaseService
-    // Just return them as-is since they're already properly calculated
-    // The backend getRecentFlowMetrics handles the timeframe filtering
+  flowsWithActivity: (flows: any[]) => {
+    // Backend already filtered by timeframe via getRecentFlowMetrics
+    // This function only filters out flows with zero activity
     console.log('🔍 TIMEFRAME-UTILS: Processing flows:', flows.length)
     console.log('🔍 TIMEFRAME-UTILS: Sample flow data:', flows.slice(0, 1))
     
     const filteredFlows = flows.filter(flow => {
-      // ✅ FIX: Less strict filtering - include flows with any activity
+      // Include flows with any activity
       const hasActivity = flow && (
         (flow.revenue && flow.revenue > 0) || 
         (flow.weeklyRevenue && flow.weeklyRevenue > 0) ||
@@ -52,7 +52,7 @@ export const filterAndAggregateData = {
       return hasActivity
     })
     
-    console.log('🔍 TIMEFRAME-UTILS: Filtered flows:', filteredFlows.length)
+    console.log('🔍 TIMEFRAME-UTILS: Filtered flows with activity:', filteredFlows.length)
     return filteredFlows
   },
 

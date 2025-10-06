@@ -36,7 +36,9 @@ import {
   Target,
   Percent,
   MessageSquare,
-  AlertTriangle
+  AlertTriangle,
+  Loader2,
+  AlertCircle
 } from 'lucide-react'
 
 interface ModernDashboardProps {
@@ -64,10 +66,13 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
   const timeframe = externalTimeframe || internalTimeframe // Use external timeframe when provided
   const [data, setData] = useState(initialData)
   const [loading, setLoading] = useState(false)
+  const [cachedData, setCachedData] = useState<{ timeframe: number, data: any } | null>(null)
   const [sortField, setSortField] = useState('send_date')
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc')
   const [expandedFlows, setExpandedFlows] = useState<Set<string>>(new Set())
   const [flowEmails, setFlowEmails] = useState<{ [flowId: string]: any[] }>({})
+  const [flowEmailsLoading, setFlowEmailsLoading] = useState<{ [flowId: string]: boolean }>({})
+  const [flowEmailsError, setFlowEmailsError] = useState<{ [flowId: string]: string }>({})
   const [analysisTab, setAnalysisTab] = useState<'conversion' | 'aov'>('conversion')
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
 
@@ -574,10 +579,21 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
     setSelectedCategory(null)
   }, [analysisTab])
 
-  // Fetch data when timeframe changes
+  // Fetch data when timeframe changes (with intelligent caching)
   useEffect(() => {
     const fetchData = async () => {
       if (!client?.brand_slug) return
+      
+      // ✅ CACHING LOGIC: Check if we can use cached data for smaller timeframes
+      if (cachedData && timeframe <= cachedData.timeframe) {
+        console.log(`🚀 CACHE HIT: Using cached ${cachedData.timeframe}-day data for ${timeframe}-day view`)
+        console.log(`🚀 CACHE: Instant client-side filtering applied`)
+        
+        // Use cached data and filter client-side (instant!)
+        setData(cachedData.data)
+        setLoading(false)
+        return
+      }
       
       setLoading(true)
       try {
@@ -592,6 +608,12 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
             flows: result.data.flows?.length || 0,
             revenueRecords: result.data.revenueAttributionMetrics?.length || 0
           })
+          
+          // ✅ CACHE STRATEGY: Cache data for largest timeframes (365 or 180+ days)
+          if (timeframe >= 180) {
+            console.log(`💾 CACHING: Storing ${timeframe}-day data for future instant access`)
+            setCachedData({ timeframe, data: result.data })
+          }
         } else {
           console.error('❌ FETCH ERROR:', result)
         }
@@ -613,13 +635,13 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
     } else {
       console.log(`⏭️ MODERN DASHBOARD: Using initial data, timeframe: ${timeframe}, external: ${externalTimeframe}`)
     }
-  }, [timeframe, client?.brand_slug, initialData, externalTimeframe])
+  }, [timeframe, client?.brand_slug, initialData, externalTimeframe, cachedData])
 
   const renderOverviewTab = () => {
     // ✅ FIX: Calculate filtered data and timeframe-specific summaries
     const filteredData = {
       campaigns: filterAndAggregateData.campaigns(data?.campaigns || [], timeframe),
-      flows: filterAndAggregateData.flows(data?.flows || [], timeframe),
+      flows: filterAndAggregateData.flowsWithActivity(data?.flows || []),
       revenueAttribution: filterAndAggregateData.revenueAttribution(data?.revenueAttributionMetrics || [], timeframe),
       listGrowth: filterAndAggregateData.listGrowth(data?.listGrowthMetrics || [], timeframe)
     }
@@ -1682,7 +1704,7 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
     const allFlows = data?.flows || []
     console.log('🔍 FLOWS DEBUG: Raw flows data:', allFlows.length, allFlows.slice(0, 2))
     
-    const flows = filterAndAggregateData.flows(allFlows, timeframe)
+    const flows = filterAndAggregateData.flowsWithActivity(allFlows)
     console.log('🔍 FLOWS DEBUG: Filtered flows data:', flows.length, flows.slice(0, 2))
     
     // Calculate total flow revenue from properly filtered data
@@ -1703,24 +1725,36 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
           console.log(`📧 FRONTEND: Attempting to load emails for flow ${flowId}`)
           console.log(`📧 FRONTEND: API URL: /api/flow-emails?flowId=${flowId}&clientSlug=${client?.brand_slug}&timeframe=${timeframe}`)
           
+          // Set loading state
+          setFlowEmailsLoading(prev => ({ ...prev, [flowId]: true }))
+          setFlowEmailsError(prev => ({ ...prev, [flowId]: '' }))
+          
           try {
             const response = await fetch(`/api/flow-emails?flowId=${flowId}&clientSlug=${client?.brand_slug}&timeframe=${timeframe}`)
-            const result = await response.json()
             
             console.log(`📧 FRONTEND: API Response status: ${response.status}`)
+            
+            if (!response.ok) {
+              throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+            }
+            
+            const result = await response.json()
             console.log(`📧 FRONTEND: API Response:`, result)
             
-            if (response.ok) {
-              setFlowEmails(prev => ({
-                ...prev,
-                [flowId]: result.emails || []
-              }))
-              console.log(`📧 FRONTEND: Successfully loaded ${result.emails?.length || 0} emails for flow ${flowId}`)
-            } else {
-              console.error('📧 FRONTEND: Flow emails API error:', result)
-            }
+            setFlowEmails(prev => ({
+              ...prev,
+              [flowId]: result.emails || []
+            }))
+            console.log(`📧 FRONTEND: Successfully loaded ${result.emails?.length || 0} emails for flow ${flowId}`)
           } catch (error) {
-            console.error('📧 FRONTEND: Network error loading flow emails:', error)
+            console.error('📧 FRONTEND: Error loading flow emails:', error)
+            const errorMessage = error instanceof Error ? error.message : 'Failed to load flow emails'
+            setFlowEmailsError(prev => ({
+              ...prev,
+              [flowId]: errorMessage
+            }))
+          } finally {
+            setFlowEmailsLoading(prev => ({ ...prev, [flowId]: false }))
           }
         } else {
           console.log(`📧 FRONTEND: Emails already loaded for flow ${flowId}:`, flowEmails[flowId])
@@ -1750,10 +1784,9 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
                 <div>
                   <p className="text-white/60 text-sm font-medium">Total Flow Revenue</p>
                   <p className="text-2xl font-bold text-white mt-1">${totalFlowRevenue.toLocaleString()}</p>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className="text-green-300 text-xs">↗️ +12.5%</span>
-                    <span className="text-white/40 text-xs">vs last period</span>
-                  </div>
+                  <p className="text-white/60 text-xs mt-1">
+                    From {flows.length} active flow{flows.length !== 1 ? 's' : ''}
+                  </p>
                 </div>
                 <div className="bg-white/10 p-3 rounded-lg">
                   <DollarSign className="w-6 h-6 text-white" />
@@ -1973,6 +2006,32 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
                             <div className="ml-6 space-y-3">
                               <h4 className="text-white font-medium text-sm mb-3">📧 Email Sequence Performance</h4>
                               {(() => {
+                                // Check loading state first
+                                if (flowEmailsLoading[flow.flow_id]) {
+                                  return (
+                                    <div className="flex items-center justify-center py-8">
+                                      <Loader2 className="animate-spin text-white/60 w-5 h-5 mr-2" />
+                                      <span className="text-white/60 text-sm">Loading flow emails...</span>
+                                    </div>
+                                  )
+                                }
+                                
+                                // Check error state
+                                if (flowEmailsError[flow.flow_id]) {
+                                  return (
+                                    <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4">
+                                      <div className="flex items-start gap-2">
+                                        <AlertCircle className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
+                                        <div>
+                                          <div className="text-red-400 text-sm font-medium">Error loading emails</div>
+                                          <div className="text-red-300/80 text-xs mt-1">{flowEmailsError[flow.flow_id]}</div>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  )
+                                }
+                                
+                                // Show emails if available
                                 const emails = flowEmails[flow.flow_id] || []
                                 console.log(`📧 RENDER: Flow ${flow.flow_id} emails in state:`, emails)
                                 console.log(`📧 RENDER: flowEmails state:`, flowEmails)
@@ -2009,7 +2068,7 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
                                 } else {
                                   return (
                                     <div className="text-white/60 text-sm py-2">
-                                      No email sequence data available for this flow (State: {emails.length} emails)
+                                      No email sequence data available for this flow
                                     </div>
                                   )
                                 }

@@ -13,7 +13,11 @@ import {
   Settings, 
   BarChart3,
   Plus,
-  UserPlus
+  UserPlus,
+  RefreshCw,
+  RotateCw,
+  CheckCircle,
+  AlertCircle
 } from 'lucide-react'
 
 interface AgencyAdminDashboardProps {
@@ -26,6 +30,9 @@ type ActiveTab = 'overview' | 'clients' | 'users' | 'settings'
 
 export function AgencyAdminDashboard({ agency, clients, clientUsers }: AgencyAdminDashboardProps) {
   const [activeTab, setActiveTab] = useState<ActiveTab>('overview')
+  const [syncingAll, setSyncingAll] = useState(false)
+  const [syncProgress, setSyncProgress] = useState({ current: 0, total: 0, currentClient: '' })
+  const [syncResults, setSyncResults] = useState<{ success: string[], failed: string[] }>({ success: [], failed: [] })
 
   const activeClients = clients.filter(c => c.is_active)
   const totalRevenue = 0 // This would be calculated from client metrics
@@ -37,6 +44,41 @@ export function AgencyAdminDashboard({ agency, clients, clientUsers }: AgencyAdm
     { id: 'users', label: 'Users', icon: Users },
     { id: 'settings', label: 'Settings', icon: Settings },
   ] as const
+
+  const handleSyncAllClients = async () => {
+    setSyncingAll(true)
+    setSyncProgress({ current: 0, total: activeClients.length, currentClient: '' })
+    setSyncResults({ success: [], failed: [] })
+
+    for (let i = 0; i < activeClients.length; i++) {
+      const client = activeClients[i]
+      setSyncProgress({ current: i + 1, total: activeClients.length, currentClient: client.brand_name })
+
+      try {
+        const response = await fetch('/api/sync', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ clientId: client.brand_slug })
+        })
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`)
+        }
+
+        setSyncResults(prev => ({ ...prev, success: [...prev.success, client.brand_name] }))
+      } catch (error) {
+        console.error(`Failed to sync ${client.brand_name}:`, error)
+        setSyncResults(prev => ({ ...prev, failed: [...prev.failed, client.brand_name] }))
+      }
+
+      // Add delay between syncs to avoid rate limiting
+      if (i < activeClients.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, 2000))
+      }
+    }
+
+    setSyncingAll(false)
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -62,12 +104,100 @@ export function AgencyAdminDashboard({ agency, clients, clientUsers }: AgencyAdm
                 <p className="text-blue-100">Agency Admin Dashboard</p>
               </div>
             </div>
-            <LogoutButton className="bg-white/10 hover:bg-white/20 text-white" />
+            <div className="flex items-center gap-3">
+              <button
+                onClick={handleSyncAllClients}
+                disabled={syncingAll || activeClients.length === 0}
+                className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-lg flex items-center gap-2 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {syncingAll ? (
+                  <>
+                    <RotateCw className="h-4 w-4 animate-spin" />
+                    Syncing {syncProgress.current}/{syncProgress.total}
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="h-4 w-4" />
+                    Sync All Clients ({activeClients.length})
+                  </>
+                )}
+              </button>
+              <LogoutButton className="bg-white/10 hover:bg-white/20 text-white" />
+            </div>
           </div>
+          
+          {/* Sync Progress Bar */}
+          {syncingAll && (
+            <div className="mt-4 bg-white/10 rounded-lg p-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-white text-sm font-medium">
+                  Syncing: {syncProgress.currentClient}
+                </span>
+                <span className="text-white/80 text-sm">
+                  {syncProgress.current} / {syncProgress.total}
+                </span>
+              </div>
+              <div className="w-full bg-white/20 rounded-full h-2">
+                <div 
+                  className="bg-white h-2 rounded-full transition-all duration-300"
+                  style={{ width: `${(syncProgress.current / syncProgress.total) * 100}%` }}
+                />
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
       <div className="container mx-auto px-4 py-8">
+        {/* Sync Results Card */}
+        {!syncingAll && (syncResults.success.length > 0 || syncResults.failed.length > 0) && (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                {syncResults.failed.length === 0 ? (
+                  <>
+                    <CheckCircle className="h-5 w-5 text-green-600" />
+                    Sync Completed Successfully
+                  </>
+                ) : (
+                  <>
+                    <AlertCircle className="h-5 w-5 text-yellow-600" />
+                    Sync Completed with Issues
+                  </>
+                )}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {syncResults.success.length > 0 && (
+                  <div>
+                    <p className="text-sm font-medium text-green-700 mb-1">
+                      ✅ Successfully synced {syncResults.success.length} client{syncResults.success.length !== 1 ? 's' : ''}
+                    </p>
+                    <div className="text-xs text-gray-600 space-x-2">
+                      {syncResults.success.map((name, i) => (
+                        <span key={i} className="inline-block">{name}{i < syncResults.success.length - 1 ? ',' : ''}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {syncResults.failed.length > 0 && (
+                  <div>
+                    <p className="text-sm font-medium text-red-700 mb-1">
+                      ❌ Failed to sync {syncResults.failed.length} client{syncResults.failed.length !== 1 ? 's' : ''}
+                    </p>
+                    <div className="text-xs text-gray-600 space-x-2">
+                      {syncResults.failed.map((name, i) => (
+                        <span key={i} className="inline-block">{name}{i < syncResults.failed.length - 1 ? ',' : ''}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+        
         {/* Navigation Tabs */}
         <div className="mb-8">
           <nav className="flex space-x-1 bg-white p-1 rounded-lg shadow-sm">
