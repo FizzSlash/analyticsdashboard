@@ -50,9 +50,9 @@ CREATE TABLE IF NOT EXISTS audit_results (
 CREATE INDEX IF NOT EXISTS idx_audit_results_client_date 
   ON audit_results(client_id, audit_date DESC);
 
-CREATE INDEX IF NOT EXISTS idx_audit_results_recent 
-  ON audit_results(audit_date DESC) 
-  WHERE audit_date > NOW() - INTERVAL '30 days';
+-- Simple index without WHERE clause (avoid NOW() immutability issue)
+CREATE INDEX IF NOT EXISTS idx_audit_results_date 
+  ON audit_results(audit_date DESC);
 
 -- Function to automatically update updated_at
 CREATE OR REPLACE FUNCTION update_audit_results_updated_at()
