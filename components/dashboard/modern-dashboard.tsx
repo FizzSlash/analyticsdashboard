@@ -2601,10 +2601,8 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
       className="min-h-screen"
       style={{
         background: hideHeader 
-          ? 'transparent' // Use transparent when header is external
-          : client?.background_image_url 
-            ? `url(${client.background_image_url}) center/cover fixed, ${client?.primary_color || '#3B82F6'}` // Image with color fallback
-            : `linear-gradient(135deg, ${client?.primary_color || '#3B82F6'} 0%, ${client?.secondary_color || '#1D4ED8'} 100%)` // Color gradient only
+          ? 'transparent' // Use transparent when header is external (colors handled by parent)
+          : 'transparent' // Colors now handled by parent component (agency branding)
       }}
     >
       {/* Header - Only show if not hidden by external layout */}

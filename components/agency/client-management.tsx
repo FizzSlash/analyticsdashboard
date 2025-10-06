@@ -1206,22 +1206,23 @@ ${flowDetails.slice(0, 3).map((f: any, i: number) =>
                   </div>
                 </div>
 
-                {/* Client Colors Preview */}
+                {/* Client Colors Preview - Shows Agency Branding */}
                 <div className="mt-4 flex items-center gap-4">
                   <div className="flex items-center gap-2">
                     <div 
                       className="w-4 h-4 rounded border"
-                      style={{ backgroundColor: client.primary_color }}
+                      style={{ backgroundColor: agency.primary_color }}
                     />
                     <span className="text-xs text-gray-600">Primary</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <div 
                       className="w-4 h-4 rounded border"
-                      style={{ backgroundColor: client.secondary_color }}
+                      style={{ backgroundColor: agency.secondary_color }}
                     />
                     <span className="text-xs text-gray-600">Secondary</span>
                   </div>
+                  <span className="text-xs text-gray-500 italic">(from agency)</span>
                 </div>
               </CardContent>
             </Card>
