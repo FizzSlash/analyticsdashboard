@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
-    // Prepare data for Claude
+    // Prepare data for Claude with recipient context
     const campaignData = campaigns
       .filter(c => c.subject_line && (c.open_rate || 0) > 0)
       .map(c => ({
@@ -41,12 +41,20 @@ export async function POST(request: NextRequest) {
         openRate: ((c.open_rate || 0) * 100).toFixed(1),
         clickRate: ((c.click_rate || 0) * 100).toFixed(1),
         revenue: c.revenue || 0,
+        recipients: c.recipients_count || 0,  // Include recipient count
         sendDate: c.send_date || ''
       }))
       .sort((a, b) => parseFloat(b.openRate) - parseFloat(a.openRate))
 
     const topPerformers = campaignData.slice(0, 10)
     const bottomPerformers = campaignData.slice(-10).reverse()
+    
+    // Calculate average recipients for context
+    const avgRecipients = Math.round(
+      campaignData.reduce((sum, c) => sum + c.recipients, 0) / campaignData.length
+    )
+    const medianRecipients = campaignData.length > 0 ? 
+      campaignData.sort((a, b) => a.recipients - b.recipients)[Math.floor(campaignData.length / 2)].recipients : 0
 
     console.log('🤖 Calling Claude for subject line analysis...')
 
@@ -54,23 +62,45 @@ export async function POST(request: NextRequest) {
 
 SUBJECT LINE DATA (Last ${timeframe} days):
 
+AUDIENCE CONTEXT:
+- Average recipients per campaign: ${avgRecipients.toLocaleString()}
+- Median recipients: ${medianRecipients.toLocaleString()}
+- Total campaigns analyzed: ${campaignData.length}
+
+IMPORTANT: When analyzing performance, consider:
+- Campaigns to smaller audiences (high-intent segments) naturally have higher open rates
+- Campaigns to larger audiences (broader lists) naturally have lower open rates
+- A 40% OR to 5,000 people may indicate better subject line quality than 60% OR to 500 people
+- Look for patterns WITHIN similar audience sizes, not across different sizes
+
 TOP 10 PERFORMING SUBJECT LINES:
-${topPerformers.map((c, i) => `${i + 1}. "${c.subject}" - ${c.openRate}% OR, ${c.clickRate}% CTR, $${c.revenue} revenue`).join('\n')}
+${topPerformers.map((c, i) => `${i + 1}. "${c.subject}" - ${c.openRate}% OR, ${c.clickRate}% CTR, $${c.revenue} revenue, ${c.recipients.toLocaleString()} recipients`).join('\n')}
 
 BOTTOM 10 PERFORMING SUBJECT LINES:
-${bottomPerformers.map((c, i) => `${i + 1}. "${c.subject}" - ${c.openRate}% OR, ${c.clickRate}% CTR, $${c.revenue} revenue`).join('\n')}
+${bottomPerformers.map((c, i) => `${i + 1}. "${c.subject}" - ${c.openRate}% OR, ${c.clickRate}% CTR, $${c.revenue} revenue, ${c.recipients.toLocaleString()} recipients`).join('\n')}
 
 TASK:
 Analyze the patterns in high-performing vs low-performing subject lines for THIS SPECIFIC BRAND.
 
+When analyzing, ACCOUNT FOR AUDIENCE SIZE:
+- Note if top performers are to smaller (high-intent) vs larger (broad) audiences
+- Compare campaigns within similar audience size brackets when possible
+- If a pattern only works for small audiences, mention that caveat
+- Example: "Short subjects work well for your larger broadcasts (5k+ recipients)"
+
 Identify:
 1. What patterns/characteristics do top performers share?
+   - Note audience sizes for context
 2. What patterns/characteristics do bottom performers share?
+   - Note if they're to different audience sizes
 3. Specific, actionable recommendations for improving subject lines
+   - Specify if recommendations apply to all campaigns or just certain audience sizes
 4. Example subject line formulas that work for this brand
+   - Note optimal audience size for each formula
 5. Things to avoid based on their data
+   - Call out if bad patterns are audience-size dependent
 
-Be SPECIFIC to this brand's data. Don't give generic advice.
+Be SPECIFIC to this brand's data. Don't give generic advice. Consider audience segmentation in your analysis.
 
 Return as JSON:
 {
