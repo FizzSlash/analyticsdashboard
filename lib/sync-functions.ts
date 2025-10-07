@@ -3,7 +3,7 @@
  * These replicate the exact working sync processes from client-management.tsx
  */
 
-export async function syncCampaigns(clientSlug: string, onProgress?: (message: string) => void) {
+export async function syncCampaigns(clientSlug: string, clientId: string, onProgress?: (message: string) => void) {
   try {
     onProgress?.('Step 1/4: Getting conversion metric...')
     
@@ -58,7 +58,7 @@ export async function syncCampaigns(clientSlug: string, onProgress?: (message: s
     const saveResponse = await fetch('/api/klaviyo-proxy/save-campaigns', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ campaignDetails, clientSlug })
+      body: JSON.stringify({ campaignDetails, clientId }) // Use clientId (UUID) not slug
     })
     
     if (!saveResponse.ok) throw new Error('Save campaigns failed')
@@ -70,7 +70,7 @@ export async function syncCampaigns(clientSlug: string, onProgress?: (message: s
   }
 }
 
-export async function syncFlows(clientSlug: string, onProgress?: (message: string) => void) {
+export async function syncFlows(clientSlug: string, clientId: string, onProgress?: (message: string) => void) {
   try {
     onProgress?.('Step 1/4: Getting conversion metric...')
     
@@ -118,7 +118,7 @@ export async function syncFlows(clientSlug: string, onProgress?: (message: strin
     const saveResponse = await fetch('/api/klaviyo-proxy/save-flows', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ flowDetails, clientSlug })
+      body: JSON.stringify({ flowDetails, clientId }) // Use clientId (UUID) not slug
     })
     
     if (!saveResponse.ok) throw new Error('Save flows failed')
@@ -130,7 +130,7 @@ export async function syncFlows(clientSlug: string, onProgress?: (message: strin
   }
 }
 
-export async function syncListGrowth(clientSlug: string, onProgress?: (message: string) => void) {
+export async function syncListGrowth(clientSlug: string, clientId: string, onProgress?: (message: string) => void) {
   try {
     onProgress?.('Step 1/2: Getting list growth metrics...')
     
@@ -154,7 +154,7 @@ export async function syncListGrowth(clientSlug: string, onProgress?: (message: 
     const saveResponse = await fetch('/api/klaviyo-proxy/save-list-growth', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ clientSlug, metricIds })
+      body: JSON.stringify({ clientId, metricIds }) // Use clientId (UUID) not slug
     })
     
     if (!saveResponse.ok) throw new Error('Save list growth failed')
@@ -167,14 +167,14 @@ export async function syncListGrowth(clientSlug: string, onProgress?: (message: 
   }
 }
 
-export async function syncRevenueAttribution(clientSlug: string, onProgress?: (message: string) => void) {
+export async function syncRevenueAttribution(clientSlug: string, clientId: string, onProgress?: (message: string) => void) {
   try {
     onProgress?.('Syncing revenue attribution...')
     
     const saveResponse = await fetch('/api/klaviyo-proxy/save-revenue-attribution', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ clientSlug })
+      body: JSON.stringify({ clientId }) // Use clientId (UUID) not slug
     })
     
     if (!saveResponse.ok) throw new Error('Save revenue failed')

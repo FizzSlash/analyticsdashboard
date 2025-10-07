@@ -92,10 +92,16 @@ export default function ClientDashboardPage({ params }: PageProps) {
     setSyncProgress({ step: 0, total: 4, currentTask: '', completed: [], failed: [] })
     
     try {
+      // Get client ID (UUID) from dashboard data
+      const clientId = dashboardData?.client?.id
+      if (!clientId) {
+        throw new Error('Client ID not available')
+      }
+
       // Step 1: Sync Campaigns
       setSyncProgress(prev => ({ ...prev, step: 1, currentTask: 'Campaigns' }))
       try {
-        await syncCampaigns(params.slug, (msg) => console.log(msg))
+        await syncCampaigns(params.slug, clientId, (msg) => console.log(msg))
         setSyncProgress(prev => ({ ...prev, completed: [...prev.completed, 'Campaigns'] }))
       } catch (err) {
         console.error('Campaigns sync error:', err)
@@ -105,7 +111,7 @@ export default function ClientDashboardPage({ params }: PageProps) {
       // Step 2: Sync Flows
       setSyncProgress(prev => ({ ...prev, step: 2, currentTask: 'Flows' }))
       try {
-        await syncFlows(params.slug, (msg) => console.log(msg))
+        await syncFlows(params.slug, clientId, (msg) => console.log(msg))
         setSyncProgress(prev => ({ ...prev, completed: [...prev.completed, 'Flows'] }))
       } catch (err) {
         console.error('Flows sync error:', err)
@@ -115,7 +121,7 @@ export default function ClientDashboardPage({ params }: PageProps) {
       // Step 3: Sync List Growth
       setSyncProgress(prev => ({ ...prev, step: 3, currentTask: 'List Growth' }))
       try {
-        await syncListGrowth(params.slug, (msg) => console.log(msg))
+        await syncListGrowth(params.slug, clientId, (msg) => console.log(msg))
         setSyncProgress(prev => ({ ...prev, completed: [...prev.completed, 'List Growth'] }))
       } catch (err) {
         console.error('List Growth sync error:', err)
@@ -125,7 +131,7 @@ export default function ClientDashboardPage({ params }: PageProps) {
       // Step 4: Sync Revenue Attribution
       setSyncProgress(prev => ({ ...prev, step: 4, currentTask: 'Revenue Attribution' }))
       try {
-        await syncRevenueAttribution(params.slug, (msg) => console.log(msg))
+        await syncRevenueAttribution(params.slug, clientId, (msg) => console.log(msg))
         setSyncProgress(prev => ({ ...prev, completed: [...prev.completed, 'Revenue Attribution'] }))
       } catch (err) {
         console.error('Revenue sync error:', err)
