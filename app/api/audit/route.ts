@@ -108,12 +108,11 @@ export async function GET(request: NextRequest) {
 
 // Helper: Gather all data for audit
 async function gatherAuditData(clientId: string, timeframe: number) {
-  const [campaigns, flows, revenue, listGrowth, flowWeekly] = await Promise.all([
-    DatabaseService.getRecentCampaignMetrics(clientId, timeframe),
-    DatabaseService.getRecentFlowMetrics(clientId, timeframe),
-    DatabaseService.getRevenueAttributionMetrics(clientId, timeframe),
-    DatabaseService.getListGrowthMetrics(clientId, timeframe),
-    DatabaseService.getFlowWeeklyTrends(clientId, timeframe)
+  // Fetch data from correct sources
+  const [campaigns, flows, listGrowth] = await Promise.all([
+    DatabaseService.getRecentCampaignMetrics(clientId, timeframe), // campaign_metrics table
+    DatabaseService.getRecentFlowMetrics(clientId, timeframe), // flow_metrics + aggregated flow_message_metrics
+    DatabaseService.getListGrowthMetrics(clientId, timeframe) // list_growth_metrics table
   ])
 
   // Calculate summary statistics using CORRECT data sources
@@ -130,26 +129,23 @@ async function gatherAuditData(clientId: string, timeframe: number) {
       total: flows.length,
       avgOpenRate: flows.length > 0 ? flows.reduce((sum, f) => sum + ((f.open_rate || 0) * 100), 0) / flows.length : 0,
       avgClickRate: flows.length > 0 ? flows.reduce((sum, f) => sum + ((f.click_rate || 0) * 100), 0) / flows.length : 0,
-      totalRevenue: flows.reduce((sum, f) => sum + (f.revenue || 0), 0), // Aggregated from flow_message_metrics
+      totalRevenue: flows.reduce((sum, f) => sum + (f.revenue || 0), 0), // Aggregated from flow_message_metrics via getRecentFlowMetrics
       flowNames: flows.map(f => f.flow_name?.toLowerCase() || '')
     },
-    revenue: {
-      // Revenue attribution table - OVERALL attribution breakdown
-      totalEmailRevenue: revenue.reduce((sum, r) => sum + (r.email_revenue || 0), 0),
-      totalSmsRevenue: revenue.reduce((sum, r) => sum + (r.sms_revenue || 0), 0),
-      flowEmailRevenue: revenue.reduce((sum, r) => sum + (r.flow_email_revenue || 0), 0),
-      campaignEmailRevenue: revenue.reduce((sum, r) => sum + (r.campaign_email_revenue || 0), 0)
-    },
     listGrowth: {
-      timeframeDays: timeframe, // Track what timeframe we're analyzing
+      timeframeDays: timeframe,
       totalSubscriptions: listGrowth.reduce((sum, lg) => sum + (lg.email_subscriptions || 0), 0),
       totalUnsubscribes: listGrowth.reduce((sum, lg) => sum + (lg.email_unsubscribes || 0), 0),
-      netGrowth: listGrowth.reduce((sum, lg) => sum + (lg.email_subscriptions || 0), 0) - listGrowth.reduce((sum, lg) => sum + (lg.email_unsubscribes || 0), 0), // EMAIL ONLY
+      netGrowth: listGrowth.reduce((sum, lg) => sum + (lg.email_subscriptions || 0), 0) - listGrowth.reduce((sum, lg) => sum + (lg.email_unsubscribes || 0), 0),
       avgDailySubscriptions: listGrowth.length > 0 ? listGrowth.reduce((sum, lg) => sum + (lg.email_subscriptions || 0), 0) / listGrowth.length : 0,
       avgDailyUnsubscribes: listGrowth.length > 0 ? listGrowth.reduce((sum, lg) => sum + (lg.email_unsubscribes || 0), 0) / listGrowth.length : 0,
-      // PROPER churn: total unsubscribes / total subscriptions (not average of daily %)
-      churnRate: listGrowth.reduce((sum, lg) => sum + (lg.email_subscriptions || 0), 0) > 0 
+      // UNSUBSCRIBE RATE: What % of new subscribers also unsubscribed (NOT true churn rate)
+      unsubscribeRate: listGrowth.reduce((sum, lg) => sum + (lg.email_subscriptions || 0), 0) > 0 
         ? listGrowth.reduce((sum, lg) => sum + (lg.email_unsubscribes || 0), 0) / listGrowth.reduce((sum, lg) => sum + (lg.email_subscriptions || 0), 0)
+        : 0,
+      // Net growth rate: What % of subscriptions resulted in net growth
+      netGrowthRate: listGrowth.reduce((sum, lg) => sum + (lg.email_subscriptions || 0), 0) > 0
+        ? (listGrowth.reduce((sum, lg) => sum + (lg.email_subscriptions || 0), 0) - listGrowth.reduce((sum, lg) => sum + (lg.email_unsubscribes || 0), 0)) / listGrowth.reduce((sum, lg) => sum + (lg.email_subscriptions || 0), 0)
         : 0
     }
   }
@@ -167,9 +163,7 @@ async function gatherAuditData(clientId: string, timeframe: number) {
     summary,
     campaigns,
     flows,
-    revenue,
     listGrowth,
-    flowWeekly,
     sendTimeAnalysis,
     subjectLineAnalysis,
     missingFlows
@@ -315,14 +309,20 @@ function buildAuditPrompt(brandName: string, data: any) {
   // Use CORRECT data sources for revenue
   const campaignTotalRevenue = data.summary.campaigns.totalRevenue // From campaign_metrics table
   const flowTotalRevenue = data.summary.flows.totalRevenue // Aggregated from flow_message_metrics
-  const totalEmailRevenue = data.summary.revenue.totalEmailRevenue || (campaignTotalRevenue + flowTotalRevenue) // Use attribution or calculate
+  const totalEmailRevenue = campaignTotalRevenue + flowTotalRevenue // Calculate from actual tables, not attribution
   
   const avgOrderValue = totalOrders > 0 ? campaignTotalRevenue / totalOrders : 0
-  const monthlyEmailRevenue = totalEmailRevenue / 3 // 90 days → monthly
-  const monthlyFlowRevenue = flowTotalRevenue / 3
-  const monthlyCampaignRevenue = campaignTotalRevenue / 3
-  const estimatedListSize = Math.round(data.summary.listGrowth.avgDailySubscriptions * data.summary.listGrowth.timeframeDays)
-  const campaignsPerWeek = data.summary.campaigns.total / 13 // 90 days ≈ 13 weeks
+  
+  // Calculate monthly based on ACTUAL timeframe
+  const timeframeDays = data.summary.listGrowth.timeframeDays
+  const monthlyMultiplier = 30 / timeframeDays // Convert to monthly
+  const monthlyEmailRevenue = totalEmailRevenue * monthlyMultiplier
+  const monthlyFlowRevenue = flowTotalRevenue * monthlyMultiplier
+  const monthlyCampaignRevenue = campaignTotalRevenue * monthlyMultiplier
+  
+  const estimatedListSize = Math.round(data.summary.listGrowth.avgDailySubscriptions * timeframeDays)
+  const weeksInTimeframe = timeframeDays / 7
+  const campaignsPerWeek = data.summary.campaigns.total / weeksInTimeframe
 
   return `You are an expert email marketing consultant analyzing Klaviyo performance data for ${brandName}.
 
@@ -367,30 +367,37 @@ Total flow revenue: $${data.summary.flows.totalRevenue.toLocaleString()}
 MISSING FLOW TYPES:
 ${data.missingFlows.length > 0 ? data.missingFlows.join(', ') : 'None - all essential flows present'}
 
-REVENUE ATTRIBUTION:
-Email revenue: $${data.summary.revenue.totalEmailRevenue.toLocaleString()}
-SMS revenue: $${data.summary.revenue.totalSmsRevenue.toLocaleString()}
-Flow email revenue: $${data.summary.revenue.flowEmailRevenue.toLocaleString()}
-Campaign email revenue: $${data.summary.revenue.campaignEmailRevenue.toLocaleString()}
+REVENUE BREAKDOWN:
+Campaign revenue (from campaign_metrics): $${campaignTotalRevenue.toLocaleString()}
+Flow revenue (from flow_message_metrics): $${flowTotalRevenue.toLocaleString()}
+Total email revenue (calculated): $${totalEmailRevenue.toLocaleString()}
 
 LIST HEALTH (Last ${data.summary.listGrowth.timeframeDays} days):
-Total subscriptions: ${data.summary.listGrowth.totalSubscriptions.toLocaleString()}
+Total new subscriptions: ${data.summary.listGrowth.totalSubscriptions.toLocaleString()}
 Total unsubscribes: ${data.summary.listGrowth.totalUnsubscribes.toLocaleString()}
 Net growth: ${data.summary.listGrowth.netGrowth >= 0 ? '+' : ''}${data.summary.listGrowth.netGrowth.toLocaleString()}
-Est. list size: ~${estimatedListSize.toLocaleString()} subscribers
+Net growth rate: ${(data.summary.listGrowth.netGrowthRate * 100).toFixed(1)}% (${data.summary.listGrowth.netGrowth >= 0 ? 'Growing' : 'Declining'})
+Unsubscribe-to-subscribe ratio: ${(data.summary.listGrowth.unsubscribeRate * 100).toFixed(1)}% (${data.summary.listGrowth.totalUnsubscribes} unsubs / ${data.summary.listGrowth.totalSubscriptions} new subs)
 Avg daily subscriptions: ${data.summary.listGrowth.avgDailySubscriptions.toFixed(0)}
 Avg daily unsubscribes: ${data.summary.listGrowth.avgDailyUnsubscribes.toFixed(0)}
-Churn rate: ${(data.summary.listGrowth.churnRate * 100).toFixed(2)}% (Total unsubs / total subs - Industry benchmark: ~2%)
+
+IMPORTANT: We don't have total list size, so we CANNOT calculate true churn rate (unsubs / total list).
+Instead, we're showing unsubscribe-to-subscribe ratio and net growth rate.
+- Unsubscribe ratio of 20-40% is NORMAL (some new subs don't engage)
+- What matters is NET GROWTH (are you growing overall?)
+- If net growth is positive, list is healthy even if unsub ratio seems high
 
 BUSINESS METRICS (for revenue estimates):
 =========================================
-- Total email revenue (90 days): $${data.summary.revenue.totalEmailRevenue.toLocaleString()}
-- Monthly email revenue: $${monthlyEmailRevenue.toFixed(0)}
-- Monthly flow revenue: $${monthlyFlowRevenue.toFixed(0)}
-- Monthly campaign revenue: $${monthlyCampaignRevenue.toFixed(0)}
-- Total orders (90 days): ${totalOrders}
+- Campaign revenue (${timeframeDays} days): $${campaignTotalRevenue.toLocaleString()} (from campaign_metrics table)
+- Flow revenue (${timeframeDays} days): $${flowTotalRevenue.toLocaleString()} (from flow_message_metrics aggregation)
+- Total email revenue (${timeframeDays} days): $${totalEmailRevenue.toLocaleString()}
+- Monthly campaign revenue: $${monthlyCampaignRevenue.toFixed(0)} (adjusted for ${timeframeDays}-day period)
+- Monthly flow revenue: $${monthlyFlowRevenue.toFixed(0)} (adjusted for ${timeframeDays}-day period)
+- Monthly email revenue: $${monthlyEmailRevenue.toFixed(0)} (adjusted for ${timeframeDays}-day period)
+- Total orders (${timeframeDays} days): ${totalOrders}
 - Average Order Value (AOV): $${avgOrderValue.toFixed(2)}
-- Monthly orders: ~${Math.round(totalOrders / 3)}
+- Monthly orders: ~${Math.round(totalOrders * monthlyMultiplier)}
 
 REVENUE ESTIMATION GUIDELINES:
 ===============================
