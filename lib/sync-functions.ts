@@ -101,6 +101,8 @@ export async function syncFlows(clientSlug: string, clientId: string, onProgress
     
     onProgress?.('Step 4/4: Saving flows...')
     
+    onProgress?.('Step 4/4: Saving flows...')
+    
     const flowDetails: any[] = []
     flowsResult.data?.data?.forEach((flow: any) => {
       const flowWeeklyData = analyticsResult.data?.data?.filter((record: any) => 
@@ -115,13 +117,21 @@ export async function syncFlows(clientSlug: string, clientId: string, onProgress
       })
     })
     
+    console.log(`💾 Saving ${flowDetails.length} flows to database`)
+    
     const saveResponse = await fetch('/api/klaviyo-proxy/save-flows', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ flowDetails, clientId }) // Use clientId (UUID) not slug
     })
     
-    if (!saveResponse.ok) throw new Error('Save flows failed')
+    if (!saveResponse.ok) {
+      const error = await saveResponse.json()
+      throw new Error(error.message || 'Save flows failed')
+    }
+    
+    const saveResult = await saveResponse.json()
+    console.log(`✅ Saved ${flowDetails.length} flows successfully`)
     
     return { success: true, count: flowDetails.length }
   } catch (error) {

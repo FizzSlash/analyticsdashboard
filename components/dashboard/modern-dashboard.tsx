@@ -2398,14 +2398,14 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
                           day: 'numeric' 
                         })}
                       />
-                      {/* Net growth bar - green if positive, red if negative - FIXED for negative values */}
+                      {/* Net growth bar - HARDCODED green/red for positive/negative */}
                       <Bar 
                         dataKey="net_growth" 
                         radius={[4, 4, 0, 0]}
                       >
                         {chartData.map((entry: any, index: number) => {
                           const value = entry.net_growth || 0
-                          const color = value >= 0 ? accentColor : errorColor
+                          const color = value >= 0 ? '#10B981' : '#EF4444' // Hardcoded green/red
                           return <Cell key={`cell-${index}`} fill={color} />
                         })}
                       </Bar>
