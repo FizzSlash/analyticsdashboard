@@ -139,29 +139,7 @@ export function UserManagement({ agency, clients, clientUsers: initialUsers }: U
     }
   }
 
-  const resendInvite = async (email: string) => {
-    setLoading(true)
-    try {
-      const response = await fetch('/api/users/resend-invite', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email })
-      })
-
-      if (!response.ok) {
-        const result = await response.json()
-        throw new Error(result.error || 'Failed to resend invitation')
-      }
-
-      setSuccess('Invitation resent successfully!')
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to resend invitation')
-    } finally {
-      setLoading(false)
-    }
-  }
+  // Removed resendInvite - email not configured, users get magic link in modal instead
 
   return (
     <div className="space-y-6">
