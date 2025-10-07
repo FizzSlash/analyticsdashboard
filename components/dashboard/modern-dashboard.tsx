@@ -883,23 +883,26 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
     )
   }
 
-  // Load cached subject line insights on mount
+  // Load cached subject line insights from database on mount
   useEffect(() => {
     const loadCachedInsights = async () => {
-      const cached = sessionStorage.getItem(`subjectInsights_${client?.brand_slug}_${timeframe}`)
-      if (cached) {
-        try {
-          setAiSubjectInsights(JSON.parse(cached))
-          console.log('✅ Loaded cached subject line insights')
-        } catch (e) {
-          console.log('Failed to parse cached insights')
+      try {
+        const response = await fetch(`/api/subject-line-insights?clientSlug=${client?.brand_slug}`)
+        if (response.ok) {
+          const result = await response.json()
+          if (result.insights) {
+            setAiSubjectInsights(result.insights)
+            console.log('✅ Loaded subject line insights from database')
+          }
         }
+      } catch (e) {
+        console.log('No cached subject line insights found')
       }
     }
     if (client?.brand_slug) {
       loadCachedInsights()
     }
-  }, [client?.brand_slug, timeframe])
+  }, [client?.brand_slug])
 
   const runAiSubjectLineAnalysis = async () => {
     setLoadingAiInsights(true)
@@ -916,13 +919,7 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
       
       const result = await response.json()
       setAiSubjectInsights(result.insights)
-      
-      // Cache the result
-      sessionStorage.setItem(
-        `subjectInsights_${client.brand_slug}_${timeframe}`,
-        JSON.stringify(result.insights)
-      )
-      console.log('💾 Cached subject line insights')
+      console.log('✅ Subject line insights saved to database')
     } catch (error) {
       console.error('AI insights error:', error)
     } finally {

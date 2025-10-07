@@ -88,33 +88,87 @@ export default function ClientDashboardPage({ params }: PageProps) {
     setSyncing(true)
     setShowSyncModal(true)
     setSyncMessage(null)
-    setSyncProgress({ step: 0, total: 1, currentTask: '', completed: [], failed: [] })
+    setSyncProgress({ step: 0, total: 4, currentTask: '', completed: [], failed: [] })
     
-    // Use single comprehensive sync endpoint
-    const syncTasks = [
-      { name: 'All Data (Campaigns, Flows, List Growth, Revenue)', api: '/api/sync' }
-    ]
-
     try {
-      const task = syncTasks[0]
-      setSyncProgress(prev => ({ ...prev, step: 1, currentTask: task.name }))
-
-      const response = await fetch(task.api, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ clientId: params.slug })
-      })
-
-      if (!response.ok) {
-        throw new Error('Sync failed')
+      // Step 1: Sync Campaigns
+      setSyncProgress(prev => ({ ...prev, step: 1, currentTask: 'Campaigns' }))
+      try {
+        const response = await fetch('/api/sync/campaigns', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ clientSlug: params.slug })
+        })
+        if (response.ok) {
+          setSyncProgress(prev => ({ ...prev, completed: [...prev.completed, 'Campaigns'] }))
+        } else {
+          throw new Error('Campaigns sync failed')
+        }
+      } catch (err) {
+        console.error('Campaigns sync error:', err)
+        setSyncProgress(prev => ({ ...prev, failed: [...prev.failed, 'Campaigns'] }))
       }
 
-      setSyncProgress(prev => ({ ...prev, completed: [task.name] }))
+      // Step 2: Sync Flows
+      setSyncProgress(prev => ({ ...prev, step: 2, currentTask: 'Flows' }))
+      try {
+        const response = await fetch('/api/sync/flows', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ clientSlug: params.slug })
+        })
+        if (response.ok) {
+          setSyncProgress(prev => ({ ...prev, completed: [...prev.completed, 'Flows'] }))
+        } else {
+          throw new Error('Flows sync failed')
+        }
+      } catch (err) {
+        console.error('Flows sync error:', err)
+        setSyncProgress(prev => ({ ...prev, failed: [...prev.failed, 'Flows'] }))
+      }
 
-      // Update last sync time only on success
-      const lastSyncKey = `lastSync_${params.slug}`
-      localStorage.setItem(lastSyncKey, new Date().toISOString())
-      setCanSync(false)
+      // Step 3: Sync List Growth
+      setSyncProgress(prev => ({ ...prev, step: 3, currentTask: 'List Growth' }))
+      try {
+        const response = await fetch('/api/sync/list-growth', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ clientSlug: params.slug })
+        })
+        if (response.ok) {
+          setSyncProgress(prev => ({ ...prev, completed: [...prev.completed, 'List Growth'] }))
+        } else {
+          throw new Error('List Growth sync failed')
+        }
+      } catch (err) {
+        console.error('List Growth sync error:', err)
+        setSyncProgress(prev => ({ ...prev, failed: [...prev.failed, 'List Growth'] }))
+      }
+
+      // Step 4: Sync Revenue Attribution
+      setSyncProgress(prev => ({ ...prev, step: 4, currentTask: 'Revenue Attribution' }))
+      try {
+        const response = await fetch('/api/sync/revenue', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ clientSlug: params.slug })
+        })
+        if (response.ok) {
+          setSyncProgress(prev => ({ ...prev, completed: [...prev.completed, 'Revenue Attribution'] }))
+        } else {
+          throw new Error('Revenue sync failed')
+        }
+      } catch (err) {
+        console.error('Revenue sync error:', err)
+        setSyncProgress(prev => ({ ...prev, failed: [...prev.failed, 'Revenue Attribution'] }))
+      }
+
+      // Update last sync time only if at least one succeeded
+      if (syncProgress.completed.length > 0) {
+        const lastSyncKey = `lastSync_${params.slug}`
+        localStorage.setItem(lastSyncKey, new Date().toISOString())
+        setCanSync(false)
+      }
       
       setSyncMessage('✅ Sync completed! Refreshing dashboard...')
       
@@ -124,14 +178,15 @@ export default function ClientDashboardPage({ params }: PageProps) {
       }, 3000)
     } catch (err) {
       console.error('Sync error:', err)
-      setSyncProgress(prev => ({ ...prev, failed: ['All Data'] }))
-      setSyncMessage('❌ Sync failed. Please try again later.')
+      setSyncMessage('❌ Some syncs failed. Check individual status above.')
       
-      // Don't update last sync time on failure - allow immediate retry
-      setTimeout(() => {
-        setShowSyncModal(false)
-        setSyncMessage(null)
-      }, 5000)
+      // Allow immediate retry if all failed
+      if (syncProgress.completed.length === 0) {
+        setTimeout(() => {
+          setShowSyncModal(false)
+          setSyncMessage(null)
+        }, 5000)
+      }
     } finally {
       setSyncing(false)
     }
@@ -313,59 +368,64 @@ export default function ClientDashboardPage({ params }: PageProps) {
                   </h3>
                   
                   <div className="space-y-4 mb-6">
-                    {/* Single Progress Item - All Data Sync */}
-                    {syncProgress.completed.length > 0 ? (
-                      <div className="flex items-center gap-3">
-                        <div className="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center flex-shrink-0">
-                          <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                          </svg>
+                    {/* 4 Separate Progress Items */}
+                    {['Campaigns', 'Flows', 'List Growth', 'Revenue Attribution'].map((task, index) => {
+                      const isCompleted = syncProgress.completed.includes(task)
+                      const isFailed = syncProgress.failed.includes(task)
+                      const isCurrent = syncProgress.currentTask === task
+                      const isPending = index + 1 > syncProgress.step
+                      
+                      return (
+                        <div key={task} className="flex items-center gap-3">
+                          {isCompleted ? (
+                            <div className="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center flex-shrink-0">
+                              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                              </svg>
+                            </div>
+                          ) : isFailed ? (
+                            <div className="w-6 h-6 rounded-full bg-red-500 flex items-center justify-center flex-shrink-0">
+                              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                            </div>
+                          ) : isCurrent ? (
+                            <div className="w-6 h-6 rounded-full border-2 border-blue-500 border-t-transparent animate-spin flex-shrink-0" />
+                          ) : (
+                            <div className="w-6 h-6 rounded-full bg-gray-200 flex-shrink-0" />
+                          )}
+                          
+                          <div className="flex-1">
+                            <span className={`text-sm font-medium ${
+                              isCompleted ? 'text-green-700' : 
+                              isFailed ? 'text-red-700' : 
+                              isCurrent ? 'text-blue-700' : 
+                              'text-gray-500'
+                            }`}>
+                              {task}
+                            </span>
+                          </div>
+                          
+                          {isCompleted && <span className="text-xs text-green-600">✓ Done</span>}
+                          {isFailed && <span className="text-xs text-red-600">✗ Failed</span>}
+                          {isCurrent && <span className="text-xs text-blue-600">⏳ Syncing...</span>}
                         </div>
-                        <div className="flex-1">
-                          <span className="text-sm font-medium text-green-700">
-                            Syncing Campaigns, Flows, List Growth & Revenue
-                          </span>
-                        </div>
-                        <span className="text-xs text-green-600">✓ Done</span>
-                      </div>
-                    ) : syncProgress.failed.length > 0 ? (
-                      <div className="flex items-center gap-3">
-                        <div className="w-6 h-6 rounded-full bg-red-500 flex items-center justify-center flex-shrink-0">
-                          <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                          </svg>
-                        </div>
-                        <div className="flex-1">
-                          <span className="text-sm font-medium text-red-700">
-                            Sync Failed - Please try again
-                          </span>
-                        </div>
-                        <span className="text-xs text-red-600">✗ Error</span>
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-3">
-                        <div className="w-6 h-6 rounded-full border-2 border-blue-500 border-t-transparent animate-spin flex-shrink-0" />
-                        <div className="flex-1">
-                          <span className="text-sm font-medium text-blue-700">
-                            Syncing Campaigns, Flows, List Growth & Revenue
-                          </span>
-                          <p className="text-xs text-gray-500 mt-1">
-                            This may take 30-60 seconds...
-                          </p>
-                        </div>
-                        <span className="text-xs text-blue-600">⏳ In progress...</span>
-                      </div>
-                    )}
+                      )
+                    })}
                   </div>
                   
                   {/* Progress Bar */}
                   <div className="mb-4">
+                    <div className="flex justify-between text-xs text-gray-600 mb-2">
+                      <span>Overall Progress</span>
+                      <span>{syncProgress.step} / {syncProgress.total}</span>
+                    </div>
                     <div className="w-full bg-gray-200 rounded-full h-2">
                       <div 
-                        className={`h-2 rounded-full transition-all duration-500 ${
+                        className={`h-2 rounded-full transition-all duration-300 ${
                           syncProgress.failed.length > 0 ? 'bg-red-600' : 'bg-blue-600'
                         }`}
-                        style={{ width: syncProgress.completed.length > 0 ? '100%' : syncing ? '75%' : '0%' }}
+                        style={{ width: `${(syncProgress.step / syncProgress.total) * 100}%` }}
                       />
                     </div>
                   </div>

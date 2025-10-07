@@ -131,6 +131,27 @@ Return as JSON:
 
     console.log('✅ Subject line AI analysis complete')
 
+    // Save to database
+    const { supabaseAdmin } = await import('@/lib/supabase')
+    const { data: savedInsight, error: saveError } = await supabaseAdmin
+      .from('subject_line_insights')
+      .insert({
+        client_id: client.id,
+        timeframe_days: timeframe,
+        campaigns_analyzed: campaigns.length,
+        insights,
+        tokens_used: message.usage.input_tokens + message.usage.output_tokens,
+        api_cost_usd: (message.usage.input_tokens * 0.003 / 1000) + (message.usage.output_tokens * 0.015 / 1000)
+      })
+      .select()
+      .single()
+
+    if (saveError) {
+      console.error('Failed to save insights to database:', saveError)
+    } else {
+      console.log('💾 Saved subject line insights to database')
+    }
+
     return NextResponse.json({
       success: true,
       insights,
@@ -147,6 +168,48 @@ Return as JSON:
       error: 'AI analysis failed',
       message: error.message
     }, { status: 500 })
+  }
+}
+
+// GET endpoint - Load cached insights from database
+export async function GET(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url)
+    const clientSlug = searchParams.get('clientSlug')
+    
+    if (!clientSlug) {
+      return NextResponse.json({ error: 'Client slug required' }, { status: 400 })
+    }
+
+    const client = await DatabaseService.getClientBySlug(clientSlug)
+    if (!client) {
+      return NextResponse.json({ error: 'Client not found' }, { status: 404 })
+    }
+
+    // Get latest insights from database
+    const { supabaseAdmin } = await import('@/lib/supabase')
+    const { data, error } = await supabaseAdmin
+      .from('subject_line_insights')
+      .select('*')
+      .eq('client_id', client.id)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single()
+
+    if (error && error.code !== 'PGRST116') {
+      console.error('Error fetching insights:', error)
+      return NextResponse.json({ error: 'Failed to fetch insights' }, { status: 500 })
+    }
+
+    return NextResponse.json({
+      success: true,
+      insights: data?.insights || null,
+      hasInsights: !!data
+    })
+
+  } catch (error: any) {
+    console.error('GET insights error:', error)
+    return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }
 
