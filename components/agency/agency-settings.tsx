@@ -118,6 +118,13 @@ export function AgencySettings({ agency: initialAgency }: AgencySettingsProps) {
       logo_url: agency.logo_url || '',
       primary_color: agency.primary_color,
       secondary_color: agency.secondary_color,
+      accent_color: agency.accent_color || '#6366F1',
+      success_color: agency.success_color || '#10B981',
+      warning_color: agency.warning_color || '#F59E0B',
+      error_color: agency.error_color || '#EF4444',
+      chart_color_1: agency.chart_color_1 || '#3B82F6',
+      chart_color_2: agency.chart_color_2 || '#8B5CF6',
+      chart_color_3: agency.chart_color_3 || '#EC4899',
       background_image_url: agency.background_image_url || '',
       custom_domain: agency.custom_domain || ''
     })
