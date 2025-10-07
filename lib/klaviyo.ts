@@ -637,10 +637,10 @@ export class KlaviyoAPI {
     return { data: results }
   }
 
-  // Flow Analytics Report - SERIES APPROACH (Last Year = Exactly 52 Weeks)
+  // Flow Analytics Report - SERIES APPROACH (Last 365 Days)
   async getFlowAnalytics(flowIds: string[], conversionMetricId: string | null = null) {
     console.log(`🔄 FLOWS: Calling Flow Series Report API for ${flowIds.length} flows - USING PRE-DEFINED KEY`)
-    console.log(`📅 FLOWS: Using pre-defined timeframe: last_year (exactly 52 weeks)`)
+    console.log(`📅 FLOWS: Using pre-defined timeframe: last_365_days`)
     console.log(`📊 FLOWS: SERIES CALL - Getting WEEKLY analytics for ALL ${flowIds.length} flows`)
     console.log(`🎯 FLOWS: Using conversion metric ID: ${conversionMetricId || 'none'}`)
     
@@ -664,9 +664,9 @@ export class KlaviyoAPI {
               'average_order_value'
             ],
             timeframe: { 
-              key: 'last_year'  // ✅ Exactly 52 weeks (Klaviyo pre-defined)
+              key: 'last_365_days'  // ✅ Pre-defined 365 days key
             },
-            interval: 'weekly', // ✅ Weekly interval perfect for last_year
+            interval: 'weekly', // ✅ Weekly interval (Klaviyo will handle 52+ week edge case)
             filter: `contains-any(flow_id,["${flowIds.join('","')}"])` // BATCH ALL FLOWS
           }
         }
