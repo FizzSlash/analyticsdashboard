@@ -115,13 +115,13 @@ async function gatherAuditData(clientId: string, timeframe: number) {
     DatabaseService.getFlowWeeklyTrends(clientId, timeframe)
   ])
 
-  // Calculate summary statistics
+  // Calculate summary statistics using CORRECT data sources
   const summary = {
     campaigns: {
       total: campaigns.length,
       avgOpenRate: campaigns.length > 0 ? campaigns.reduce((sum, c) => sum + (c.open_rate || 0), 0) / campaigns.length : 0,
       avgClickRate: campaigns.length > 0 ? campaigns.reduce((sum, c) => sum + (c.click_rate || 0), 0) / campaigns.length : 0,
-      totalRevenue: campaigns.reduce((sum, c) => sum + (c.revenue || 0), 0),
+      totalRevenue: campaigns.reduce((sum, c) => sum + (c.revenue || 0), 0), // From campaign_metrics table
       totalRecipients: campaigns.reduce((sum, c) => sum + (c.recipients_count || 0), 0),
       avgRevenuePerCampaign: campaigns.length > 0 ? campaigns.reduce((sum, c) => sum + (c.revenue || 0), 0) / campaigns.length : 0
     },
@@ -129,20 +129,27 @@ async function gatherAuditData(clientId: string, timeframe: number) {
       total: flows.length,
       avgOpenRate: flows.length > 0 ? flows.reduce((sum, f) => sum + ((f.open_rate || 0) * 100), 0) / flows.length : 0,
       avgClickRate: flows.length > 0 ? flows.reduce((sum, f) => sum + ((f.click_rate || 0) * 100), 0) / flows.length : 0,
-      totalRevenue: flows.reduce((sum, f) => sum + (f.revenue || 0), 0),
+      totalRevenue: flows.reduce((sum, f) => sum + (f.revenue || 0), 0), // Aggregated from flow_message_metrics
       flowNames: flows.map(f => f.flow_name?.toLowerCase() || '')
     },
     revenue: {
+      // Revenue attribution table - OVERALL attribution breakdown
       totalEmailRevenue: revenue.reduce((sum, r) => sum + (r.email_revenue || 0), 0),
       totalSmsRevenue: revenue.reduce((sum, r) => sum + (r.sms_revenue || 0), 0),
       flowEmailRevenue: revenue.reduce((sum, r) => sum + (r.flow_email_revenue || 0), 0),
       campaignEmailRevenue: revenue.reduce((sum, r) => sum + (r.campaign_email_revenue || 0), 0)
     },
     listGrowth: {
-      netGrowth: listGrowth.reduce((sum, lg) => sum + (lg.overall_net_growth || 0), 0),
+      timeframeDays: timeframe, // Track what timeframe we're analyzing
+      totalSubscriptions: listGrowth.reduce((sum, lg) => sum + (lg.email_subscriptions || 0), 0),
+      totalUnsubscribes: listGrowth.reduce((sum, lg) => sum + (lg.email_unsubscribes || 0), 0),
+      netGrowth: listGrowth.reduce((sum, lg) => sum + (lg.email_subscriptions || 0), 0) - listGrowth.reduce((sum, lg) => sum + (lg.email_unsubscribes || 0), 0), // EMAIL ONLY
       avgDailySubscriptions: listGrowth.length > 0 ? listGrowth.reduce((sum, lg) => sum + (lg.email_subscriptions || 0), 0) / listGrowth.length : 0,
       avgDailyUnsubscribes: listGrowth.length > 0 ? listGrowth.reduce((sum, lg) => sum + (lg.email_unsubscribes || 0), 0) / listGrowth.length : 0,
-      avgChurnRate: listGrowth.length > 0 ? listGrowth.reduce((sum, lg) => sum + (lg.churn_rate || 0), 0) / listGrowth.length : 0
+      // PROPER churn: total unsubscribes / total subscriptions (not average of daily %)
+      churnRate: listGrowth.reduce((sum, lg) => sum + (lg.email_subscriptions || 0), 0) > 0 
+        ? listGrowth.reduce((sum, lg) => sum + (lg.email_unsubscribes || 0), 0) / listGrowth.reduce((sum, lg) => sum + (lg.email_subscriptions || 0), 0)
+        : 0
     }
   }
 
@@ -303,11 +310,17 @@ async function analyzeWithClaude(brandName: string, auditData: any) {
 function buildAuditPrompt(brandName: string, data: any) {
   // Calculate key business metrics for revenue estimation
   const totalOrders = data.campaigns.reduce((sum: number, c: any) => sum + (c.orders_count || 0), 0)
-  const avgOrderValue = totalOrders > 0 ? data.summary.campaigns.totalRevenue / totalOrders : 0
-  const monthlyEmailRevenue = data.summary.revenue.totalEmailRevenue / 3 // 90 days → monthly
-  const monthlyFlowRevenue = data.summary.revenue.flowEmailRevenue / 3
-  const monthlyCampaignRevenue = data.summary.revenue.campaignEmailRevenue / 3
-  const estimatedListSize = Math.round(data.summary.listGrowth.avgDailySubscriptions * 90)
+  
+  // Use CORRECT data sources for revenue
+  const campaignTotalRevenue = data.summary.campaigns.totalRevenue // From campaign_metrics table
+  const flowTotalRevenue = data.summary.flows.totalRevenue // Aggregated from flow_message_metrics
+  const totalEmailRevenue = data.summary.revenue.totalEmailRevenue || (campaignTotalRevenue + flowTotalRevenue) // Use attribution or calculate
+  
+  const avgOrderValue = totalOrders > 0 ? campaignTotalRevenue / totalOrders : 0
+  const monthlyEmailRevenue = totalEmailRevenue / 3 // 90 days → monthly
+  const monthlyFlowRevenue = flowTotalRevenue / 3
+  const monthlyCampaignRevenue = campaignTotalRevenue / 3
+  const estimatedListSize = Math.round(data.summary.listGrowth.avgDailySubscriptions * data.summary.listGrowth.timeframeDays)
   const campaignsPerWeek = data.summary.campaigns.total / 13 // 90 days ≈ 13 weeks
 
   return `You are an expert email marketing consultant analyzing Klaviyo performance data for ${brandName}.
@@ -359,12 +372,14 @@ SMS revenue: $${data.summary.revenue.totalSmsRevenue.toLocaleString()}
 Flow email revenue: $${data.summary.revenue.flowEmailRevenue.toLocaleString()}
 Campaign email revenue: $${data.summary.revenue.campaignEmailRevenue.toLocaleString()}
 
-LIST HEALTH:
-Net growth (90 days): ${data.summary.listGrowth.netGrowth >= 0 ? '+' : ''}${data.summary.listGrowth.netGrowth}
+LIST HEALTH (Last ${data.summary.listGrowth.timeframeDays} days):
+Total subscriptions: ${data.summary.listGrowth.totalSubscriptions.toLocaleString()}
+Total unsubscribes: ${data.summary.listGrowth.totalUnsubscribes.toLocaleString()}
+Net growth: ${data.summary.listGrowth.netGrowth >= 0 ? '+' : ''}${data.summary.listGrowth.netGrowth.toLocaleString()}
 Est. list size: ~${estimatedListSize.toLocaleString()} subscribers
 Avg daily subscriptions: ${data.summary.listGrowth.avgDailySubscriptions.toFixed(0)}
 Avg daily unsubscribes: ${data.summary.listGrowth.avgDailyUnsubscribes.toFixed(0)}
-Avg churn rate: ${(data.summary.listGrowth.avgChurnRate * 100).toFixed(2)}% (Industry benchmark: ~2%)
+Churn rate: ${(data.summary.listGrowth.churnRate * 100).toFixed(2)}% (Total unsubs / total subs - Industry benchmark: ~2%)
 
 BUSINESS METRICS (for revenue estimates):
 =========================================
