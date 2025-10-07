@@ -10,7 +10,7 @@ export async function POST(request: NextRequest) {
   console.log('🤖 AUDIT API: Starting AI audit...')
   
   try {
-    const { clientSlug } = await request.json()
+    const { clientSlug, timeframe: requestedTimeframe } = await request.json()
     
     if (!clientSlug) {
       return NextResponse.json({ error: 'Client slug is required' }, { status: 400 })
@@ -25,15 +25,16 @@ export async function POST(request: NextRequest) {
     // Check if audit is enabled for this client
     if (!client.audit_enabled) {
       return NextResponse.json({ 
-        error: 'AI Audit is not enabled for this client',
+        error: 'Audit is not enabled for this client',
         message: 'Contact your agency administrator to enable this feature'
       }, { status: 403 })
     }
 
-    console.log(`🤖 AUDIT: Running audit for ${client.brand_name}`)
+    // Use requested timeframe, minimum 30 days, default 90 days
+    const timeframe = Math.max(requestedTimeframe || 90, 30)
+    console.log(`🤖 AUDIT: Running audit for ${client.brand_name} (${timeframe} days)`)
 
     // Gather comprehensive data for analysis
-    const timeframe = 90 // Always analyze last 90 days
     const auditData = await gatherAuditData(client.id, timeframe)
 
     console.log('🤖 AUDIT: Data gathered, calling Claude API...')
@@ -325,7 +326,7 @@ function buildAuditPrompt(brandName: string, data: any) {
 
   return `You are an expert email marketing consultant analyzing Klaviyo performance data for ${brandName}.
 
-Provide a comprehensive marketing audit analyzing their last 90 days of email marketing performance.
+Provide a comprehensive marketing audit analyzing their last ${data.summary.listGrowth.timeframeDays} days of email marketing performance.
 
 CLIENT DATA:
 ===========

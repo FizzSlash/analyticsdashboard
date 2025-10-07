@@ -91,7 +91,10 @@ export function AuditTab({ client, timeframe }: AuditTabProps) {
       const response = await fetch('/api/audit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ clientSlug: client.brand_slug })
+        body: JSON.stringify({ 
+          clientSlug: client.brand_slug,
+          timeframe: timeframe // Use current dashboard timeframe
+        })
       })
 
       if (!response.ok) {
