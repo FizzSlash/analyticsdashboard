@@ -6,6 +6,7 @@ import { CleanPortalDashboard } from '@/components/portal/clean-portal-dashboard
 import { ViewToggle, type ViewMode } from '@/components/ui/view-toggle'
 import { TimeframeSelector } from '@/components/ui/timeframe-selector'
 import { useRouter } from 'next/navigation'
+import { syncCampaigns, syncFlows, syncListGrowth, syncRevenueAttribution } from '@/lib/sync-functions'
 
 interface PageProps {
   params: {
@@ -91,25 +92,11 @@ export default function ClientDashboardPage({ params }: PageProps) {
     setSyncProgress({ step: 0, total: 4, currentTask: '', completed: [], failed: [] })
     
     try {
-      // Get full client object first (needed for sync endpoints)
-      const clientData = dashboardData?.client
-      if (!clientData) {
-        throw new Error('Client data not available')
-      }
-
       // Step 1: Sync Campaigns
       setSyncProgress(prev => ({ ...prev, step: 1, currentTask: 'Campaigns' }))
       try {
-        const response = await fetch('/api/sync/campaigns', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ client: clientData })
-        })
-        if (response.ok) {
-          setSyncProgress(prev => ({ ...prev, completed: [...prev.completed, 'Campaigns'] }))
-        } else {
-          throw new Error('Campaigns sync failed')
-        }
+        await syncCampaigns(params.slug, (msg) => console.log(msg))
+        setSyncProgress(prev => ({ ...prev, completed: [...prev.completed, 'Campaigns'] }))
       } catch (err) {
         console.error('Campaigns sync error:', err)
         setSyncProgress(prev => ({ ...prev, failed: [...prev.failed, 'Campaigns'] }))
@@ -118,16 +105,8 @@ export default function ClientDashboardPage({ params }: PageProps) {
       // Step 2: Sync Flows
       setSyncProgress(prev => ({ ...prev, step: 2, currentTask: 'Flows' }))
       try {
-        const response = await fetch('/api/sync/flows', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ client: clientData })
-        })
-        if (response.ok) {
-          setSyncProgress(prev => ({ ...prev, completed: [...prev.completed, 'Flows'] }))
-        } else {
-          throw new Error('Flows sync failed')
-        }
+        await syncFlows(params.slug, (msg) => console.log(msg))
+        setSyncProgress(prev => ({ ...prev, completed: [...prev.completed, 'Flows'] }))
       } catch (err) {
         console.error('Flows sync error:', err)
         setSyncProgress(prev => ({ ...prev, failed: [...prev.failed, 'Flows'] }))
@@ -136,17 +115,17 @@ export default function ClientDashboardPage({ params }: PageProps) {
       // Step 3: Sync List Growth
       setSyncProgress(prev => ({ ...prev, step: 3, currentTask: 'List Growth' }))
       try {
-        // List growth doesn't have its own endpoint, skip it
+        await syncListGrowth(params.slug, (msg) => console.log(msg))
         setSyncProgress(prev => ({ ...prev, completed: [...prev.completed, 'List Growth'] }))
       } catch (err) {
         console.error('List Growth sync error:', err)
         setSyncProgress(prev => ({ ...prev, failed: [...prev.failed, 'List Growth'] }))
       }
 
-      // Step 4: Sync Revenue
+      // Step 4: Sync Revenue Attribution
       setSyncProgress(prev => ({ ...prev, step: 4, currentTask: 'Revenue Attribution' }))
       try {
-        // Revenue doesn't have its own endpoint, skip it
+        await syncRevenueAttribution(params.slug, (msg) => console.log(msg))
         setSyncProgress(prev => ({ ...prev, completed: [...prev.completed, 'Revenue Attribution'] }))
       } catch (err) {
         console.error('Revenue sync error:', err)
