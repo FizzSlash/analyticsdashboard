@@ -637,16 +637,11 @@ export class KlaviyoAPI {
     return { data: results }
   }
 
-  // Flow Analytics Report - SERIES APPROACH (Dynamic 365 Days)
+  // Flow Analytics Report - SERIES APPROACH (Last 12 Months)
   async getFlowAnalytics(flowIds: string[], conversionMetricId: string | null = null) {
-    console.log(`🔄 FLOWS: Calling Flow Series Report API for ${flowIds.length} flows - DYNAMIC SERIES`)
-    
-    // Calculate dynamic date range (last 365 days from today)
-    const endDate = new Date().toISOString().split('T')[0]
-    const startDate = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-    
-    console.log(`📅 FLOWS: Using DYNAMIC date range: ${startDate} to ${endDate}`)
-    console.log(`📊 FLOWS: SERIES CALL - Getting weekly analytics for ALL ${flowIds.length} flows`)
+    console.log(`🔄 FLOWS: Calling Flow Series Report API for ${flowIds.length} flows - USING PRE-DEFINED KEY`)
+    console.log(`📅 FLOWS: Using pre-defined timeframe: last_12_months`)
+    console.log(`📊 FLOWS: SERIES CALL - Getting daily analytics for ALL ${flowIds.length} flows`)
     console.log(`🎯 FLOWS: Using conversion metric ID: ${conversionMetricId || 'none'}`)
     
     try {
@@ -669,10 +664,9 @@ export class KlaviyoAPI {
               'average_order_value'
             ],
             timeframe: { 
-              start: startDate, 
-              end: endDate 
-            }, // DYNAMIC dates instead of static key
-            interval: 'weekly', // Weekly interval for 365 days
+              key: 'last_12_months'  // ✅ Pre-defined key (Klaviyo handles date calculation)
+            },
+            interval: 'monthly', // ✅ Monthly interval works with last_12_months (max 52 weeks)
             filter: `contains-any(flow_id,["${flowIds.join('","')}"])` // BATCH ALL FLOWS
           }
         }
