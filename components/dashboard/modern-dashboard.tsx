@@ -58,12 +58,16 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
   const [viewMode, setViewMode] = useState<ViewMode>('analytics')
   const [activeTab, setActiveTab] = useState<TabType>('dashboard')
 
-  // Dynamic colors based on client branding
+  // Dynamic colors based on agency branding (inherited by client)
   const primaryColor = client?.primary_color || '#3B82F6'
   const secondaryColor = client?.secondary_color || '#1D4ED8'
-  const accentColor = '#34D399' // Green for positive metrics
-  const warningColor = '#F59E0B' // Orange for neutral/warning
-  const errorColor = '#EF4444' // Red for negative metrics
+  const accentColor = client?.accent_color || '#34D399' // From agency
+  const warningColor = client?.warning_color || '#F59E0B' // From agency
+  const errorColor = client?.error_color || '#EF4444' // From agency
+  const successColor = client?.success_color || '#10B981' // From agency
+  const chartColor1 = client?.chart_color_1 || primaryColor // From agency
+  const chartColor2 = client?.chart_color_2 || secondaryColor // From agency
+  const chartColor3 = client?.chart_color_3 || '#EC4899' // From agency
   // TIMEFRAME MANAGEMENT - Use external timeframe when provided, otherwise internal state
   const [internalTimeframe, setInternalTimeframe] = useState(30) // Default to 30 days for internal use
   const timeframe = externalTimeframe || internalTimeframe // Use external timeframe when provided
