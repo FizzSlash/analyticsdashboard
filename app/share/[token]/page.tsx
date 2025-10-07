@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { ModernDashboard } from '@/components/dashboard/modern-dashboard'
+import { TimeframeSelector } from '@/components/ui/timeframe-selector'
 import { Loader2, Lock } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 
@@ -13,6 +14,7 @@ export default function SharedDashboardPage() {
   const [dashboardData, setDashboardData] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [selectedTimeframe, setSelectedTimeframe] = useState<number>(30) // Default to 30 days
 
   useEffect(() => {
     const fetchSharedDashboard = async () => {
@@ -93,7 +95,7 @@ export default function SharedDashboardPage() {
           : `linear-gradient(135deg, ${primaryColor} 0%, ${secondaryColor} 100%)`
       }}
     >
-      {/* Header with "Shared Dashboard" badge */}
+      {/* Header with "Shared Dashboard" badge and timeframe selector */}
       <div className="bg-white/5 backdrop-blur-sm border-b border-white/10 py-4">
         <div className="max-w-7xl mx-auto px-6">
           <div className="flex items-center justify-between">
@@ -104,8 +106,14 @@ export default function SharedDashboardPage() {
               <h1 className="text-2xl font-bold text-white">{client.brand_name}</h1>
               <p className="text-white/60 text-sm">Email Marketing Analytics</p>
             </div>
-            <div className="bg-white/10 px-4 py-2 rounded-lg border border-white/20">
-              <p className="text-white/80 text-sm font-medium">📊 Shared Dashboard (Read-Only)</p>
+            <div className="flex items-center gap-4">
+              <TimeframeSelector 
+                selectedTimeframe={selectedTimeframe}
+                onTimeframeChange={setSelectedTimeframe}
+              />
+              <div className="bg-white/10 px-4 py-2 rounded-lg border border-white/20">
+                <p className="text-white/80 text-sm font-medium">📊 Shared (Read-Only)</p>
+              </div>
             </div>
           </div>
         </div>
@@ -115,7 +123,7 @@ export default function SharedDashboardPage() {
       <ModernDashboard 
         client={{ ...client, ...agency }}
         data={dashboardData.data}
-        timeframe={365}
+        timeframe={selectedTimeframe}
         disablePortalMode={true}
         hideHeader={true}
       />
