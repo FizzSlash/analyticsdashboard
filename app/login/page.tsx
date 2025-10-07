@@ -218,17 +218,12 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center p-4" style={{
       background: `linear-gradient(135deg, ${primaryColor} 0%, ${secondaryColor} 100%)`
     }}>
-      <Card className="w-full max-w-md bg-white/95 backdrop-blur-md shadow-2xl">
+      <Card className="w-full max-w-md bg-white/10 backdrop-blur-xl border border-white/20 shadow-2xl">
         <CardHeader className="text-center">
-          {logoUrl && (
-            <div className="flex justify-center mb-4">
-              <img src={logoUrl} alt="Logo" className="h-12 w-auto" />
-            </div>
-          )}
-          <CardTitle className="text-2xl font-bold text-gray-900">
+          <CardTitle className="text-2xl font-bold text-white">
             Sign In
           </CardTitle>
-          <p className="text-gray-600">
+          <p className="text-white/70">
             Access your Analytics Dashboard
           </p>
         </CardHeader>
@@ -242,17 +237,17 @@ export default function LoginPage() {
             )}
             
             <div className="space-y-2">
-              <label htmlFor="email" className="text-sm font-medium text-gray-700">
+              <label htmlFor="email" className="text-sm font-medium text-white/90">
                 Email Address
               </label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-white/40" />
                 <input
                   id="email"
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full pl-10 pr-4 py-2 bg-white/10 border border-white/20 rounded-md text-white placeholder-white/40 focus:ring-2 focus:ring-white/30 focus:border-white/40"
                   placeholder="Enter your email"
                   required
                 />
@@ -260,17 +255,17 @@ export default function LoginPage() {
             </div>
 
             <div className="space-y-2">
-              <label htmlFor="password" className="text-sm font-medium text-gray-700">
+              <label htmlFor="password" className="text-sm font-medium text-white/90">
                 Password
               </label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-white/40" />
                 <input
                   id="password"
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full pl-10 pr-4 py-2 bg-white/10 border border-white/20 rounded-md text-white placeholder-white/40 focus:ring-2 focus:ring-white/30 focus:border-white/40"
                   placeholder="Enter your password"
                   required
                 />
@@ -280,11 +275,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full text-white py-2 px-4 rounded-md focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-all"
-              style={{
-                background: `linear-gradient(135deg, ${primaryColor} 0%, ${secondaryColor} 100%)`,
-                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
-              }}
+              className="w-full bg-white/20 hover:bg-white/30 text-white py-2 px-4 rounded-md focus:ring-2 focus:ring-white/30 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-all border border-white/30 font-medium"
             >
               {loading ? (
                 <>
@@ -297,7 +288,7 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <div className="mt-6 text-center text-sm text-gray-600">
+          <div className="mt-6 text-center text-sm text-white/60">
             <p>
               Need access? Contact your agency administrator.
             </p>

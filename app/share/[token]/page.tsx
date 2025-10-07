@@ -91,7 +91,7 @@ export default function SharedDashboardPage() {
           <div className="flex items-center justify-between">
             <div>
               {agency?.logo_url && (
-                <img src={agency.logo_url} alt="Logo" className="h-8 w-auto mb-2" />
+                <img src={agency.logo_url} alt="" className="h-8 w-auto mb-2" />
               )}
               <h1 className="text-2xl font-bold text-white">{client.brand_name}</h1>
               <p className="text-white/60 text-sm">Email Marketing Analytics</p>
