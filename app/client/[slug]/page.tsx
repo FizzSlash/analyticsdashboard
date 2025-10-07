@@ -91,77 +91,25 @@ export default function ClientDashboardPage({ params }: PageProps) {
     setSyncProgress({ step: 0, total: 4, currentTask: '', completed: [], failed: [] })
     
     try {
-      // Step 1: Sync Campaigns
-      setSyncProgress(prev => ({ ...prev, step: 1, currentTask: 'Campaigns' }))
-      try {
-        const response = await fetch('/api/sync/campaigns', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ clientSlug: params.slug })
-        })
-        if (response.ok) {
-          setSyncProgress(prev => ({ ...prev, completed: [...prev.completed, 'Campaigns'] }))
-        } else {
-          throw new Error('Campaigns sync failed')
-        }
-      } catch (err) {
-        console.error('Campaigns sync error:', err)
-        setSyncProgress(prev => ({ ...prev, failed: [...prev.failed, 'Campaigns'] }))
+      // Use the main sync endpoint (it handles all 4 sync types internally)
+      setSyncProgress(prev => ({ ...prev, step: 1, currentTask: 'Syncing all data types...' }))
+      
+      const response = await fetch('/api/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ clientId: params.slug })
+      })
+
+      if (!response.ok) {
+        throw new Error('Sync failed')
       }
 
-      // Step 2: Sync Flows
-      setSyncProgress(prev => ({ ...prev, step: 2, currentTask: 'Flows' }))
-      try {
-        const response = await fetch('/api/sync/flows', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ clientSlug: params.slug })
-        })
-        if (response.ok) {
-          setSyncProgress(prev => ({ ...prev, completed: [...prev.completed, 'Flows'] }))
-        } else {
-          throw new Error('Flows sync failed')
-        }
-      } catch (err) {
-        console.error('Flows sync error:', err)
-        setSyncProgress(prev => ({ ...prev, failed: [...prev.failed, 'Flows'] }))
-      }
-
-      // Step 3: Sync List Growth
-      setSyncProgress(prev => ({ ...prev, step: 3, currentTask: 'List Growth' }))
-      try {
-        const response = await fetch('/api/sync/list-growth', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ clientSlug: params.slug })
-        })
-        if (response.ok) {
-          setSyncProgress(prev => ({ ...prev, completed: [...prev.completed, 'List Growth'] }))
-        } else {
-          throw new Error('List Growth sync failed')
-        }
-      } catch (err) {
-        console.error('List Growth sync error:', err)
-        setSyncProgress(prev => ({ ...prev, failed: [...prev.failed, 'List Growth'] }))
-      }
-
-      // Step 4: Sync Revenue Attribution
-      setSyncProgress(prev => ({ ...prev, step: 4, currentTask: 'Revenue Attribution' }))
-      try {
-        const response = await fetch('/api/sync/revenue', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ clientSlug: params.slug })
-        })
-        if (response.ok) {
-          setSyncProgress(prev => ({ ...prev, completed: [...prev.completed, 'Revenue Attribution'] }))
-        } else {
-          throw new Error('Revenue sync failed')
-        }
-      } catch (err) {
-        console.error('Revenue sync error:', err)
-        setSyncProgress(prev => ({ ...prev, failed: [...prev.failed, 'Revenue Attribution'] }))
-      }
+      // Mark all as completed since /api/sync handles everything
+      setSyncProgress(prev => ({
+        ...prev,
+        step: 4,
+        completed: ['Campaigns', 'Flows', 'List Growth', 'Revenue Attribution']
+      }))
 
       // Update last sync time only if at least one succeeded
       if (syncProgress.completed.length > 0) {
