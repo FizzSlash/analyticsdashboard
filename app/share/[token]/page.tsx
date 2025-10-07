@@ -36,9 +36,15 @@ export default function SharedDashboardPage() {
     fetchSharedDashboard()
   }, [token])
 
+  // Use agency colors for loading state (fallback if not loaded yet)
+  const primaryColor = dashboardData?.agency?.primary_color || '#110E12'
+  const secondaryColor = dashboardData?.agency?.secondary_color || '#23154B'
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center" style={{
+        background: `linear-gradient(135deg, ${primaryColor} 0%, ${secondaryColor} 100%)`
+      }}>
         <Card className="bg-white/10 backdrop-blur-md border-white/20">
           <CardContent className="p-12">
             <Loader2 className="h-12 w-12 animate-spin text-white mx-auto mb-4" />

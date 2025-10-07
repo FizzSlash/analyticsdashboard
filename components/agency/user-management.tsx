@@ -415,15 +415,6 @@ export function UserManagement({ agency, clients, clientUsers: initialUsers }: U
 
                   <div className="flex items-center gap-2">
                     <button
-                      onClick={() => resendInvite('user@example.com')} // Would need actual email
-                      disabled={loading}
-                      className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
-                      title="Resend Invitation"
-                    >
-                      <Mail className="h-4 w-4" />
-                    </button>
-
-                    <button
                       onClick={() => handleRemoveUser(
                         user.id, 
                         user.first_name && user.last_name 
