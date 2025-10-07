@@ -637,10 +637,15 @@ export class KlaviyoAPI {
     return { data: results }
   }
 
-  // Flow Analytics Report - SERIES APPROACH (Last 365 Days)
+  // Flow Analytics Report - SERIES APPROACH (Exactly 364 Days = 52 Weeks)
   async getFlowAnalytics(flowIds: string[], conversionMetricId: string | null = null) {
-    console.log(`🔄 FLOWS: Calling Flow Series Report API for ${flowIds.length} flows - USING PRE-DEFINED KEY`)
-    console.log(`📅 FLOWS: Using pre-defined timeframe: last_365_days`)
+    console.log(`🔄 FLOWS: Calling Flow Series Report API for ${flowIds.length} flows`)
+    
+    // Calculate exactly 364 days (52 weeks) to avoid Klaviyo's 52 week limit
+    const endDate = new Date().toISOString().split('T')[0]
+    const startDate = new Date(Date.now() - 364 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+    
+    console.log(`📅 FLOWS: Using EXACTLY 364 days (52 weeks): ${startDate} to ${endDate}`)
     console.log(`📊 FLOWS: SERIES CALL - Getting WEEKLY analytics for ALL ${flowIds.length} flows`)
     console.log(`🎯 FLOWS: Using conversion metric ID: ${conversionMetricId || 'none'}`)
     
@@ -664,9 +669,10 @@ export class KlaviyoAPI {
               'average_order_value'
             ],
             timeframe: { 
-              key: 'last_365_days'  // ✅ Pre-defined 365 days key
-            },
-            interval: 'weekly', // ✅ Weekly interval (Klaviyo will handle 52+ week edge case)
+              start: startDate,
+              end: endDate
+            }, // ✅ Exactly 364 days = 52 weeks
+            interval: 'weekly', // ✅ Weekly interval (exactly 52 weeks, within limit)
             filter: `contains-any(flow_id,["${flowIds.join('","')}"])` // BATCH ALL FLOWS
           }
         }
