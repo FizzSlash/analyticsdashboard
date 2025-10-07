@@ -2260,7 +2260,7 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
     const totalEmailUnsubscribes = filteredListGrowth.reduce((sum, lg) => sum + (lg.email_unsubscribes || 0), 0)
     const totalSmsSubscriptions = filteredListGrowth.reduce((sum, lg) => sum + (lg.sms_subscriptions || 0), 0)
     const totalFormSubmissions = filteredListGrowth.reduce((sum, lg) => sum + (lg.form_submissions || 0), 0)
-    const netGrowth = filteredListGrowth.reduce((sum, lg) => sum + (lg.overall_net_growth || 0), 0)
+    const netGrowth = totalEmailSubscriptions - totalEmailUnsubscribes // EMAIL ONLY - makes math add up!
     const averageGrowthRate = filteredListGrowth.length > 0 ? 
       filteredListGrowth.reduce((sum, lg) => sum + (lg.growth_rate || 0), 0) / filteredListGrowth.length : 0
     const averageChurnRate = filteredListGrowth.length > 0 ?
@@ -2388,6 +2388,8 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
                           borderRadius: '8px',
                           color: 'white'
                         }}
+                        labelStyle={{ color: 'white' }}
+                        itemStyle={{ color: 'white' }}
                         formatter={(value: any, name: string) => [
                           `${value} ${value >= 0 ? '(Growth)' : '(Decline)'}`, 
                           'Net Subscriber Change'

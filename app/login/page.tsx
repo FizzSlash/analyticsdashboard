@@ -12,6 +12,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [redirecting, setRedirecting] = useState(false)
   const [error, setError] = useState('')
+  const [agency, setAgency] = useState<any>(null)
   
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -20,6 +21,22 @@ export default function LoginPage() {
   
   // Prevent multiple redirects
   const redirectInProgress = useRef(false)
+
+  // Fetch agency branding for login page
+  useEffect(() => {
+    const fetchAgency = async () => {
+      try {
+        const response = await fetch('/api/agency?slug=retention-harbor')
+        if (response.ok) {
+          const result = await response.json()
+          setAgency(result.agency)
+        }
+      } catch (err) {
+        console.log('Could not load agency branding')
+      }
+    }
+    fetchAgency()
+  }, [])
   
   // Redirect if already logged in
   useEffect(() => {
@@ -174,13 +191,20 @@ export default function LoginPage() {
     }
   }
 
+  // Use agency branding
+  const primaryColor = agency?.primary_color || '#110E12'
+  const secondaryColor = agency?.secondary_color || '#23154B'
+  const logoUrl = agency?.logo_url
+
   // Show loading while auth initializes or redirecting
   if (!initialized || redirecting) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-        <Card className="w-full max-w-md">
+      <div className="min-h-screen flex items-center justify-center p-4" style={{
+        background: `linear-gradient(135deg, ${primaryColor} 0%, ${secondaryColor} 100%)`
+      }}>
+        <Card className="w-full max-w-md bg-white/95 backdrop-blur-md">
           <CardContent className="flex flex-col items-center justify-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-blue-600 mb-4" />
+            <Loader2 className="h-8 w-8 animate-spin text-gray-800 mb-4" />
             <p className="text-gray-600">
               {redirecting ? 'Redirecting to your dashboard...' : 'Initializing...'}
             </p>
@@ -191,14 +215,21 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center p-4" style={{
+      background: `linear-gradient(135deg, ${primaryColor} 0%, ${secondaryColor} 100%)`
+    }}>
+      <Card className="w-full max-w-md bg-white/95 backdrop-blur-md shadow-2xl">
         <CardHeader className="text-center">
+          {logoUrl && (
+            <div className="flex justify-center mb-4">
+              <img src={logoUrl} alt="Logo" className="h-12 w-auto" />
+            </div>
+          )}
           <CardTitle className="text-2xl font-bold text-gray-900">
             Sign In
           </CardTitle>
           <p className="text-gray-600">
-            Access your Klaviyo Analytics Dashboard
+            Access your Analytics Dashboard
           </p>
         </CardHeader>
         <CardContent>
@@ -249,7 +280,11 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="w-full text-white py-2 px-4 rounded-md focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-all"
+              style={{
+                background: `linear-gradient(135deg, ${primaryColor} 0%, ${secondaryColor} 100%)`,
+                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+              }}
             >
               {loading ? (
                 <>
