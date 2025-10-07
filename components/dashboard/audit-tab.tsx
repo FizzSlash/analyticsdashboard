@@ -187,8 +187,8 @@ export function AuditTab({ client, timeframe }: AuditTabProps) {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="bg-purple-500/20 p-3 rounded-xl">
-                <Sparkles className="h-6 w-6 text-purple-300" />
+              <div className="bg-white/10 p-3 rounded-xl border border-white/20">
+                <Sparkles className="h-6 w-6 text-white" />
               </div>
               <div>
                 <CardTitle className="text-white text-xl font-bold">
@@ -204,7 +204,7 @@ export function AuditTab({ client, timeframe }: AuditTabProps) {
               {audit && (
                 <button
                   onClick={exportToPDF}
-                  className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-lg flex items-center gap-2 font-medium transition-colors"
+                  className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-lg flex items-center gap-2 font-medium transition-colors border border-white/20"
                 >
                   <Download className="h-4 w-4" />
                   Export PDF
@@ -213,7 +213,7 @@ export function AuditTab({ client, timeframe }: AuditTabProps) {
               <button
                 onClick={runAudit}
                 disabled={loading}
-                className="bg-purple-500/80 hover:bg-purple-500 text-white px-6 py-2 rounded-lg flex items-center gap-2 font-semibold transition-colors disabled:opacity-50"
+                className="bg-white/20 hover:bg-white/30 text-white px-6 py-2 rounded-lg flex items-center gap-2 font-semibold transition-colors disabled:opacity-50 border border-white/30"
               >
                 {loading ? (
                   <>
@@ -333,7 +333,7 @@ export function AuditTab({ client, timeframe }: AuditTabProps) {
               </div>
               <button
                 onClick={runAudit}
-                className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white px-8 py-3 rounded-xl font-bold text-lg flex items-center gap-3 mx-auto shadow-lg"
+                className="bg-white/20 hover:bg-white/30 text-white px-8 py-3 rounded-xl font-bold text-lg flex items-center gap-3 mx-auto shadow-lg border border-white/30 transition-colors"
               >
                 <Sparkles className="h-5 w-5" />
                 Run AI Audit
@@ -404,14 +404,14 @@ export function AuditTab({ client, timeframe }: AuditTabProps) {
                 <span className="text-2xl">✅</span> WORKING WELL ({strengths.length})
               </h2>
               {strengths.map((strength) => (
-                <Card key={strength.id} className="bg-green-500/10 backdrop-blur-md border-green-400/30">
+                <Card key={strength.id} className="bg-white/10 backdrop-blur-md border-white/20">
                   <CardContent className="p-6">
                     <div className="flex items-start gap-3">
                       <span className="text-3xl">{strength.icon}</span>
                       <div className="flex-1">
                         <h3 className="text-lg font-bold text-white mb-2">{strength.title}</h3>
                         <p className="text-white/80 text-sm mb-2">{strength.analysis}</p>
-                        <div className="inline-block bg-green-500/20 px-3 py-1 rounded-full text-green-300 text-xs font-medium">
+                        <div className="inline-block bg-white/5 border border-white/20 px-3 py-1 rounded-full text-green-300 text-xs font-medium">
                           {strength.data}
                         </div>
                       </div>
@@ -433,34 +433,15 @@ function FindingCard({ finding, expanded, onToggle }: {
   expanded: boolean
   onToggle: () => void
 }) {
-  const styles = {
-    high: {
-      border: 'border-l-4 border-red-500',
-      bg: 'bg-red-500/10',
-      borderColor: 'border-red-400/30',
-      badge: 'bg-red-500/20 text-red-300',
-      text: 'text-white'
-    },
-    medium: {
-      border: 'border-l-4 border-yellow-500',
-      bg: 'bg-yellow-500/10',
-      borderColor: 'border-yellow-400/30',
-      badge: 'bg-yellow-500/20 text-yellow-300',
-      text: 'text-white'
-    },
-    low: {
-      border: 'border-l-4 border-blue-500',
-      bg: 'bg-blue-500/10',
-      borderColor: 'border-blue-400/30',
-      badge: 'bg-blue-500/20 text-blue-300',
-      text: 'text-white'
-    }
+  // Unified styling - all cards match dashboard theme
+  const severityBadges = {
+    high: 'bg-red-500/20 text-red-300 border border-red-400/30',
+    medium: 'bg-yellow-500/20 text-yellow-300 border border-yellow-400/30',
+    low: 'bg-blue-500/20 text-blue-300 border border-blue-400/30'
   }
 
-  const style = styles[finding.severity]
-
   return (
-    <Card className={`${style.bg} backdrop-blur-md ${style.borderColor} ${style.border}`}>
+    <Card className="bg-white/10 backdrop-blur-md border-white/20">
       <CardContent className="p-6">
         <div className="flex items-start justify-between">
           <div className="flex items-start gap-3 flex-1">
@@ -468,7 +449,7 @@ function FindingCard({ finding, expanded, onToggle }: {
             <div className="flex-1">
               <div className="flex items-start gap-3 mb-2">
                 <h3 className="text-lg font-bold text-white flex-1">{finding.title}</h3>
-                <span className={`px-3 py-1 rounded-full text-xs font-medium ${style.badge}`}>
+                <span className={`px-3 py-1 rounded-full text-xs font-medium ${severityBadges[finding.severity]}`}>
                   {finding.severity.toUpperCase()}
                 </span>
               </div>
