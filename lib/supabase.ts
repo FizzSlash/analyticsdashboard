@@ -75,13 +75,9 @@ export interface Agency {
   owner_id: string
   primary_color: string
   secondary_color: string
-  accent_color?: string
-  success_color?: string
-  warning_color?: string
-  error_color?: string
-  chart_color_1?: string
-  chart_color_2?: string
-  chart_color_3?: string
+  bar_chart_color?: string
+  line_chart_color?: string
+  ui_accent_color?: string
   logo_url?: string
   background_image_url?: string
   custom_domain?: string

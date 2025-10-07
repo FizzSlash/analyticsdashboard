@@ -58,16 +58,18 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
   const [viewMode, setViewMode] = useState<ViewMode>('analytics')
   const [activeTab, setActiveTab] = useState<TabType>('dashboard')
 
-  // Dynamic colors based on agency branding (inherited by client)
+  // Simplified color system - 5 colors total
   const primaryColor = client?.primary_color || '#3B82F6'
   const secondaryColor = client?.secondary_color || '#1D4ED8'
-  const accentColor = client?.accent_color || '#34D399' // From agency
-  const warningColor = client?.warning_color || '#F59E0B' // From agency
-  const errorColor = client?.error_color || '#EF4444' // From agency
-  const successColor = client?.success_color || '#10B981' // From agency
-  const chartColor1 = client?.chart_color_1 || primaryColor // From agency
-  const chartColor2 = client?.chart_color_2 || secondaryColor // From agency
-  const chartColor3 = client?.chart_color_3 || '#EC4899' // From agency
+  const barChartColor = client?.bar_chart_color || primaryColor
+  const lineChartColor = client?.line_chart_color || '#34D399'
+  const uiAccentColor = client?.ui_accent_color || '#6366F1'
+  
+  // Use UI accent for all success/error/warning states
+  const accentColor = lineChartColor // Line charts
+  const errorColor = uiAccentColor // Errors use UI accent
+  const successColor = uiAccentColor // Success uses UI accent
+  const warningColor = uiAccentColor // Warning uses UI accent
   // TIMEFRAME MANAGEMENT - Use external timeframe when provided, otherwise internal state
   const [internalTimeframe, setInternalTimeframe] = useState(30) // Default to 30 days for internal use
   const timeframe = externalTimeframe || internalTimeframe // Use external timeframe when provided
@@ -1321,7 +1323,7 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
                     <Bar 
                       yAxisId="revenue"
                       dataKey="revenue" 
-                      fill={primaryColor}
+                      fill={barChartColor}
                       fillOpacity={0.8}
                       radius={[4, 4, 0, 0]}
                     />
@@ -1329,10 +1331,10 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
                       yAxisId="recipients"
                       type="monotone" 
                       dataKey="recipients" 
-                      stroke={accentColor}
+                      stroke={lineChartColor}
                       strokeWidth={3}
-                      dot={{ fill: accentColor, strokeWidth: 2, r: 4 }}
-                      activeDot={{ r: 6, stroke: accentColor, strokeWidth: 2 }}
+                      dot={{ fill: lineChartColor, strokeWidth: 2, r: 4 }}
+                      activeDot={{ r: 6, stroke: lineChartColor, strokeWidth: 2 }}
                     />
                   </ComposedChart>
                 </ResponsiveContainer>
@@ -1375,10 +1377,10 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
                     <Line 
                       type="monotone" 
                       dataKey="rpr" 
-                      stroke={secondaryColor}
+                      stroke={lineChartColor}
                       strokeWidth={3}
-                      dot={{ fill: secondaryColor, strokeWidth: 2, r: 4 }}
-                      activeDot={{ r: 6, stroke: secondaryColor, strokeWidth: 2 }}
+                      dot={{ fill: lineChartColor, strokeWidth: 2, r: 4 }}
+                      activeDot={{ r: 6, stroke: lineChartColor, strokeWidth: 2 }}
                     />
                   </LineChart>
                 </ResponsiveContainer>

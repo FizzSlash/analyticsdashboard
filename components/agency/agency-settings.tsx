@@ -22,13 +22,9 @@ interface SettingsFormData {
   logo_url: string
   primary_color: string
   secondary_color: string
-  accent_color: string
-  success_color: string
-  warning_color: string
-  error_color: string
-  chart_color_1: string
-  chart_color_2: string
-  chart_color_3: string
+  bar_chart_color: string
+  line_chart_color: string
+  ui_accent_color: string
   background_image_url: string
   custom_domain: string
 }
@@ -46,13 +42,9 @@ export function AgencySettings({ agency: initialAgency }: AgencySettingsProps) {
     logo_url: agency.logo_url || '',
     primary_color: agency.primary_color,
     secondary_color: agency.secondary_color,
-    accent_color: agency.accent_color || '#6366F1',
-    success_color: agency.success_color || '#10B981',
-    warning_color: agency.warning_color || '#F59E0B',
-    error_color: agency.error_color || '#EF4444',
-    chart_color_1: agency.chart_color_1 || '#3B82F6',
-    chart_color_2: agency.chart_color_2 || '#8B5CF6',
-    chart_color_3: agency.chart_color_3 || '#EC4899',
+    bar_chart_color: agency.bar_chart_color || '#3B82F6',
+    line_chart_color: agency.line_chart_color || '#34D399',
+    ui_accent_color: agency.ui_accent_color || '#6366F1',
     background_image_url: agency.background_image_url || '',
     custom_domain: agency.custom_domain || ''
   })
@@ -74,13 +66,9 @@ export function AgencySettings({ agency: initialAgency }: AgencySettingsProps) {
           logo_url: formData.logo_url || undefined,
           primary_color: formData.primary_color,
           secondary_color: formData.secondary_color,
-          accent_color: formData.accent_color,
-          success_color: formData.success_color,
-          warning_color: formData.warning_color,
-          error_color: formData.error_color,
-          chart_color_1: formData.chart_color_1,
-          chart_color_2: formData.chart_color_2,
-          chart_color_3: formData.chart_color_3,
+          bar_chart_color: formData.bar_chart_color,
+          line_chart_color: formData.line_chart_color,
+          ui_accent_color: formData.ui_accent_color,
           background_image_url: formData.background_image_url || undefined,
           custom_domain: formData.custom_domain || undefined
         })
@@ -118,13 +106,9 @@ export function AgencySettings({ agency: initialAgency }: AgencySettingsProps) {
       logo_url: agency.logo_url || '',
       primary_color: agency.primary_color,
       secondary_color: agency.secondary_color,
-      accent_color: agency.accent_color || '#6366F1',
-      success_color: agency.success_color || '#10B981',
-      warning_color: agency.warning_color || '#F59E0B',
-      error_color: agency.error_color || '#EF4444',
-      chart_color_1: agency.chart_color_1 || '#3B82F6',
-      chart_color_2: agency.chart_color_2 || '#8B5CF6',
-      chart_color_3: agency.chart_color_3 || '#EC4899',
+      bar_chart_color: agency.bar_chart_color || '#3B82F6',
+      line_chart_color: agency.line_chart_color || '#34D399',
+      ui_accent_color: agency.ui_accent_color || '#6366F1',
       background_image_url: agency.background_image_url || '',
       custom_domain: agency.custom_domain || ''
     })
@@ -276,162 +260,74 @@ export function AgencySettings({ agency: initialAgency }: AgencySettingsProps) {
               </div>
             </div>
 
-            {/* Additional Brand Colors */}
+            {/* Chart & UI Colors */}
             <div className="pt-4 border-t">
-              <h4 className="text-sm font-semibold text-gray-900 mb-4">Additional Colors</h4>
+              <h4 className="text-sm font-semibold text-gray-900 mb-4">Chart & UI Colors</h4>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Accent Color
+                    Bar Chart Color
                   </label>
                   <div className="flex items-center gap-3">
                     <input
                       type="color"
-                      value={formData.accent_color}
-                      onChange={(e) => setFormData({ ...formData, accent_color: e.target.value })}
+                      value={formData.bar_chart_color}
+                      onChange={(e) => setFormData({ ...formData, bar_chart_color: e.target.value })}
                       className="w-12 h-10 border border-gray-300 rounded cursor-pointer"
                     />
                     <input
                       type="text"
-                      value={formData.accent_color}
-                      onChange={(e) => setFormData({ ...formData, accent_color: e.target.value })}
-                      className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm"
-                      placeholder="#6366F1"
-                    />
-                  </div>
-                  <p className="text-xs text-gray-500 mt-1">Highlights & accents</p>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Success Color
-                  </label>
-                  <div className="flex items-center gap-3">
-                    <input
-                      type="color"
-                      value={formData.success_color}
-                      onChange={(e) => setFormData({ ...formData, success_color: e.target.value })}
-                      className="w-12 h-10 border border-gray-300 rounded cursor-pointer"
-                    />
-                    <input
-                      type="text"
-                      value={formData.success_color}
-                      onChange={(e) => setFormData({ ...formData, success_color: e.target.value })}
-                      className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm"
-                      placeholder="#10B981"
-                    />
-                  </div>
-                  <p className="text-xs text-gray-500 mt-1">Success states & positive metrics</p>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Warning Color
-                  </label>
-                  <div className="flex items-center gap-3">
-                    <input
-                      type="color"
-                      value={formData.warning_color}
-                      onChange={(e) => setFormData({ ...formData, warning_color: e.target.value })}
-                      className="w-12 h-10 border border-gray-300 rounded cursor-pointer"
-                    />
-                    <input
-                      type="text"
-                      value={formData.warning_color}
-                      onChange={(e) => setFormData({ ...formData, warning_color: e.target.value })}
-                      className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm"
-                      placeholder="#F59E0B"
-                    />
-                  </div>
-                  <p className="text-xs text-gray-500 mt-1">Warnings & neutral alerts</p>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Error Color
-                  </label>
-                  <div className="flex items-center gap-3">
-                    <input
-                      type="color"
-                      value={formData.error_color}
-                      onChange={(e) => setFormData({ ...formData, error_color: e.target.value })}
-                      className="w-12 h-10 border border-gray-300 rounded cursor-pointer"
-                    />
-                    <input
-                      type="text"
-                      value={formData.error_color}
-                      onChange={(e) => setFormData({ ...formData, error_color: e.target.value })}
-                      className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm"
-                      placeholder="#EF4444"
-                    />
-                  </div>
-                  <p className="text-xs text-gray-500 mt-1">Errors & critical alerts</p>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Chart Color 1
-                  </label>
-                  <div className="flex items-center gap-3">
-                    <input
-                      type="color"
-                      value={formData.chart_color_1}
-                      onChange={(e) => setFormData({ ...formData, chart_color_1: e.target.value })}
-                      className="w-12 h-10 border border-gray-300 rounded cursor-pointer"
-                    />
-                    <input
-                      type="text"
-                      value={formData.chart_color_1}
-                      onChange={(e) => setFormData({ ...formData, chart_color_1: e.target.value })}
+                      value={formData.bar_chart_color}
+                      onChange={(e) => setFormData({ ...formData, bar_chart_color: e.target.value })}
                       className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm"
                       placeholder="#3B82F6"
                     />
                   </div>
-                  <p className="text-xs text-gray-500 mt-1">Primary chart/graph color</p>
+                  <p className="text-xs text-gray-500 mt-1">All bar charts & graphs</p>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Chart Color 2
+                    Line Chart Color
                   </label>
                   <div className="flex items-center gap-3">
                     <input
                       type="color"
-                      value={formData.chart_color_2}
-                      onChange={(e) => setFormData({ ...formData, chart_color_2: e.target.value })}
+                      value={formData.line_chart_color}
+                      onChange={(e) => setFormData({ ...formData, line_chart_color: e.target.value })}
                       className="w-12 h-10 border border-gray-300 rounded cursor-pointer"
                     />
                     <input
                       type="text"
-                      value={formData.chart_color_2}
-                      onChange={(e) => setFormData({ ...formData, chart_color_2: e.target.value })}
+                      value={formData.line_chart_color}
+                      onChange={(e) => setFormData({ ...formData, line_chart_color: e.target.value })}
                       className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm"
-                      placeholder="#8B5CF6"
+                      placeholder="#34D399"
                     />
                   </div>
-                  <p className="text-xs text-gray-500 mt-1">Secondary chart/graph color</p>
+                  <p className="text-xs text-gray-500 mt-1">All line charts & trends</p>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Chart Color 3
+                    UI Accent Color
                   </label>
                   <div className="flex items-center gap-3">
                     <input
                       type="color"
-                      value={formData.chart_color_3}
-                      onChange={(e) => setFormData({ ...formData, chart_color_3: e.target.value })}
+                      value={formData.ui_accent_color}
+                      onChange={(e) => setFormData({ ...formData, ui_accent_color: e.target.value })}
                       className="w-12 h-10 border border-gray-300 rounded cursor-pointer"
                     />
                     <input
                       type="text"
-                      value={formData.chart_color_3}
-                      onChange={(e) => setFormData({ ...formData, chart_color_3: e.target.value })}
+                      value={formData.ui_accent_color}
+                      onChange={(e) => setFormData({ ...formData, ui_accent_color: e.target.value })}
                       className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm"
-                      placeholder="#EC4899"
+                      placeholder="#6366F1"
                     />
                   </div>
-                  <p className="text-xs text-gray-500 mt-1">Tertiary chart/graph color</p>
+                  <p className="text-xs text-gray-500 mt-1">Success, errors, highlights, badges</p>
                 </div>
               </div>
             </div>
@@ -443,23 +339,17 @@ export function AgencySettings({ agency: initialAgency }: AgencySettingsProps) {
               <div className="text-white font-medium mb-2">Brand Gradient Preview</div>
               <div className="text-white/80 text-sm mb-4">This is how your primary and secondary colors will appear together</div>
               <div className="flex items-center gap-3 flex-wrap">
-                <div className="px-3 py-1 rounded" style={{ backgroundColor: formData.accent_color }}>
-                  <span className="text-white text-xs font-medium">Accent</span>
-                </div>
-                <div className="px-3 py-1 rounded" style={{ backgroundColor: formData.success_color }}>
-                  <span className="text-white text-xs font-medium">Success</span>
-                </div>
-                <div className="px-3 py-1 rounded" style={{ backgroundColor: formData.warning_color }}>
-                  <span className="text-white text-xs font-medium">Warning</span>
-                </div>
-                <div className="px-3 py-1 rounded" style={{ backgroundColor: formData.error_color }}>
-                  <span className="text-white text-xs font-medium">Error</span>
+                <div className="flex items-center gap-2">
+                  <div className="w-12 h-8 rounded" style={{ backgroundColor: formData.bar_chart_color }}></div>
+                  <span className="text-white/80 text-xs">Bar Charts</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded" style={{ backgroundColor: formData.chart_color_1 }}></div>
-                  <div className="w-8 h-8 rounded" style={{ backgroundColor: formData.chart_color_2 }}></div>
-                  <div className="w-8 h-8 rounded" style={{ backgroundColor: formData.chart_color_3 }}></div>
-                  <span className="text-white/80 text-xs ml-2">Chart Colors</span>
+                  <div className="w-12 h-8 rounded border-2" style={{ borderColor: formData.line_chart_color }}></div>
+                  <span className="text-white/80 text-xs">Line Charts</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded" style={{ backgroundColor: formData.ui_accent_color }}></div>
+                  <span className="text-white/80 text-xs">UI Accents</span>
                 </div>
               </div>
             </div>
