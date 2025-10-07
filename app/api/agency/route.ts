@@ -1,47 +1,40 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { DatabaseService } from '@/lib/database'
-import { supabaseAdmin } from '@/lib/supabase'
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
-    const agencySlug = searchParams.get('agencySlug')
+    const slug = searchParams.get('slug')
     
-    if (!agencySlug) {
-      return NextResponse.json({ error: 'Agency slug is required' }, { status: 400 })
+    if (!slug) {
+      return NextResponse.json({ error: 'Agency slug required' }, { status: 400 })
     }
 
-    console.log(`AGENCY API: Fetching data for agency: ${agencySlug}`)
-
-    // Get agency data
-    const agency = await DatabaseService.getAgencyBySlug(agencySlug)
+    const agency = await DatabaseService.getAgencyBySlug(slug)
+    
     if (!agency) {
       return NextResponse.json({ error: 'Agency not found' }, { status: 404 })
     }
 
-    // Get agency clients and users in parallel
-    const [clients, clientUsers] = await Promise.all([
-      DatabaseService.getAgencyClients(agency.id),
-      supabaseAdmin
-        .from('user_profiles')
-        .select('*')
-        .eq('agency_id', agency.id)
-        .eq('role', 'client_user')
-        .then(({ data }: { data: any }) => data || [])
-    ])
-
+    // Return agency branding data (no sensitive info)
     return NextResponse.json({
       success: true,
-      agency,
-      clients,
-      clientUsers
+      agency: {
+        id: agency.id,
+        agency_name: agency.agency_name,
+        agency_slug: agency.agency_slug,
+        primary_color: agency.primary_color,
+        secondary_color: agency.secondary_color,
+        logo_url: agency.logo_url,
+        background_image_url: agency.background_image_url
+      }
     })
 
   } catch (error: any) {
-    console.error('AGENCY API: Error:', error)
+    console.error('GET agency error:', error)
     return NextResponse.json({
-      error: 'Failed to fetch agency data',
+      error: 'Failed to fetch agency',
       message: error.message
     }, { status: 500 })
   }
-} 
+}
