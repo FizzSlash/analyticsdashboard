@@ -816,7 +816,7 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
                     />
                     <Bar 
                       dataKey="revenue" 
-                      fill={primaryColor}
+                      fill={barChartColor}
                       radius={[8, 8, 0, 0]}
                     />
                   </BarChart>
@@ -2040,7 +2040,7 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
                     <Bar 
                       yAxisId="revenue"
                       dataKey="revenue" 
-                      fill={secondaryColor}
+                      fill={barChartColor}
                       fillOpacity={0.8}
                       radius={[4, 4, 0, 0]}
                     />
@@ -2048,10 +2048,10 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
                       yAxisId="recipients"
                       type="monotone" 
                       dataKey="recipients" 
-                      stroke={accentColor}
+                      stroke={lineChartColor}
                       strokeWidth={3}
-                      dot={{ fill: accentColor, strokeWidth: 2, r: 4 }}
-                      activeDot={{ r: 6, stroke: accentColor, strokeWidth: 2 }}
+                      dot={{ fill: lineChartColor, strokeWidth: 2, r: 4 }}
+                      activeDot={{ r: 6, stroke: lineChartColor, strokeWidth: 2 }}
                     />
                   </ComposedChart>
                 </ResponsiveContainer>
