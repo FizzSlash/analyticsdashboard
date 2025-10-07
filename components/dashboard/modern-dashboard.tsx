@@ -2094,10 +2094,10 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
                     <Line 
                       type="monotone" 
                       dataKey="revenue" 
-                      stroke={secondaryColor}
+                      stroke={lineChartColor}
                       strokeWidth={3}
-                      dot={{ fill: secondaryColor, strokeWidth: 2, r: 4 }}
-                      activeDot={{ r: 6, stroke: secondaryColor, strokeWidth: 2 }}
+                      dot={{ fill: lineChartColor, strokeWidth: 2, r: 4 }}
+                      activeDot={{ r: 6, stroke: lineChartColor, strokeWidth: 2 }}
                     />
                   </LineChart>
                 </ResponsiveContainer>
