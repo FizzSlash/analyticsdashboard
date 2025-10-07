@@ -14,12 +14,19 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     
     console.log('PATCH AGENCY: Updating agency:', agencyId, body)
 
-    // Prepare update data
+    // Prepare update data - include all color fields
     const updateData: any = {
       agency_name: body.agency_name,
       logo_url: body.logo_url || undefined,
       primary_color: body.primary_color,
       secondary_color: body.secondary_color,
+      accent_color: body.accent_color,
+      success_color: body.success_color,
+      warning_color: body.warning_color,
+      error_color: body.error_color,
+      chart_color_1: body.chart_color_1,
+      chart_color_2: body.chart_color_2,
+      chart_color_3: body.chart_color_3,
       background_image_url: body.background_image_url || undefined,
       custom_domain: body.custom_domain || undefined
     }
