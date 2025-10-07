@@ -41,6 +41,14 @@ export default function ClientDashboardPage({ params }: PageProps) {
   const [syncing, setSyncing] = useState(false)
   const [syncMessage, setSyncMessage] = useState<string | null>(null)
   const [canSync, setCanSync] = useState(true)
+  const [showSyncModal, setShowSyncModal] = useState(false)
+  const [syncProgress, setSyncProgress] = useState({
+    step: 0,
+    total: 4,
+    currentTask: '',
+    completed: [] as string[],
+    failed: [] as string[]
+  })
   const router = useRouter()
 
   // Check if client can sync (once per day limit)
@@ -78,33 +86,57 @@ export default function ClientDashboardPage({ params }: PageProps) {
     }
 
     setSyncing(true)
+    setShowSyncModal(true)
     setSyncMessage(null)
+    setSyncProgress({ step: 0, total: 4, currentTask: '', completed: [], failed: [] })
     
-    try {
-      const response = await fetch('/api/sync', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ clientId: params.slug })
-      })
+    const syncTasks = [
+      { name: 'Campaigns', api: '/api/sync/campaigns' },
+      { name: 'Flows', api: '/api/sync/flows' },
+      { name: 'List Growth', api: '/api/klaviyo-proxy/sync-list-growth' },
+      { name: 'Revenue Attribution', api: '/api/klaviyo-proxy/sync-revenue-attribution' }
+    ]
 
-      if (!response.ok) {
-        throw new Error('Sync failed')
+    try {
+      for (let i = 0; i < syncTasks.length; i++) {
+        const task = syncTasks[i]
+        setSyncProgress(prev => ({ ...prev, step: i + 1, currentTask: task.name }))
+
+        try {
+          const response = await fetch(task.api, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ clientSlug: params.slug })
+          })
+
+          if (!response.ok) {
+            throw new Error(`${task.name} sync failed`)
+          }
+
+          setSyncProgress(prev => ({ ...prev, completed: [...prev.completed, task.name] }))
+        } catch (taskError) {
+          console.error(`${task.name} sync error:`, taskError)
+          setSyncProgress(prev => ({ ...prev, failed: [...prev.failed, task.name] }))
+        }
       }
 
       // Update last sync time
       const lastSyncKey = `lastSync_${params.slug}`
       localStorage.setItem(lastSyncKey, new Date().toISOString())
-      setCanSync(false) // Disable sync button for 24 hours
+      setCanSync(false)
       
       setSyncMessage('✅ Sync completed! Refreshing dashboard...')
       
-      // Refresh the page to show new data
+      // Wait to show results, then refresh
       setTimeout(() => {
         window.location.reload()
-      }, 2000)
+      }, 3000)
     } catch (err) {
       setSyncMessage('❌ Sync failed. Please try again later.')
-      setTimeout(() => setSyncMessage(null), 5000)
+      setTimeout(() => {
+        setShowSyncModal(false)
+        setSyncMessage(null)
+      }, 5000)
     } finally {
       setSyncing(false)
     }
@@ -270,28 +302,88 @@ export default function ClientDashboardPage({ params }: PageProps) {
                     </svg>
                     {syncing ? 'Syncing...' : canSync ? 'Sync Data' : 'Synced'}
                   </button>
-                  {/* Clear Cache Button (Debug Tool) */}
-                  <button
-                    onClick={() => {
-                      console.log('🗑️ Clearing dashboard cache and reloading')
-                      window.location.reload()
-                    }}
-                    className="bg-white/10 hover:bg-white/20 text-white px-3 py-2 rounded-lg flex items-center gap-2 text-sm font-medium transition-colors"
-                    title="Clear cache and reload data"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                    </svg>
-                    Clear Cache
-                  </button>
                 </>
               )}
             </div>
             
-            {/* Sync Message Toast */}
-            {syncMessage && (
-              <div className="absolute top-20 right-6 z-50 bg-white/95 backdrop-blur-sm border border-white/30 rounded-lg shadow-xl px-4 py-3 max-w-md">
-                <p className="text-sm font-medium text-gray-900">{syncMessage}</p>
+            {/* Sync Status Modal */}
+            {showSyncModal && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+                <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full mx-4">
+                  <h3 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-3">
+                    <svg className="w-6 h-6 text-blue-600 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    Syncing Data from Klaviyo
+                  </h3>
+                  
+                  <div className="space-y-4 mb-6">
+                    {/* Progress Items */}
+                    {['Campaigns', 'Flows', 'List Growth', 'Revenue Attribution'].map((task, index) => {
+                      const isCompleted = syncProgress.completed.includes(task)
+                      const isFailed = syncProgress.failed.includes(task)
+                      const isCurrent = syncProgress.currentTask === task
+                      const isPending = index + 1 > syncProgress.step
+                      
+                      return (
+                        <div key={task} className="flex items-center gap-3">
+                          {isCompleted ? (
+                            <div className="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center flex-shrink-0">
+                              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                              </svg>
+                            </div>
+                          ) : isFailed ? (
+                            <div className="w-6 h-6 rounded-full bg-red-500 flex items-center justify-center flex-shrink-0">
+                              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                            </div>
+                          ) : isCurrent ? (
+                            <div className="w-6 h-6 rounded-full border-2 border-blue-500 border-t-transparent animate-spin flex-shrink-0" />
+                          ) : (
+                            <div className="w-6 h-6 rounded-full bg-gray-200 flex-shrink-0" />
+                          )}
+                          
+                          <div className="flex-1">
+                            <span className={`text-sm font-medium ${
+                              isCompleted ? 'text-green-700' : 
+                              isFailed ? 'text-red-700' : 
+                              isCurrent ? 'text-blue-700' : 
+                              'text-gray-500'
+                            }`}>
+                              {task}
+                            </span>
+                          </div>
+                          
+                          {isCompleted && <span className="text-xs text-green-600">✓ Done</span>}
+                          {isFailed && <span className="text-xs text-red-600">✗ Failed</span>}
+                          {isCurrent && <span className="text-xs text-blue-600">⏳ In progress...</span>}
+                        </div>
+                      )
+                    })}
+                  </div>
+                  
+                  {/* Progress Bar */}
+                  <div className="mb-4">
+                    <div className="flex justify-between text-xs text-gray-600 mb-2">
+                      <span>Progress</span>
+                      <span>{syncProgress.step} / {syncProgress.total}</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div 
+                        className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                        style={{ width: `${(syncProgress.step / syncProgress.total) * 100}%` }}
+                      />
+                    </div>
+                  </div>
+                  
+                  {syncMessage && (
+                    <div className="text-center text-sm font-medium text-green-700 bg-green-50 rounded-lg py-3">
+                      {syncMessage}
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </div>

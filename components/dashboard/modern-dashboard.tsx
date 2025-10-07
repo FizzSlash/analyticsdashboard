@@ -78,6 +78,8 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
   const [flowEmailsError, setFlowEmailsError] = useState<{ [flowId: string]: string }>({})
   const [analysisTab, setAnalysisTab] = useState<'conversion' | 'aov'>('conversion')
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
+  const [aiSubjectInsights, setAiSubjectInsights] = useState<any>(null)
+  const [loadingAiInsights, setLoadingAiInsights] = useState(false)
 
   // Chart data processing functions
   const getRevenueRecipientsComboData = (campaigns: any[], timeframe: number) => {
@@ -881,6 +883,28 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
     )
   }
 
+  const runAiSubjectLineAnalysis = async () => {
+    setLoadingAiInsights(true)
+    try {
+      const response = await fetch('/api/subject-line-insights', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ clientSlug: client.brand_slug, timeframe })
+      })
+      
+      if (!response.ok) {
+        throw new Error('AI analysis failed')
+      }
+      
+      const result = await response.json()
+      setAiSubjectInsights(result.insights)
+    } catch (error) {
+      console.error('AI insights error:', error)
+    } finally {
+      setLoadingAiInsights(false)
+    }
+  }
+
   const renderSubjectLinesTab = () => {
     // ✅ FIX: Use filtered campaigns (sent only, within timeframe)
     const campaigns = filterAndAggregateData.campaigns(data?.campaigns || [], timeframe)
@@ -893,16 +917,82 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
     
     return (
       <div className="space-y-6">
-        {/* Smart Subject Line Insights */}
-        <Card className="bg-white/10 backdrop-blur-md border-white/20">
+        {/* AI-Powered Subject Line Insights */}
+        <Card className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 backdrop-blur-md border-purple-400/30">
           <CardHeader>
-            <CardTitle className="text-white flex items-center gap-2">
-              <Eye className="w-5 h-5" />
-              ✨ Smart Subject Line Insights
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-white flex items-center gap-2">
+                <Eye className="w-5 h-5" />
+                🤖 AI Subject Line Insights
+              </CardTitle>
+              <button
+                onClick={runAiSubjectLineAnalysis}
+                disabled={loadingAiInsights}
+                className="bg-purple-500/80 hover:bg-purple-500 text-white px-4 py-2 rounded-lg flex items-center gap-2 font-medium transition-colors disabled:opacity-50"
+              >
+                {loadingAiInsights ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Analyzing...
+                  </>
+                ) : (
+                  <>
+                    <MessageSquare className="h-4 w-4" />
+                    Get AI Insights
+                  </>
+                )}
+              </button>
+            </div>
           </CardHeader>
           <CardContent>
+            {/* AI Insights Section */}
+            {aiSubjectInsights && (
+              <div className="mb-6 space-y-4">
+                <div className="bg-purple-500/10 border border-purple-400/30 rounded-lg p-4">
+                  <h4 className="text-purple-300 font-bold text-sm mb-2">🤖 AI Analysis Summary</h4>
+                  <p className="text-white/90 text-sm">{aiSubjectInsights.summary}</p>
+                </div>
+
+                {aiSubjectInsights.recommendations && aiSubjectInsights.recommendations.length > 0 && (
+                  <div>
+                    <h4 className="text-white font-semibold text-sm mb-3">✅ AI Recommendations</h4>
+                    <div className="space-y-3">
+                      {aiSubjectInsights.recommendations.map((rec: any, i: number) => (
+                        <div key={i} className="bg-black/20 rounded-lg p-4 border border-white/10">
+                          <div className="font-medium text-white mb-1">{rec.action}</div>
+                          <p className="text-white/70 text-xs mb-2">{rec.why}</p>
+                          {rec.expected_improvement && (
+                            <div className="text-green-300 text-xs font-medium">
+                              Expected: {rec.expected_improvement}
+                            </div>
+                          )}
+                          {rec.examples && rec.examples.length > 0 && (
+                            <div className="mt-2 space-y-1">
+                              {rec.examples.map((ex: string, j: number) => (
+                                <div key={j} className="text-blue-300 text-xs italic">
+                                  → "{ex}"
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {aiSubjectInsights.winning_formula && (
+                  <div className="bg-green-500/10 border border-green-400/30 rounded-lg p-4">
+                    <h4 className="text-green-300 font-bold text-sm mb-2">🏆 Your Winning Formula</h4>
+                    <p className="text-white/90 text-sm">{aiSubjectInsights.winning_formula}</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Existing Basic Insights */}
             <div className="space-y-3">
+              <h4 className="text-white/80 font-medium text-xs uppercase tracking-wide">Quick Insights</h4>
               {(() => {
                 const insights = []
                 
@@ -911,7 +1001,7 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
                 }
                 
                 if (subjectInsights.shortLines.avgOpenRate > subjectInsights.longLines.avgOpenRate && subjectInsights.shortLines.count > 0) {
-                  insights.push(`📏 Short subject lines (<30 chars) have ${subjectInsights.shortLines.avgOpenRate.toFixed(1)}% open rate vs ${subjectInsights.longLines.avgOpenRate.toFixed(1)}% for longer ones`)
+                  insights.push(`📏 Short subject lines (<${subjectInsights.shortLines.threshold?.toFixed(0)} chars) have ${subjectInsights.shortLines.avgOpenRate.toFixed(1)}% open rate vs ${subjectInsights.longLines.avgOpenRate.toFixed(1)}% for longer ones`)
                 }
                 
                 if (subjectInsights.withPersonalization.count > 0) {
