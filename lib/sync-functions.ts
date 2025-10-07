@@ -117,23 +117,35 @@ export async function syncFlows(clientSlug: string, clientId: string, onProgress
       })
     })
     
-    console.log(`💾 Saving ${flowDetails.length} flows to database`)
+    console.log(`💾 Saving ${flowDetails.length} flows in batches of 5`)
     
-    const saveResponse = await fetch('/api/klaviyo-proxy/save-flows', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ flowDetails, clientId }) // Use clientId (UUID) not slug
-    })
+    // Save in batches to avoid 413 Payload Too Large error
+    const batchSize = 5
+    let totalSaved = 0
     
-    if (!saveResponse.ok) {
-      const error = await saveResponse.json()
-      throw new Error(error.message || 'Save flows failed')
+    for (let i = 0; i < flowDetails.length; i += batchSize) {
+      const batch = flowDetails.slice(i, i + batchSize)
+      console.log(`📦 Batch ${Math.floor(i / batchSize) + 1}: Saving ${batch.length} flows`)
+      
+      const saveResponse = await fetch('/api/klaviyo-proxy/save-flows', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ flowDetails: batch, clientId })
+      })
+      
+      if (!saveResponse.ok) {
+        const error = await saveResponse.json()
+        console.error(`❌ Batch ${Math.floor(i / batchSize) + 1} failed:`, error)
+        throw new Error(error.message || 'Save flows failed')
+      }
+      
+      totalSaved += batch.length
+      console.log(`✅ Batch saved (${totalSaved}/${flowDetails.length})`)
     }
     
-    const saveResult = await saveResponse.json()
-    console.log(`✅ Saved ${flowDetails.length} flows successfully`)
+    console.log(`✅ All ${totalSaved} flows saved successfully`)
     
-    return { success: true, count: flowDetails.length }
+    return { success: true, count: totalSaved }
   } catch (error) {
     console.error('Flow sync error:', error)
     throw error

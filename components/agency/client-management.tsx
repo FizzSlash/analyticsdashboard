@@ -884,28 +884,39 @@ ${campaignDetails.slice(0, 3).map((c: any, i: number) =>
       
       console.log(`💾 FRONTEND: Prepared ${flowDetails.length} flows for saving`)
       
-      // Step 5: Save to database using new save-flows endpoint
+      // Step 5: Save to database in batches (avoid 413 Payload Too Large)
       setSuccess('Step 5/5: Saving flows to database...')
       console.log('💾 FRONTEND: Saving flows to database via save-flows endpoint')
+      console.log(`📦 FRONTEND: Batching ${flowDetails.length} flows into groups of 5`)
       
-      // Save the combined proxy data to database
-      const saveResponse = await fetch('/api/klaviyo-proxy/save-flows', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          flowDetails: flowDetails,
-          clientId: client.id
+      const batchSize = 5
+      let totalSaved = 0
+      
+      for (let i = 0; i < flowDetails.length; i += batchSize) {
+        const batch = flowDetails.slice(i, i + batchSize)
+        console.log(`📦 FRONTEND: Saving batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(flowDetails.length / batchSize)} (${batch.length} flows)`)
+        
+        const saveResponse = await fetch('/api/klaviyo-proxy/save-flows', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            flowDetails: batch,
+            clientId: client.id
+          })
         })
-      })
-      
-      if (!saveResponse.ok) {
-        const saveError = await saveResponse.json()
-        console.log('❌ FRONTEND: Database save failed:', saveError)
-        throw new Error(`Database save failed: ${saveError.message}`)
+        
+        if (!saveResponse.ok) {
+          const saveError = await saveResponse.json()
+          console.log('❌ FRONTEND: Batch save failed:', saveError)
+          throw new Error(`Batch save failed: ${saveError.message}`)
+        }
+        
+        const saveResult = await saveResponse.json()
+        totalSaved += batch.length
+        console.log(`✅ FRONTEND: Batch saved successfully (${totalSaved}/${flowDetails.length} total)`)
       }
       
-      const saveResult = await saveResponse.json()
-      console.log('💾 FRONTEND: Database save completed:', saveResult)
+      console.log(`💾 FRONTEND: All ${totalSaved} flows saved to database`)
       
       setSuccess(`✅ Optimized 4-call flow sync with database save completed for ${client.brand_name}!
       
