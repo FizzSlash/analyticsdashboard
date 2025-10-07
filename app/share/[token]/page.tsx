@@ -96,7 +96,7 @@ export default function SharedDashboardPage() {
       }}
     >
       {/* Header with "Shared Dashboard" badge and timeframe selector */}
-      <div className="bg-white/5 backdrop-blur-sm border-b border-white/10 py-4">
+      <div className="bg-white/5 backdrop-blur-sm border-b border-white/10 py-4 relative z-50">
         <div className="max-w-7xl mx-auto px-6">
           <div className="flex items-center justify-between">
             <div>
