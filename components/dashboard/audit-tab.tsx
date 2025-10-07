@@ -192,10 +192,10 @@ export function AuditTab({ client, timeframe }: AuditTabProps) {
               </div>
               <div>
                 <CardTitle className="text-white text-xl font-bold">
-                  AI Marketing Audit
+                  Marketing Audit
                 </CardTitle>
                 <p className="text-white/70 text-sm">
-                  Powered by Claude Sonnet 4 - Analyzing your email marketing performance
+                  Comprehensive analysis of your email marketing performance
                 </p>
               </div>
             </div>
@@ -310,10 +310,10 @@ export function AuditTab({ client, timeframe }: AuditTabProps) {
             <div className="text-center">
               <Sparkles className="h-16 w-16 text-purple-400 mx-auto mb-4" />
               <h3 className="text-2xl font-bold text-white mb-3">
-                Get AI-Powered Marketing Insights
+                Get Expert Marketing Insights
               </h3>
               <p className="text-white/70 text-sm max-w-2xl mx-auto mb-6">
-                Our AI will analyze your last 90 days of email marketing data to identify:
+                Analyze your last 90 days of email marketing data to identify:
               </p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-w-2xl mx-auto mb-8 text-left">
                 <div className="bg-white/5 rounded-lg p-3">

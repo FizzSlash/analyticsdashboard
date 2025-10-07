@@ -588,7 +588,7 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
     { id: 'subject-lines', label: 'Subject Lines', icon: Eye },
     { id: 'list-growth', label: 'List Growth', icon: Users },
     { id: 'deliverability', label: 'Deliverability', icon: Shield },
-    ...(client?.audit_enabled ? [{ id: 'audit', label: 'AI Audit', icon: MessageSquare }] : [])
+    ...(client?.audit_enabled ? [{ id: 'audit', label: 'Audit', icon: MessageSquare }] : [])
   ]
 
   // Reset selected category when analysis tab changes
@@ -944,7 +944,7 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
             <div className="flex items-center justify-between">
               <CardTitle className="text-white flex items-center gap-2">
                 <Eye className="w-5 h-5" />
-                🤖 AI Subject Line Insights
+                Smart Subject Line Insights
               </CardTitle>
               <button
                 onClick={runAiSubjectLineAnalysis}
@@ -959,7 +959,7 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
                 ) : (
                   <>
                     <MessageSquare className="h-4 w-4" />
-                    Get AI Insights
+                    Analyze Subject Lines
                   </>
                 )}
               </button>
@@ -972,14 +972,14 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
                 <div className="bg-white/5 border border-white/20 rounded-lg p-4">
                   <h4 className="text-white font-bold text-sm mb-2 flex items-center gap-2">
                     <MessageSquare className="h-4 w-4" />
-                    AI Analysis Summary
+                    Analysis Summary
                   </h4>
                   <p className="text-white/90 text-sm">{aiSubjectInsights.summary}</p>
                 </div>
 
                 {aiSubjectInsights.recommendations && aiSubjectInsights.recommendations.length > 0 && (
                   <div>
-                    <h4 className="text-white font-semibold text-sm mb-3">✅ AI Recommendations</h4>
+                    <h4 className="text-white font-semibold text-sm mb-3">Recommendations</h4>
                     <div className="space-y-3">
                       {aiSubjectInsights.recommendations.map((rec: any, i: number) => (
                         <div key={i} className="bg-white/5 rounded-lg p-4 border border-white/10">
@@ -2327,12 +2327,12 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-white/60 text-sm font-medium">Churn Rate</p>
+                  <p className="text-white/60 text-sm font-medium">Total Unsubscribes</p>
                   <p className="text-2xl font-bold text-white mt-1">
-                    {(averageChurnRate * 100).toFixed(1)}%
+                    {totalEmailUnsubscribes.toLocaleString()}
                   </p>
                   <p className="text-white/60 text-xs mt-1">
-                    {totalEmailUnsubscribes.toLocaleString()} unsubscribes
+                    Last {timeframe} days
                   </p>
                 </div>
                 <div className="bg-white/10 p-3 rounded-lg">
