@@ -233,37 +233,39 @@ export function AuditTab({ client, timeframe }: AuditTabProps) {
 
         {audit && (
           <CardContent>
-            <div className="flex items-center gap-6">
+            <div className="grid grid-cols-5 gap-6">
               <div className="text-center">
-                <div className={`text-5xl font-bold ${getScoreColor(audit.overall_score)}`}>
+                <div className="text-white/60 text-xs uppercase tracking-wide mb-2">Score</div>
+                <div className="text-4xl font-bold text-white">
                   {audit.overall_score.toFixed(1)}
                 </div>
-                <div className="text-white/60 text-sm mt-1">out of 10</div>
+                <div className="text-white/40 text-xs mt-1">out of 10</div>
               </div>
               
-              <div className="flex-1 grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="text-center">
-                  <div className="text-3xl font-bold text-red-400">{highPriority.length}</div>
-                  <div className="text-white/60 text-xs">High Priority</div>
+              <div className="text-center">
+                <div className="text-white/60 text-xs uppercase tracking-wide mb-2">Grade</div>
+                <div className="text-4xl font-bold text-white">
+                  {audit.grade}
                 </div>
-                <div className="text-center">
-                  <div className="text-3xl font-bold text-yellow-400">{mediumPriority.length}</div>
-                  <div className="text-white/60 text-xs">Medium Priority</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-3xl font-bold text-blue-400">{lowPriority.length}</div>
-                  <div className="text-white/60 text-xs">Low Priority</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-3xl font-bold text-green-400">{strengths.length}</div>
-                  <div className="text-white/60 text-xs">Strengths</div>
-                </div>
+                <div className="text-white/40 text-xs mt-1">overall</div>
               </div>
 
               <div className="text-center">
-                <div className="text-4xl mb-2">{getScoreEmoji(audit.overall_score)}</div>
-                <div className="text-2xl font-bold text-white">{audit.grade}</div>
-                <div className="text-white/60 text-xs">Grade</div>
+                <div className="text-white/60 text-xs uppercase tracking-wide mb-2">High</div>
+                <div className="text-4xl font-bold text-white">{highPriority.length}</div>
+                <div className="text-white/40 text-xs mt-1">priority</div>
+              </div>
+              
+              <div className="text-center">
+                <div className="text-white/60 text-xs uppercase tracking-wide mb-2">Medium</div>
+                <div className="text-4xl font-bold text-white">{mediumPriority.length}</div>
+                <div className="text-white/40 text-xs mt-1">priority</div>
+              </div>
+              
+              <div className="text-center">
+                <div className="text-white/60 text-xs uppercase tracking-wide mb-2">Strengths</div>
+                <div className="text-4xl font-bold text-white">{strengths.length}</div>
+                <div className="text-white/40 text-xs mt-1">working well</div>
               </div>
             </div>
           </CardContent>
@@ -350,7 +352,7 @@ export function AuditTab({ client, timeframe }: AuditTabProps) {
           {highPriority.length > 0 && (
             <div className="space-y-4">
               <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                <span className="text-2xl">🔴</span> HIGH PRIORITY ({highPriority.length})
+                HIGH PRIORITY ({highPriority.length})
               </h2>
               {highPriority.map((finding) => (
                 <FindingCard 
@@ -367,7 +369,7 @@ export function AuditTab({ client, timeframe }: AuditTabProps) {
           {mediumPriority.length > 0 && (
             <div className="space-y-4">
               <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                <span className="text-2xl">🟡</span> MEDIUM PRIORITY ({mediumPriority.length})
+                MEDIUM PRIORITY ({mediumPriority.length})
               </h2>
               {mediumPriority.map((finding) => (
                 <FindingCard 
@@ -384,7 +386,7 @@ export function AuditTab({ client, timeframe }: AuditTabProps) {
           {lowPriority.length > 0 && (
             <div className="space-y-4">
               <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                <span className="text-2xl">🟢</span> OPPORTUNITIES ({lowPriority.length})
+                OPPORTUNITIES ({lowPriority.length})
               </h2>
               {lowPriority.map((finding) => (
                 <FindingCard 
@@ -401,7 +403,7 @@ export function AuditTab({ client, timeframe }: AuditTabProps) {
           {strengths.length > 0 && (
             <div className="space-y-4">
               <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                <span className="text-2xl">✅</span> WORKING WELL ({strengths.length})
+                WORKING WELL ({strengths.length})
               </h2>
               {strengths.map((strength) => (
                 <Card key={strength.id} className="bg-white/10 backdrop-blur-md border-white/20">
