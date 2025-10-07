@@ -1084,6 +1084,12 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
                       </div>
                       <div className="flex items-center gap-4 text-xs">
                         <div className="text-right">
+                          <div className="text-white/80 font-medium">
+                            {(campaign.recipients_count || 0).toLocaleString()}
+                          </div>
+                          <div className="text-white/50">sent</div>
+                        </div>
+                        <div className="text-right">
                           <div className={`font-bold ${
                             (campaign.open_rate || 0) >= 0.25 ? 'text-green-300' :
                             (campaign.open_rate || 0) >= 0.15 ? 'text-yellow-300' : 'text-red-300'
