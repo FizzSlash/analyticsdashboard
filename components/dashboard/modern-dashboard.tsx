@@ -932,9 +932,8 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
     const campaigns = filterAndAggregateData.campaigns(data?.campaigns || [], timeframe)
     const subjectInsights = getSubjectLineInsights(campaigns)
     
-    // Sort filtered campaigns by open rate  
+    // Sort all campaigns by open rate (don't filter out those without subject lines)
     const allCampaigns = [...campaigns]
-      .filter((c: any) => c.subject_line)
       .sort((a: any, b: any) => (b.open_rate || 0) - (a.open_rate || 0))
     
     return (
