@@ -35,13 +35,13 @@ export async function POST(request: NextRequest) {
 
     // Prepare data for Claude
     const campaignData = campaigns
-      .filter(c => c.subject_line && c.open_rate > 0)
+      .filter(c => c.subject_line && (c.open_rate || 0) > 0)
       .map(c => ({
-        subject: c.subject_line,
-        openRate: (c.open_rate * 100).toFixed(1),
-        clickRate: (c.click_rate * 100).toFixed(1),
-        revenue: c.revenue,
-        sendDate: c.send_date
+        subject: c.subject_line || '',
+        openRate: ((c.open_rate || 0) * 100).toFixed(1),
+        clickRate: ((c.click_rate || 0) * 100).toFixed(1),
+        revenue: c.revenue || 0,
+        sendDate: c.send_date || ''
       }))
       .sort((a, b) => parseFloat(b.openRate) - parseFloat(a.openRate))
 
