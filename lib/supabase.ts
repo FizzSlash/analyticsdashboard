@@ -106,6 +106,11 @@ export interface Client {
   last_sync: string | null
   is_active: boolean
   audit_enabled?: boolean
+  share_token?: string
+  share_enabled?: boolean
+  share_expires_at?: string
+  share_last_accessed?: string
+  share_view_count?: number
 }
 
 export interface CampaignMetric {

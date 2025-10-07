@@ -22,7 +22,10 @@ import {
   DollarSign,
   RefreshCw,
   Link,
-  Sparkles
+  Sparkles,
+  Share2,
+  Copy,
+  X
 } from 'lucide-react'
 
 interface ClientManagementProps {
@@ -45,6 +48,9 @@ export function ClientManagement({ agency, clients: initialClients }: ClientMana
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [showApiKey, setShowApiKey] = useState<string | null>(null)
+  const [showShareModal, setShowShareModal] = useState(false)
+  const [shareLink, setShareLink] = useState('')
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null)
   
   // Simplified - no auth dependency to avoid circular imports
 
@@ -102,10 +108,71 @@ export function ClientManagement({ agency, clients: initialClients }: ClientMana
           : c
       ))
 
-      setSuccess(`AI Audit ${!client.audit_enabled ? 'enabled' : 'disabled'} for ${client.brand_name}`)
+      setSuccess(`Audit ${!client.audit_enabled ? 'enabled' : 'disabled'} for ${client.brand_name}`)
       setTimeout(() => setSuccess(''), 3000)
     } catch (err) {
       setError('Failed to toggle audit')
+    }
+  }
+
+  const generateShareLink = async (client: Client) => {
+    try {
+      // Enable sharing if not already
+      if (!client.share_enabled) {
+        const response = await fetch(`/api/clients/${client.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            brand_name: client.brand_name,
+            brand_slug: client.brand_slug,
+            share_enabled: true
+          })
+        })
+
+        if (!response.ok) throw new Error('Failed to enable sharing')
+
+        const result = await response.json()
+        const updatedClient = result.client
+
+        // Update local state
+        setClients(clients.map(c => c.id === client.id ? updatedClient : c))
+        
+        const link = `${window.location.origin}/share/${updatedClient.share_token}`
+        setShareLink(link)
+        setSelectedClient(updatedClient)
+      } else {
+        const link = `${window.location.origin}/share/${client.share_token}`
+        setShareLink(link)
+        setSelectedClient(client)
+      }
+      
+      setShowShareModal(true)
+    } catch (err) {
+      setError('Failed to generate share link')
+    }
+  }
+
+  const toggleSharing = async (client: Client) => {
+    try {
+      const response = await fetch(`/api/clients/${client.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          brand_name: client.brand_name,
+          brand_slug: client.brand_slug,
+          share_enabled: !client.share_enabled
+        })
+      })
+
+      if (!response.ok) throw new Error('Failed to toggle sharing')
+
+      const result = await response.json()
+      setClients(clients.map(c => c.id === client.id ? result.client : c))
+      
+      setSuccess(`Sharing ${!client.share_enabled ? 'enabled' : 'disabled'} for ${client.brand_name}`)
+      setTimeout(() => setSuccess(''), 3000)
+    } catch (err) {
+      setError('Failed to toggle sharing')
     }
   }
 
@@ -1137,6 +1204,84 @@ ${flowDetails.slice(0, 3).map((f: any, i: number) =>
         </Card>
       )}
 
+      {/* Share Link Modal */}
+      {showShareModal && selectedClient && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <Card className="w-full max-w-lg mx-4">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <Share2 className="h-5 w-5" />
+                  Shareable Dashboard Link
+                </CardTitle>
+                <button
+                  onClick={() => setShowShareModal(false)}
+                  className="p-1 hover:bg-gray-100 rounded"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <p className="text-sm text-gray-600 mb-3">
+                  Share this link to give read-only access to <strong>{selectedClient.brand_name}</strong> dashboard (no login required):
+                </p>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={shareLink}
+                    readOnly
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-sm"
+                  />
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(shareLink)
+                      setSuccess('Link copied to clipboard!')
+                      setTimeout(() => setSuccess(''), 2000)
+                    }}
+                    className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 flex items-center gap-2"
+                  >
+                    <Copy className="h-4 w-4" />
+                    Copy
+                  </button>
+                </div>
+              </div>
+
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <h4 className="text-sm font-semibold text-blue-900 mb-2">Features:</h4>
+                <ul className="text-xs text-blue-800 space-y-1">
+                  <li>✓ No login required</li>
+                  <li>✓ Read-only access (cannot sync or modify data)</li>
+                  <li>✓ Shows all analytics tabs</li>
+                  <li>✓ Branded with your agency colors</li>
+                  <li>✓ Tracks views ({selectedClient.share_view_count || 0} total views)</li>
+                </ul>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => toggleSharing(selectedClient)}
+                  className={`flex-1 px-4 py-2 rounded-md font-medium ${
+                    selectedClient.share_enabled
+                      ? 'bg-red-100 text-red-700 hover:bg-red-200'
+                      : 'bg-green-100 text-green-700 hover:bg-green-200'
+                  }`}
+                >
+                  {selectedClient.share_enabled ? 'Disable Sharing' : 'Enable Sharing'}
+                </button>
+                <button
+                  onClick={() => setShowShareModal(false)}
+                  className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
+                >
+                  Close
+                </button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
       {/* Clients List */}
       <div className="grid gap-6">
         {clients.length === 0 ? (
@@ -1235,6 +1380,14 @@ ${flowDetails.slice(0, 3).map((f: any, i: number) =>
                     >
                       <ExternalLink className="h-4 w-4" />
                     </a>
+
+                    <button
+                      onClick={() => generateShareLink(client)}
+                      className="p-2 text-gray-600 hover:text-green-600 hover:bg-green-50 rounded-md transition-colors"
+                      title="Generate Share Link"
+                    >
+                      <Share2 className="h-4 w-4" />
+                    </button>
 
                     <button
                       onClick={() => handleEdit(client)}

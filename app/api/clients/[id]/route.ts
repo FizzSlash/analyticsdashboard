@@ -20,7 +20,8 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       brand_name: body.brand_name,
       brand_slug: body.brand_slug,
       logo_url: body.logo_url || undefined,
-      audit_enabled: body.audit_enabled !== undefined ? body.audit_enabled : undefined
+      audit_enabled: body.audit_enabled !== undefined ? body.audit_enabled : undefined,
+      share_enabled: body.share_enabled !== undefined ? body.share_enabled : undefined
     }
 
     // Only update API key if provided

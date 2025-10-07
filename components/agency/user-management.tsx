@@ -10,7 +10,10 @@ import {
   Loader2,
   AlertCircle,
   CheckCircle,
-  User
+  User,
+  Copy,
+  X,
+  Link2
 } from 'lucide-react'
 
 interface UserManagementProps {
@@ -32,6 +35,8 @@ export function UserManagement({ agency, clients, clientUsers: initialUsers }: U
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+  const [invitationLink, setInvitationLink] = useState<string | null>(null)
+  const [showInviteLinkModal, setShowInviteLinkModal] = useState(false)
   
   // Using API calls instead of direct supabase calls
 
@@ -92,14 +97,16 @@ export function UserManagement({ agency, clients, clientUsers: initialUsers }: U
       // Check if email was sent or if we need to show the magic link
       if (result.invitation?.emailSent) {
         setSuccess('✅ Invitation email sent successfully! The user will receive an email to set their password.')
+        resetForm()
       } else if (result.invitation?.link) {
-        setSuccess(`⚠️ Email not configured. Send this link to the user:\n\n${result.invitation.link}\n\nThey can click it to set their password and access the dashboard.`)
+        // Show invitation link modal instead of text
+        setInvitationLink(result.invitation.link)
+        setShowInviteLinkModal(true)
+        resetForm()
       } else {
         setSuccess('✅ User created! Ask them to use "Forgot Password" at login with their email.')
+        resetForm()
       }
-      
-      // Refresh user list (simplified for now)
-      resetForm()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred')
     } finally {
@@ -185,6 +192,84 @@ export function UserManagement({ agency, clients, clientUsers: initialUsers }: U
         <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-md text-green-700">
           <CheckCircle className="h-4 w-4" />
           {success}
+        </div>
+      )}
+
+      {/* Invitation Link Modal */}
+      {showInviteLinkModal && invitationLink && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <Card className="w-full max-w-2xl mx-4">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <Link2 className="h-5 w-5" />
+                  User Invitation Link
+                </CardTitle>
+                <button
+                  onClick={() => {
+                    setShowInviteLinkModal(false)
+                    setInvitationLink(null)
+                  }}
+                  className="p-1 hover:bg-gray-100 rounded"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                <p className="text-sm font-semibold text-yellow-900 mb-1">⚠️ Email Not Configured</p>
+                <p className="text-xs text-yellow-800">
+                  Supabase email service is not set up. Copy this invitation link and send it to the user manually.
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Invitation Link (expires in 24 hours):
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={invitationLink}
+                    readOnly
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-sm font-mono"
+                  />
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(invitationLink)
+                      setSuccess('Invitation link copied!')
+                      setTimeout(() => setSuccess(''), 2000)
+                    }}
+                    className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 flex items-center gap-2"
+                  >
+                    <Copy className="h-4 w-4" />
+                    Copy
+                  </button>
+                </div>
+              </div>
+
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <h4 className="text-sm font-semibold text-blue-900 mb-2">Next Steps:</h4>
+                <ol className="text-xs text-blue-800 space-y-1 list-decimal list-inside">
+                  <li>Copy the invitation link above</li>
+                  <li>Send it to the user via email or message</li>
+                  <li>User clicks the link and sets their password</li>
+                  <li>User can then login at /login with their email</li>
+                </ol>
+              </div>
+
+              <button
+                onClick={() => {
+                  setShowInviteLinkModal(false)
+                  setInvitationLink(null)
+                }}
+                className="w-full bg-gray-200 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-300"
+              >
+                Close
+              </button>
+            </CardContent>
+          </Card>
         </div>
       )}
 
