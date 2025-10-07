@@ -267,7 +267,7 @@ async function analyzeWithClaude(brandName: string, auditData: any) {
   const message = await anthropic.messages.create({
     model: 'claude-sonnet-4-20250514',
     max_tokens: 8192,
-    temperature: 0.7,
+    temperature: 0.3, // Lower for more conservative, fact-based recommendations
     messages: [{
       role: 'user',
       content: prompt
@@ -301,6 +301,15 @@ async function analyzeWithClaude(brandName: string, auditData: any) {
 
 // Helper: Build comprehensive audit prompt
 function buildAuditPrompt(brandName: string, data: any) {
+  // Calculate key business metrics for revenue estimation
+  const totalOrders = data.campaigns.reduce((sum: number, c: any) => sum + (c.orders_count || 0), 0)
+  const avgOrderValue = totalOrders > 0 ? data.summary.campaigns.totalRevenue / totalOrders : 0
+  const monthlyEmailRevenue = data.summary.revenue.totalEmailRevenue / 3 // 90 days → monthly
+  const monthlyFlowRevenue = data.summary.revenue.flowEmailRevenue / 3
+  const monthlyCampaignRevenue = data.summary.revenue.campaignEmailRevenue / 3
+  const estimatedListSize = Math.round(data.summary.listGrowth.avgDailySubscriptions * 90)
+  const campaignsPerWeek = data.summary.campaigns.total / 13 // 90 days ≈ 13 weeks
+
   return `You are an expert email marketing consultant analyzing Klaviyo performance data for ${brandName}.
 
 Provide a comprehensive marketing audit analyzing their last 90 days of email marketing performance.
@@ -312,9 +321,11 @@ CAMPAIGN PERFORMANCE:
 - Total campaigns: ${data.summary.campaigns.total}
 - Average open rate: ${(data.summary.campaigns.avgOpenRate * 100).toFixed(1)}% (Industry benchmark: 33%)
 - Average click rate: ${(data.summary.campaigns.avgClickRate * 100).toFixed(1)}% (Industry benchmark: 2.5%)
-- Total revenue: $${data.summary.campaigns.totalRevenue.toLocaleString()}
+- Total revenue (90 days): $${data.summary.campaigns.totalRevenue.toLocaleString()}
+- Monthly campaign revenue: $${monthlyCampaignRevenue.toFixed(0)}
 - Revenue per campaign: $${data.summary.campaigns.avgRevenuePerCampaign.toFixed(0)}
 - Total recipients: ${data.summary.campaigns.totalRecipients.toLocaleString()}
+- Campaign frequency: ${campaignsPerWeek.toFixed(1)} per week
 
 TOP 5 PERFORMING CAMPAIGNS:
 ${data.subjectLineAnalysis.topPerformers.map((c: any, i: number) => 
@@ -350,9 +361,47 @@ Campaign email revenue: $${data.summary.revenue.campaignEmailRevenue.toLocaleStr
 
 LIST HEALTH:
 Net growth (90 days): ${data.summary.listGrowth.netGrowth >= 0 ? '+' : ''}${data.summary.listGrowth.netGrowth}
+Est. list size: ~${estimatedListSize.toLocaleString()} subscribers
 Avg daily subscriptions: ${data.summary.listGrowth.avgDailySubscriptions.toFixed(0)}
 Avg daily unsubscribes: ${data.summary.listGrowth.avgDailyUnsubscribes.toFixed(0)}
 Avg churn rate: ${(data.summary.listGrowth.avgChurnRate * 100).toFixed(2)}% (Industry benchmark: ~2%)
+
+BUSINESS METRICS (for revenue estimates):
+=========================================
+- Total email revenue (90 days): $${data.summary.revenue.totalEmailRevenue.toLocaleString()}
+- Monthly email revenue: $${monthlyEmailRevenue.toFixed(0)}
+- Monthly flow revenue: $${monthlyFlowRevenue.toFixed(0)}
+- Monthly campaign revenue: $${monthlyCampaignRevenue.toFixed(0)}
+- Total orders (90 days): ${totalOrders}
+- Average Order Value (AOV): $${avgOrderValue.toFixed(2)}
+- Monthly orders: ~${Math.round(totalOrders / 3)}
+
+REVENUE ESTIMATION GUIDELINES:
+===============================
+CRITICAL: All revenue estimates MUST be:
+1. Based on PERCENTAGE of current monthly email revenue ($${monthlyEmailRevenue.toFixed(0)})
+2. Use conservative industry benchmarks:
+   - New abandoned cart flow: 10-15% of monthly email revenue
+   - New welcome series: 5-10% of monthly email revenue
+   - New browse abandonment: 3-7% of monthly email revenue
+   - Send time optimization: 5-15% engagement lift
+   - Subject line improvements: 3-10% open rate lift
+   
+3. ALWAYS show your calculation: 
+   "[X carts/month] × [$${avgOrderValue.toFixed(0)} AOV] × [recovery %] = $[result]"
+   
+4. Provide LOW-HIGH ranges based on conservative-to-optimistic scenarios
+   Example: "$${(monthlyEmailRevenue * 0.10).toFixed(0)}-${(monthlyEmailRevenue * 0.15).toFixed(0)}/month (10-15% of email revenue)"
+   
+5. SANITY CHECK: If your estimate exceeds 30% of monthly email revenue ($${(monthlyEmailRevenue * 0.30).toFixed(0)}), it's unrealistic - reduce it!
+
+6. Always frame as "potential opportunity" not "guaranteed revenue"
+
+7. For missing flows, estimate based on:
+   - Monthly orders: ${Math.round(totalOrders / 3)}
+   - Est. abandonment rate: 70% (industry std)
+   - Potential abandoned carts: ${Math.round(totalOrders / 3 / 0.30 * 0.70)}/month
+   - Recovery rate (realistic): 15-25%
 
 TASK:
 =====
@@ -394,11 +443,18 @@ Return ONLY valid JSON in this exact structure:
       "icon": "🚨",
       "impact": {
         "type": "revenue",
-        "value": "$2,000-5,000/month potential",
-        "confidence": "high"
+        "value": "10-15% of email revenue ($3,000-4,500/month potential)",
+        "calculation": "200 carts/month × $125 AOV × 15% recovery = $3,750",
+        "confidence": "medium"
       },
       "analysis": "Detailed explanation using their data...",
       "data_points": {
+        "your_current_monthly_revenue": "$30,000",
+        "estimated_monthly_orders": "240",
+        "average_order_value": "$125",
+        "estimated_cart_abandonments": "560/month (70% of checkout starts)",
+        "industry_recovery_rate": "15-25%",
+        "conservative_estimate": "560 × $125 × 15% = $10,500 potential",
         "your_metric": "value",
         "industry_benchmark": "value"
       },
@@ -422,7 +478,32 @@ Return ONLY valid JSON in this exact structure:
   ]
 }
 
-Be specific, data-driven, and actionable. Use their actual numbers. Estimate revenue impact where possible.`
+CRITICAL REQUIREMENTS:
+======================
+1. ALL revenue estimates MUST include:
+   - Percentage of current monthly email revenue
+   - Dollar range based on that percentage
+   - Calculation showing your math
+   - Confidence level (high/medium/low)
+
+2. Be CONSERVATIVE with estimates:
+   - Use lower end of industry benchmarks
+   - Show realistic recovery/conversion rates
+   - Never estimate more than 30% of current revenue for a single recommendation
+
+3. Be specific, data-driven, and actionable
+4. Use their ACTUAL numbers in all calculations
+5. Provide LOW-HIGH ranges, never single estimates
+6. Always show percentage context: "X% of current $Y revenue = $Z"
+
+Example good impact format:
+"value": "10-15% lift ($3,000-4,500/month potential)"
+"calculation": "Current: $30k/month. 10-15% improvement = $3k-4.5k increase"
+"confidence": "medium" // Based on industry benchmarks
+
+Example bad impact format:
+"value": "$15,000/month potential" // ❌ No context, unrealistic
+`
 }
 
 // Helper: Save audit to database
