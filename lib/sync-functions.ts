@@ -132,35 +132,79 @@ export async function syncFlows(clientSlug: string, clientId: string, onProgress
 
 export async function syncListGrowth(clientSlug: string, clientId: string, onProgress?: (message: string) => void) {
   try {
-    onProgress?.('Step 1/2: Getting list growth metrics...')
+    onProgress?.('Step 1/3: Getting metrics...')
     
     const metricsResponse = await fetch(`/api/klaviyo-proxy/metrics?clientSlug=${clientSlug}`)
     if (!metricsResponse.ok) throw new Error('Metrics API failed')
     
     const metricsResult = await metricsResponse.json()
     const metrics = metricsResult.data?.data || []
-    const metricIds: string[] = []
+    const metricLookup: { [key: string]: string } = {}
     
-    // Find subscription metrics
-    const subscriptionMetrics = ['Subscribed to Email Marketing', 'Unsubscribed from Email Marketing']
     metrics.forEach((metric: any) => {
-      if (subscriptionMetrics.includes(metric.attributes.name)) {
-        metricIds.push(metric.id)
-      }
+      metricLookup[metric.attributes.name] = metric.id
     })
     
-    onProgress?.('Step 2/2: Saving list growth data...')
+    onProgress?.('Step 2/3: Getting subscription data...')
     
+    const endDate = new Date().toISOString()
+    const startDate = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString()
+    
+    const subscriptionMetrics = [
+      'Subscribed to Email Marketing',
+      'Unsubscribed from Email Marketing',
+      'Subscribed to SMS Marketing',
+      'Unsubscribed from SMS Marketing',
+      'Form submitted by profile'
+    ]
+    
+    const aggregateQueries = []
+    const validMetrics = []
+    
+    for (const metricName of subscriptionMetrics) {
+      if (metricLookup[metricName]) {
+        aggregateQueries.push(
+          fetch('/api/klaviyo-proxy/metric-aggregates', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              clientSlug,
+              metricId: metricLookup[metricName],
+              interval: 'day',
+              startDate,
+              endDate
+            })
+          })
+        )
+        validMetrics.push(metricName)
+      }
+    }
+    
+    const aggregateResponses = await Promise.all(aggregateQueries)
+    const aggregateResults = await Promise.all(
+      aggregateResponses.map(response => response.json())
+    )
+    
+    onProgress?.('Step 3/3: Saving list growth...')
+    
+    // Transform data (simplified - just pass raw data to save endpoint)
     const saveResponse = await fetch('/api/klaviyo-proxy/save-list-growth', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ clientId, metricIds }) // Use clientId (UUID) not slug
+      body: JSON.stringify({
+        clientSlug,
+        growthData: aggregateResults, // Pass the aggregate data
+        interval: 'day'
+      })
     })
     
-    if (!saveResponse.ok) throw new Error('Save list growth failed')
-    const result = await saveResponse.json()
+    if (!saveResponse.ok) {
+      const error = await saveResponse.json()
+      throw new Error(error.message || 'Save list growth failed')
+    }
     
-    return { success: true, count: result.dataPoints || 0 }
+    const result = await saveResponse.json()
+    return { success: true, count: result.saved || 0 }
   } catch (error) {
     console.error('List growth sync error:', error)
     throw error
@@ -174,12 +218,19 @@ export async function syncRevenueAttribution(clientSlug: string, clientId: strin
     const saveResponse = await fetch('/api/klaviyo-proxy/save-revenue-attribution', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ clientId }) // Use clientId (UUID) not slug
+      body: JSON.stringify({ 
+        clientSlug,
+        timeframe: 'last-365-days'  // Required parameter!
+      })
     })
     
-    if (!saveResponse.ok) throw new Error('Save revenue failed')
+    if (!saveResponse.ok) {
+      const error = await saveResponse.json()
+      throw new Error(error.message || 'Save revenue failed')
+    }
     
-    return { success: true }
+    const result = await saveResponse.json()
+    return { success: true, count: result.savedCount || 0 }
   } catch (error) {
     console.error('Revenue sync error:', error)
     throw error
