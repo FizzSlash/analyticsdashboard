@@ -883,6 +883,24 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
     )
   }
 
+  // Load cached subject line insights on mount
+  useEffect(() => {
+    const loadCachedInsights = async () => {
+      const cached = sessionStorage.getItem(`subjectInsights_${client?.brand_slug}_${timeframe}`)
+      if (cached) {
+        try {
+          setAiSubjectInsights(JSON.parse(cached))
+          console.log('✅ Loaded cached subject line insights')
+        } catch (e) {
+          console.log('Failed to parse cached insights')
+        }
+      }
+    }
+    if (client?.brand_slug) {
+      loadCachedInsights()
+    }
+  }, [client?.brand_slug, timeframe])
+
   const runAiSubjectLineAnalysis = async () => {
     setLoadingAiInsights(true)
     try {
@@ -898,6 +916,13 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
       
       const result = await response.json()
       setAiSubjectInsights(result.insights)
+      
+      // Cache the result
+      sessionStorage.setItem(
+        `subjectInsights_${client.brand_slug}_${timeframe}`,
+        JSON.stringify(result.insights)
+      )
+      console.log('💾 Cached subject line insights')
     } catch (error) {
       console.error('AI insights error:', error)
     } finally {
@@ -918,7 +943,7 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
     return (
       <div className="space-y-6">
         {/* AI-Powered Subject Line Insights */}
-        <Card className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 backdrop-blur-md border-purple-400/30">
+        <Card className="bg-white/10 backdrop-blur-md border-white/20">
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle className="text-white flex items-center gap-2">
@@ -948,8 +973,11 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
             {/* AI Insights Section */}
             {aiSubjectInsights && (
               <div className="mb-6 space-y-4">
-                <div className="bg-purple-500/10 border border-purple-400/30 rounded-lg p-4">
-                  <h4 className="text-purple-300 font-bold text-sm mb-2">🤖 AI Analysis Summary</h4>
+                <div className="bg-white/5 border border-white/20 rounded-lg p-4">
+                  <h4 className="text-white font-bold text-sm mb-2 flex items-center gap-2">
+                    <MessageSquare className="h-4 w-4" />
+                    AI Analysis Summary
+                  </h4>
                   <p className="text-white/90 text-sm">{aiSubjectInsights.summary}</p>
                 </div>
 
@@ -958,7 +986,7 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
                     <h4 className="text-white font-semibold text-sm mb-3">✅ AI Recommendations</h4>
                     <div className="space-y-3">
                       {aiSubjectInsights.recommendations.map((rec: any, i: number) => (
-                        <div key={i} className="bg-black/20 rounded-lg p-4 border border-white/10">
+                        <div key={i} className="bg-white/5 rounded-lg p-4 border border-white/10">
                           <div className="font-medium text-white mb-1">{rec.action}</div>
                           <p className="text-white/70 text-xs mb-2">{rec.why}</p>
                           {rec.expected_improvement && (
@@ -982,8 +1010,11 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
                 )}
 
                 {aiSubjectInsights.winning_formula && (
-                  <div className="bg-green-500/10 border border-green-400/30 rounded-lg p-4">
-                    <h4 className="text-green-300 font-bold text-sm mb-2">🏆 Your Winning Formula</h4>
+                  <div className="bg-white/5 border border-white/20 rounded-lg p-4">
+                    <h4 className="text-white font-bold text-sm mb-2 flex items-center gap-2">
+                      <TrendingUp className="h-4 w-4" />
+                      Your Winning Formula
+                    </h4>
                     <p className="text-white/90 text-sm">{aiSubjectInsights.winning_formula}</p>
                   </div>
                 )}

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { 
   Sparkles, 
@@ -55,8 +55,33 @@ interface AuditResult {
 export function AuditTab({ client, timeframe }: AuditTabProps) {
   const [audit, setAudit] = useState<AuditResult | null>(null)
   const [loading, setLoading] = useState(false)
+  const [loadingCached, setLoadingCached] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [expandedFindings, setExpandedFindings] = useState<Set<string>>(new Set())
+
+  // Load cached audit on mount
+  useEffect(() => {
+    loadCachedAudit()
+  }, [])
+
+  const loadCachedAudit = async () => {
+    setLoadingCached(true)
+    try {
+      const response = await fetch(`/api/audit?clientSlug=${client.brand_slug}`)
+      
+      if (response.ok) {
+        const result = await response.json()
+        if (result.audit) {
+          setAudit(result.audit)
+          console.log('✅ Loaded cached audit from database')
+        }
+      }
+    } catch (err) {
+      console.log('No cached audit found')
+    } finally {
+      setLoadingCached(false)
+    }
+  }
 
   const runAudit = async () => {
     setLoading(true)
@@ -277,7 +302,7 @@ export function AuditTab({ client, timeframe }: AuditTabProps) {
       )}
 
       {/* No Audit Yet */}
-      {!audit && !loading && !error && (
+      {!audit && !loading && !error && !loadingCached && (
         <Card className="bg-white/10 backdrop-blur-md border-white/20">
           <CardContent className="p-12">
             <div className="text-center">
