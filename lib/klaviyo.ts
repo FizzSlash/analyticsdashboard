@@ -102,30 +102,45 @@ export class KlaviyoAPI {
     return this.makeRequest(`/campaigns/${campaignId}`)
   }
 
-  // Get Templates by IDs - fetch individually in parallel (filter doesn't work)
+  // Get Templates by IDs - fetch in batches to respect rate limits
   async getTemplatesByIds(templateIds: string[]) {
     if (!templateIds || templateIds.length === 0) {
       return { data: [] }
     }
     
-    console.log(`📧 TEMPLATES API: Fetching ${templateIds.length} templates individually (parallel)`)
+    console.log(`📧 TEMPLATES API: Fetching ${templateIds.length} templates in batches`)
     
-    // Fetch all templates in parallel
-    const templatePromises = templateIds.map(id => 
-      this.makeRequest(`/templates/${id}?fields[template]=html,name,id`)
-        .then(result => result.data)
-        .catch(error => {
-          console.log(`⚠️ TEMPLATES API: Failed to fetch template ${id}:`, error.message)
-          return null
-        })
-    )
+    const batchSize = 8 // Safe: 8/s is under 10/s burst limit
+    const allTemplates: any[] = []
     
-    const templates = await Promise.all(templatePromises)
-    const validTemplates = templates.filter(t => t !== null)
+    for (let i = 0; i < templateIds.length; i += batchSize) {
+      const batch = templateIds.slice(i, i + batchSize)
+      console.log(`📧 TEMPLATES API: Fetching batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(templateIds.length / batchSize)} (${batch.length} templates)`)
+      
+      // Fetch batch in parallel
+      const batchPromises = batch.map(id => 
+        this.makeRequest(`/templates/${id}?fields[template]=html,name,id`)
+          .then(result => result.data)
+          .catch(error => {
+            console.log(`⚠️ TEMPLATES API: Failed to fetch template ${id}`)
+            return null
+          })
+      )
+      
+      const batchResults = await Promise.all(batchPromises)
+      const validResults = batchResults.filter(t => t !== null)
+      allTemplates.push(...validResults)
+      
+      // Wait 1 second between batches (except last batch)
+      if (i + batchSize < templateIds.length) {
+        console.log(`⏱️ TEMPLATES API: Waiting 1 second before next batch...`)
+        await new Promise(resolve => setTimeout(resolve, 1000))
+      }
+    }
     
-    console.log(`📧 TEMPLATES API: Successfully fetched ${validTemplates.length}/${templateIds.length} templates`)
+    console.log(`📧 TEMPLATES API: Successfully fetched ${allTemplates.length}/${templateIds.length} templates`)
     
-    return { data: validTemplates }
+    return { data: allTemplates }
   }
 
   // Get Campaign Messages - MAXIMUM DATA EXTRACTION
