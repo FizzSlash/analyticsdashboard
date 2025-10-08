@@ -77,14 +77,31 @@ export class KlaviyoAPI {
       params.set('page[cursor]', cursor)
     }
     
-    // Optional: Include related data (campaign-messages, tags, images, templates)
+    // Optional: Include related data - REQUEST EVERYTHING FOR TESTING
     if (includes && includes.length > 0) {
       params.set('include', includes.join(','))
     }
     
-    // Optional: Specific fields to reduce payload size
+    // Request ALL possible fields for testing
     params.set('fields[campaign]', 'name,status,send_time,audiences,tracking_options,send_strategy,created_at,updated_at,scheduled_at,archived')
-    params.set('fields[campaign-message]', 'definition,send_times,created_at,updated_at')
+    params.set('fields[campaign-message]', 
+      'definition,' +
+      'definition.content.body,' +
+      'definition.content.subject,' +
+      'definition.content.preview_text,' +
+      'definition.content.from_email,' +
+      'definition.content.from_label,' +
+      'definition.content.media_url,' +
+      'definition.content.title,' +
+      'definition.content.dynamic_image,' +
+      'definition.render_options,' +
+      'definition.kv_pairs,' +
+      'send_times,' +
+      'created_at,' +
+      'updated_at'
+    )
+    params.set('fields[template]', 'html,name,created_at,updated_at')
+    params.set('fields[image]', 'image_url,name,size')
     
     const queryString = params.toString()
     endpoint += `?${queryString}`

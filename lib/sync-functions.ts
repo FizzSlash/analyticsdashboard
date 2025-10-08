@@ -70,7 +70,12 @@ export async function syncCampaigns(clientSlug: string, clientId: string, onProg
         from_email: messageData?.definition?.content?.from_email || null,
         from_label: messageData?.definition?.content?.from_label || null,
         reply_to_email: messageData?.definition?.content?.reply_to_email || null,
-        email_html: messageData?.definition?.content?.body || null, // Extract HTML body
+        email_html: messageData?.definition?.content?.body || null,
+        media_url: messageData?.definition?.content?.media_url || null,
+        email_title: messageData?.definition?.content?.title || null,
+        dynamic_image: messageData?.definition?.content?.dynamic_image || null,
+        render_options: messageData?.definition?.render_options || null,
+        kv_pairs: messageData?.definition?.kv_pairs || null
         campaign_archived: campaign.attributes?.archived || false,
         campaign_created_at: campaign.attributes?.created_at || null,
         campaign_updated_at: campaign.attributes?.updated_at || null,

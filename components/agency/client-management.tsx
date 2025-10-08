@@ -453,6 +453,11 @@ export function ClientManagement({ agency, clients: initialClients }: ClientMana
             from_label: messageData?.definition?.content?.from_label || null,
             reply_to_email: messageData?.definition?.content?.reply_to_email || null,
             email_html: messageData?.definition?.content?.body || null, // Extract HTML body
+            media_url: messageData?.definition?.content?.media_url || null, // Featured image
+            email_title: messageData?.definition?.content?.title || null,
+            dynamic_image: messageData?.definition?.content?.dynamic_image || null,
+            render_options: messageData?.definition?.render_options || null,
+            kv_pairs: messageData?.definition?.kv_pairs || null
             // Targeting data
             included_audiences: campaign.attributes?.audiences?.included || [],
             excluded_audiences: campaign.attributes?.audiences?.excluded || [],

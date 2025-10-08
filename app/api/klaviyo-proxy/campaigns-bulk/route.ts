@@ -20,9 +20,11 @@ export async function GET(request: NextRequest) {
     const decryptedKey = decryptApiKey(client.klaviyo_api_key)
     const klaviyo = new KlaviyoAPI(decryptedKey)
 
-    // Get ALL campaigns with messages and additional data in single call
+    // Get ALL campaigns with messages, templates, images - REQUEST EVERYTHING FOR TESTING
     const campaigns = await klaviyo.getCampaigns(undefined, 'email', [
-      'campaign-messages', 
+      'campaign-messages',
+      'template',
+      'images',
       'tags'
     ])
     
