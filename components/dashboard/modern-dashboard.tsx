@@ -90,6 +90,7 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
   const [loadingAiInsights, setLoadingAiInsights] = useState(false)
   const [creativesSortField, setCreativesSortField] = useState<'send_date' | 'open_rate' | 'click_rate' | 'revenue_per_recipient'>('send_date')
   const [selectedCreative, setSelectedCreative] = useState<any>(null)
+  const [showAboveFold, setShowAboveFold] = useState(false)
 
   // Chart data processing functions
   const getRevenueRecipientsComboData = (campaigns: any[], timeframe: number) => {
@@ -2596,18 +2597,32 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
                 <p className="text-white/60 text-sm mt-1">{sortedCreatives.length} campaigns with email templates</p>
               </div>
               
-              <div className="flex items-center gap-3">
-                <span className="text-white/60 text-sm">Sort by:</span>
-                <select
-                  value={creativesSortField}
-                  onChange={(e) => setCreativesSortField(e.target.value as any)}
-                  className="bg-white/10 text-white border border-white/20 rounded px-3 py-1.5 text-sm"
+              <div className="flex items-center gap-4">
+                {/* Above the Fold Toggle */}
+                <button
+                  onClick={() => setShowAboveFold(!showAboveFold)}
+                  className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${
+                    showAboveFold 
+                      ? 'bg-blue-500/80 text-white' 
+                      : 'bg-white/10 text-white/60 hover:bg-white/20'
+                  }`}
                 >
-                  <option value="send_date">Send Date</option>
-                  <option value="open_rate">Open Rate</option>
-                  <option value="click_rate">Click Rate</option>
-                  <option value="revenue_per_recipient">Revenue/Recipient</option>
-                </select>
+                  📱 Above the Fold
+                </button>
+                
+                <div className="flex items-center gap-3">
+                  <span className="text-white/60 text-sm">Sort by:</span>
+                  <select
+                    value={creativesSortField}
+                    onChange={(e) => setCreativesSortField(e.target.value as any)}
+                    className="bg-white/10 text-white border border-white/20 rounded px-3 py-1.5 text-sm"
+                  >
+                    <option value="send_date">Send Date</option>
+                    <option value="open_rate">Open Rate</option>
+                    <option value="click_rate">Click Rate</option>
+                    <option value="revenue_per_recipient">Revenue/Recipient</option>
+                  </select>
+                </div>
               </div>
             </div>
           </CardContent>
@@ -2625,24 +2640,56 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
                 className="bg-white/10 backdrop-blur-md border-white/20 hover:bg-white/15 transition-all cursor-pointer group"
                 onClick={() => setSelectedCreative(campaign)}
               >
-                {/* Email Preview Image - Uniform sizing */}
-                <div className="h-80 bg-white/5 overflow-hidden relative flex items-center justify-center">
-                  {firstImage ? (
-                    <img 
-                      src={firstImage} 
-                      alt={campaign.campaign_name}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        e.currentTarget.style.display = 'none'
-                        e.currentTarget.parentElement!.innerHTML = '<div class="w-full h-full flex flex-col items-center justify-center gap-2"><div class="text-white/40 text-sm">Plain-text Email</div><div class="text-white/20 text-3xl">📧</div></div>'
-                      }}
-                    />
-                  ) : (
-                    <div className="w-full h-full flex flex-col items-center justify-center gap-2">
-                      <Mail className="h-12 w-12 text-white/20" />
-                      <span className="text-white/40 text-sm">Plain-text Email</span>
+                {/* Email Preview - Toggle between image or mobile above-the-fold */}
+                {showAboveFold ? (
+                  // Mobile phone mockup showing above the fold (first 500px)
+                  <div className="h-80 bg-gradient-to-b from-gray-900 to-gray-800 overflow-hidden relative flex items-center justify-center p-4">
+                    <div className="w-[375px] h-full bg-black rounded-[2.5rem] p-3 shadow-2xl border-4 border-gray-800">
+                      <div className="w-full h-full bg-white rounded-[1.75rem] overflow-hidden">
+                        {campaign.email_html ? (
+                          <iframe
+                            srcDoc={campaign.email_html}
+                            className="w-full h-full border-0 pointer-events-none"
+                            title={`Mobile: ${campaign.campaign_name}`}
+                            sandbox="allow-same-origin"
+                            style={{ transform: 'scale(1)', transformOrigin: 'top center' }}
+                          />
+                        ) : (
+                          <div className="w-full h-full flex flex-col items-center justify-center gap-2 bg-gray-50">
+                            <Mail className="h-12 w-12 text-gray-300" />
+                            <span className="text-gray-400 text-sm">Plain-text Email</span>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  )}
+                    {/* "Above the Fold" indicator */}
+                    <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2">
+                      <span className="bg-blue-500/90 text-white px-3 py-1 rounded-full text-xs font-medium backdrop-blur-sm">
+                        Mobile Preview
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  // Original image preview
+                  <div className="h-80 bg-white/5 overflow-hidden relative flex items-center justify-center">
+                    {firstImage ? (
+                      <img 
+                        src={firstImage} 
+                        alt={campaign.campaign_name}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none'
+                          e.currentTarget.parentElement!.innerHTML = '<div class="w-full h-full flex flex-col items-center justify-center gap-2"><div class="text-white/40 text-sm">Plain-text Email</div><div class="text-white/20 text-3xl">📧</div></div>'
+                        }}
+                      />
+                    ) : (
+                      <div className="w-full h-full flex flex-col items-center justify-center gap-2">
+                        <Mail className="h-12 w-12 text-white/20" />
+                        <span className="text-white/40 text-sm">Plain-text Email</span>
+                      </div>
+                    )}
+                  </div>
+                )}
                   
                   {/* Status Badge */}
                   <div className="absolute top-2 right-2">
