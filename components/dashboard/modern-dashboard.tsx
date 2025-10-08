@@ -2644,17 +2644,21 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
                 <div className="relative">
                   {/* Email Preview - Toggle between image or mobile above-the-fold */}
                   {showAboveFold ? (
-                    // Mobile phone mockup showing above the fold (first 500px)
-                    <div className="h-80 bg-gradient-to-b from-gray-900 to-gray-800 overflow-hidden relative flex items-center justify-center p-4">
-                      <div className="w-[375px] h-full bg-black rounded-[2.5rem] p-3 shadow-2xl border-4 border-gray-800">
+                    // Mobile phone mockup showing above the fold
+                    <div className="h-[500px] bg-gradient-to-b from-gray-900 to-gray-800 overflow-hidden relative flex items-center justify-center p-4">
+                      <div className="w-[280px] h-full bg-black rounded-[2.5rem] p-2 shadow-2xl border-4 border-gray-800">
                         <div className="w-full h-full bg-white rounded-[1.75rem] overflow-hidden">
                           {campaign.email_html ? (
                             <iframe
                               srcDoc={campaign.email_html}
-                              className="w-full h-full border-0 pointer-events-none"
+                              className="w-full border-0 pointer-events-none"
                               title={`Mobile: ${campaign.campaign_name}`}
                               sandbox="allow-same-origin"
-                              style={{ transform: 'scale(1)', transformOrigin: 'top center' }}
+                              style={{ 
+                                height: '600px',
+                                transform: 'scale(0.6)', 
+                                transformOrigin: 'top center',
+                              }}
                             />
                           ) : (
                             <div className="w-full h-full flex flex-col items-center justify-center gap-2 bg-gray-50">
@@ -2664,7 +2668,7 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
                           )}
                         </div>
                       </div>
-                      {/* "Above the Fold" indicator */}
+                      {/* "Mobile Preview" indicator */}
                       <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2">
                         <span className="bg-blue-500/90 text-white px-3 py-1 rounded-full text-xs font-medium backdrop-blur-sm">
                           Mobile Preview
@@ -2673,7 +2677,7 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
                     </div>
                   ) : (
                     // Desktop preview - shows top of actual email (above the fold)
-                    <div className="h-80 bg-white overflow-hidden relative">
+                    <div className="h-[500px] bg-white overflow-hidden relative">
                       {campaign.email_html ? (
                         <iframe
                           srcDoc={campaign.email_html}
@@ -2688,9 +2692,6 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
                           <span className="text-gray-400 text-sm">Plain-text Email</span>
                         </div>
                       )}
-                      
-                      {/* Fade overlay at bottom to indicate there's more */}
-                      <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-gray-100 to-transparent pointer-events-none" />
                     </div>
                   )}
                   
