@@ -408,11 +408,14 @@ export function ClientManagement({ agency, clients: initialClients }: ClientMana
       
       // Step 3.5: Fetch ALL templates with HTML
       setSuccess('Step 3.5/4: Fetching email templates...')
-      console.log('📧 FRONTEND: Calling templates API to get HTML')
+      console.log('📧 FRONTEND: ============ CALLING TEMPLATES API ============')
+      console.log('📧 FRONTEND: URL:', `/api/klaviyo-proxy/templates?clientSlug=${client.brand_slug}`)
       
       const templatesResponse = await fetch(`/api/klaviyo-proxy/templates?clientSlug=${client.brand_slug}`)
+      console.log('📧 FRONTEND: Templates response status:', templatesResponse.status)
+      
       const templatesResult = templatesResponse.ok ? await templatesResponse.json() : { data: { data: [] } }
-      console.log('📧 FRONTEND: Got templates:', templatesResult?.data?.data?.length || 0)
+      console.log('📧 FRONTEND: ============ GOT TEMPLATES:', templatesResult?.data?.data?.length || 0, '============')
       
       // Create template lookup
       const templateLookup: { [key: string]: { html: string, name: string } } = {}
