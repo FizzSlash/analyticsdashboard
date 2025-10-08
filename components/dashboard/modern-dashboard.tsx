@@ -82,6 +82,7 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
   const [flowEmails, setFlowEmails] = useState<{ [flowId: string]: any[] }>({})
   const [flowEmailsLoading, setFlowEmailsLoading] = useState<{ [flowId: string]: boolean }>({})
   const [flowEmailsError, setFlowEmailsError] = useState<{ [flowId: string]: string }>({})
+  const [expandedCampaigns, setExpandedCampaigns] = useState<Set<string>>(new Set())
   const [analysisTab, setAnalysisTab] = useState<'conversion' | 'aov'>('conversion')
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [aiSubjectInsights, setAiSubjectInsights] = useState<any>(null)
@@ -1787,13 +1788,33 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
                 </thead>
                 <tbody>
                   {sortedCampaigns.map((campaign: any) => (
-                    <tr key={campaign.id} className="border-b border-white/10 hover:bg-white/5 transition-colors">
-                      <td className="py-4">
-                        <div>
-                          <p className="text-white font-medium text-sm">{campaign.campaign_name}</p>
-                          <p className="text-white/60 text-xs mt-1">{campaign.subject_line}</p>
-                        </div>
-                      </td>
+                    <>
+                      <tr 
+                        key={campaign.id} 
+                        className="border-b border-white/10 hover:bg-white/5 transition-colors cursor-pointer"
+                        onClick={() => {
+                          const newExpanded = new Set(expandedCampaigns)
+                          if (newExpanded.has(campaign.campaign_id)) {
+                            newExpanded.delete(campaign.campaign_id)
+                          } else {
+                            newExpanded.add(campaign.campaign_id)
+                          }
+                          setExpandedCampaigns(newExpanded)
+                        }}
+                      >
+                        <td className="py-4">
+                          <div className="flex items-center gap-2">
+                            {campaign.email_html && (
+                              <span className="text-white/60 text-xs">
+                                {expandedCampaigns.has(campaign.campaign_id) ? '▼' : '▶'}
+                              </span>
+                            )}
+                            <div>
+                              <p className="text-white font-medium text-sm">{campaign.campaign_name}</p>
+                              <p className="text-white/60 text-xs mt-1">{campaign.subject_line}</p>
+                            </div>
+                          </div>
+                        </td>
                       <td className="py-4">
                         <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
                           campaign.campaign_status === 'Sent' 
