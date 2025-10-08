@@ -2670,24 +2670,25 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
                     </div>
                   </div>
                 ) : (
-                  // Original image preview
-                  <div className="h-80 bg-white/5 overflow-hidden relative flex items-center justify-center">
-                    {firstImage ? (
-                      <img 
-                        src={firstImage} 
-                        alt={campaign.campaign_name}
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          e.currentTarget.style.display = 'none'
-                          e.currentTarget.parentElement!.innerHTML = '<div class="w-full h-full flex flex-col items-center justify-center gap-2"><div class="text-white/40 text-sm">Plain-text Email</div><div class="text-white/20 text-3xl">📧</div></div>'
-                        }}
+                  // Desktop preview - shows top of actual email (above the fold)
+                  <div className="h-80 bg-white overflow-hidden relative">
+                    {campaign.email_html ? (
+                      <iframe
+                        srcDoc={campaign.email_html}
+                        className="w-full h-full border-0 pointer-events-none"
+                        title={`Preview: ${campaign.campaign_name}`}
+                        sandbox="allow-same-origin"
+                        style={{ transform: 'scale(1)', transformOrigin: 'top center' }}
                       />
                     ) : (
-                      <div className="w-full h-full flex flex-col items-center justify-center gap-2">
-                        <Mail className="h-12 w-12 text-white/20" />
-                        <span className="text-white/40 text-sm">Plain-text Email</span>
+                      <div className="w-full h-full flex flex-col items-center justify-center gap-2 bg-gray-50">
+                        <Mail className="h-12 w-12 text-gray-300" />
+                        <span className="text-gray-400 text-sm">Plain-text Email</span>
                       </div>
                     )}
+                    
+                    {/* Fade overlay at bottom to indicate there's more */}
+                    <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-gray-100 to-transparent pointer-events-none" />
                   </div>
                 )}
                   
