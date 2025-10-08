@@ -2,13 +2,17 @@ import { NextRequest, NextResponse } from 'next/server'
 import { DatabaseService } from '@/lib/database'
 import { KlaviyoAPI, decryptApiKey } from '@/lib/klaviyo'
 
-export async function GET(request: NextRequest) {
+export async function POST(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url)
-    const clientSlug = searchParams.get('clientSlug')
+    const body = await request.json()
+    const { clientSlug, templateIds } = body
     
     if (!clientSlug) {
       return NextResponse.json({ error: 'Client slug required' }, { status: 400 })
+    }
+    
+    if (!templateIds || !Array.isArray(templateIds)) {
+      return NextResponse.json({ error: 'Template IDs array required' }, { status: 400 })
     }
 
     // Get client and decrypt API key
@@ -20,13 +24,14 @@ export async function GET(request: NextRequest) {
     const decryptedKey = decryptApiKey(client.klaviyo_api_key)
     const klaviyo = new KlaviyoAPI(decryptedKey)
 
-    // Get ALL templates with HTML
-    const templates = await klaviyo.getTemplates()
+    // Get only templates used by campaigns (filtered by IDs)
+    const templates = await klaviyo.getTemplatesByIds(templateIds)
     
     return NextResponse.json({
       success: true,
       data: templates,
-      client: client.brand_name
+      client: client.brand_name,
+      templatesRequested: templateIds.length
     })
 
   } catch (error: any) {

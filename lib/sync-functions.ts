@@ -35,10 +35,25 @@ export async function syncCampaigns(clientSlug: string, clientId: string, onProg
     if (!campaignsResponse.ok) throw new Error('Campaigns API failed')
     const campaignsResult = await campaignsResponse.json()
     
-    onProgress?.('Step 3.5/4: Fetching email templates...')
+    // Extract unique template IDs from campaigns
+    const templateIds = new Set<string>()
+    if (campaignsResult.data?.included) {
+      campaignsResult.data.included.forEach((item: any) => {
+        if (item.type === 'campaign-message' && item.relationships?.template?.data?.id) {
+          templateIds.add(item.relationships.template.data.id)
+        }
+      })
+    }
     
-    // Fetch all templates with HTML
-    const templatesResponse = await fetch(`/api/klaviyo-proxy/templates?clientSlug=${clientSlug}`)
+    const templateIdsArray = Array.from(templateIds)
+    onProgress?.(`Step 3.5/4: Fetching ${templateIdsArray.length} email templates...`)
+    
+    // Fetch only templates used by campaigns (filtered by IDs)
+    const templatesResponse = await fetch('/api/klaviyo-proxy/templates', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ clientSlug, templateIds: templateIdsArray })
+    })
     const templatesResult = templatesResponse.ok ? await templatesResponse.json() : { data: { data: [] } }
     
     // Create template lookup

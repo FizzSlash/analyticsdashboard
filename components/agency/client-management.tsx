@@ -406,12 +406,31 @@ export function ClientManagement({ agency, clients: initialClients }: ClientMana
       console.log('📊 FRONTEND: Got campaigns:', campaignsResult.data?.data?.length || 0)
       console.log('📩 FRONTEND: Got included data:', campaignsResult.data?.included?.length || 0)
       
-      // Step 3.5: Fetch ALL templates with HTML
-      setSuccess('Step 3.5/4: Fetching email templates...')
-      console.log('📧 FRONTEND: ============ CALLING TEMPLATES API ============')
-      console.log('📧 FRONTEND: URL:', `/api/klaviyo-proxy/templates?clientSlug=${client.brand_slug}`)
+      // Step 3.5: Extract unique template IDs from campaigns first
+      const templateIds = new Set<string>()
+      if (campaignsResult.data?.included) {
+        campaignsResult.data.included.forEach((item: any) => {
+          if (item.type === 'campaign-message' && item.relationships?.template?.data?.id) {
+            templateIds.add(item.relationships.template.data.id)
+          }
+        })
+      }
       
-      const templatesResponse = await fetch(`/api/klaviyo-proxy/templates?clientSlug=${client.brand_slug}`)
+      const templateIdsArray = Array.from(templateIds)
+      console.log('📧 FRONTEND: Found', templateIdsArray.length, 'unique template IDs:', templateIdsArray)
+      
+      // Step 3.5: Fetch ONLY templates used by campaigns (filtered)
+      setSuccess(`Step 3.5/4: Fetching ${templateIdsArray.length} email templates...`)
+      console.log('📧 FRONTEND: ============ CALLING TEMPLATES API WITH FILTER ============')
+      
+      const templatesResponse = await fetch('/api/klaviyo-proxy/templates', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          clientSlug: client.brand_slug,
+          templateIds: templateIdsArray 
+        })
+      })
       console.log('📧 FRONTEND: Templates response status:', templatesResponse.status)
       
       const templatesResult = templatesResponse.ok ? await templatesResponse.json() : { data: { data: [] } }

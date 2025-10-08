@@ -102,13 +102,22 @@ export class KlaviyoAPI {
     return this.makeRequest(`/campaigns/${campaignId}`)
   }
 
-  // Get All Templates with HTML
-  async getTemplates() {
+  // Get Templates by IDs with HTML (filtered to only templates actually used)
+  async getTemplatesByIds(templateIds: string[]) {
+    if (!templateIds || templateIds.length === 0) {
+      return { data: [] }
+    }
+    
     const params = new URLSearchParams()
     params.set('fields[template]', 'html,name')
     
+    // Use 'any' filter to get only specific template IDs
+    const filter = `any(id,["${templateIds.join('","')}"])`
+    params.set('filter', filter)
+    
     const endpoint = `/templates?${params.toString()}`
-    console.log(`📧 TEMPLATES API: Fetching all templates with HTML`)
+    console.log(`📧 TEMPLATES API: Fetching ${templateIds.length} specific templates with filter`)
+    console.log(`📧 TEMPLATES API: Filter: ${filter}`)
     
     return this.makeRequest(endpoint)
   }
