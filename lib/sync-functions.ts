@@ -75,7 +75,7 @@ export async function syncCampaigns(clientSlug: string, clientId: string, onProg
         email_title: messageData?.definition?.content?.title || null,
         dynamic_image: messageData?.definition?.content?.dynamic_image || null,
         render_options: messageData?.definition?.render_options || null,
-        kv_pairs: messageData?.definition?.kv_pairs || null
+        kv_pairs: messageData?.definition?.kv_pairs || null,
         campaign_archived: campaign.attributes?.archived || false,
         campaign_created_at: campaign.attributes?.created_at || null,
         campaign_updated_at: campaign.attributes?.updated_at || null,
