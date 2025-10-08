@@ -1860,6 +1860,47 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
                         </span>
                       </td>
                     </tr>
+                    
+                    {/* Expanded Email Preview */}
+                    {expandedCampaigns.has(campaign.campaign_id) && campaign.email_html && (
+                      <tr key={`${campaign.id}-preview`} className="bg-white/5">
+                        <td colSpan={7} className="py-6 px-4">
+                          <div className="space-y-4">
+                            <div className="flex items-center justify-between">
+                              <h4 className="text-white font-semibold">Email Preview</h4>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  const blob = new Blob([campaign.email_html], { type: 'text/html' })
+                                  const url = URL.createObjectURL(blob)
+                                  window.open(url, '_blank')
+                                }}
+                                className="bg-white/10 hover:bg-white/20 text-white px-3 py-1.5 rounded text-xs flex items-center gap-2 transition-colors border border-white/20"
+                              >
+                                <ExternalLink className="h-3 w-3" />
+                                View Full Size
+                              </button>
+                            </div>
+                            
+                            <div className="bg-white rounded-lg overflow-hidden shadow-xl" style={{ height: '600px' }}>
+                              <iframe
+                                srcDoc={campaign.email_html}
+                                className="w-full h-full border-0"
+                                title={`Preview: ${campaign.campaign_name}`}
+                                sandbox="allow-same-origin"
+                              />
+                            </div>
+                            
+                            <div className="flex items-center gap-4 text-xs text-white/60">
+                              <span>Template: {campaign.template_name || campaign.template_id || 'N/A'}</span>
+                              <span>•</span>
+                              <span>Size: {(campaign.email_html.length / 1024).toFixed(1)} KB</span>
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </>
                   ))}
                 </tbody>
               </table>
