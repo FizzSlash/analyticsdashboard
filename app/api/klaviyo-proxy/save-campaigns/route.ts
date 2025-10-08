@@ -50,6 +50,11 @@ export async function POST(request: NextRequest) {
           reply_to_email: campaign.reply_to_email || null,
           email_html: campaign.email_html || null,
           preview_text: campaign.preview_text || null,
+          media_url: campaign.media_url || null,
+          email_title: campaign.email_title || null,
+          dynamic_image: campaign.dynamic_image || null,
+          render_options: campaign.render_options || null,
+          kv_pairs: campaign.kv_pairs || null,
           // NEW FIELDS - Targeting
           included_audiences: campaign.included_audiences || [],
           excluded_audiences: campaign.excluded_audiences || [],
