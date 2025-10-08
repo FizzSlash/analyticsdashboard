@@ -49,6 +49,8 @@ export async function POST(request: NextRequest) {
           from_label: campaign.from_label || null,
           reply_to_email: campaign.reply_to_email || null,
           email_html: campaign.email_html || null,
+          template_id: campaign.template_id || null,
+          template_name: campaign.template_name || null,
           preview_text: campaign.preview_text || null,
           media_url: campaign.media_url || null,
           email_title: campaign.email_title || null,

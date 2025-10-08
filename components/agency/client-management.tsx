@@ -406,6 +406,30 @@ export function ClientManagement({ agency, clients: initialClients }: ClientMana
       console.log('📊 FRONTEND: Got campaigns:', campaignsResult.data?.data?.length || 0)
       console.log('📩 FRONTEND: Got included data:', campaignsResult.data?.included?.length || 0)
       
+      // Step 3.5: Fetch ALL templates with HTML
+      setSuccess('Step 3.5/4: Fetching email templates...')
+      console.log('📧 FRONTEND: Calling templates API to get HTML')
+      
+      const templatesResponse = await fetch(`/api/klaviyo-proxy/templates?clientSlug=${client.brand_slug}`)
+      if (!templatesResponse.ok) {
+        console.log('⚠️ FRONTEND: Templates API failed, continuing without HTML')
+      }
+      
+      const templatesResult = templatesResponse.ok ? await templatesResponse.json() : null
+      console.log('📧 FRONTEND: Got templates:', templatesResult?.data?.data?.length || 0)
+      
+      // Create template lookup
+      const templateLookup: { [key: string]: { html: string, name: string } } = {}
+      if (templatesResult?.data?.data) {
+        templatesResult.data.data.forEach((template: any) => {
+          templateLookup[template.id] = {
+            html: template.attributes?.html || '',
+            name: template.attributes?.name || ''
+          }
+        })
+      }
+      console.log('📧 FRONTEND: Template lookup created for', Object.keys(templateLookup).length, 'templates')
+      
       // Process and combine data
       const campaignDetails: any[] = []
       const analyticsLookup: { [key: string]: any } = {}
@@ -429,11 +453,14 @@ export function ClientManagement({ agency, clients: initialClients }: ClientMana
         })
       }
       
-      // Combine all data
+      // Combine all data with template HTML
       if (campaignsResult.data?.data) {
         campaignsResult.data.data.forEach((campaign: any, index: number) => {
           const analytics = analyticsLookup[campaign.id] || {}
-          const messageData = messagesLookup[campaign.id] || {}
+          const messageInfo = messagesLookup[campaign.id] || {}
+          const messageData = messageInfo.attributes || {}
+          const templateId = messageInfo.template_id
+          const template = templateId ? templateLookup[templateId] : null
           
           const completeData = {
             id: campaign.id,
@@ -452,8 +479,10 @@ export function ClientManagement({ agency, clients: initialClients }: ClientMana
             from_email: messageData?.definition?.content?.from_email || null,
             from_label: messageData?.definition?.content?.from_label || null,
             reply_to_email: messageData?.definition?.content?.reply_to_email || null,
-            email_html: messageData?.definition?.content?.body || null, // Extract HTML body
-            media_url: messageData?.definition?.content?.media_url || null, // Featured image
+            email_html: template?.html || messageData?.definition?.content?.body || null, // Template HTML or inline body
+            template_id: templateId,
+            template_name: template?.name || null,
+            media_url: messageData?.definition?.content?.media_url || null,
             email_title: messageData?.definition?.content?.title || null,
             dynamic_image: messageData?.definition?.content?.dynamic_image || null,
             render_options: messageData?.definition?.render_options || null,
