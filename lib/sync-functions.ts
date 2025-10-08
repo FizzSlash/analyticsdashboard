@@ -49,7 +49,10 @@ export async function syncCampaigns(clientSlug: string, clientId: string, onProg
       campaignsResult.data.included.forEach((item: any) => {
         if (item.type === 'campaign-message') {
           const campaignId = item.relationships?.campaign?.data?.id || item.id
-          messagesLookup[campaignId] = item.attributes
+          messagesLookup[campaignId] = {
+            attributes: item.attributes,
+            template_id: item.relationships?.template?.data?.id || null
+          }
         }
       })
     }
@@ -57,7 +60,10 @@ export async function syncCampaigns(clientSlug: string, clientId: string, onProg
     const campaignDetails: any[] = []
     campaignsResult.data?.data?.forEach((campaign: any) => {
       const analytics = analyticsLookup[campaign.id] || {}
-      const messageData = messagesLookup[campaign.id] || {}
+      const messageInfo = messagesLookup[campaign.id] || {}
+      const messageData = messageInfo.attributes || {}
+      const templateId = messageInfo.template_id
+      const template = templateId ? templateLookup[templateId] : null
       
       campaignDetails.push({
         id: campaign.id,
@@ -70,7 +76,9 @@ export async function syncCampaigns(clientSlug: string, clientId: string, onProg
         from_email: messageData?.definition?.content?.from_email || null,
         from_label: messageData?.definition?.content?.from_label || null,
         reply_to_email: messageData?.definition?.content?.reply_to_email || null,
-        email_html: messageData?.definition?.content?.body || null,
+        email_html: template?.html || messageData?.definition?.content?.body || null, // Template HTML or inline body
+        template_id: templateId,
+        template_name: template?.name || null,
         media_url: messageData?.definition?.content?.media_url || null,
         email_title: messageData?.definition?.content?.title || null,
         dynamic_image: messageData?.definition?.content?.dynamic_image || null,
