@@ -82,9 +82,11 @@ export class KlaviyoAPI {
       params.set('include', includes.join(','))
     }
     
-    // Request campaign-message fields (just definition for now - it should include everything)
+    // Request fields - definition includes relationships to template
     params.set('fields[campaign]', 'name,status,send_time,audiences,tracking_options,send_strategy,created_at,updated_at,scheduled_at,archived')
     params.set('fields[campaign-message]', 'definition,send_times,created_at,updated_at')
+    
+    console.log(`📧 CAMPAIGNS API: Requesting campaigns with template relationships`)
     
     const queryString = params.toString()
     endpoint += `?${queryString}`
@@ -98,6 +100,17 @@ export class KlaviyoAPI {
   // Get Campaign by ID
   async getCampaign(campaignId: string) {
     return this.makeRequest(`/campaigns/${campaignId}`)
+  }
+
+  // Get All Templates with HTML
+  async getTemplates() {
+    const params = new URLSearchParams()
+    params.set('fields[template]', 'html,name')
+    
+    const endpoint = `/templates?${params.toString()}`
+    console.log(`📧 TEMPLATES API: Fetching all templates with HTML`)
+    
+    return this.makeRequest(endpoint)
   }
 
   // Get Campaign Messages - MAXIMUM DATA EXTRACTION
