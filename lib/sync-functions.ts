@@ -43,15 +43,45 @@ export async function syncCampaigns(clientSlug: string, clientId: string, onProg
       analyticsLookup[item.id] = item.attributes
     })
     
+    // Create messages lookup from included data
+    const messagesLookup: { [key: string]: any } = {}
+    if (campaignsResult.data?.included) {
+      campaignsResult.data.included.forEach((item: any) => {
+        if (item.type === 'campaign-message') {
+          const campaignId = item.relationships?.campaign?.data?.id || item.id
+          messagesLookup[campaignId] = item.attributes
+        }
+      })
+    }
+    
     const campaignDetails: any[] = []
     campaignsResult.data?.data?.forEach((campaign: any) => {
       const analytics = analyticsLookup[campaign.id] || {}
+      const messageData = messagesLookup[campaign.id] || {}
+      
       campaignDetails.push({
         id: campaign.id,
         attributes: analytics,
         campaign_name: campaign.attributes?.name,
         campaign_status: campaign.attributes?.status,
-        send_date: campaign.attributes?.send_time
+        send_date: campaign.attributes?.send_time,
+        subject_line: messageData?.definition?.content?.subject || null,
+        preview_text: messageData?.definition?.content?.preview_text || null,
+        from_email: messageData?.definition?.content?.from_email || null,
+        from_label: messageData?.definition?.content?.from_label || null,
+        reply_to_email: messageData?.definition?.content?.reply_to_email || null,
+        email_html: messageData?.definition?.content?.body || null, // Extract HTML body
+        campaign_archived: campaign.attributes?.archived || false,
+        campaign_created_at: campaign.attributes?.created_at || null,
+        campaign_updated_at: campaign.attributes?.updated_at || null,
+        campaign_scheduled_at: campaign.attributes?.scheduled_at || null,
+        included_audiences: campaign.attributes?.audiences?.included || [],
+        excluded_audiences: campaign.attributes?.audiences?.excluded || [],
+        use_smart_sending: campaign.attributes?.send_options?.use_smart_sending || false,
+        is_tracking_clicks: campaign.attributes?.tracking_options?.is_tracking_clicks !== false,
+        is_tracking_opens: campaign.attributes?.tracking_options?.is_tracking_opens !== false,
+        add_utm_tracking: campaign.attributes?.tracking_options?.add_tracking_params || false,
+        send_strategy: campaign.attributes?.send_strategy?.method || 'static'
       })
     })
     

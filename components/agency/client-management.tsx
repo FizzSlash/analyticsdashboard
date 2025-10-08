@@ -452,7 +452,7 @@ export function ClientManagement({ agency, clients: initialClients }: ClientMana
             from_email: messageData?.definition?.content?.from_email || null,
             from_label: messageData?.definition?.content?.from_label || null,
             reply_to_email: messageData?.definition?.content?.reply_to_email || null,
-            email_html: null, // Will be populated from template if available
+            email_html: messageData?.definition?.content?.body || null, // Extract HTML body
             // Targeting data
             included_audiences: campaign.attributes?.audiences?.included || [],
             excluded_audiences: campaign.attributes?.audiences?.excluded || [],
