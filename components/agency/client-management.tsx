@@ -435,6 +435,8 @@ export function ClientManagement({ agency, clients: initialClients }: ClientMana
       
       const templatesResult = templatesResponse.ok ? await templatesResponse.json() : { data: { data: [] } }
       console.log('📧 FRONTEND: ============ GOT TEMPLATES:', templatesResult?.data?.data?.length || 0, '============')
+      console.log('📧 FRONTEND: Template response:', templatesResult)
+      console.log('📧 FRONTEND: Template data structure:', templatesResult?.data)
       
       // Create template lookup
       const templateLookup: { [key: string]: { html: string, name: string } } = {}
