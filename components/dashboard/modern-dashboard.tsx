@@ -53,7 +53,7 @@ interface ModernDashboardProps {
   hideHeader?: boolean // Hide internal header when using external layout
 }
 
-type TabType = 'dashboard' | 'campaigns' | 'flows' | 'subject-lines' | 'list-growth' | 'deliverability' | 'audit'
+type TabType = 'dashboard' | 'campaigns' | 'flows' | 'subject-lines' | 'list-growth' | 'deliverability' | 'creatives' | 'audit'
 
 export function ModernDashboard({ client, data: initialData, timeframe: externalTimeframe, disablePortalMode = false, hideHeader = false }: ModernDashboardProps) {
   const [viewMode, setViewMode] = useState<ViewMode>('analytics')
@@ -88,6 +88,8 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [aiSubjectInsights, setAiSubjectInsights] = useState<any>(null)
   const [loadingAiInsights, setLoadingAiInsights] = useState(false)
+  const [creativesSortField, setCreativesSortField] = useState<'send_date' | 'open_rate' | 'click_rate' | 'revenue_per_recipient'>('send_date')
+  const [selectedCreative, setSelectedCreative] = useState<any>(null)
 
   // Chart data processing functions
   const getRevenueRecipientsComboData = (campaigns: any[], timeframe: number) => {
@@ -596,6 +598,7 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
     { id: 'subject-lines', label: 'Subject Lines', icon: Eye },
     { id: 'list-growth', label: 'List Growth', icon: Users },
     { id: 'deliverability', label: 'Deliverability', icon: Shield },
+    { id: 'creatives', label: 'Creatives', icon: Eye },
     ...(client?.audit_enabled ? [{ id: 'audit', label: 'Audit', icon: MessageSquare }] : [])
   ]
 
