@@ -442,6 +442,10 @@ export function ClientManagement({ agency, clients: initialClients }: ClientMana
       const templateLookup: { [key: string]: { html: string, name: string } } = {}
       if (templatesResult?.data?.data) {
         templatesResult.data.data.forEach((template: any) => {
+          const hasHtml = !!template.attributes?.html
+          const htmlLength = template.attributes?.html?.length || 0
+          console.log(`📧 Template ${template.id}: name=${template.attributes?.name}, hasHtml=${hasHtml}, htmlLength=${htmlLength}`)
+          
           templateLookup[template.id] = {
             html: template.attributes?.html || '',
             name: template.attributes?.name || ''
