@@ -446,9 +446,12 @@ export function ClientManagement({ agency, clients: initialClients }: ClientMana
       if (campaignsResult.data?.included) {
         campaignsResult.data.included.forEach((item: any) => {
           if (item.type === 'campaign-message') {
-            // Extract campaign ID from relationships or use message ID
+            // Extract campaign ID and template ID from relationships
             const campaignId = item.relationships?.campaign?.data?.id || item.id
-            messagesLookup[campaignId] = item.attributes
+            messagesLookup[campaignId] = {
+              attributes: item.attributes,
+              template_id: item.relationships?.template?.data?.id || null
+            }
           }
         })
       }
