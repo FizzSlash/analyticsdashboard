@@ -102,15 +102,30 @@ export class KlaviyoAPI {
     return this.makeRequest(`/campaigns/${campaignId}`)
   }
 
-  // Get All Templates with HTML (no filter - gets everything, we'll match in code)
+  // Get Templates by IDs - try individual calls for first one to test
   async getTemplatesByIds(templateIds: string[]) {
-    const params = new URLSearchParams()
-    params.set('fields[template]', 'html,name,id')
+    if (!templateIds || templateIds.length === 0) {
+      return { data: [] }
+    }
     
-    const endpoint = `/templates?${params.toString()}`
-    console.log(`📧 TEMPLATES API: Fetching all templates (no filter)`)
+    // Test: Try to fetch the FIRST template by ID directly
+    const testId = templateIds[0]
+    console.log(`📧 TEMPLATES API: Testing if template ${testId} exists by fetching directly`)
     
-    return this.makeRequest(endpoint)
+    try {
+      const testResult = await this.makeRequest(`/templates/${testId}?fields[template]=html,name,id`)
+      console.log(`📧 TEMPLATES API: Direct fetch SUCCESS for ${testId}`)
+      console.log(`📧 TEMPLATES API: Template exists:`, testResult?.data?.id)
+      
+      // If direct fetch works, that template exists
+      // Now we know the issue is with the filter syntax
+      return { data: [] } // Return empty for now to debug
+      
+    } catch (error: any) {
+      console.log(`📧 TEMPLATES API: Direct fetch FAILED for ${testId}:`, error.message)
+      console.log(`📧 TEMPLATES API: This means template IDs from campaigns might not exist in templates endpoint`)
+      return { data: [] }
+    }
   }
 
   // Get Campaign Messages - MAXIMUM DATA EXTRACTION
