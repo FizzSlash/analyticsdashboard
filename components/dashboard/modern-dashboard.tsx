@@ -2687,27 +2687,31 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
                         </svg>
                         
                         {/* Email content positioned in phone screen area */}
-                        <div className="absolute overflow-hidden bg-white" style={{ 
+                        <div className="absolute overflow-hidden bg-white rounded" style={{ 
                           left: '22px', 
                           top: '72px', 
                           width: '190px', 
                           height: '296px'
                         }}>
                           {campaign.email_html ? (
-                            <iframe
-                              srcDoc={campaign.email_html}
-                              className="border-0 pointer-events-none"
-                              title={`Mobile: ${campaign.campaign_name}`}
-                              sandbox="allow-same-origin"
-                              style={{ 
-                                width: '375px',
-                                height: '800px',
-                                transform: 'scale(0.507)', 
-                                transformOrigin: 'top left',
-                                marginLeft: '0',
-                                marginTop: '0'
-                              }}
-                            />
+                            <div style={{ 
+                              width: '375px',
+                              height: '667px',
+                              transform: 'scale(0.507)', 
+                              transformOrigin: 'top left',
+                            }}>
+                              <iframe
+                                srcDoc={campaign.email_html}
+                                className="border-0 pointer-events-none"
+                                title={`Mobile: ${campaign.campaign_name}`}
+                                sandbox="allow-same-origin"
+                                style={{ 
+                                  width: '100%',
+                                  height: '100%',
+                                  display: 'block'
+                                }}
+                              />
+                            </div>
                           ) : (
                             <div className="w-full h-full flex flex-col items-center justify-center gap-2">
                               <Mail className="h-8 w-8 text-gray-300" />
