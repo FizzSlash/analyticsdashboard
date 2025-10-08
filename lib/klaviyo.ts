@@ -102,33 +102,15 @@ export class KlaviyoAPI {
     return this.makeRequest(`/campaigns/${campaignId}`)
   }
 
-  // Get Templates by IDs with HTML (filtered to only templates actually used)
+  // Get All Templates with HTML (no filter - gets everything, we'll match in code)
   async getTemplatesByIds(templateIds: string[]) {
-    if (!templateIds || templateIds.length === 0) {
-      return { data: [] }
-    }
-    
     const params = new URLSearchParams()
     params.set('fields[template]', 'html,name,id')
     
-    // TEST: Try without filter first to see if templates exist
-    console.log(`📧 TEMPLATES API: Fetching templates WITHOUT filter first (test)`)
-    console.log(`📧 TEMPLATES API: Looking for IDs:`, templateIds)
-    
     const endpoint = `/templates?${params.toString()}`
-    console.log(`📧 TEMPLATES API: Endpoint:`, endpoint)
+    console.log(`📧 TEMPLATES API: Fetching all templates (no filter)`)
     
-    const result = await this.makeRequest(endpoint)
-    console.log(`📧 TEMPLATES API: Got ${result?.data?.length || 0} total templates`)
-    
-    // Filter in code for now
-    if (result?.data && Array.isArray(result.data)) {
-      const filtered = result.data.filter((t: any) => templateIds.includes(t.id))
-      console.log(`📧 TEMPLATES API: Filtered to ${filtered.length} matching templates`)
-      return { data: filtered, links: result.links }
-    }
-    
-    return result
+    return this.makeRequest(endpoint)
   }
 
   // Get Campaign Messages - MAXIMUM DATA EXTRACTION
