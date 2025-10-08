@@ -102,30 +102,30 @@ export class KlaviyoAPI {
     return this.makeRequest(`/campaigns/${campaignId}`)
   }
 
-  // Get Templates by IDs - try individual calls for first one to test
+  // Get Templates by IDs - fetch individually in parallel (filter doesn't work)
   async getTemplatesByIds(templateIds: string[]) {
     if (!templateIds || templateIds.length === 0) {
       return { data: [] }
     }
     
-    // Test: Try to fetch the FIRST template by ID directly
-    const testId = templateIds[0]
-    console.log(`📧 TEMPLATES API: Testing if template ${testId} exists by fetching directly`)
+    console.log(`📧 TEMPLATES API: Fetching ${templateIds.length} templates individually (parallel)`)
     
-    try {
-      const testResult = await this.makeRequest(`/templates/${testId}?fields[template]=html,name,id`)
-      console.log(`📧 TEMPLATES API: Direct fetch SUCCESS for ${testId}`)
-      console.log(`📧 TEMPLATES API: Template exists:`, testResult?.data?.id)
-      
-      // If direct fetch works, that template exists
-      // Now we know the issue is with the filter syntax
-      return { data: [] } // Return empty for now to debug
-      
-    } catch (error: any) {
-      console.log(`📧 TEMPLATES API: Direct fetch FAILED for ${testId}:`, error.message)
-      console.log(`📧 TEMPLATES API: This means template IDs from campaigns might not exist in templates endpoint`)
-      return { data: [] }
-    }
+    // Fetch all templates in parallel
+    const templatePromises = templateIds.map(id => 
+      this.makeRequest(`/templates/${id}?fields[template]=html,name,id`)
+        .then(result => result.data)
+        .catch(error => {
+          console.log(`⚠️ TEMPLATES API: Failed to fetch template ${id}:`, error.message)
+          return null
+        })
+    )
+    
+    const templates = await Promise.all(templatePromises)
+    const validTemplates = templates.filter(t => t !== null)
+    
+    console.log(`📧 TEMPLATES API: Successfully fetched ${validTemplates.length}/${templateIds.length} templates`)
+    
+    return { data: validTemplates }
   }
 
   // Get Campaign Messages - MAXIMUM DATA EXTRACTION
