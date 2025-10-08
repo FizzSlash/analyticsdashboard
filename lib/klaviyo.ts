@@ -77,7 +77,7 @@ export class KlaviyoAPI {
       params.set('page[cursor]', cursor)
     }
     
-    // Optional: Include related data - REQUEST EVERYTHING FOR TESTING
+    // Optional: Include related data (campaign-messages for content, tags for organization)
     if (includes && includes.length > 0) {
       params.set('include', includes.join(','))
     }
