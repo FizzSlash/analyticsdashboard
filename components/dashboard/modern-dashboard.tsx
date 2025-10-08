@@ -2625,21 +2625,22 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
                 className="bg-white/10 backdrop-blur-md border-white/20 hover:bg-white/15 transition-all cursor-pointer group"
                 onClick={() => setSelectedCreative(campaign)}
               >
-                {/* Email Preview Image - Fixed aspect ratio */}
-                <div className="h-64 bg-white/5 overflow-hidden relative">
+                {/* Email Preview Image - Uniform sizing */}
+                <div className="h-80 bg-white/5 overflow-hidden relative flex items-center justify-center">
                   {firstImage ? (
                     <img 
                       src={firstImage} 
                       alt={campaign.campaign_name}
-                      className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
+                      className="w-full h-full object-cover"
                       onError={(e) => {
                         e.currentTarget.style.display = 'none'
-                        e.currentTarget.parentElement!.innerHTML = '<div class="w-full h-full flex items-center justify-center"><div class="text-white/20 text-4xl">📧</div></div>'
+                        e.currentTarget.parentElement!.innerHTML = '<div class="w-full h-full flex flex-col items-center justify-center gap-2"><div class="text-white/40 text-sm">Plain-text Email</div><div class="text-white/20 text-3xl">📧</div></div>'
                       }}
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <Mail className="h-16 w-16 text-white/20" />
+                    <div className="w-full h-full flex flex-col items-center justify-center gap-2">
+                      <Mail className="h-12 w-12 text-white/20" />
+                      <span className="text-white/40 text-sm">Plain-text Email</span>
                     </div>
                   )}
                   
