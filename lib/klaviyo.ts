@@ -82,26 +82,9 @@ export class KlaviyoAPI {
       params.set('include', includes.join(','))
     }
     
-    // Request ALL possible fields for testing
+    // Request campaign-message fields (just definition for now - it should include everything)
     params.set('fields[campaign]', 'name,status,send_time,audiences,tracking_options,send_strategy,created_at,updated_at,scheduled_at,archived')
-    params.set('fields[campaign-message]', 
-      'definition,' +
-      'definition.content.body,' +
-      'definition.content.subject,' +
-      'definition.content.preview_text,' +
-      'definition.content.from_email,' +
-      'definition.content.from_label,' +
-      'definition.content.media_url,' +
-      'definition.content.title,' +
-      'definition.content.dynamic_image,' +
-      'definition.render_options,' +
-      'definition.kv_pairs,' +
-      'send_times,' +
-      'created_at,' +
-      'updated_at'
-    )
-    params.set('fields[template]', 'html,name,created_at,updated_at')
-    params.set('fields[image]', 'image_url,name,size')
+    params.set('fields[campaign-message]', 'definition,send_times,created_at,updated_at')
     
     const queryString = params.toString()
     endpoint += `?${queryString}`
