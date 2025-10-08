@@ -2687,7 +2687,7 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
                         </svg>
                         
                         {/* Email content positioned in phone screen area */}
-                        <div className="absolute overflow-hidden" style={{ 
+                        <div className="absolute overflow-hidden bg-white" style={{ 
                           left: '22px', 
                           top: '72px', 
                           width: '190px', 
@@ -2696,13 +2696,16 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
                           {campaign.email_html ? (
                             <iframe
                               srcDoc={campaign.email_html}
-                              className="w-full border-0 pointer-events-none"
+                              className="border-0 pointer-events-none"
                               title={`Mobile: ${campaign.campaign_name}`}
                               sandbox="allow-same-origin"
                               style={{ 
-                                height: '500px',
-                                transform: 'scale(0.55)', 
-                                transformOrigin: 'top center',
+                                width: '375px',
+                                height: '800px',
+                                transform: 'scale(0.507)', 
+                                transformOrigin: 'top left',
+                                marginLeft: '0',
+                                marginTop: '0'
                               }}
                             />
                           ) : (
