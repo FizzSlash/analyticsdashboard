@@ -2625,13 +2625,17 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
                 className="bg-white/10 backdrop-blur-md border-white/20 hover:bg-white/15 transition-all cursor-pointer group"
                 onClick={() => setSelectedCreative(campaign)}
               >
-                {/* Email Preview Image */}
-                <div className="aspect-[3/4] bg-white/5 overflow-hidden relative">
+                {/* Email Preview Image - Fixed aspect ratio */}
+                <div className="h-64 bg-white/5 overflow-hidden relative">
                   {firstImage ? (
                     <img 
                       src={firstImage} 
                       alt={campaign.campaign_name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none'
+                        e.currentTarget.parentElement!.innerHTML = '<div class="w-full h-full flex items-center justify-center"><div class="text-white/20 text-4xl">📧</div></div>'
+                      }}
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
@@ -2641,7 +2645,7 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
                   
                   {/* Status Badge */}
                   <div className="absolute top-2 right-2">
-                    <span className={`inline-flex px-2 py-1 rounded text-xs font-medium ${
+                    <span className={`inline-flex px-2 py-1 rounded text-xs font-medium backdrop-blur-sm ${
                       campaign.campaign_status === 'Sent' 
                         ? 'bg-green-500/90 text-white' 
                         : 'bg-yellow-500/90 text-white'
