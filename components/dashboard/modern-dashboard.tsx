@@ -2553,6 +2553,207 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
     )
   }
 
+  const renderCreativesTab = () => {
+    const allCampaigns = data?.campaigns || []
+    const campaigns = filterAndAggregateData.campaigns(allCampaigns, timeframe)
+    
+    // Only campaigns with email_html
+    const creativeCampaigns = campaigns.filter((c: any) => c.email_html)
+    
+    // Extract first image from HTML
+    const extractFirstImage = (html: string): string | null => {
+      if (!html) return null
+      const match = html.match(/<img[^>]+src=["']([^"'>]+)["']/i)
+      return match ? match[1] : null
+    }
+    
+    // Sort campaigns
+    const sortedCreatives = [...creativeCampaigns].sort((a: any, b: any) => {
+      switch(creativesSortField) {
+        case 'send_date':
+          return new Date(b.send_date || 0).getTime() - new Date(a.send_date || 0).getTime()
+        case 'open_rate':
+          return (b.open_rate || 0) - (a.open_rate || 0)
+        case 'click_rate':
+          return (b.click_rate || 0) - (a.click_rate || 0)
+        case 'revenue_per_recipient':
+          const aRPR = (a.revenue || 0) / (a.recipients_count || 1)
+          const bRPR = (b.revenue || 0) / (b.recipients_count || 1)
+          return bRPR - aRPR
+        default:
+          return 0
+      }
+    })
+    
+    return (
+      <div className="space-y-6">
+        {/* Header with Sort Controls */}
+        <Card className="bg-white/10 backdrop-blur-md border-white/20">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-white font-bold text-lg">Email Creatives Gallery</h3>
+                <p className="text-white/60 text-sm mt-1">{sortedCreatives.length} campaigns with email templates</p>
+              </div>
+              
+              <div className="flex items-center gap-3">
+                <span className="text-white/60 text-sm">Sort by:</span>
+                <select
+                  value={creativesSortField}
+                  onChange={(e) => setCreativesSortField(e.target.value as any)}
+                  className="bg-white/10 text-white border border-white/20 rounded px-3 py-1.5 text-sm"
+                >
+                  <option value="send_date">Send Date</option>
+                  <option value="open_rate">Open Rate</option>
+                  <option value="click_rate">Click Rate</option>
+                  <option value="revenue_per_recipient">Revenue/Recipient</option>
+                </select>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Creatives Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {sortedCreatives.map((campaign: any) => {
+            const firstImage = extractFirstImage(campaign.email_html)
+            const revenuePerRecipient = (campaign.revenue || 0) / (campaign.recipients_count || 1)
+            
+            return (
+              <Card 
+                key={campaign.campaign_id}
+                className="bg-white/10 backdrop-blur-md border-white/20 hover:bg-white/15 transition-all cursor-pointer group"
+                onClick={() => setSelectedCreative(campaign)}
+              >
+                {/* Email Preview Image */}
+                <div className="aspect-[3/4] bg-white/5 overflow-hidden relative">
+                  {firstImage ? (
+                    <img 
+                      src={firstImage} 
+                      alt={campaign.campaign_name}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <Mail className="h-16 w-16 text-white/20" />
+                    </div>
+                  )}
+                  
+                  {/* Status Badge */}
+                  <div className="absolute top-2 right-2">
+                    <span className={`inline-flex px-2 py-1 rounded text-xs font-medium ${
+                      campaign.campaign_status === 'Sent' 
+                        ? 'bg-green-500/90 text-white' 
+                        : 'bg-yellow-500/90 text-white'
+                    }`}>
+                      {campaign.campaign_status}
+                    </span>
+                  </div>
+                </div>
+                
+                {/* Campaign Info */}
+                <CardContent className="p-4">
+                  <h4 className="text-white font-medium text-sm mb-2 line-clamp-2">
+                    {campaign.campaign_name}
+                  </h4>
+                  
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-xs">
+                      <span className="text-white/60">Open Rate</span>
+                      <span className={`font-semibold ${
+                        (campaign.open_rate * 100) > 25 ? 'text-green-300' : 'text-white'
+                      }`}>
+                        {(campaign.open_rate * 100).toFixed(1)}%
+                      </span>
+                    </div>
+                    
+                    <div className="flex justify-between text-xs">
+                      <span className="text-white/60">Click Rate</span>
+                      <span className="text-white font-semibold">
+                        {(campaign.click_rate * 100).toFixed(1)}%
+                      </span>
+                    </div>
+                    
+                    <div className="flex justify-between text-xs">
+                      <span className="text-white/60">Revenue</span>
+                      <span className="text-white font-semibold">
+                        ${campaign.revenue?.toLocaleString() || '0'}
+                      </span>
+                    </div>
+                    
+                    <div className="flex justify-between text-xs">
+                      <span className="text-white/60">Revenue/Recipient</span>
+                      <span className="text-white font-semibold">
+                        ${revenuePerRecipient.toFixed(2)}
+                      </span>
+                    </div>
+                    
+                    <div className="pt-2 border-t border-white/10 text-xs text-white/40">
+                      {campaign.send_date ? new Date(campaign.send_date).toLocaleDateString() : 'Not sent'}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )
+          })}
+        </div>
+
+        {/* Full Preview Modal */}
+        {selectedCreative && (
+          <div 
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+            onClick={() => setSelectedCreative(null)}
+          >
+            <div 
+              className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Modal Header */}
+              <div className="p-6 border-b border-white/20 flex items-center justify-between">
+                <div>
+                  <h3 className="text-white font-bold text-lg">{selectedCreative.campaign_name}</h3>
+                  <p className="text-white/60 text-sm mt-1">{selectedCreative.subject_line}</p>
+                </div>
+                <button
+                  onClick={() => setSelectedCreative(null)}
+                  className="text-white/60 hover:text-white p-2"
+                >
+                  <AlertCircle className="h-5 w-5" />
+                </button>
+              </div>
+              
+              {/* Email Preview */}
+              <div className="bg-white" style={{ height: '70vh' }}>
+                <iframe
+                  srcDoc={selectedCreative.email_html}
+                  className="w-full h-full border-0"
+                  title={selectedCreative.campaign_name}
+                  sandbox="allow-same-origin"
+                />
+              </div>
+              
+              {/* Modal Footer */}
+              <div className="p-4 bg-white/5 flex items-center justify-between text-xs text-white/60">
+                <span>Template: {selectedCreative.template_name || 'N/A'}</span>
+                <button
+                  onClick={() => {
+                    const blob = new Blob([selectedCreative.email_html], { type: 'text/html' })
+                    const url = URL.createObjectURL(blob)
+                    window.open(url, '_blank')
+                  }}
+                  className="bg-white/10 hover:bg-white/20 text-white px-3 py-1.5 rounded flex items-center gap-2"
+                >
+                  <ExternalLink className="h-3 w-3" />
+                  Open Full Size
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    )
+  }
+
   const renderDeliverabilityTab = () => {
     const campaigns = data?.campaigns || []
     const flows = data?.flows || []
@@ -2904,6 +3105,7 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
                 {activeTab === 'subject-lines' && renderSubjectLinesTab()}
                 {activeTab === 'list-growth' && renderListGrowthTab()}
                 {activeTab === 'deliverability' && renderDeliverabilityTab()}
+                {activeTab === 'creatives' && renderCreativesTab()}
                 {activeTab === 'audit' && <AuditTab client={client} timeframe={timeframe} />}
               </>
             ) : (
