@@ -35,6 +35,23 @@ export async function syncCampaigns(clientSlug: string, clientId: string, onProg
     if (!campaignsResponse.ok) throw new Error('Campaigns API failed')
     const campaignsResult = await campaignsResponse.json()
     
+    onProgress?.('Step 3.5/4: Fetching email templates...')
+    
+    // Fetch all templates with HTML
+    const templatesResponse = await fetch(`/api/klaviyo-proxy/templates?clientSlug=${clientSlug}`)
+    const templatesResult = templatesResponse.ok ? await templatesResponse.json() : { data: { data: [] } }
+    
+    // Create template lookup
+    const templateLookup: { [key: string]: { html: string, name: string } } = {}
+    if (templatesResult?.data?.data) {
+      templatesResult.data.data.forEach((template: any) => {
+        templateLookup[template.id] = {
+          html: template.attributes?.html || '',
+          name: template.attributes?.name || ''
+        }
+      })
+    }
+    
     onProgress?.('Step 4/4: Saving campaigns...')
     
     // Step 4: Save to database
@@ -63,6 +80,7 @@ export async function syncCampaigns(clientSlug: string, clientId: string, onProg
       const messageInfo = messagesLookup[campaign.id] || {}
       const messageData = messageInfo.attributes || {}
       const templateId = messageInfo.template_id || null
+      const template = templateId ? templateLookup[templateId] : null
       
       campaignDetails.push({
         id: campaign.id,
@@ -75,9 +93,9 @@ export async function syncCampaigns(clientSlug: string, clientId: string, onProg
         from_email: messageData?.definition?.content?.from_email || null,
         from_label: messageData?.definition?.content?.from_label || null,
         reply_to_email: messageData?.definition?.content?.reply_to_email || null,
-        email_html: messageData?.definition?.content?.body || null, // Inline body only
-        template_id: templateId, // Save template ID from relationships
-        template_name: null, // Not fetching yet
+        email_html: template?.html || messageData?.definition?.content?.body || null, // Template HTML or inline body
+        template_id: templateId,
+        template_name: template?.name || null
         media_url: messageData?.definition?.content?.media_url || null,
         email_title: messageData?.definition?.content?.title || null,
         dynamic_image: messageData?.definition?.content?.dynamic_image || null,
