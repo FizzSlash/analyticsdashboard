@@ -2644,10 +2644,55 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
                 <div className="relative">
                   {/* Email Preview - Toggle between image or mobile above-the-fold */}
                   {showAboveFold ? (
-                    // Mobile phone mockup showing above the fold
-                    <div className="h-[500px] bg-gradient-to-b from-gray-900 to-gray-800 overflow-hidden relative flex items-center justify-center p-4">
-                      <div className="w-[280px] h-full bg-black rounded-[2.5rem] p-2 shadow-2xl border-4 border-gray-800">
-                        <div className="w-full h-full bg-white rounded-[1.75rem] overflow-hidden">
+                    // Mobile phone mockup with custom SVG
+                    <div className="h-[500px] bg-gradient-to-b from-gray-900 to-gray-800 overflow-hidden relative flex items-center justify-center">
+                      <div className="relative" style={{ width: '234px', height: '424px' }}>
+                        {/* Phone SVG Frame */}
+                        <svg width="234" height="424" viewBox="0 0 468 848" fill="none" xmlns="http://www.w3.org/2000/svg" className="absolute inset-0 pointer-events-none z-10">
+                          <g filter="url(#filter0_ddd)">
+                            <path d="M42 736H429V768C429 785.673 414.673 800 397 800H74C56.3269 800 42 785.673 42 768V736Z" fill="#DFE3E6"/>
+                            <circle cx="91" cy="768" r="16" fill="#EBEEEF"/>
+                            <circle cx="187" cy="768" r="16" fill="#EBEEEF"/>
+                            <circle cx="283" cy="768" r="16" fill="#EBEEEF"/>
+                            <circle cx="379" cy="768" r="16" fill="#EBEEEF"/>
+                            <path d="M44 60C44 48.9543 52.9543 40 64 40H404C415.046 40 424 48.9543 424 60V144H44V60Z" fill="#DFE3E6"/>
+                            <rect x="68" y="60" width="51" height="12" rx="6" fill="#EBEEEF"/>
+                            <rect x="388" y="62" width="12" height="11" rx="5.5" fill="#EBEEEF"/>
+                            <rect x="372" y="62" width="12" height="11" rx="5.5" fill="#EBEEEF"/>
+                            <rect x="68" y="92" width="332" height="32" rx="8" fill="#EBEEEF"/>
+                            <path fillRule="evenodd" clipRule="evenodd" d="M344.516 28C358.08 27.9999 368.989 27.9998 377.817 28.7211C386.897 29.4629 394.826 31.0272 402.147 34.7576C413.813 40.7018 423.298 50.1865 429.242 61.8526C432.973 69.174 434.537 77.1032 435.279 86.1829C436 95.0108 436 105.92 436 119.484V720.516C436 734.08 436 744.989 435.279 753.817C434.537 762.897 432.973 770.826 429.242 778.147C423.298 789.813 413.813 799.298 402.147 805.242C394.826 808.973 386.897 810.537 377.817 811.279C368.989 812 358.08 812 344.516 812H123.484C109.92 812 99.0108 812 90.1829 811.279C81.1032 810.537 73.174 808.973 65.8526 805.242C54.1865 799.298 44.7018 789.813 38.7576 778.147C35.0272 770.826 33.4629 762.897 32.7211 753.817C31.9998 744.989 31.9999 734.08 32 720.516V119.484C31.9999 105.92 31.9998 95.0109 32.7211 86.1829C33.4629 77.1032 35.0272 69.174 38.7576 61.8526C44.7018 50.1865 54.1865 40.7018 65.8526 34.7576C73.174 31.0272 81.1032 29.4629 90.1829 28.7211C99.0109 27.9998 109.92 27.9999 123.484 28H344.516ZM49.4497 67.3005C44 77.9961 44 91.9974 44 120V720C44 748.003 44 762.004 49.4497 772.7C54.2433 782.108 61.8924 789.757 71.3005 794.55C81.9961 800 95.9974 800 124 800H344C372.003 800 386.004 800 396.7 794.55C406.108 789.757 413.757 782.108 418.55 772.7C424 762.004 424 748.003 424 720V120C424 91.9974 424 77.9961 418.55 67.3005C413.757 57.8924 406.108 50.2433 396.7 45.4497C386.004 40 372.003 40 344 40H124C95.9974 40 81.9961 40 71.3005 45.4497C61.8924 50.2433 54.2433 57.8924 49.4497 67.3005Z" fill="#DFE1E5"/>
+                            <rect x="44" y="144" width="380" height="592" fill="white"/>
+                          </g>
+                          <defs>
+                            <filter id="filter0_ddd" x="0" y="0" width="468" height="848" filterUnits="userSpaceOnUse" colorInterpolationFilters="sRGB">
+                              <feFlood floodOpacity="0" result="BackgroundImageFix"/>
+                              <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0"/>
+                              <feOffset dy="2"/>
+                              <feGaussianBlur stdDeviation="4"/>
+                              <feColorMatrix type="matrix" values="0 0 0 0 0.215686 0 0 0 0 0.247059 0 0 0 0 0.278431 0 0 0 0.08 0"/>
+                              <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow"/>
+                              <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0"/>
+                              <feOffset dy="1"/>
+                              <feGaussianBlur stdDeviation="1"/>
+                              <feColorMatrix type="matrix" values="0 0 0 0 0.215686 0 0 0 0 0.247059 0 0 0 0 0.278431 0 0 0 0.12 0"/>
+                              <feBlend mode="normal" in2="effect1_dropShadow" result="effect2_dropShadow"/>
+                              <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0"/>
+                              <feOffset dy="4"/>
+                              <feGaussianBlur stdDeviation="16"/>
+                              <feColorMatrix type="matrix" values="0 0 0 0 0.376471 0 0 0 0 0.411765 0 0 0 0 0.447059 0 0 0 0.08 0"/>
+                              <feBlend mode="normal" in2="effect2_dropShadow" result="effect3_dropShadow"/>
+                              <feBlend mode="normal" in="SourceGraphic" in2="effect3_dropShadow" result="shape"/>
+                            </filter>
+                          </defs>
+                        </svg>
+                        
+                        {/* Email content positioned in phone screen area */}
+                        <div className="absolute overflow-hidden" style={{ 
+                          left: '22px', 
+                          top: '72px', 
+                          width: '190px', 
+                          height: '296px'
+                        }}>
                           {campaign.email_html ? (
                             <iframe
                               srcDoc={campaign.email_html}
@@ -2655,19 +2700,20 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
                               title={`Mobile: ${campaign.campaign_name}`}
                               sandbox="allow-same-origin"
                               style={{ 
-                                height: '600px',
-                                transform: 'scale(0.6)', 
+                                height: '500px',
+                                transform: 'scale(0.55)', 
                                 transformOrigin: 'top center',
                               }}
                             />
                           ) : (
-                            <div className="w-full h-full flex flex-col items-center justify-center gap-2 bg-gray-50">
-                              <Mail className="h-12 w-12 text-gray-300" />
-                              <span className="text-gray-400 text-sm">Plain-text Email</span>
+                            <div className="w-full h-full flex flex-col items-center justify-center gap-2">
+                              <Mail className="h-8 w-8 text-gray-300" />
+                              <span className="text-gray-400 text-xs">Plain-text</span>
                             </div>
                           )}
                         </div>
                       </div>
+                      
                       {/* "Mobile Preview" indicator */}
                       <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2">
                         <span className="bg-blue-500/90 text-white px-3 py-1 rounded-full text-xs font-medium backdrop-blur-sm">
