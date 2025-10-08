@@ -95,7 +95,7 @@ export async function syncCampaigns(clientSlug: string, clientId: string, onProg
         reply_to_email: messageData?.definition?.content?.reply_to_email || null,
         email_html: template?.html || messageData?.definition?.content?.body || null, // Template HTML or inline body
         template_id: templateId,
-        template_name: template?.name || null
+        template_name: template?.name || null,
         media_url: messageData?.definition?.content?.media_url || null,
         email_title: messageData?.definition?.content?.title || null,
         dynamic_image: messageData?.definition?.content?.dynamic_image || null,
