@@ -41,7 +41,8 @@ import {
   MessageSquare,
   AlertTriangle,
   Loader2,
-  AlertCircle
+  AlertCircle,
+  ExternalLink
 } from 'lucide-react'
 
 interface ModernDashboardProps {
