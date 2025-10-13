@@ -294,7 +294,8 @@ export class DatabaseService {
           .from('flow_message_metrics')
           .select('*')
           .eq('client_id', clientId)
-          .order('week_date', { ascending: false }),
+          .order('week_date', { ascending: false })
+          .limit(10000), // Fetch up to 10k records (fallback query)
         supabaseAdmin
           .from('flow_metrics')
           .select('flow_id, flow_name, flow_status, trigger_type')
