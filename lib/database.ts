@@ -410,18 +410,31 @@ export class DatabaseService {
           console.log(`⚠️ DATABASE: Flow ${flowId} has weekly data but not in flow_metrics table!`)
         }
       })
-      console.log(`📊 DATABASE: Aggregation complete:`)
-      console.log(`   - Records processed: ${recordsProcessed}`)
-      console.log(`   - Total revenue aggregated: $${totalRevenueAggregated.toLocaleString()}`)
-      console.log(`   - Flows with data: ${flowsWithData.size}`)
-      console.log(`   - Flows in flow_metrics: ${Object.keys(flowAggregates).length}`)
+      console.log(`📊 DATABASE: ========================================`)
+      console.log(`📊 DATABASE: AGGREGATION COMPLETE FOR ${days} DAYS`)
+      console.log(`📊 DATABASE: ========================================`)
+      console.log(`   - Weekly records in query result: ${weeklyData.length}`)
+      console.log(`   - Records actually processed: ${recordsProcessed}`)
+      console.log(`   - Total revenue from raw records: $${totalRevenueAggregated.toLocaleString()}`)
+      console.log(`   - Flows with weekly data: ${flowsWithData.size}`)
+      console.log(`   - Flows in flow_metrics table: ${Object.keys(flowAggregates).length}`)
+      console.log(`📊 DATABASE: ========================================`)
     } else {
       console.log(`📊 DATABASE: No weekly data available - showing flows with zero values`)
     }
 
     // Convert aggregates to array and return ALL flows (including those with 0 messages)
     const flows = Object.values(flowAggregates)
-    console.log(`📊 DATABASE: Returning ${flows.length} total flows (including flows with 0 messages)`)
+    const totalRevenueInFlows = flows.reduce((sum, f: any) => sum + (f.revenue || 0), 0)
+    
+    console.log(`📊 DATABASE: FINAL FLOW ARRAY:`)
+    console.log(`   - Total flows returned: ${flows.length}`)
+    console.log(`   - Total revenue in flow objects: $${totalRevenueInFlows.toLocaleString()}`)
+    console.log(`   - Revenue match check: Aggregated($${totalRevenueAggregated.toLocaleString()}) vs Flow array($${totalRevenueInFlows.toLocaleString()})`)
+    
+    if (Math.abs(totalRevenueAggregated - totalRevenueInFlows) > 1) {
+      console.log(`🚨 REVENUE MISMATCH! ${totalRevenueAggregated - totalRevenueInFlows} difference!`)
+    }
     console.log(`📊 DATABASE: Flow breakdown:`, flows.map(f => ({ 
       id: f.flow_id, 
       name: f.flow_name, 
