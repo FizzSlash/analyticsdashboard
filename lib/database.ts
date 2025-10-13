@@ -362,9 +362,20 @@ export class DatabaseService {
     console.log(`📊 DATABASE: Initialized ${Object.keys(flowAggregates).length} flows from flow_metrics`)
     
     // STEP 2: Enhance with weekly data where available
+    let totalRevenueAggregated = 0
+    let recordsProcessed = 0
+    let flowsWithData = new Set()
+    
     if (weeklyData && weeklyData.length > 0) {
+      console.log(`📊 DATABASE: Processing ${weeklyData.length} weekly records for aggregation`)
+      
       weeklyData.forEach((record: any) => {
         const flowId = record.flow_id
+        const recordRevenue = parseFloat(record.revenue) || 0
+        
+        totalRevenueAggregated += recordRevenue
+        recordsProcessed++
+        flowsWithData.add(flowId)
         
         if (flowAggregates[flowId]) {
           // Update existing flow with weekly data
@@ -373,7 +384,7 @@ export class DatabaseService {
           // Add weekly data to existing aggregates
           existing.weeklyOpens += record.opens || 0
           existing.weeklyClicks += record.clicks || 0
-          existing.weeklyRevenue += record.revenue || 0
+          existing.weeklyRevenue += recordRevenue
           existing.weeklyDelivered += record.delivered || 0
           existing.weeklyRecipients += record.recipients || 0
           
@@ -394,9 +405,15 @@ export class DatabaseService {
           
           // ✅ FIX: Calculate average order value from total aggregated data
           existing.averageOrderValue = existing.weeklyConversions > 0 ? (existing.weeklyRevenue / existing.weeklyConversions) : 0
+        } else {
+          console.log(`⚠️ DATABASE: Flow ${flowId} has weekly data but not in flow_metrics table!`)
         }
       })
-      console.log(`📊 DATABASE: Enhanced ${Object.keys(flowAggregates).length} flows with weekly data`)
+      console.log(`📊 DATABASE: Aggregation complete:`)
+      console.log(`   - Records processed: ${recordsProcessed}`)
+      console.log(`   - Total revenue aggregated: $${totalRevenueAggregated.toLocaleString()}`)
+      console.log(`   - Flows with data: ${flowsWithData.size}`)
+      console.log(`   - Flows in flow_metrics: ${Object.keys(flowAggregates).length}`)
     } else {
       console.log(`📊 DATABASE: No weekly data available - showing flows with zero values`)
     }
