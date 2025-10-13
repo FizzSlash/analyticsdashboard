@@ -570,11 +570,12 @@ export function ClientManagement({ agency, clients: initialClients }: ClientMana
       
       console.log(`💾 FRONTEND: All ${totalSaved} campaigns saved to database`)
       
-      setSuccess(`✅ Optimized 2-call sync with Supabase save completed for ${client.brand_name}!
+      setSuccess(`✅ Campaign sync completed for ${client.brand_name}!
       
 📊 Analytics: ${analyticsResult.data?.data?.length || 0} campaigns processed
 📧 Campaign Details: ${campaignsResult.data?.data?.length || 0} campaigns with complete data
-💾 Saved: ${saveResult.results?.successful || 0}/${saveResult.results?.total || 0} campaigns to Supabase
+📧 Templates: ${Object.keys(templateLookup).length} email templates fetched
+💾 Saved: ${totalSaved} campaigns to database (batched)
 🎯 Conversion Metric: ${conversionMetricId}
 
 Sample campaigns:
