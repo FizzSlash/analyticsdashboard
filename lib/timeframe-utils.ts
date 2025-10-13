@@ -27,34 +27,17 @@ export const filterAndAggregateData = {
   },
 
   /**
-   * Flows: Filter flows by date_start field and remove zero-activity flows
-   * NOTE: Backend returns all flows, frontend filters by timeframe
+   * Flows: Just remove zero-activity flows
+   * NOTE: Backend getRecentFlowMetrics already handles timeframe filtering via weekly data aggregation
+   * The revenue field IS timeframe-specific (aggregated from flow_message_metrics for the period)
    */
   flowsWithActivity: (flows: any[], days?: number) => {
     console.log('🔍 TIMEFRAME-UTILS: Processing flows:', flows.length, 'days:', days)
-    console.log('🔍 TIMEFRAME-UTILS: Sample flow data:', flows.slice(0, 1))
+    console.log('🔍 TIMEFRAME-UTILS: Sample flow revenue:', flows[0]?.revenue, 'weeklyRevenue:', flows[0]?.weeklyRevenue)
     
-    // If days parameter provided, filter by date_start
-    let filtered = flows
-    if (days) {
-      const cutoff = subDays(new Date(), days)
-      filtered = flows.filter(flow => {
-        // Filter by date_start if it exists
-        if (flow.date_start) {
-          try {
-            const flowDate = new Date(flow.date_start)
-            return flowDate >= cutoff && !isNaN(flowDate.getTime())
-          } catch (error) {
-            return true // Include if date parsing fails
-          }
-        }
-        return true // Include flows without date_start (might be ongoing)
-      })
-      console.log(`🔍 TIMEFRAME-UTILS: After date filtering (${days} days): ${filtered.length} flows`)
-    }
-    
-    // Also filter out flows with zero activity
-    const filteredFlows = filtered.filter(flow => {
+    // Backend already filtered by timeframe and aggregated revenue from weekly data
+    // This function ONLY removes flows with zero activity
+    const filteredFlows = flows.filter(flow => {
       const hasActivity = flow && (
         (flow.revenue && flow.revenue > 0) || 
         (flow.weeklyRevenue && flow.weeklyRevenue > 0) ||
@@ -67,7 +50,7 @@ export const filterAndAggregateData = {
       return hasActivity
     })
     
-    console.log('🔍 TIMEFRAME-UTILS: Final flows with activity:', filteredFlows.length)
+    console.log('🔍 TIMEFRAME-UTILS: Flows with activity:', filteredFlows.length)
     return filteredFlows
   },
 
