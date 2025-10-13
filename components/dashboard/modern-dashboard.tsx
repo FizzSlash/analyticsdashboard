@@ -612,17 +612,6 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
     const fetchData = async () => {
       if (!client?.brand_slug) return
       
-      // ✅ CACHING LOGIC: Check if we can use cached data for smaller timeframes
-      if (cachedData && timeframe <= cachedData.timeframe) {
-        console.log(`🚀 CACHE HIT: Using cached ${cachedData.timeframe}-day data for ${timeframe}-day view`)
-        console.log(`🚀 CACHE: Instant client-side filtering applied`)
-        
-        // Use cached data and filter client-side (instant!)
-        setData(cachedData.data)
-        setLoading(false)
-        return
-      }
-      
       setLoading(true)
       try {
         console.log(`🔄 FETCHING: New data for timeframe: ${timeframe} days`)
@@ -637,11 +626,7 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
             revenueRecords: result.data.revenueAttributionMetrics?.length || 0
           })
           
-          // ✅ CACHE STRATEGY: Cache data for largest timeframes (365 or 180+ days)
-          if (timeframe >= 180) {
-            console.log(`💾 CACHING: Storing ${timeframe}-day data for future instant access`)
-            setCachedData({ timeframe, data: result.data })
-          }
+          // No caching - always fresh data
         } else {
           console.error('❌ FETCH ERROR:', result)
         }
