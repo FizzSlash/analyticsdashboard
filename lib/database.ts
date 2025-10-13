@@ -244,6 +244,7 @@ export class DatabaseService {
         .eq('client_id', clientId)
         .gte('week_date', cutoffDate.toISOString().split('T')[0])
         .order('week_date', { ascending: false })
+        .limit(10000) // Fetch up to 10k records (covers 365 days of data)
     ])
 
     let weeklyData = weeklyResult.data
