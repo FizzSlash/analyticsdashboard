@@ -538,23 +538,37 @@ export function ClientManagement({ agency, clients: initialClients }: ClientMana
       setSuccess('Step 4/4: Saving complete data to Supabase...')
       console.log('💾 FRONTEND: Calling bulk save API for Supabase upsert')
       
-      const saveResponse = await fetch('/api/klaviyo-proxy/save-campaigns', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          campaignDetails,
-          clientId: client.id
-        })
-      })
+      // Save in batches to avoid 413 Payload Too Large
+      console.log(`📦 FRONTEND: Batching ${campaignDetails.length} campaigns into groups of 10`)
       
-      if (!saveResponse.ok) {
-        const saveError = await saveResponse.json()
-        console.log('❌ FRONTEND: Save API failed:', saveError)
-        throw new Error(`Save API failed: ${saveError.message}`)
+      const batchSize = 10
+      let totalSaved = 0
+      
+      for (let i = 0; i < campaignDetails.length; i += batchSize) {
+        const batch = campaignDetails.slice(i, i + batchSize)
+        console.log(`📦 FRONTEND: Saving batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(campaignDetails.length / batchSize)} (${batch.length} campaigns)`)
+        
+        const saveResponse = await fetch('/api/klaviyo-proxy/save-campaigns', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            campaignDetails: batch,
+            clientId: client.id
+          })
+        })
+        
+        if (!saveResponse.ok) {
+          const saveError = await saveResponse.json().catch(() => ({ message: 'Unknown error' }))
+          console.log('❌ FRONTEND: Batch save failed:', saveError)
+          throw new Error(`Batch save failed: ${saveError.message}`)
+        }
+        
+        const saveResult = await saveResponse.json()
+        totalSaved += batch.length
+        console.log(`✅ FRONTEND: Batch saved successfully (${totalSaved}/${campaignDetails.length} total)`)
       }
       
-      const saveResult = await saveResponse.json()
-      console.log('💾 FRONTEND: Bulk save completed:', saveResult)
+      console.log(`💾 FRONTEND: All ${totalSaved} campaigns saved to database`)
       
       setSuccess(`✅ Optimized 2-call sync with Supabase save completed for ${client.brand_name}!
       
