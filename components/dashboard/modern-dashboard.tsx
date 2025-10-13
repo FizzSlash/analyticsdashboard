@@ -670,7 +670,7 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
     // ✅ FIX: Calculate filtered data and timeframe-specific summaries
     const filteredData = {
       campaigns: filterAndAggregateData.campaigns(data?.campaigns || [], timeframe),
-      flows: filterAndAggregateData.flowsWithActivity(data?.flows || []),
+      flows: filterAndAggregateData.flowsWithActivity(data?.flows || [], timeframe),
       revenueAttribution: filterAndAggregateData.revenueAttribution(data?.revenueAttributionMetrics || [], timeframe),
       listGrowth: filterAndAggregateData.listGrowth(data?.listGrowthMetrics || [], timeframe)
     }
@@ -1921,7 +1921,7 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
     const allFlows = data?.flows || []
     console.log('🔍 FLOWS DEBUG: Raw flows data:', allFlows.length, allFlows.slice(0, 2))
     
-    const flows = filterAndAggregateData.flowsWithActivity(allFlows)
+    const flows = filterAndAggregateData.flowsWithActivity(allFlows, timeframe)
     console.log('🔍 FLOWS DEBUG: Filtered flows data:', flows.length, flows.slice(0, 2))
     
     // Calculate total flow revenue from properly filtered data

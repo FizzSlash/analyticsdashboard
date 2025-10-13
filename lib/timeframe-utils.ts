@@ -27,18 +27,34 @@ export const filterAndAggregateData = {
   },
 
   /**
-   * Flows: Filter flows to show only those with activity
-   * Note: Timeframe filtering is already done by DatabaseService.getRecentFlowMetrics
-   * This only removes flows with zero activity across all metrics
+   * Flows: Filter flows by date_start field and remove zero-activity flows
+   * NOTE: Backend returns all flows, frontend filters by timeframe
    */
-  flowsWithActivity: (flows: any[]) => {
-    // Backend already filtered by timeframe via getRecentFlowMetrics
-    // This function only filters out flows with zero activity
-    console.log('🔍 TIMEFRAME-UTILS: Processing flows:', flows.length)
+  flowsWithActivity: (flows: any[], days?: number) => {
+    console.log('🔍 TIMEFRAME-UTILS: Processing flows:', flows.length, 'days:', days)
     console.log('🔍 TIMEFRAME-UTILS: Sample flow data:', flows.slice(0, 1))
     
-    const filteredFlows = flows.filter(flow => {
-      // Include flows with any activity
+    // If days parameter provided, filter by date_start
+    let filtered = flows
+    if (days) {
+      const cutoff = subDays(new Date(), days)
+      filtered = flows.filter(flow => {
+        // Filter by date_start if it exists
+        if (flow.date_start) {
+          try {
+            const flowDate = new Date(flow.date_start)
+            return flowDate >= cutoff && !isNaN(flowDate.getTime())
+          } catch (error) {
+            return true // Include if date parsing fails
+          }
+        }
+        return true // Include flows without date_start (might be ongoing)
+      })
+      console.log(`🔍 TIMEFRAME-UTILS: After date filtering (${days} days): ${filtered.length} flows`)
+    }
+    
+    // Also filter out flows with zero activity
+    const filteredFlows = filtered.filter(flow => {
       const hasActivity = flow && (
         (flow.revenue && flow.revenue > 0) || 
         (flow.weeklyRevenue && flow.weeklyRevenue > 0) ||
@@ -48,11 +64,10 @@ export const filterAndAggregateData = {
         (flow.weeklyClicks && flow.weeklyClicks > 0) ||
         (flow.weeklyRecipients && flow.weeklyRecipients > 0)
       )
-      console.log(`🔍 Flow ${flow?.flow_name}: hasActivity=${hasActivity}, revenue=${flow?.revenue}, weeklyRevenue=${flow?.weeklyRevenue}`)
       return hasActivity
     })
     
-    console.log('🔍 TIMEFRAME-UTILS: Filtered flows with activity:', filteredFlows.length)
+    console.log('🔍 TIMEFRAME-UTILS: Final flows with activity:', filteredFlows.length)
     return filteredFlows
   },
 
