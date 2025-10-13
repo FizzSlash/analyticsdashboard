@@ -64,6 +64,59 @@ export class KlaviyoAPI {
     }
   }
 
+  // Get ALL Campaigns with pagination support
+  async getAllCampaigns(channel: 'email' | 'sms' | 'mobile_push' = 'email', includes?: string[]) {
+    console.log(`📧 CAMPAIGNS API: Fetching ALL campaigns with pagination`)
+    
+    let allCampaigns: any[] = []
+    let allIncluded: any[] = []
+    let cursor: string | null = null
+    let pageCount = 0
+    
+    do {
+      const params = new URLSearchParams()
+      params.set('filter', `equals(messages.channel,'${channel}')`)
+      
+      if (cursor) {
+        params.set('page[cursor]', cursor)
+      }
+      
+      if (includes && includes.length > 0) {
+        params.set('include', includes.join(','))
+      }
+      
+      params.set('fields[campaign]', 'name,status,send_time,audiences,tracking_options,send_strategy,created_at,updated_at,scheduled_at,archived')
+      params.set('fields[campaign-message]', 'definition,send_times,created_at,updated_at')
+      
+      const endpoint = `/campaigns?${params.toString()}`
+      
+      pageCount++
+      console.log(`📧 CAMPAIGNS API: Fetching page ${pageCount}${cursor ? ' (cursor: ' + cursor.substring(0, 20) + '...)' : ''}`)
+      
+      const result = await this.makeRequest(endpoint)
+      
+      if (result.data) {
+        allCampaigns.push(...result.data)
+        console.log(`📧 CAMPAIGNS API: Page ${pageCount}: Got ${result.data.length} campaigns (total: ${allCampaigns.length})`)
+      }
+      
+      if (result.included) {
+        allIncluded.push(...result.included)
+      }
+      
+      cursor = result.links?.next ? new URL(result.links.next).searchParams.get('page[cursor]') : null
+      
+    } while (cursor)
+    
+    console.log(`📧 CAMPAIGNS API: Pagination complete - ${pageCount} pages, ${allCampaigns.length} total campaigns`)
+    
+    return {
+      data: allCampaigns,
+      included: allIncluded,
+      links: { self: '/campaigns', next: null, prev: null }
+    }
+  }
+  
   // Get Campaigns - ENHANCED with includes for complete data
   async getCampaigns(cursor?: string, channel: 'email' | 'sms' | 'mobile_push' = 'email', includes?: string[]) {
     let endpoint = `/campaigns`
