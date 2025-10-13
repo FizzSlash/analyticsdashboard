@@ -76,7 +76,6 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
   const timeframe = externalTimeframe || internalTimeframe // Use external timeframe when provided
   const [data, setData] = useState(initialData)
   const [loading, setLoading] = useState(false)
-  const [cachedData, setCachedData] = useState<{ timeframe: number, data: any } | null>(null)
   const [sortField, setSortField] = useState('send_date')
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc')
   const [expandedFlows, setExpandedFlows] = useState<Set<string>>(new Set())
@@ -664,7 +663,7 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
     } else {
       console.log(`⏭️ MODERN DASHBOARD: Using initial data, timeframe: ${timeframe}, external: ${externalTimeframe}`)
     }
-  }, [timeframe, client?.brand_slug, initialData, externalTimeframe, cachedData])
+  }, [timeframe, client?.brand_slug, initialData, externalTimeframe])
 
   const renderOverviewTab = () => {
     // ✅ FIX: Calculate filtered data and timeframe-specific summaries
