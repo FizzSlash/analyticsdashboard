@@ -130,15 +130,33 @@ export async function syncCampaigns(clientSlug: string, clientId: string, onProg
       })
     })
     
-    const saveResponse = await fetch('/api/klaviyo-proxy/save-campaigns', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ campaignDetails, clientId }) // Use clientId (UUID) not slug
-    })
+    // Save in batches to avoid 413 Payload Too Large (especially with email HTML)
+    const batchSize = 10
+    let totalSaved = 0
     
-    if (!saveResponse.ok) throw new Error('Save campaigns failed')
+    for (let i = 0; i < campaignDetails.length; i += batchSize) {
+      const batch = campaignDetails.slice(i, i + batchSize)
+      console.log(`📦 Batch ${Math.floor(i / batchSize) + 1}: Saving ${batch.length} campaigns`)
+      
+      const saveResponse = await fetch('/api/klaviyo-proxy/save-campaigns', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ campaignDetails: batch, clientId })
+      })
+      
+      if (!saveResponse.ok) {
+        const error = await saveResponse.json().catch(() => ({ message: 'Save failed' }))
+        console.error(`❌ Batch ${Math.floor(i / batchSize) + 1} failed:`, error)
+        throw new Error(error.message || 'Save campaigns failed')
+      }
+      
+      totalSaved += batch.length
+      console.log(`✅ Batch saved (${totalSaved}/${campaignDetails.length})`)
+    }
     
-    return { success: true, count: campaignDetails.length }
+    console.log(`✅ All ${totalSaved} campaigns saved successfully`)
+    
+    return { success: true, count: totalSaved }
   } catch (error) {
     console.error('Campaign sync error:', error)
     throw error
