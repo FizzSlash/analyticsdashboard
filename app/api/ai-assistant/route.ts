@@ -1,13 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { DatabaseService } from '@/lib/database'
-import { mcpClientPool } from '@/lib/klaviyo-mcp-client'
+import { KlaviyoAPI } from '@/lib/klaviyo-api'
 import Anthropic from '@anthropic-ai/sdk'
 
 /*
- * AI Assistant API - Claude with Real Klaviyo MCP Server
+ * AI Assistant API - Claude with Direct Klaviyo API
  * 
- * Uses local Klaviyo MCP server for rich data access via MCP protocol.
- * Claude decides what tools to call, we execute via MCP, Claude analyzes results.
+ * Uses Klaviyo REST API directly for rich data access.
+ * Same data as MCP tools, but serverless-friendly!
+ * 
+ * Why not MCP?
+ * - MCP is designed for desktop AI clients (Claude Desktop, Cursor IDE)
+ * - Requires spawning processes (doesn't work in serverless)
+ * - MCP tools just call Klaviyo REST APIs anyway
+ * - We call those APIs directly = same data, simpler architecture
  */
 
 const anthropic = new Anthropic({
@@ -26,13 +32,16 @@ export async function POST(request: NextRequest) {
       throw new Error('Client not found or missing Klaviyo API key')
     }
 
+    // Initialize Klaviyo API client
+    const klaviyo = new KlaviyoAPI(client.klaviyo_api_key)
+
     // Prepare system prompt
     const systemPrompt = `You are an AI assistant for ${client.brand_name}'s email marketing analytics dashboard.
 
-You have access to Klaviyo MCP tools that provide detailed performance data:
-- get_flows: List all flows
-- get_flow_report: Detailed flow performance with message-level data
-- get_campaigns: List all campaigns  
+You have access to Klaviyo tools that provide detailed performance data:
+- get_flows: List all flows with metadata
+- get_flow_report: Detailed flow performance with rich metrics
+- get_campaigns: List all campaigns
 - get_campaign_report: Detailed campaign performance
 - get_account_details: Account information
 - analyze_dashboard_data: Quick analysis of already-loaded data
@@ -42,25 +51,25 @@ Dashboard Context (for quick reference):
 - Recent Campaigns: ${context.campaigns?.length || 0}
 - Total Flow Revenue: $${context.flows?.reduce((s: number, f: any) => s + (f.revenue || 0), 0).toLocaleString() || 0}
 
-Use MCP tools when you need:
+Use Klaviyo tools when you need:
+- Complete lists of flows/campaigns
 - Detailed performance reports
-- Specific flow/campaign data
-- Complete lists from Klaviyo
+- Specific flow or campaign data
 
 Use analyze_dashboard_data when:
 - Question can be answered from loaded context
-- User wants quick summary
+- Quick summary needed
 - Comparing top performers
 
 Provide insights with:
 - Specific numbers and percentages
 - Actionable recommendations
 - Industry benchmark comparisons (20-25% open rate is good)
-- Bold formatting for emphasis
+- Bold formatting and emojis for readability
 
 Be concise but thorough.`
 
-    console.log('🤖 AI Assistant: Calling Claude API with MCP tools...')
+    console.log('🤖 AI Assistant: Calling Claude API...')
 
     // Call Claude with tool definitions
     let response = await anthropic.messages.create({
@@ -76,7 +85,7 @@ Be concise but thorough.`
       tools: [
         {
           name: 'get_flows',
-          description: 'Get list of all flows with names, statuses, and IDs. Use this to see what flows exist.',
+          description: 'Get list of all flows from Klaviyo with names, statuses, IDs, and metadata.',
           input_schema: {
             type: 'object',
             properties: {},
@@ -85,21 +94,22 @@ Be concise but thorough.`
         },
         {
           name: 'get_flow_report',
-          description: 'Get detailed performance report for a specific flow including all messages, opens, clicks, revenue, conversion rates, and trends over time.',
+          description: 'Get detailed performance report for specific flows including opens, clicks, revenue, conversions, and trends. This is rich reporting data.',
           input_schema: {
             type: 'object',
             properties: {
-              flow_id: {
-                type: 'string',
-                description: 'The Klaviyo flow ID (get from get_flows first)'
+              flow_ids: {
+                type: 'array',
+                items: { type: 'string' },
+                description: 'Array of Klaviyo flow IDs to get reports for (get from get_flows first)'
               }
             },
-            required: ['flow_id']
+            required: ['flow_ids']
           }
         },
         {
           name: 'get_campaigns',
-          description: 'Get list of all campaigns with names, send dates, statuses, and IDs.',
+          description: 'Get list of all campaigns from Klaviyo with names, send dates, statuses, and IDs.',
           input_schema: {
             type: 'object',
             properties: {},
@@ -108,21 +118,22 @@ Be concise but thorough.`
         },
         {
           name: 'get_campaign_report',
-          description: 'Get detailed performance report for a specific campaign including sends, opens, clicks, revenue, and deliverability metrics.',
+          description: 'Get detailed performance report for specific campaigns including opens, clicks, revenue, deliverability metrics.',
           input_schema: {
             type: 'object',
             properties: {
-              campaign_id: {
-                type: 'string',
-                description: 'The Klaviyo campaign ID (get from get_campaigns first)'
+              campaign_ids: {
+                type: 'array',
+                items: { type: 'string' },
+                description: 'Array of Klaviyo campaign IDs (get from get_campaigns first)'
               }
             },
-            required: ['campaign_id']
+            required: ['campaign_ids']
           }
         },
         {
           name: 'get_account_details',
-          description: 'Get Klaviyo account information including account name, timezone, and settings.',
+          description: 'Get Klaviyo account information including name, timezone, and settings.',
           input_schema: {
             type: 'object',
             properties: {},
@@ -131,14 +142,14 @@ Be concise but thorough.`
         },
         {
           name: 'analyze_dashboard_data',
-          description: 'Quickly analyze the dashboard data that is already loaded (flows, campaigns, metrics). Fast but less detailed than MCP reports. Use for top performers, comparisons, or quick summaries.',
+          description: 'Quickly analyze dashboard data already loaded (flows, campaigns). Fast for top performers, comparisons, summaries.',
           input_schema: {
             type: 'object',
             properties: {
               analysis_type: {
                 type: 'string',
                 enum: ['top_flows', 'campaign_performance', 'optimization_tips', 'comparison'],
-                description: 'Type of analysis to perform on loaded data'
+                description: 'Type of analysis to perform'
               }
             },
             required: ['analysis_type']
@@ -150,8 +161,7 @@ Be concise but thorough.`
     // Handle tool use loop
     let finalResponse = response
     let toolUseCount = 0
-    const maxToolUses = 5 // Allow more tool uses for complex queries
-    const mcpClient = await mcpClientPool.getClient(client.klaviyo_api_key)
+    const maxToolUses = 5
 
     while (finalResponse.stop_reason === 'tool_use' && toolUseCount < maxToolUses) {
       toolUseCount++
@@ -168,7 +178,7 @@ Be concise but thorough.`
           toolResult = await executeTool(
             toolUse.name, 
             toolUse.input, 
-            mcpClient,
+            klaviyo,
             context
           )
         } catch (error: any) {
@@ -204,12 +214,9 @@ Be concise but thorough.`
         max_tokens: 2000,
         system: systemPrompt,
         messages: messages,
-        tools: finalResponse.content.filter((block: any) => block.type === 'tool_use').length > 0 ? 
-          // Keep tools available for follow-up calls
-          response.content.filter((block: any) => block.type === 'tool_use').map(() => ({
-            name: 'dummy', // Placeholder
-            input_schema: { type: 'object', properties: {} }
-          })) : undefined
+        tools: response.content.filter((block: any) => block.type === 'tool_use').length > 0 
+          ? undefined // Don't redefine tools on follow-up
+          : undefined
       })
     }
 
@@ -254,30 +261,30 @@ Be concise but thorough.`
   }
 }
 
-// Execute tool calls using MCP client or dashboard analysis
+// Execute tool calls using Klaviyo API
 async function executeTool(
   toolName: string, 
   input: any, 
-  mcpClient: any,
+  klaviyo: KlaviyoAPI,
   context: any
 ): Promise<any> {
   console.log(`🔧 Tool: ${toolName}`, input)
 
   switch (toolName) {
     case 'get_flows':
-      return await mcpClient.getFlows()
+      return await klaviyo.getFlows()
     
     case 'get_flow_report':
-      return await mcpClient.getFlowReport(input.flow_id)
+      return await klaviyo.getFlowReport(input.flow_ids)
     
     case 'get_campaigns':
-      return await mcpClient.getCampaigns()
+      return await klaviyo.getCampaigns()
     
     case 'get_campaign_report':
-      return await mcpClient.getCampaignReport(input.campaign_id)
+      return await klaviyo.getCampaignReport(input.campaign_ids)
     
     case 'get_account_details':
-      return await mcpClient.getAccountDetails()
+      return await klaviyo.getAccountDetails()
     
     case 'analyze_dashboard_data':
       return analyzeDashboardData(input.analysis_type, context)
@@ -287,7 +294,7 @@ async function executeTool(
   }
 }
 
-// Quick dashboard data analysis (no MCP needed)
+// Quick dashboard data analysis (no API needed)
 function analyzeDashboardData(analysisType: string, context: any) {
   switch (analysisType) {
     case 'top_flows':
@@ -307,7 +314,7 @@ function analyzeDashboardData(analysisType: string, context: any) {
       const campaigns = context.campaigns || []
       return {
         total: campaigns.length,
-        avg_open_rate: campaigns.reduce((s: number, c: any) => s + (c.open_rate || 0), 0) / campaigns.length,
+        avg_open_rate: campaigns.reduce((s: number, c: any) => s + (c.open_rate || 0), 0) / (campaigns.length || 1),
         total_revenue: campaigns.reduce((s: number, c: any) => s + (c.revenue || 0), 0),
         low_performers: campaigns.filter((c: any) => c.open_rate < 0.15).length
       }
@@ -334,21 +341,21 @@ function analyzeClientData(message: string, context: any): string {
 
   if (lowerMessage.includes('flow') && (lowerMessage.includes('top') || lowerMessage.includes('best'))) {
     const flows = context.flows || []
-    if (flows.length === 0) return "No flow data available."
+    if (flows.length === 0) return "No flow data available. Try syncing your data first."
     
     const topFlows = flows
       .sort((a: any, b: any) => (b.revenue || 0) - (a.revenue || 0))
       .slice(0, 5)
     
-    let response = `Top ${topFlows.length} flows:\n\n`
+    let response = `Here are your top ${topFlows.length} performing flows by revenue:\n\n`
     topFlows.forEach((flow: any, idx: number) => {
       response += `${idx + 1}. **${flow.flow_name}**\n`
-      response += `   Revenue: $${(flow.revenue || 0).toLocaleString()}\n`
-      response += `   Opens: ${(flow.opens || 0).toLocaleString()} (${((flow.open_rate || 0) * 100).toFixed(1)}%)\n\n`
+      response += `   - Revenue: $${(flow.revenue || 0).toLocaleString()}\n`
+      response += `   - Opens: ${(flow.opens || 0).toLocaleString()} (${((flow.open_rate || 0) * 100).toFixed(1)}%)\n\n`
     })
     
     return response
   }
 
-  return `I can help analyze flows, campaigns, and provide optimization tips. Try asking:\n- "What are my top flows?"\n- "Show me campaign performance"\n- "Give me optimization recommendations"`
+  return `I can help analyze flows, campaigns, and provide optimization tips.\n\nTry asking:\n• "What are my top performing flows?"\n• "Show me campaign performance"\n• "Give me optimization recommendations"`
 }
