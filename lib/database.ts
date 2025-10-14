@@ -171,19 +171,40 @@ export class DatabaseService {
     const startDate = new Date()
     startDate.setDate(startDate.getDate() - days)
 
-    const { data, error } = await supabaseAdmin
-      .from('campaign_metrics')
-      .select('*')
-      .eq('client_id', clientId)
-      .gte('send_date', startDate.toISOString())
-      .order('send_date', { ascending: false })
+    // Fetch campaign data with pagination to handle large datasets (Supabase has 1000 row limit per query)
+    let allCampaigns: any[] = []
+    let hasMore = true
+    let pageNumber = 0
+    const pageSize = 1000
+    
+    while (hasMore) {
+      const { data, error } = await supabaseAdmin
+        .from('campaign_metrics')
+        .select('*')
+        .eq('client_id', clientId)
+        .gte('send_date', startDate.toISOString())
+        .order('send_date', { ascending: false })
+        .range(pageNumber * pageSize, (pageNumber + 1) * pageSize - 1)
 
-    if (error) {
-      console.error('Error fetching recent campaign metrics:', error)
-      return []
+      if (error) {
+        console.error(`Error fetching campaign metrics page ${pageNumber}:`, error)
+        break
+      }
+
+      if (data && data.length > 0) {
+        allCampaigns = allCampaigns.concat(data)
+        
+        if (data.length < pageSize) {
+          hasMore = false
+        } else {
+          pageNumber++
+        }
+      } else {
+        hasMore = false
+      }
     }
 
-    return data || []
+    return allCampaigns
   }
 
   static async upsertCampaignMetric(metric: Omit<CampaignMetric, 'id' | 'created_at' | 'updated_at'>): Promise<void> {
@@ -230,26 +251,54 @@ export class DatabaseService {
     cutoffDate.setDate(cutoffDate.getDate() - days)
     console.log(`📊 DATABASE: Cutoff date: ${cutoffDate.toISOString().split('T')[0]}`)
 
-    // Get ONLY ACTIVE/LIVE flows from flow_metrics (exclude drafts) + weekly data
-    const [flowMetaResult, weeklyResult] = await Promise.all([
-      supabaseAdmin
-        .from('flow_metrics')
-        .select('flow_id, flow_name, flow_status, flow_type, opens, clicks, revenue, open_rate, click_rate, date_start')
-        .eq('client_id', clientId)
-        .in('flow_status', ['active', 'live'])  // Match frontend filter: active OR live, no drafts
-        .order('date_start', { ascending: false }),
-      supabaseAdmin
+    // Get ONLY ACTIVE/LIVE flows from flow_metrics (exclude drafts)
+    const flowMetaResult = await supabaseAdmin
+      .from('flow_metrics')
+      .select('flow_id, flow_name, flow_status, flow_type, opens, clicks, revenue, open_rate, click_rate, date_start')
+      .eq('client_id', clientId)
+      .in('flow_status', ['active', 'live'])  // Match frontend filter: active OR live, no drafts
+      .order('date_start', { ascending: false })
+
+    // Fetch weekly data with pagination to handle large datasets (Supabase has 1000 row limit per query)
+    console.log(`📊 DATABASE: Fetching weekly data with pagination...`)
+    let weeklyData: any[] = []
+    let hasMore = true
+    let pageNumber = 0
+    const pageSize = 1000
+    
+    while (hasMore) {
+      const { data, error } = await supabaseAdmin
         .from('flow_message_metrics')
         .select('*')
         .eq('client_id', clientId)
         .gte('week_date', cutoffDate.toISOString().split('T')[0])
         .order('week_date', { ascending: false })
-        .limit(10000) // Fetch up to 10k records (covers 365 days of data)
-    ])
+        .range(pageNumber * pageSize, (pageNumber + 1) * pageSize - 1)
+      
+      if (error) {
+        console.error(`📊 DATABASE: Error fetching page ${pageNumber}:`, error)
+        break
+      }
+      
+      if (data && data.length > 0) {
+        weeklyData = weeklyData.concat(data)
+        console.log(`📊 DATABASE: Fetched page ${pageNumber + 1}: ${data.length} records (total so far: ${weeklyData.length})`)
+        
+        // If we got less than pageSize records, we've reached the end
+        if (data.length < pageSize) {
+          hasMore = false
+        } else {
+          pageNumber++
+        }
+      } else {
+        hasMore = false
+      }
+    }
+    
+    console.log(`📊 DATABASE: Pagination complete - fetched ${weeklyData.length} total records across ${pageNumber + 1} pages`)
 
-    let weeklyData = weeklyResult.data
     let flowMeta = flowMetaResult.data || []
-    const error = weeklyResult.error || flowMetaResult.error
+    const error = flowMetaResult.error
 
     console.log(`📊 DATABASE: Raw query results - weeklyData: ${weeklyData?.length || 0} records, flowMeta: ${flowMeta?.length || 0} records`)
     console.log(`📊 DATABASE: Sample weeklyData:`, weeklyData?.slice(0, 2))
@@ -288,23 +337,50 @@ export class DatabaseService {
       }
       
       // If we have data but it's outside the date range, use all available data
-      console.log('📊 DATABASE: Date filtering too restrictive, fetching all available flow data...')
-      const [allWeeklyResult, allFlowMetaResult] = await Promise.all([
-        supabaseAdmin
+      console.log('📊 DATABASE: Date filtering too restrictive, fetching all available flow data with pagination...')
+      
+      // Fetch flow metadata
+      const allFlowMetaResult = await supabaseAdmin
+        .from('flow_metrics')
+        .select('flow_id, flow_name, flow_status, trigger_type')
+        .eq('client_id', clientId)
+      
+      // Fetch all weekly data with pagination
+      let allWeeklyData: any[] = []
+      let hasMoreFallback = true
+      let fallbackPage = 0
+      const fallbackPageSize = 1000
+      
+      while (hasMoreFallback) {
+        const { data, error } = await supabaseAdmin
           .from('flow_message_metrics')
           .select('*')
           .eq('client_id', clientId)
           .order('week_date', { ascending: false })
-          .limit(10000), // Fetch up to 10k records (fallback query)
-        supabaseAdmin
-          .from('flow_metrics')
-          .select('flow_id, flow_name, flow_status, trigger_type')
-          .eq('client_id', clientId)
-      ])
+          .range(fallbackPage * fallbackPageSize, (fallbackPage + 1) * fallbackPageSize - 1)
+        
+        if (error) {
+          console.error(`📊 DATABASE: Error fetching fallback page ${fallbackPage}:`, error)
+          break
+        }
+        
+        if (data && data.length > 0) {
+          allWeeklyData = allWeeklyData.concat(data)
+          console.log(`📊 DATABASE: Fallback page ${fallbackPage + 1}: ${data.length} records (total: ${allWeeklyData.length})`)
+          
+          if (data.length < fallbackPageSize) {
+            hasMoreFallback = false
+          } else {
+            fallbackPage++
+          }
+        } else {
+          hasMoreFallback = false
+        }
+      }
       
-      weeklyData = allWeeklyResult.data
+      weeklyData = allWeeklyData
       flowMeta = allFlowMetaResult.data || []
-      console.log(`📊 DATABASE: Fallback query - weeklyData: ${weeklyData?.length || 0} records, flowMeta: ${flowMeta?.length || 0} records`)
+      console.log(`📊 DATABASE: Fallback query complete - weeklyData: ${weeklyData?.length || 0} records, flowMeta: ${flowMeta?.length || 0} records`)
       
       if (!weeklyData || weeklyData.length === 0) {
         return []

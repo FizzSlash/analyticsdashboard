@@ -7,6 +7,7 @@ import { ViewToggle, type ViewMode } from '@/components/ui/view-toggle'
 import { TimeframeSelector } from '@/components/ui/timeframe-selector'
 import { useRouter } from 'next/navigation'
 import { syncCampaigns, syncFlows, syncListGrowth, syncRevenueAttribution } from '@/lib/sync-functions'
+import AIAssistant from '@/components/dashboard/AIAssistant'
 
 interface PageProps {
   params: {
@@ -418,15 +419,24 @@ export default function ClientDashboardPage({ params }: PageProps) {
       </div>
 
       {/* Content */}
-      <div className="relative z-10">
-        {viewMode === 'analytics' ? (
-          <ModernDashboard 
-            client={{ ...client, ...agency }} // Merge client data with agency branding
-            data={dashboardData.data} 
-            timeframe={selectedTimeframe}
-            disablePortalMode={true} 
-            hideHeader={true} 
-          />
+        <div className="relative z-10">
+          {viewMode === 'analytics' ? (
+            <>
+              <ModernDashboard
+              client={{ ...client, ...agency }} // Merge client data with agency branding
+              data={dashboardData.data} 
+              timeframe={selectedTimeframe}
+              disablePortalMode={true} 
+              hideHeader={true} 
+            />
+            
+            {/* AI Assistant - Only shows in Analytics mode */}
+            <AIAssistant 
+              clientId={client.id}
+              clientSlug={params.slug}
+              dashboardData={dashboardData.data}
+            />
+          </>
         ) : (
           <div className="max-w-7xl mx-auto px-6 py-8">
             <CleanPortalDashboard 
