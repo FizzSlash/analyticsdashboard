@@ -166,7 +166,9 @@ class MCPClientPool {
   }
 
   async cleanup(): Promise<void> {
-    for (const client of this.clients.values()) {
+    // Convert Map.values() to array for TypeScript compatibility
+    const clientsArray = Array.from(this.clients.values())
+    for (const client of clientsArray) {
       await client.disconnect()
     }
     this.clients.clear()
