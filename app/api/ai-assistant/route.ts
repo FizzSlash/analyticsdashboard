@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { DatabaseService } from '@/lib/database'
 import { KlaviyoAPI } from '@/lib/klaviyo-api'
+import { decryptApiKey } from '@/lib/utils'
 import Anthropic from '@anthropic-ai/sdk'
 
 /*
@@ -32,8 +33,12 @@ export async function POST(request: NextRequest) {
       throw new Error('Client not found or missing Klaviyo API key')
     }
 
+    // Decrypt the API key (keys are stored encrypted in database)
+    const decryptedKey = decryptApiKey(client.klaviyo_api_key)
+    console.log('🔓 AI Assistant: API key decrypted successfully')
+
     // Initialize Klaviyo API client
-    const klaviyo = new KlaviyoAPI(client.klaviyo_api_key)
+    const klaviyo = new KlaviyoAPI(decryptedKey)
 
     // Prepare system prompt
     const systemPrompt = `You are an AI assistant for ${client.brand_name}'s email marketing analytics dashboard.
