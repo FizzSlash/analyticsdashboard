@@ -1,22 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { DatabaseService } from '@/lib/database'
+import { mcpClientPool } from '@/lib/klaviyo-mcp-client'
 import Anthropic from '@anthropic-ai/sdk'
 
 /*
- * AI Assistant API - Claude with Klaviyo API Integration
+ * AI Assistant API - Claude with Real Klaviyo MCP Server
  * 
- * Uses Claude API with tool calling to access Klaviyo data.
- * Claude can request data using tools, which we fetch from Klaviyo API.
- * 
- * See: https://developers.klaviyo.com/en/docs/klaviyo_mcp_server
+ * Uses local Klaviyo MCP server for rich data access via MCP protocol.
+ * Claude decides what tools to call, we execute via MCP, Claude analyzes results.
  */
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 })
-
-// Klaviyo API base URL
-const KLAVIYO_API_BASE = 'https://a.klaviyo.com/api'
 
 export async function POST(request: NextRequest) {
   try {
@@ -30,30 +26,43 @@ export async function POST(request: NextRequest) {
       throw new Error('Client not found or missing Klaviyo API key')
     }
 
-    // Prepare system prompt with context
-    const systemPrompt = `You are an AI assistant for an email marketing analytics dashboard analyzing data for ${client.brand_name}.
+    // Prepare system prompt
+    const systemPrompt = `You are an AI assistant for ${client.brand_name}'s email marketing analytics dashboard.
 
-Current Dashboard Context:
+You have access to Klaviyo MCP tools that provide detailed performance data:
+- get_flows: List all flows
+- get_flow_report: Detailed flow performance with message-level data
+- get_campaigns: List all campaigns  
+- get_campaign_report: Detailed campaign performance
+- get_account_details: Account information
+- analyze_dashboard_data: Quick analysis of already-loaded data
+
+Dashboard Context (for quick reference):
 - Active Flows: ${context.flows?.length || 0}
 - Recent Campaigns: ${context.campaigns?.length || 0}
 - Total Flow Revenue: $${context.flows?.reduce((s: number, f: any) => s + (f.revenue || 0), 0).toLocaleString() || 0}
 
-You have access to tools to fetch detailed data from Klaviyo. Use them when you need:
-- Specific flow or campaign performance data
-- Complete list of flows or campaigns
-- Detailed metrics not in the dashboard context
+Use MCP tools when you need:
+- Detailed performance reports
+- Specific flow/campaign data
+- Complete lists from Klaviyo
 
-When analyzing performance:
-- Compare metrics to industry benchmarks (20-25% open rate is good)
-- Identify specific opportunities with dollar impact
-- Provide actionable, step-by-step recommendations
-- Use bold, bullets, and emojis for readability
+Use analyze_dashboard_data when:
+- Question can be answered from loaded context
+- User wants quick summary
+- Comparing top performers
 
-Be concise but thorough. Always use real data, never estimate.`
+Provide insights with:
+- Specific numbers and percentages
+- Actionable recommendations
+- Industry benchmark comparisons (20-25% open rate is good)
+- Bold formatting for emphasis
 
-    console.log('🤖 AI Assistant: Calling Claude API...')
+Be concise but thorough.`
 
-    //Call Claude with tool definitions
+    console.log('🤖 AI Assistant: Calling Claude API with MCP tools...')
+
+    // Call Claude with tool definitions
     let response = await anthropic.messages.create({
       model: 'claude-3-5-sonnet-20241022',
       max_tokens: 2000,
@@ -67,7 +76,7 @@ Be concise but thorough. Always use real data, never estimate.`
       tools: [
         {
           name: 'get_flows',
-          description: 'Get a list of all flows for this Klaviyo account with basic metrics',
+          description: 'Get list of all flows with names, statuses, and IDs. Use this to see what flows exist.',
           input_schema: {
             type: 'object',
             properties: {},
@@ -76,13 +85,13 @@ Be concise but thorough. Always use real data, never estimate.`
         },
         {
           name: 'get_flow_report',
-          description: 'Get detailed performance report for a specific flow including messages, metrics, and trends',
+          description: 'Get detailed performance report for a specific flow including all messages, opens, clicks, revenue, conversion rates, and trends over time.',
           input_schema: {
             type: 'object',
             properties: {
               flow_id: {
                 type: 'string',
-                description: 'The Klaviyo flow ID (e.g., "WZCeMQ")'
+                description: 'The Klaviyo flow ID (get from get_flows first)'
               }
             },
             required: ['flow_id']
@@ -90,7 +99,7 @@ Be concise but thorough. Always use real data, never estimate.`
         },
         {
           name: 'get_campaigns',
-          description: 'Get a list of campaigns for this Klaviyo account',
+          description: 'Get list of all campaigns with names, send dates, statuses, and IDs.',
           input_schema: {
             type: 'object',
             properties: {},
@@ -99,28 +108,37 @@ Be concise but thorough. Always use real data, never estimate.`
         },
         {
           name: 'get_campaign_report',
-          description: 'Get detailed performance report for a specific campaign',
+          description: 'Get detailed performance report for a specific campaign including sends, opens, clicks, revenue, and deliverability metrics.',
           input_schema: {
             type: 'object',
             properties: {
-                campaign_id: {
+              campaign_id: {
                 type: 'string',
-                description: 'The Klaviyo campaign ID'
+                description: 'The Klaviyo campaign ID (get from get_campaigns first)'
               }
             },
             required: ['campaign_id']
           }
         },
         {
+          name: 'get_account_details',
+          description: 'Get Klaviyo account information including account name, timezone, and settings.',
+          input_schema: {
+            type: 'object',
+            properties: {},
+            required: []
+          }
+        },
+        {
           name: 'analyze_dashboard_data',
-          description: 'Analyze the current dashboard data (flows, campaigns, metrics) that is already loaded. Use this for questions about top performers, trends, or comparisons.',
+          description: 'Quickly analyze the dashboard data that is already loaded (flows, campaigns, metrics). Fast but less detailed than MCP reports. Use for top performers, comparisons, or quick summaries.',
           input_schema: {
             type: 'object',
             properties: {
               analysis_type: {
                 type: 'string',
                 enum: ['top_flows', 'campaign_performance', 'optimization_tips', 'comparison'],
-                description: 'Type of analysis to perform'
+                description: 'Type of analysis to perform on loaded data'
               }
             },
             required: ['analysis_type']
@@ -129,26 +147,32 @@ Be concise but thorough. Always use real data, never estimate.`
       ]
     })
 
-    // Handle tool use - Claude may request to use tools
+    // Handle tool use loop
     let finalResponse = response
     let toolUseCount = 0
-    const maxToolUses = 3
+    const maxToolUses = 5 // Allow more tool uses for complex queries
+    const mcpClient = await mcpClientPool.getClient(client.klaviyo_api_key)
 
     while (finalResponse.stop_reason === 'tool_use' && toolUseCount < maxToolUses) {
       toolUseCount++
-      console.log(`🤖 AI Assistant: Claude requested tool use (${toolUseCount}/${maxToolUses})`)
+      console.log(`🤖 AI Assistant: Claude requested tools (${toolUseCount}/${maxToolUses})`)
 
       const toolUseBlocks = finalResponse.content.filter((block: any) => block.type === 'tool_use') as any[]
       const toolResults = []
 
       for (const toolUse of toolUseBlocks) {
-        console.log(`🤖 AI Assistant: Executing tool: ${toolUse.name}`)
+        console.log(`🔧 Executing tool: ${toolUse.name}`)
         
         let toolResult
         try {
-          toolResult = await executeTool(toolUse.name, toolUse.input, client.klaviyo_api_key, context)
+          toolResult = await executeTool(
+            toolUse.name, 
+            toolUse.input, 
+            mcpClient,
+            context
+          )
         } catch (error: any) {
-          console.error(`🤖 AI Assistant: Tool execution error:`, error)
+          console.error(`❌ Tool execution error:`, error)
           toolResult = { error: error.message }
         }
 
@@ -160,7 +184,7 @@ Be concise but thorough. Always use real data, never estimate.`
       }
 
       // Continue conversation with tool results
-      const messages = [
+      const messages: any[] = [
         {
           role: 'user',
           content: message
@@ -179,20 +203,23 @@ Be concise but thorough. Always use real data, never estimate.`
         model: 'claude-3-5-sonnet-20241022',
         max_tokens: 2000,
         system: systemPrompt,
-        messages: messages as any,
-        tools: finalResponse.content.filter((block: any) => block.type === 'tool_use').length > 0 ? [
-          // Same tools as before...
-        ] : undefined
+        messages: messages,
+        tools: finalResponse.content.filter((block: any) => block.type === 'tool_use').length > 0 ? 
+          // Keep tools available for follow-up calls
+          response.content.filter((block: any) => block.type === 'tool_use').map(() => ({
+            name: 'dummy', // Placeholder
+            input_schema: { type: 'object', properties: {} }
+          })) : undefined
       })
     }
 
-    // Extract final response text
+    // Extract final response
     const responseText = finalResponse.content
       .filter((block: any) => block.type === 'text')
       .map((block: any) => block.text)
       .join('\n')
 
-    console.log('🤖 AI Assistant: Response complete')
+    console.log('✅ AI Assistant: Response complete')
 
     return NextResponse.json({
       success: true,
@@ -204,9 +231,9 @@ Be concise but thorough. Always use real data, never estimate.`
       tool_uses: toolUseCount
     })
   } catch (error: any) {
-    console.error('🤖 AI Assistant API error:', error)
+    console.error('❌ AI Assistant error:', error)
     
-    // Fall back to data analysis
+    // Fall back to dashboard data analysis
     try {
       const body = await request.json()
       const fallbackResponse = analyzeClientData(body.message, body.context)
@@ -220,27 +247,37 @@ Be concise but thorough. Always use real data, never estimate.`
     } catch (fallbackError) {
       return NextResponse.json({
         success: false,
-        error: 'Failed to process your request. Please try again.',
-        response: 'I apologize, but I encountered an error. Please try again.'
+        error: 'Failed to process request',
+        response: 'Sorry, I encountered an error. Please try again.'
       }, { status: 500 })
     }
   }
 }
 
-// Execute tool calls
-async function executeTool(toolName: string, input: any, klaviyoApiKey: string, context: any): Promise<any> {
+// Execute tool calls using MCP client or dashboard analysis
+async function executeTool(
+  toolName: string, 
+  input: any, 
+  mcpClient: any,
+  context: any
+): Promise<any> {
+  console.log(`🔧 Tool: ${toolName}`, input)
+
   switch (toolName) {
     case 'get_flows':
-      return getFlowsFromKlaviyo(klaviyoApiKey)
+      return await mcpClient.getFlows()
     
     case 'get_flow_report':
-      return getFlowReportFromKlaviyo(input.flow_id, klaviyoApiKey)
+      return await mcpClient.getFlowReport(input.flow_id)
     
     case 'get_campaigns':
-      return getCampaignsFromKlaviyo(klaviyoApiKey)
+      return await mcpClient.getCampaigns()
     
     case 'get_campaign_report':
-      return getCampaignReportFromKlaviyo(input.campaign_id, klaviyoApiKey)
+      return await mcpClient.getCampaignReport(input.campaign_id)
+    
+    case 'get_account_details':
+      return await mcpClient.getAccountDetails()
     
     case 'analyze_dashboard_data':
       return analyzeDashboardData(input.analysis_type, context)
@@ -250,49 +287,7 @@ async function executeTool(toolName: string, input: any, klaviyoApiKey: string, 
   }
 }
 
-// Klaviyo API functions
-async function getFlowsFromKlaviyo(apiKey: string) {
-  const response = await fetch(`${KLAVIYO_API_BASE}/flows/?fields[flow]=name,status,archived,created,updated`, {
-    headers: {
-      'Authorization': `Klaviyo-API-Key ${apiKey}`,
-      'revision': '2024-10-15'
-    }
-  })
-  
-  if (!response.ok) throw new Error(`Klaviyo API error: ${response.status}`)
-  return await response.json()
-}
-
-async function getFlowReportFromKlaviyo(flowId: string, apiKey: string) {
-  // Get flow performance data - would need to implement based on Klaviyo's reporting API
-  // For now, return placeholder
-  return {
-    flow_id: flowId,
-    message: 'Flow report data would be fetched from Klaviyo reporting API'
-  }
-}
-
-async function getCampaignsFromKlaviyo(apiKey: string) {
-  const response = await fetch(`${KLAVIYO_API_BASE}/campaigns/?fields[campaign]=name,status,archived,send_time,created_at`, {
-    headers: {
-      'Authorization': `Klaviyo-API-Key ${apiKey}`,
-      'revision': '2024-10-15'
-    }
-  })
-  
-  if (!response.ok) throw new Error(`Klaviyo API error: ${response.status}`)
-  return await response.json()
-}
-
-async function getCampaignReportFromKlaviyo(campaignId: string, apiKey: string) {
-  // Get campaign performance data
-  return {
-    campaign_id: campaignId,
-    message: 'Campaign report data would be fetched from Klaviyo reporting API'
-  }
-}
-
-// Analyze dashboard data (uses context already loaded)
+// Quick dashboard data analysis (no MCP needed)
 function analyzeDashboardData(analysisType: string, context: any) {
   switch (analysisType) {
     case 'top_flows':
@@ -300,6 +295,7 @@ function analyzeDashboardData(analysisType: string, context: any) {
         .sort((a: any, b: any) => (b.revenue || 0) - (a.revenue || 0))
         .slice(0, 10)
         .map((f: any) => ({
+          id: f.flow_id,
           name: f.flow_name,
           revenue: f.revenue,
           opens: f.opens,
@@ -309,12 +305,10 @@ function analyzeDashboardData(analysisType: string, context: any) {
     
     case 'campaign_performance':
       const campaigns = context.campaigns || []
-      const avgOpenRate = campaigns.reduce((s: number, c: any) => s + (c.open_rate || 0), 0) / campaigns.length
-      const totalRevenue = campaigns.reduce((s: number, c: any) => s + (c.revenue || 0), 0)
       return {
-        total_campaigns: campaigns.length,
-        average_open_rate: avgOpenRate,
-        total_revenue: totalRevenue,
+        total: campaigns.length,
+        avg_open_rate: campaigns.reduce((s: number, c: any) => s + (c.open_rate || 0), 0) / campaigns.length,
+        total_revenue: campaigns.reduce((s: number, c: any) => s + (c.revenue || 0), 0),
         low_performers: campaigns.filter((c: any) => c.open_rate < 0.15).length
       }
     
@@ -325,8 +319,8 @@ function analyzeDashboardData(analysisType: string, context: any) {
       return {
         sms_count: smsFlows.length,
         email_count: emailFlows.length,
-        sms_avg_revenue: smsFlows.reduce((s: number, f: any) => s + f.revenue, 0) / smsFlows.length,
-        email_avg_revenue: emailFlows.reduce((s: number, f: any) => s + f.revenue, 0) / emailFlows.length
+        sms_avg_revenue: smsFlows.reduce((s: number, f: any) => s + (f.revenue || 0), 0) / (smsFlows.length || 1),
+        email_avg_revenue: emailFlows.reduce((s: number, f: any) => s + (f.revenue || 0), 0) / (emailFlows.length || 1)
       }
     
     default:
@@ -334,27 +328,27 @@ function analyzeDashboardData(analysisType: string, context: any) {
   }
 }
 
-// Fallback: Simple data analysis
+// Fallback: Simple analysis without AI
 function analyzeClientData(message: string, context: any): string {
   const lowerMessage = message.toLowerCase()
 
   if (lowerMessage.includes('flow') && (lowerMessage.includes('top') || lowerMessage.includes('best'))) {
     const flows = context.flows || []
-    if (flows.length === 0) return "No flow data available. Try syncing your data first."
+    if (flows.length === 0) return "No flow data available."
     
     const topFlows = flows
       .sort((a: any, b: any) => (b.revenue || 0) - (a.revenue || 0))
       .slice(0, 5)
     
-    let response = `Here are your top ${topFlows.length} performing flows:\n\n`
+    let response = `Top ${topFlows.length} flows:\n\n`
     topFlows.forEach((flow: any, idx: number) => {
       response += `${idx + 1}. **${flow.flow_name}**\n`
-      response += `   - Revenue: $${(flow.revenue || 0).toLocaleString()}\n`
-      response += `   - Opens: ${(flow.opens || 0).toLocaleString()} (${((flow.open_rate || 0) * 100).toFixed(1)}%)\n\n`
+      response += `   Revenue: $${(flow.revenue || 0).toLocaleString()}\n`
+      response += `   Opens: ${(flow.opens || 0).toLocaleString()} (${((flow.open_rate || 0) * 100).toFixed(1)}%)\n\n`
     })
     
     return response
   }
 
-  return `I can help you analyze:\n- Top performing flows\n- Campaign performance\n- Optimization opportunities\n\nTry asking: "What are my top flows?" or "How are my campaigns doing?"`
+  return `I can help analyze flows, campaigns, and provide optimization tips. Try asking:\n- "What are my top flows?"\n- "Show me campaign performance"\n- "Give me optimization recommendations"`
 }
