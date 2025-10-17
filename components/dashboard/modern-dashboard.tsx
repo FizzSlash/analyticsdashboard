@@ -42,7 +42,8 @@ import {
   AlertTriangle,
   Loader2,
   AlertCircle,
-  ExternalLink
+  ExternalLink,
+  X
 } from 'lucide-react'
 import { calculatePreciseClickRate, calculatePreciseOpenRate } from '@/lib/utils'
 
@@ -93,6 +94,7 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
   const [showAboveFold, setShowAboveFold] = useState(false)
   const [selectedCampaignPeriod, setSelectedCampaignPeriod] = useState<string | null>(null)
   const [selectedFlowPeriod, setSelectedFlowPeriod] = useState<string | null>(null)
+  const [creativesPage, setCreativesPage] = useState(1)
 
   // Chart data processing functions
   const getRevenueRecipientsComboData = (campaigns: any[], timeframe: number) => {
@@ -2810,6 +2812,13 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
       }
     })
     
+    // Pagination
+    const itemsPerPage = 50
+    const totalPages = Math.ceil(sortedCreatives.length / itemsPerPage)
+    const startIndex = (creativesPage - 1) * itemsPerPage
+    const endIndex = startIndex + itemsPerPage
+    const paginatedCreatives = sortedCreatives.slice(startIndex, endIndex)
+    
     return (
       <div className="space-y-6">
         {/* Header with Sort Controls */}
@@ -2819,7 +2828,9 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
               <div>
                 <h3 className="text-white font-bold text-lg">Email Creatives Gallery</h3>
                 <p className="text-white/60 text-sm mt-1">
-                  {creativeCampaigns.length > 50 ? `Showing top 50 of ${creativeCampaigns.length} campaigns` : `${creativeCampaigns.length} campaigns with email templates`}
+                  {sortedCreatives.length > itemsPerPage 
+                    ? `Showing ${startIndex + 1}-${Math.min(endIndex, sortedCreatives.length)} of ${sortedCreatives.length} campaigns` 
+                    : `${sortedCreatives.length} campaigns with email templates`}
                 </p>
               </div>
               
@@ -2856,7 +2867,7 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
 
         {/* Creatives Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {sortedCreatives.slice(0, 50).map((campaign: any) => {
+          {paginatedCreatives.map((campaign: any) => {
             const firstImage = extractFirstImage(campaign.email_html)
             const revenuePerRecipient = (campaign.revenue || 0) / (campaign.recipients_count || 1)
             
@@ -3040,6 +3051,51 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
           })}
         </div>
 
+        {/* Pagination Controls */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-center gap-2 mt-6">
+            <button
+              onClick={() => setCreativesPage(Math.max(1, creativesPage - 1))}
+              disabled={creativesPage === 1}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                creativesPage === 1
+                  ? 'bg-white/5 text-white/30 cursor-not-allowed'
+                  : 'bg-white/10 text-white hover:bg-white/20'
+              }`}
+            >
+              ← Previous
+            </button>
+            
+            <div className="flex items-center gap-2">
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                <button
+                  key={page}
+                  onClick={() => setCreativesPage(page)}
+                  className={`w-10 h-10 rounded-lg text-sm font-medium transition-colors ${
+                    page === creativesPage
+                      ? 'bg-blue-500 text-white'
+                      : 'bg-white/10 text-white hover:bg-white/20'
+                  }`}
+                >
+                  {page}
+                </button>
+              ))}
+            </div>
+            
+            <button
+              onClick={() => setCreativesPage(Math.min(totalPages, creativesPage + 1))}
+              disabled={creativesPage === totalPages}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                creativesPage === totalPages
+                  ? 'bg-white/5 text-white/30 cursor-not-allowed'
+                  : 'bg-white/10 text-white hover:bg-white/20'
+              }`}
+            >
+              Next →
+            </button>
+          </div>
+        )}
+
         {/* Full Preview Modal */}
         {selectedCreative && (
           <div 
@@ -3070,9 +3126,9 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
                   </div>
                   <button
                     onClick={() => setSelectedCreative(null)}
-                    className="text-white/60 hover:text-white p-2 ml-4"
+                    className="text-white/60 hover:text-white p-2 ml-4 hover:bg-white/10 rounded-lg transition-colors"
                   >
-                    <X className="h-6 w-6" />
+                    <AlertCircle className="h-6 w-6" />
                   </button>
                 </div>
                 
