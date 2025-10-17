@@ -44,6 +44,7 @@ import {
   AlertCircle,
   ExternalLink
 } from 'lucide-react'
+import { calculatePreciseClickRate, calculatePreciseOpenRate } from '@/lib/utils'
 
 interface ModernDashboardProps {
   client: any
@@ -1221,10 +1222,10 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
                         </div>
                         <div className="text-right">
                           <div className={`font-bold ${
-                            (campaign.click_rate || 0) >= 0.03 ? 'text-green-300' :
-                            (campaign.click_rate || 0) >= 0.015 ? 'text-yellow-300' : 'text-red-300'
+                            calculatePreciseClickRate(campaign) >= 0.03 ? 'text-green-300' :
+                            calculatePreciseClickRate(campaign) >= 0.015 ? 'text-yellow-300' : 'text-red-300'
                           }`}>
-                            {((campaign.click_rate || 0) * 100).toFixed(1)}%
+                            {(calculatePreciseClickRate(campaign) * 100).toFixed(2)}%
                           </div>
                           <div className="text-white/50">click</div>
                         </div>
@@ -1956,10 +1957,10 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
                       </td>
                       <td className="text-right text-white text-sm py-4">
                         <span className={`${
-                          (campaign.click_rate * 100) > 3 ? 'text-green-300' : 
-                          (campaign.click_rate * 100) > 1 ? 'text-yellow-300' : 'text-red-300'
+                          (calculatePreciseClickRate(campaign) * 100) > 3 ? 'text-green-300' : 
+                          (calculatePreciseClickRate(campaign) * 100) > 1 ? 'text-yellow-300' : 'text-red-300'
                         }`}>
-                          {(campaign.click_rate * 100)?.toFixed(1)}%
+                          {(calculatePreciseClickRate(campaign) * 100)?.toFixed(2)}%
                         </span>
                       </td>
                       <td className="text-right text-white font-semibold text-sm py-4">
@@ -2333,7 +2334,7 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
                        </td>
                         <td className="text-right text-white text-sm py-3 px-2">${(flow.revenue || 0).toLocaleString()}</td>
                         <td className="text-right text-white text-sm py-3 px-2">{((flow.open_rate || 0) * 100).toFixed(1)}%</td>
-                        <td className="text-right text-white text-sm py-3 px-2">{((flow.click_rate || 0) * 100).toFixed(1)}%</td>
+                        <td className="text-right text-white text-sm py-3 px-2">{(calculatePreciseClickRate(flow) * 100).toFixed(2)}%</td>
                         <td className="text-right text-white text-sm py-3 px-2">{(flow.weeklyRecipients || 0).toLocaleString()}</td>
                         <td className="text-right text-white text-sm py-3 px-2">{(flow.opens || flow.weeklyOpens || 0).toLocaleString()}</td>
                         <td className="text-right text-white text-sm py-3 px-2">{(flow.clicks || flow.weeklyClicks || 0).toLocaleString()}</td>
@@ -2893,7 +2894,7 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
                     <div className="flex justify-between text-xs">
                       <span className="text-white/60">Click Rate</span>
                       <span className="text-white font-semibold">
-                        {(campaign.click_rate * 100).toFixed(1)}%
+                        {(calculatePreciseClickRate(campaign) * 100).toFixed(2)}%
                       </span>
                     </div>
                     

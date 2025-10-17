@@ -91,3 +91,23 @@ export function calculateAverageMetrics(metrics: any[], fields: string[]) {
   
   return averages
 }
+
+/**
+ * Calculate precise click rate from raw unique clicks data
+ * Uses clicks_unique / recipients for more accuracy (2 decimals) than Klaviyo's rounded click_rate
+ */
+export function calculatePreciseClickRate(item: any): number {
+  const clicks = item.clicks_unique || item.clicked_count || item.clicks || 0
+  const recipients = item.recipients_count || item.recipients || item.weeklyRecipients || 0
+  return recipients > 0 ? (clicks / recipients) : 0
+}
+
+/**
+ * Calculate precise open rate from raw unique opens data
+ * Uses opens_unique / recipients for more accuracy
+ */
+export function calculatePreciseOpenRate(item: any): number {
+  const opens = item.opens_unique || item.opened_count || item.opens || 0
+  const recipients = item.recipients_count || item.recipients || item.weeklyRecipients || 0
+  return recipients > 0 ? (opens / recipients) : 0
+}

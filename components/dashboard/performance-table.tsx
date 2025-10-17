@@ -1,7 +1,7 @@
 'use client'
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { formatCurrency, formatNumber, formatPercentage } from "@/lib/utils"
+import { formatCurrency, formatNumber, formatPercentage, calculatePreciseClickRate, calculatePreciseOpenRate } from "@/lib/utils"
 import { CampaignMetric, FlowMetric } from "@/lib/supabase"
 
 interface PerformanceTableProps {
@@ -75,10 +75,10 @@ export function PerformanceTable({ title, data, type, className }: PerformanceTa
                         {formatNumber(campaign.recipients_count)}
                       </td>
                       <td className="text-right py-3 px-2 text-sm">
-                        {campaign.open_rate ? formatPercentage(campaign.open_rate) : '-'}
+                        {formatPercentage(calculatePreciseOpenRate(campaign) * 100, 2)}
                       </td>
                       <td className="text-right py-3 px-2 text-sm">
-                        {campaign.click_rate ? formatPercentage(campaign.click_rate) : '-'}
+                        {formatPercentage(calculatePreciseClickRate(campaign) * 100, 2)}
                       </td>
                       <td className="text-right py-3 px-2 text-sm font-medium">
                         {formatCurrency(campaign.revenue)}
