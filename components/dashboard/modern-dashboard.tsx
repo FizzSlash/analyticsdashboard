@@ -95,6 +95,7 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
   const [selectedCampaignPeriod, setSelectedCampaignPeriod] = useState<string | null>(null)
   const [selectedFlowPeriod, setSelectedFlowPeriod] = useState<string | null>(null)
   const [creativesPage, setCreativesPage] = useState(1)
+  const [expandedInsights, setExpandedInsights] = useState<Set<number>>(new Set())
 
   // Chart data processing functions
   const getRevenueRecipientsComboData = (campaigns: any[], timeframe: number) => {
@@ -1107,26 +1108,68 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
                   <div>
                     <h4 className="text-white font-semibold text-sm mb-3">Recommendations</h4>
                     <div className="space-y-3">
-                      {aiSubjectInsights.recommendations.map((rec: any, i: number) => (
-                        <div key={i} className="bg-white/5 rounded-lg p-4 border border-white/10">
-                          <div className="font-medium text-white mb-1">{rec.action}</div>
-                          <p className="text-white/70 text-xs mb-2">{rec.why}</p>
-                          {rec.expected_improvement && (
-                            <div className="text-green-300 text-xs font-medium">
-                              Expected: {rec.expected_improvement}
-                            </div>
-                          )}
-                          {rec.examples && rec.examples.length > 0 && (
-                            <div className="mt-2 space-y-1">
-                              {rec.examples.map((ex: string, j: number) => (
-                                <div key={j} className="text-blue-300 text-xs italic">
-                                  → "{ex}"
+                      {aiSubjectInsights.recommendations.map((rec: any, i: number) => {
+                        const isExpanded = expandedInsights.has(i)
+                        const hasSupporting = rec.supporting_campaigns && rec.supporting_campaigns.length > 0
+                        
+                        return (
+                          <div key={i} className="bg-white/5 rounded-lg border border-white/10 overflow-hidden">
+                            <div className="p-4">
+                              <div className="font-medium text-white mb-1">{rec.action}</div>
+                              <p className="text-white/70 text-xs mb-2">{rec.why}</p>
+                              {rec.expected_improvement && (
+                                <div className="text-green-300 text-xs font-medium mb-2">
+                                  Expected: {rec.expected_improvement}
                                 </div>
-                              ))}
+                              )}
+                              {rec.examples && rec.examples.length > 0 && (
+                                <div className="mt-2 space-y-1">
+                                  {rec.examples.map((ex: string, j: number) => (
+                                    <div key={j} className="text-blue-300 text-xs italic">
+                                      → "{ex}"
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                              
+                              {/* Show Evidence Button */}
+                              {hasSupporting && (
+                                <button
+                                  onClick={() => {
+                                    const newExpanded = new Set(expandedInsights)
+                                    if (isExpanded) {
+                                      newExpanded.delete(i)
+                                    } else {
+                                      newExpanded.add(i)
+                                    }
+                                    setExpandedInsights(newExpanded)
+                                  }}
+                                  className="mt-3 text-xs text-white/60 hover:text-white flex items-center gap-1 transition-colors"
+                                >
+                                  <Eye className="h-3 w-3" />
+                                  {isExpanded ? 'Hide' : 'Show'} Supporting Data ({rec.supporting_campaigns.length} campaigns)
+                                </button>
+                              )}
                             </div>
-                          )}
-                        </div>
-                      ))}
+                            
+                            {/* Expanded Supporting Campaigns */}
+                            {isExpanded && hasSupporting && (
+                              <div className="border-t border-white/10 bg-black/20 p-4">
+                                <h5 className="text-white/80 text-xs font-semibold mb-2 uppercase tracking-wide">
+                                  📊 Campaigns Supporting This Insight:
+                                </h5>
+                                <div className="space-y-2">
+                                  {rec.supporting_campaigns.map((campaign: string, idx: number) => (
+                                    <div key={idx} className="bg-white/5 rounded p-2 text-xs text-white/90 border-l-2 border-white/30">
+                                      {campaign}
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )
+                      })}
                     </div>
                   </div>
                 )}

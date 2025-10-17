@@ -110,6 +110,15 @@ CRITICAL FOR EXPECTED_IMPROVEMENT:
 
 Be SPECIFIC to this brand's data. Don't give generic advice. Consider audience segmentation in your analysis.
 
+CRITICAL - INCLUDE ACTUAL CAMPAIGN EXAMPLES FOR CREDIBILITY:
+- For EVERY pattern/recommendation, include "supporting_campaigns" array
+- List 3-5 ACTUAL subject lines from the data provided (use exact subjects from TOP 10/BOTTOM 10)
+- Include full metrics for each: open rate, click rate, revenue, audience size
+- This proves it's a TREND (multiple campaigns), not just one outlier
+- Format: "Exact Subject Line from data - 58.2% OR, 0.86% CTR, $1,234 revenue, 5,678 recipients"
+- Use campaigns that clearly demonstrate the pattern
+- Show variety (not just the top 3, show a range)
+
 Return as JSON:
 {
   "summary": "2-3 sentence overview of findings",
@@ -117,14 +126,24 @@ Return as JSON:
     {
       "pattern": "Short subject lines (under 40 chars)",
       "evidence": "7 out of top 10 are under 40 chars",
-      "avg_performance": "52% OR vs 38% for longer"
+      "avg_performance": "52% OR vs 38% for longer",
+      "supporting_campaigns": [
+        "Campaign Subject Line 1 - 58% OR",
+        "Campaign Subject Line 2 - 54% OR",
+        "Campaign Subject Line 3 - 52% OR"
+      ]
     }
   ],
   "avoid_patterns": [
     {
       "pattern": "Using emoji",
       "evidence": "8 out of bottom 10 have emoji",
-      "avg_performance": "28% OR vs 48% without emoji"
+      "avg_performance": "28% OR vs 48% without emoji",
+      "supporting_campaigns": [
+        "Campaign Subject Line 1 - 25% OR",
+        "Campaign Subject Line 2 - 28% OR",
+        "Campaign Subject Line 3 - 30% OR"
+      ]
     }
   ],
   "recommendations": [
@@ -135,6 +154,11 @@ Return as JSON:
       "examples": [
         "Your October Favorites",
         "New Arrivals Inside"
+      ],
+      "supporting_campaigns": [
+        "Actual campaign subject from your top performers - 58% OR",
+        "Another actual campaign subject - 54% OR",
+        "Third actual campaign subject - 52% OR"
       ]
     }
   ],
