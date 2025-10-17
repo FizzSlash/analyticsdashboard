@@ -281,17 +281,27 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
       
       // Fill in actual data where it exists
       weeklyFlowData.forEach((week: any) => {
-        // Parse the week date properly
+        // ✅ FIX: Always prioritize weekDate (ISO format) for accurate date parsing
         let date: Date
+        
         if (week.weekDate) {
+          // Use the accurate ISO date from backend
           date = new Date(week.weekDate)
         } else if (week.week) {
-          // Handle formats like "Oct 17" or full date strings
-          const currentYear = new Date().getFullYear()
-          date = new Date(week.week + ', ' + currentYear)
-          // If the parsed date is invalid, try previous year
-          if (isNaN(date.getTime())) {
-            date = new Date(week.week + ', ' + (currentYear - 1))
+          // Fallback: Parse formatted string intelligently
+          // For 365-day views, need to check if data is from previous year
+          const today = new Date()
+          const currentYear = today.getFullYear()
+          
+          // Try to parse with different years to find valid date within our range
+          const startYear = new Date(startDate).getFullYear()
+          
+          // Start with the year from our timeframe range (most likely correct)
+          date = new Date(week.week + ', ' + startYear)
+          
+          // If parsing failed or date seems wrong, try current year
+          if (isNaN(date.getTime()) || date > today) {
+            date = new Date(week.week + ', ' + currentYear)
           }
         } else {
           return // Skip if no date info
