@@ -91,6 +91,8 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
   const [creativesSortField, setCreativesSortField] = useState<'send_date' | 'open_rate' | 'click_rate' | 'revenue_per_recipient'>('send_date')
   const [selectedCreative, setSelectedCreative] = useState<any>(null)
   const [showAboveFold, setShowAboveFold] = useState(false)
+  const [selectedCampaignPeriod, setSelectedCampaignPeriod] = useState<string | null>(null)
+  const [selectedFlowPeriod, setSelectedFlowPeriod] = useState<string | null>(null)
 
   // Chart data processing functions
   const getRevenueRecipientsComboData = (campaigns: any[], timeframe: number) => {
@@ -1255,7 +1257,29 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
   const renderCampaignsTab = () => {
     // ✅ FIX: Filter out drafts and apply timeframe filtering
     const allCampaigns = data?.campaigns || []
-    const campaigns = filterAndAggregateData.campaigns(allCampaigns, timeframe)
+    let campaigns = filterAndAggregateData.campaigns(allCampaigns, timeframe)
+    
+    // ✅ NEW: Filter by selected chart period if user clicked a bar
+    if (selectedCampaignPeriod) {
+      campaigns = campaigns.filter((campaign: any) => {
+        if (!campaign.send_date) return false
+        const date = new Date(campaign.send_date)
+        
+        // For monthly periods (e.g., "2025 Aug"), match month and year
+        if (selectedCampaignPeriod.includes(' ')) {
+          const [year, month] = selectedCampaignPeriod.split(' ')
+          const campaignMonth = date.toLocaleDateString('en-US', { month: 'short' })
+          const campaignYear = date.getFullYear().toString()
+          return campaignMonth === month && campaignYear === year
+        } else {
+          // For weekly periods (e.g., "Oct 17"), match week
+          const weekStart = new Date(date)
+          weekStart.setDate(date.getDate() - date.getDay())
+          const weekLabel = weekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+          return weekLabel === selectedCampaignPeriod
+        }
+      })
+    }
     
     // Calculate total campaign revenue from filtered data (sent campaigns only)
     const totalRevenue = campaigns.reduce((sum: number, campaign: any) => sum + (campaign.revenue || 0), 0)
@@ -1398,6 +1422,14 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
               <CardTitle className="text-white flex items-center gap-2">
                 <BarChart3 className="w-5 h-5" />
                 Campaign Revenue and Recipients
+                {selectedCampaignPeriod && (
+                  <button
+                    onClick={() => setSelectedCampaignPeriod(null)}
+                    className="ml-auto px-2 py-1 bg-blue-500/80 text-white text-xs rounded hover:bg-blue-600 transition-colors"
+                  >
+                    Filtered: {selectedCampaignPeriod} ✕
+                  </button>
+                )}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -1442,6 +1474,12 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
                       fill={barChartColor}
                       fillOpacity={0.8}
                       radius={[4, 4, 0, 0]}
+                      onClick={(data: any) => {
+                        if (data && data.period) {
+                          setSelectedCampaignPeriod(selectedCampaignPeriod === data.period ? null : data.period)
+                        }
+                      }}
+                      cursor="pointer"
                     />
                     <Line 
                       yAxisId="recipients"
@@ -1820,6 +1858,11 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
             <CardTitle className="text-white flex items-center gap-2">
               <Mail className="w-5 h-5" />
               Campaign Performance ({campaigns.length} campaigns)
+              {selectedCampaignPeriod && (
+                <span className="ml-auto text-xs bg-blue-500/80 text-white px-2 py-1 rounded">
+                  Showing: {selectedCampaignPeriod}
+                </span>
+              )}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -2031,8 +2074,34 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
     const allFlows = data?.flows || []
     console.log('🔍 FLOWS DEBUG: Raw flows data:', allFlows.length, allFlows.slice(0, 2))
     
-    const flows = filterAndAggregateData.flowsWithActivity(allFlows, timeframe)
+    let flows = filterAndAggregateData.flowsWithActivity(allFlows, timeframe)
     console.log('🔍 FLOWS DEBUG: Filtered flows data:', flows.length, flows.slice(0, 2))
+    
+    // ✅ NEW: Filter by selected chart period if user clicked a bar
+    if (selectedFlowPeriod) {
+      const weeklyFlowData = data?.flowWeeklyTrends || []
+      // Get flow IDs that had activity in the selected period
+      const flowIdsInPeriod = new Set(
+        weeklyFlowData
+          .filter((week: any) => {
+            if (selectedFlowPeriod.includes(' ')) {
+              // Monthly period
+              const date = week.weekDate ? new Date(week.weekDate) : new Date(week.week + ', 2025')
+              const monthKey = date.toLocaleDateString('en-US', { year: 'numeric', month: 'short' })
+              return monthKey === selectedFlowPeriod
+            } else {
+              // Weekly period
+              return week.week === selectedFlowPeriod
+            }
+          })
+          .flatMap((week: any) => {
+            // Get all flows from the weekly data for that week
+            return allFlows.map((f: any) => f.flow_id)
+          })
+      )
+      
+      flows = flows.filter((flow: any) => flowIdsInPeriod.has(flow.flow_id))
+    }
     
     // Calculate total flow revenue from properly filtered data
     const totalFlowRevenue = flows.reduce((sum: number, flow: any) => sum + (flow.revenue || 0), 0)
@@ -2176,6 +2245,14 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
               <CardTitle className="text-white flex items-center gap-2">
                 <BarChart3 className="w-5 h-5" />
                 Flow Revenue and Recipients
+                {selectedFlowPeriod && (
+                  <button
+                    onClick={() => setSelectedFlowPeriod(null)}
+                    className="ml-auto px-2 py-1 bg-blue-500/80 text-white text-xs rounded hover:bg-blue-600 transition-colors"
+                  >
+                    Filtered: {selectedFlowPeriod} ✕
+                  </button>
+                )}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -2220,6 +2297,12 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
                       fill={barChartColor}
                       fillOpacity={0.8}
                       radius={[4, 4, 0, 0]}
+                      onClick={(data: any) => {
+                        if (data && data.period) {
+                          setSelectedFlowPeriod(selectedFlowPeriod === data.period ? null : data.period)
+                        }
+                      }}
+                      cursor="pointer"
                     />
                     <Line 
                       yAxisId="recipients"
@@ -2292,6 +2375,11 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
             <CardTitle className="text-white flex items-center gap-2">
               <Activity className="w-5 h-5" />
               Flow Recap
+              {selectedFlowPeriod && (
+                <span className="ml-auto text-xs bg-blue-500/80 text-white px-2 py-1 rounded">
+                  Showing: {selectedFlowPeriod}
+                </span>
+              )}
             </CardTitle>
           </CardHeader>
           <CardContent>
