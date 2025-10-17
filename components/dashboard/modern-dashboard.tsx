@@ -251,10 +251,16 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
     // Get weekly flow data for ComposedChart (like campaigns)
     const weeklyFlowData = data?.flowWeeklyTrends || []
     
+    console.log(`📊 CHART DATA: Processing flow revenue chart for ${timeframe} days`)
+    console.log(`📊 CHART DATA: Received ${weeklyFlowData.length} weeks from backend`)
+    console.log(`📊 CHART DATA: Sample weeks:`, weeklyFlowData.slice(0, 3))
+    
     // Use timeframe to determine aggregation (weekly vs monthly)
     const useMonthly = timeframe > 90
     
     if (useMonthly) {
+      console.log(`📊 CHART DATA: Using MONTHLY aggregation for ${timeframe} days`)
+      
       // ✅ FIX: Generate FULL month range for longer timeframes (180, 365 days)
       const monthlyData: { [month: string]: any } = {}
       
@@ -279,7 +285,12 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
         currentDate.setMonth(currentDate.getMonth() + 1)
       }
       
+      console.log(`📊 CHART DATA: Generated ${Object.keys(monthlyData).length} month buckets`)
+      
       // Fill in actual data where it exists
+      let processedWeeks = 0
+      let totalRevenue = 0
+      
       weeklyFlowData.forEach((week: any) => {
         // ✅ FIX: Always prioritize weekDate (ISO format) for accurate date parsing
         let date: Date
@@ -304,6 +315,7 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
             date = new Date(week.week + ', ' + currentYear)
           }
         } else {
+          console.log(`📊 CHART DATA: Skipping week with no date info:`, week)
           return // Skip if no date info
         }
         
@@ -313,21 +325,37 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
           monthlyData[monthKey].revenue += week.revenue || 0
           monthlyData[monthKey].recipients += week.opens || 0 // Use opens as recipients proxy
           monthlyData[monthKey].clicks += week.clicks || 0
+          processedWeeks++
+          totalRevenue += week.revenue || 0
+        } else {
+          console.log(`📊 CHART DATA: Week ${week.weekDate || week.week} (${monthKey}) not in month buckets!`)
         }
       })
       
+      console.log(`📊 CHART DATA: Processed ${processedWeeks}/${weeklyFlowData.length} weeks`)
+      console.log(`📊 CHART DATA: Total revenue added to months: $${totalRevenue.toLocaleString()}`)
+      console.log(`📊 CHART DATA: Month data sample:`, Object.values(monthlyData).slice(0, 3))
+      
       // Return sorted array (including months with zero data)
-      return Object.values(monthlyData)
+      const finalData = Object.values(monthlyData)
         .sort((a: any, b: any) => a.monthDate.getTime() - b.monthDate.getTime())
         .map(({ monthDate, ...rest }) => rest) // Remove monthDate helper field
+      
+      console.log(`📊 CHART DATA: Returning ${finalData.length} months for chart`)
+      return finalData
     } else {
+      console.log(`📊 CHART DATA: Using WEEKLY display for ${timeframe} days`)
+      
       // Weekly data for shorter timeframes (already has full range from backend)
-      return weeklyFlowData.map((week: any) => ({
+      const result = weeklyFlowData.map((week: any) => ({
         period: week.week,
         revenue: week.revenue || 0,
         recipients: week.opens || 0, // Use opens as proxy for reach
         clicks: week.clicks || 0
       }))
+      
+      console.log(`📊 CHART DATA: Returning ${result.length} weeks for chart`)
+      return result
     }
   }
 
