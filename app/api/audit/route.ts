@@ -178,8 +178,11 @@ function analyzeSendTimes(campaigns: any[]) {
   campaigns.forEach(c => {
     if (c.send_date) {
       const date = new Date(c.send_date)
-      const day = date.toLocaleDateString('en-US', { weekday: 'short' })
-      const hour = date.getHours()
+      
+      // ✅ FIX: Convert to EST timezone for accurate US peak hours
+      const estDate = new Date(date.toLocaleString('en-US', { timeZone: 'America/New_York' }))
+      const day = estDate.toLocaleDateString('en-US', { weekday: 'short' })
+      const hour = estDate.getHours()
       
       byDay[day].push(c.open_rate || 0)
       if (!byHour[hour]) byHour[hour] = []

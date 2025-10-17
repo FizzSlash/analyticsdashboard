@@ -100,6 +100,14 @@ Identify:
 5. Things to avoid based on their data
    - Call out if bad patterns are audience-size dependent
 
+CRITICAL FOR EXPECTED_IMPROVEMENT:
+- Use PERCENTAGE POINTS, not relative percentages
+- If current open rate is 50%, a "+5 percentage points" improvement = 55% (NOT 75%)
+- Be CONSERVATIVE: Subject line changes typically improve open rates by 2-8 percentage points max
+- Format example: "+3-5 percentage points (e.g., 50% → 53-55%)" or "+2-4 points"
+- NEVER suggest improvements over 10 percentage points - that's unrealistic
+- If a change could take someone from 30% to 35%, say "+5 percentage points" NOT "+17% improvement"
+
 Be SPECIFIC to this brand's data. Don't give generic advice. Consider audience segmentation in your analysis.
 
 Return as JSON:
@@ -123,7 +131,7 @@ Return as JSON:
     {
       "action": "Keep subject lines under 40 characters",
       "why": "Your audience responds better to concise subjects",
-      "expected_improvement": "+10-15% open rate",
+      "expected_improvement": "+3-5 percentage points (e.g., 50% → 53-55%)",
       "examples": [
         "Your October Favorites",
         "New Arrivals Inside"

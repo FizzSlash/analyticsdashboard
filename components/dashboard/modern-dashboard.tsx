@@ -2246,7 +2246,10 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
             <CardContent>
               <div className="h-64">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={weeklyTrendData}>
+                  <LineChart data={weeklyTrendData.map((week: any) => ({
+                    week: week.week,
+                    rpr: week.opens > 0 ? week.revenue / week.opens : 0
+                  }))}>
                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
                     <XAxis 
                       dataKey="week" 
@@ -2269,7 +2272,7 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
                     />
                     <Line 
                       type="monotone" 
-                      dataKey="revenue" 
+                      dataKey="rpr" 
                       stroke={lineChartColor}
                       strokeWidth={3}
                       dot={{ fill: lineChartColor, strokeWidth: 2, r: 4 }}
@@ -2677,7 +2680,7 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
       return match ? match[1] : null
     }
     
-    // Sort campaigns
+    // ✅ FIX: Sort campaigns FIRST, then limit to top 50 for better performance
     const sortedCreatives = [...creativeCampaigns].sort((a: any, b: any) => {
       switch(creativesSortField) {
         case 'send_date':
@@ -2703,7 +2706,9 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-white font-bold text-lg">Email Creatives Gallery</h3>
-                <p className="text-white/60 text-sm mt-1">{sortedCreatives.length} campaigns with email templates</p>
+                <p className="text-white/60 text-sm mt-1">
+                  {creativeCampaigns.length > 50 ? `Showing top 50 of ${creativeCampaigns.length} campaigns` : `${creativeCampaigns.length} campaigns with email templates`}
+                </p>
               </div>
               
               <div className="flex items-center gap-4">
@@ -2739,7 +2744,7 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
 
         {/* Creatives Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {sortedCreatives.map((campaign: any) => {
+          {sortedCreatives.slice(0, 50).map((campaign: any) => {
             const firstImage = extractFirstImage(campaign.email_html)
             const revenuePerRecipient = (campaign.revenue || 0) / (campaign.recipients_count || 1)
             
