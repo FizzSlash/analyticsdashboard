@@ -93,30 +93,56 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
 
   // Chart data processing functions
   const getRevenueRecipientsComboData = (campaigns: any[], timeframe: number) => {
-    const revenueRecipientsByPeriod: { [key: string]: { revenue: number, recipients: number } } = {}
+    const revenueRecipientsByPeriod: { [key: string]: { revenue: number, recipients: number, sortDate: Date } } = {}
     
+    // ✅ FIX: Generate FULL date range for chart display
+    const endDate = new Date()
+    const startDate = new Date()
+    startDate.setDate(startDate.getDate() - timeframe)
+    
+    const useMonthly = timeframe > 90
+    
+    if (useMonthly) {
+      // Generate all months in range
+      let currentDate = new Date(startDate)
+      currentDate.setDate(1) // Start of month
+      
+      while (currentDate <= endDate) {
+        const period = currentDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+        revenueRecipientsByPeriod[period] = { revenue: 0, recipients: 0, sortDate: new Date(currentDate) }
+        currentDate.setMonth(currentDate.getMonth() + 1)
+      }
+    } else {
+      // Generate all weeks in range
+      let currentDate = new Date(startDate)
+      
+      while (currentDate <= endDate) {
+        const weekStart = new Date(currentDate)
+        weekStart.setDate(currentDate.getDate() - currentDate.getDay())
+        const period = weekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+        revenueRecipientsByPeriod[period] = { revenue: 0, recipients: 0, sortDate: new Date(weekStart) }
+        currentDate.setDate(currentDate.getDate() + 7) // Next week
+      }
+    }
+    
+    // Fill in actual campaign data
     campaigns.forEach((campaign: any) => {
       if (campaign.send_date && campaign.revenue) {
         const date = new Date(campaign.send_date)
         let period: string
         
-        // Weekly/Monthly aggregation for combo chart
-        if (timeframe <= 90) {
-          // Weekly for shorter timeframes
+        if (useMonthly) {
+          period = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+        } else {
           const weekStart = new Date(date)
           weekStart.setDate(date.getDate() - date.getDay())
           period = weekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-        } else {
-          // Monthly for longer timeframes
-          period = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
         }
         
-        if (!revenueRecipientsByPeriod[period]) {
-          revenueRecipientsByPeriod[period] = { revenue: 0, recipients: 0 }
+        if (revenueRecipientsByPeriod[period]) {
+          revenueRecipientsByPeriod[period].revenue += campaign.revenue || 0
+          revenueRecipientsByPeriod[period].recipients += campaign.recipients_count || 0
         }
-        
-        revenueRecipientsByPeriod[period].revenue += campaign.revenue || 0
-        revenueRecipientsByPeriod[period].recipients += campaign.recipients_count || 0
       }
     })
     
@@ -124,46 +150,76 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
       .map(([period, data]: [string, any]) => ({ 
         period, 
         revenue: data.revenue,
-        recipients: data.recipients 
+        recipients: data.recipients,
+        sortDate: data.sortDate
       }))
-      .sort((a: any, b: any) => new Date(a.period).getTime() - new Date(b.period).getTime())
+      .sort((a: any, b: any) => a.sortDate.getTime() - b.sortDate.getTime())
+      .map(({ sortDate, ...rest }) => rest) // Remove helper field
       .slice(-20) // Last 20 data points
   }
 
   const getRevenuePerRecipientData = (campaigns: any[], timeframe: number) => {
-    const rprByPeriod: { [key: string]: { revenue: number, recipients: number } } = {}
+    const rprByPeriod: { [key: string]: { revenue: number, recipients: number, sortDate: Date } } = {}
     
+    // ✅ FIX: Generate FULL date range for chart display
+    const endDate = new Date()
+    const startDate = new Date()
+    startDate.setDate(startDate.getDate() - timeframe)
+    
+    const useMonthly = timeframe > 90
+    
+    if (useMonthly) {
+      // Generate all months in range
+      let currentDate = new Date(startDate)
+      currentDate.setDate(1) // Start of month
+      
+      while (currentDate <= endDate) {
+        const period = currentDate.toLocaleDateString('en-US', { year: 'numeric', month: 'short' })
+        rprByPeriod[period] = { revenue: 0, recipients: 0, sortDate: new Date(currentDate) }
+        currentDate.setMonth(currentDate.getMonth() + 1)
+      }
+    } else {
+      // Generate all weeks in range
+      let currentDate = new Date(startDate)
+      
+      while (currentDate <= endDate) {
+        const weekStart = new Date(currentDate)
+        weekStart.setDate(currentDate.getDate() - currentDate.getDay())
+        const period = weekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+        rprByPeriod[period] = { revenue: 0, recipients: 0, sortDate: new Date(weekStart) }
+        currentDate.setDate(currentDate.getDate() + 7) // Next week
+      }
+    }
+    
+    // Fill in actual campaign data
     campaigns.forEach((campaign: any) => {
       if (campaign.send_date && campaign.revenue && campaign.recipients_count) {
         const date = new Date(campaign.send_date)
         let period: string
         
-        // Weekly/Monthly aggregation for RPR chart
-        if (timeframe <= 90) {
-          // Weekly for shorter timeframes
+        if (useMonthly) {
+          period = date.toLocaleDateString('en-US', { year: 'numeric', month: 'short' })
+        } else {
           const weekStart = new Date(date)
           weekStart.setDate(date.getDate() - date.getDay())
           period = weekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-        } else {
-          // Monthly for longer timeframes
-          period = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
         }
         
-        if (!rprByPeriod[period]) {
-          rprByPeriod[period] = { revenue: 0, recipients: 0 }
+        if (rprByPeriod[period]) {
+          rprByPeriod[period].revenue += campaign.revenue
+          rprByPeriod[period].recipients += campaign.recipients_count
         }
-        
-        rprByPeriod[period].revenue += campaign.revenue
-        rprByPeriod[period].recipients += campaign.recipients_count
       }
     })
     
     return Object.entries(rprByPeriod)
       .map(([period, data]: [string, any]) => ({
         period,
-        rpr: data.recipients > 0 ? data.revenue / data.recipients : 0
+        rpr: data.recipients > 0 ? data.revenue / data.recipients : 0,
+        sortDate: data.sortDate
       }))
-      .sort((a: any, b: any) => new Date(a.period).getTime() - new Date(b.period).getTime())
+      .sort((a: any, b: any) => a.sortDate.getTime() - b.sortDate.getTime())
+      .map(({ sortDate, ...rest }) => rest) // Remove helper field
       .slice(-20) // Last 20 data points
   }
 
@@ -199,32 +255,63 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
     const useMonthly = timeframe > 90
     
     if (useMonthly) {
-      // Monthly aggregation for longer timeframes
+      // ✅ FIX: Generate FULL month range for longer timeframes (180, 365 days)
       const monthlyData: { [month: string]: any } = {}
       
+      // Generate complete month range based on timeframe
+      const endDate = new Date()
+      const startDate = new Date()
+      startDate.setDate(startDate.getDate() - timeframe)
+      
+      let currentDate = new Date(startDate)
+      currentDate.setDate(1) // Start from beginning of month
+      
+      // Generate all months in range with zero values
+      while (currentDate <= endDate) {
+        const monthKey = currentDate.toLocaleDateString('en-US', { year: 'numeric', month: 'short' })
+        monthlyData[monthKey] = {
+          period: monthKey,
+          revenue: 0,
+          recipients: 0,
+          clicks: 0,
+          monthDate: new Date(currentDate) // For sorting
+        }
+        currentDate.setMonth(currentDate.getMonth() + 1)
+      }
+      
+      // Fill in actual data where it exists
       weeklyFlowData.forEach((week: any) => {
-        const date = new Date(week.week + ', 2025')
-        const monthKey = date.toLocaleDateString('en-US', { year: 'numeric', month: 'short' })
-        
-        if (!monthlyData[monthKey]) {
-          monthlyData[monthKey] = {
-            period: monthKey,
-            revenue: 0,
-            recipients: 0,
-            clicks: 0
+        // Parse the week date properly
+        let date: Date
+        if (week.weekDate) {
+          date = new Date(week.weekDate)
+        } else if (week.week) {
+          // Handle formats like "Oct 17" or full date strings
+          const currentYear = new Date().getFullYear()
+          date = new Date(week.week + ', ' + currentYear)
+          // If the parsed date is invalid, try previous year
+          if (isNaN(date.getTime())) {
+            date = new Date(week.week + ', ' + (currentYear - 1))
           }
+        } else {
+          return // Skip if no date info
         }
         
-        monthlyData[monthKey].revenue += week.revenue || 0
-        monthlyData[monthKey].recipients += week.opens || 0 // Use opens as recipients proxy
-        monthlyData[monthKey].clicks += week.clicks || 0
+        const monthKey = date.toLocaleDateString('en-US', { year: 'numeric', month: 'short' })
+        
+        if (monthlyData[monthKey]) {
+          monthlyData[monthKey].revenue += week.revenue || 0
+          monthlyData[monthKey].recipients += week.opens || 0 // Use opens as recipients proxy
+          monthlyData[monthKey].clicks += week.clicks || 0
+        }
       })
       
-      return Object.values(monthlyData).sort((a: any, b: any) => 
-        new Date(a.period).getTime() - new Date(b.period).getTime()
-      )
+      // Return sorted array (including months with zero data)
+      return Object.values(monthlyData)
+        .sort((a: any, b: any) => a.monthDate.getTime() - b.monthDate.getTime())
+        .map(({ monthDate, ...rest }) => rest) // Remove monthDate helper field
     } else {
-      // Weekly data for shorter timeframes
+      // Weekly data for shorter timeframes (already has full range from backend)
       return weeklyFlowData.map((week: any) => ({
         period: week.week,
         revenue: week.revenue || 0,

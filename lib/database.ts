@@ -554,6 +554,27 @@ export class DatabaseService {
     const cutoffDate = new Date()
     cutoffDate.setDate(cutoffDate.getDate() - days)
 
+    // ✅ FIX: Generate FULL date range with placeholders for missing weeks
+    // This ensures charts always show the complete timeframe, even with no data
+    const fullDateRange: { [week: string]: any } = {}
+    const startDate = new Date(cutoffDate)
+    const endDate = new Date()
+    
+    // Generate week entries for entire timeframe
+    let currentDate = new Date(startDate)
+    while (currentDate <= endDate) {
+      const weekKey = currentDate.toISOString().split('T')[0]
+      fullDateRange[weekKey] = {
+        week: currentDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        weekDate: weekKey,
+        revenue: 0,
+        opens: 0,
+        clicks: 0
+      }
+      currentDate.setDate(currentDate.getDate() + 7) // Move to next week
+    }
+
+    // Fetch actual data
     const { data, error } = await supabaseAdmin
       .from('flow_message_metrics')
       .select('week_date, opens, clicks, revenue, conversion_value')
@@ -563,33 +584,39 @@ export class DatabaseService {
 
     if (error) {
       console.error('Error fetching weekly flow trends:', error)
-      return []
+      // Still return full date range with zeros
+      return Object.values(fullDateRange)
     }
 
-    if (!data || data.length === 0) {
-      return []
-    }
-
-    // Aggregate by week_date
-    const weeklyTotals: { [week: string]: any } = {}
-    
-    data.forEach((record: any) => {
-      const week = record.week_date
-      if (!weeklyTotals[week]) {
-        weeklyTotals[week] = {
-          week: new Date(week).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-          revenue: 0,
-          opens: 0,
-          clicks: 0
+    // Fill in actual data where it exists
+    if (data && data.length > 0) {
+      data.forEach((record: any) => {
+        const weekKey = record.week_date
+        
+        // Find the closest week in our range (in case of date mismatches)
+        if (fullDateRange[weekKey]) {
+          fullDateRange[weekKey].revenue += parseFloat(record.conversion_value || 0)
+          fullDateRange[weekKey].opens += record.opens || 0
+          fullDateRange[weekKey].clicks += record.clicks || 0
+        } else {
+          // If exact week doesn't exist, add it (handles edge cases)
+          fullDateRange[weekKey] = {
+            week: new Date(weekKey).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+            weekDate: weekKey,
+            revenue: parseFloat(record.conversion_value || 0),
+            opens: record.opens || 0,
+            clicks: record.clicks || 0
+          }
         }
-      }
-      
-      weeklyTotals[week].revenue += parseFloat(record.conversion_value || 0)
-      weeklyTotals[week].opens += record.opens || 0
-      weeklyTotals[week].clicks += record.clicks || 0
-    })
+      })
+    }
 
-    return Object.values(weeklyTotals)
+    // Return sorted array with all weeks (including zeros)
+    const result = Object.entries(fullDateRange)
+      .sort(([dateA], [dateB]) => dateA.localeCompare(dateB))
+      .map(([_, data]) => data)
+    
+    return result
   }
 
 
