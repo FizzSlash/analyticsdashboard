@@ -2796,9 +2796,11 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
         case 'send_date':
           return new Date(b.send_date || 0).getTime() - new Date(a.send_date || 0).getTime()
         case 'open_rate':
-          return (b.open_rate || 0) - (a.open_rate || 0)
+          // Use precise calculation for accurate sorting
+          return calculatePreciseOpenRate(b) - calculatePreciseOpenRate(a)
         case 'click_rate':
-          return (b.click_rate || 0) - (a.click_rate || 0)
+          // Use precise calculation for accurate sorting
+          return calculatePreciseClickRate(b) - calculatePreciseClickRate(a)
         case 'revenue_per_recipient':
           const aRPR = (a.revenue || 0) / (a.recipients_count || 1)
           const bRPR = (b.revenue || 0) / (b.recipients_count || 1)
@@ -2992,6 +2994,13 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
                   
                   <div className="space-y-2">
                     <div className="flex justify-between text-xs">
+                      <span className="text-white/60">Audience</span>
+                      <span className="text-white font-semibold">
+                        {campaign.recipients_count?.toLocaleString() || '0'}
+                      </span>
+                    </div>
+                    
+                    <div className="flex justify-between text-xs">
                       <span className="text-white/60">Open Rate</span>
                       <span className={`font-semibold ${
                         (campaign.open_rate * 100) > 25 ? 'text-green-300' : 'text-white'
@@ -3042,17 +3051,50 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
               onClick={(e) => e.stopPropagation()}
             >
               {/* Modal Header */}
-              <div className="p-6 border-b border-white/20 flex items-center justify-between">
-                <div>
-                  <h3 className="text-white font-bold text-lg">{selectedCreative.campaign_name}</h3>
-                  <p className="text-white/60 text-sm mt-1">{selectedCreative.subject_line}</p>
+              <div className="p-6 border-b border-white/20">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex-1">
+                    <h3 className="text-white font-bold text-xl mb-2">{selectedCreative.campaign_name}</h3>
+                    <div className="space-y-2">
+                      <div className="bg-blue-500/20 border border-blue-500/30 rounded-lg p-3">
+                        <p className="text-white/60 text-xs uppercase tracking-wide font-medium mb-1">Subject Line</p>
+                        <p className="text-white font-semibold text-base">{selectedCreative.subject_line || 'No subject line'}</p>
+                      </div>
+                      {selectedCreative.preview_text && (
+                        <div className="bg-purple-500/20 border border-purple-500/30 rounded-lg p-3">
+                          <p className="text-white/60 text-xs uppercase tracking-wide font-medium mb-1">Preview Text</p>
+                          <p className="text-white text-sm">{selectedCreative.preview_text}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setSelectedCreative(null)}
+                    className="text-white/60 hover:text-white p-2 ml-4"
+                  >
+                    <X className="h-6 w-6" />
+                  </button>
                 </div>
-                <button
-                  onClick={() => setSelectedCreative(null)}
-                  className="text-white/60 hover:text-white p-2"
-                >
-                  <AlertCircle className="h-5 w-5" />
-                </button>
+                
+                {/* Quick Stats */}
+                <div className="grid grid-cols-4 gap-3 mt-4">
+                  <div className="bg-white/5 rounded p-2 text-center">
+                    <div className="text-white/60 text-xs">Audience</div>
+                    <div className="text-white font-bold text-sm">{selectedCreative.recipients_count?.toLocaleString() || '0'}</div>
+                  </div>
+                  <div className="bg-white/5 rounded p-2 text-center">
+                    <div className="text-white/60 text-xs">Open Rate</div>
+                    <div className="text-white font-bold text-sm">{(selectedCreative.open_rate * 100).toFixed(1)}%</div>
+                  </div>
+                  <div className="bg-white/5 rounded p-2 text-center">
+                    <div className="text-white/60 text-xs">Click Rate</div>
+                    <div className="text-white font-bold text-sm">{(calculatePreciseClickRate(selectedCreative) * 100).toFixed(2)}%</div>
+                  </div>
+                  <div className="bg-white/5 rounded p-2 text-center">
+                    <div className="text-white/60 text-xs">Revenue</div>
+                    <div className="text-white font-bold text-sm">${(selectedCreative.revenue || 0).toLocaleString()}</div>
+                  </div>
+                </div>
               </div>
               
               {/* Email Preview */}
