@@ -556,33 +556,53 @@ export class DatabaseService {
 
     console.log(`📊 FLOW WEEKLY TRENDS: Fetching for ${days} days, cutoff: ${cutoffDate.toISOString().split('T')[0]}`)
 
-    // Fetch actual data FIRST to see what we're working with
-    const { data, error } = await supabaseAdmin
-      .from('flow_message_metrics')
-      .select('week_date, opens, clicks, revenue, conversion_value')
-      .eq('client_id', clientId)
-      .gte('week_date', cutoffDate.toISOString().split('T')[0])
-      .order('week_date', { ascending: true })
+    // ✅ FIX: Fetch with PAGINATION to handle large datasets (Supabase has 1000 row limit)
+    let allData: any[] = []
+    let hasMore = true
+    let pageNumber = 0
+    const pageSize = 1000
+    
+    while (hasMore) {
+      const { data, error } = await supabaseAdmin
+        .from('flow_message_metrics')
+        .select('week_date, opens, clicks, revenue, conversion_value')
+        .eq('client_id', clientId)
+        .gte('week_date', cutoffDate.toISOString().split('T')[0])
+        .order('week_date', { ascending: true })
+        .range(pageNumber * pageSize, (pageNumber + 1) * pageSize - 1)
 
-    if (error) {
-      console.error('📊 FLOW WEEKLY TRENDS: Error fetching data:', error)
-      return []
+      if (error) {
+        console.error(`📊 FLOW WEEKLY TRENDS: Error fetching page ${pageNumber}:`, error)
+        break
+      }
+
+      if (data && data.length > 0) {
+        allData = allData.concat(data)
+        console.log(`📊 FLOW WEEKLY TRENDS: Page ${pageNumber + 1}: ${data.length} records (total: ${allData.length})`)
+        
+        if (data.length < pageSize) {
+          hasMore = false
+        } else {
+          pageNumber++
+        }
+      } else {
+        hasMore = false
+      }
     }
 
-    console.log(`📊 FLOW WEEKLY TRENDS: Query returned ${data?.length || 0} records`)
+    console.log(`📊 FLOW WEEKLY TRENDS: Pagination complete - fetched ${allData.length} total records`)
     
-    if (!data || data.length === 0) {
+    if (!allData || allData.length === 0) {
       console.log(`📊 FLOW WEEKLY TRENDS: NO DATA for ${days} days - returning empty array`)
       return []
     }
 
-    console.log(`📊 FLOW WEEKLY TRENDS: Sample records:`, data.slice(0, 3))
-    console.log(`📊 FLOW WEEKLY TRENDS: Date range in results: ${data[0]?.week_date} to ${data[data.length-1]?.week_date}`)
+    console.log(`📊 FLOW WEEKLY TRENDS: Date range in results: ${allData[0]?.week_date} to ${allData[allData.length-1]?.week_date}`)
 
     // Aggregate by week_date (keeping actual database dates as keys)
     const weeklyTotals: { [week: string]: any } = {}
     
-    data.forEach((record: any) => {
+    allData.forEach((record: any) => {
       const week = record.week_date
       if (!weeklyTotals[week]) {
         weeklyTotals[week] = {
