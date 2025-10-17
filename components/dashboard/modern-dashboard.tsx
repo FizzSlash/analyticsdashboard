@@ -1768,7 +1768,6 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
                   <div className="space-y-2">
                     {Object.entries(sendTimeAnalysis.byDay)
                       .sort(([,a]: any, [,b]: any) => b.avgOpenRate - a.avgOpenRate)
-                      .slice(0, 5)
                       .map(([day, data]: any, index: number) => {
                         const isTop = index < 2
                         return (
@@ -1822,8 +1821,23 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
                       .map(([hour, data]: any, index: number) => {
                         const isTop3 = index < 3
                         const hourNum = parseInt(hour.split(':')[0])
-                        const timeOfDay = hourNum < 12 ? 'AM' : 'PM'
-                        const displayHour = hourNum === 0 ? 12 : hourNum > 12 ? hourNum - 12 : hourNum
+                        const nextHourNum = (hourNum + 1) % 24
+                        
+                        // Format as range: "9-10 AM"
+                        const getHourDisplay = (h: number) => {
+                          if (h === 0) return 12
+                          if (h > 12) return h - 12
+                          return h
+                        }
+                        
+                        const startHour = getHourDisplay(hourNum)
+                        const endHour = getHourDisplay(nextHourNum)
+                        const startPeriod = hourNum < 12 ? 'AM' : 'PM'
+                        const endPeriod = nextHourNum < 12 ? 'AM' : 'PM'
+                        
+                        const displayRange = startPeriod === endPeriod 
+                          ? `${startHour}-${endHour} ${startPeriod}`
+                          : `${startHour} ${startPeriod} - ${endHour} ${endPeriod}`
                         
                         return (
                           <div key={hour} className={`flex items-center justify-between p-2 rounded-lg ${
@@ -1833,7 +1847,7 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
                               <div className={`text-sm font-bold ${
                                 isTop3 ? 'text-blue-300' : 'text-white'
                               }`}>
-                                {displayHour}:00 {timeOfDay}
+                                {displayRange}
                               </div>
                               <div className="text-white/60 text-xs">
                                 {data.count} sent
