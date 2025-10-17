@@ -3110,14 +3110,14 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
               <div className="p-6 border-b border-white/20">
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
-                    <h3 className="text-white font-bold text-xl mb-2">{selectedCreative.campaign_name}</h3>
+                    <h3 className="text-white font-bold text-xl mb-3">{selectedCreative.campaign_name}</h3>
                     <div className="space-y-2">
-                      <div className="bg-blue-500/20 border border-blue-500/30 rounded-lg p-3">
+                      <div className="border-l-4 border-white/40 pl-3 py-1">
                         <p className="text-white/60 text-xs uppercase tracking-wide font-medium mb-1">Subject Line</p>
                         <p className="text-white font-semibold text-base">{selectedCreative.subject_line || 'No subject line'}</p>
                       </div>
                       {selectedCreative.preview_text && (
-                        <div className="bg-purple-500/20 border border-purple-500/30 rounded-lg p-3">
+                        <div className="border-l-4 border-white/40 pl-3 py-1">
                           <p className="text-white/60 text-xs uppercase tracking-wide font-medium mb-1">Preview Text</p>
                           <p className="text-white text-sm">{selectedCreative.preview_text}</p>
                         </div>
