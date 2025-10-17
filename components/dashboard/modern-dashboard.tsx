@@ -1314,22 +1314,29 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
       .filter((c: any) => c.send_date)
       .reduce((acc: any, campaign: any) => {
         const date = new Date(campaign.send_date)
-        const hour = date.getHours()
-        const dayOfWeek = date.getDay()
         
-        const hourKey = `${hour}:00`
-        const dayKey = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][dayOfWeek]
-        
-        if (!acc.byHour[hourKey]) acc.byHour[hourKey] = { count: 0, totalOpenRate: 0, totalClickRate: 0 }
-        if (!acc.byDay[dayKey]) acc.byDay[dayKey] = { count: 0, totalOpenRate: 0, totalClickRate: 0 }
-        
-        acc.byHour[hourKey].count++
-        acc.byHour[hourKey].totalOpenRate += campaign.open_rate || 0
-        acc.byHour[hourKey].totalClickRate += campaign.click_rate || 0
-        
-        acc.byDay[dayKey].count++
-        acc.byDay[dayKey].totalOpenRate += campaign.open_rate || 0
-        acc.byDay[dayKey].totalClickRate += campaign.click_rate || 0
+        // ✅ FIX: Convert to EST timezone for accurate US peak hours  
+        try {
+          const estDate = new Date(date.toLocaleString('en-US', { timeZone: 'America/New_York' }))
+          const hour = estDate.getHours()
+          const dayOfWeek = estDate.getDay()
+          
+          const hourKey = `${hour}:00`
+          const dayKey = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][dayOfWeek]
+          
+          if (!acc.byHour[hourKey]) acc.byHour[hourKey] = { count: 0, totalOpenRate: 0, totalClickRate: 0 }
+          if (!acc.byDay[dayKey]) acc.byDay[dayKey] = { count: 0, totalOpenRate: 0, totalClickRate: 0 }
+          
+          acc.byHour[hourKey].count++
+          acc.byHour[hourKey].totalOpenRate += campaign.open_rate || 0
+          acc.byHour[hourKey].totalClickRate += campaign.click_rate || 0
+          
+          acc.byDay[dayKey].count++
+          acc.byDay[dayKey].totalOpenRate += campaign.open_rate || 0
+          acc.byDay[dayKey].totalClickRate += campaign.click_rate || 0
+        } catch (error) {
+          console.warn('Failed to process send time for campaign:', campaign.campaign_id, error)
+        }
         
         return acc
       }, { byHour: {}, byDay: {} })
