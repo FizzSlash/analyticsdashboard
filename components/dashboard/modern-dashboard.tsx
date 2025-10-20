@@ -1982,6 +1982,13 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
                       </div>
                     </th>
                     <th 
+                      className="text-right text-white/80 font-medium py-3"
+                    >
+                      <div className="flex items-center justify-end gap-1">
+                        Send Time
+                      </div>
+                    </th>
+                    <th 
                       className="text-right text-white/80 font-medium py-3 cursor-pointer hover:text-white transition-colors"
                       onClick={() => handleSort('recipients_count')}
                     >
@@ -2070,6 +2077,16 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
                       </td>
                       <td className="text-right text-white/80 text-sm py-4">
                         {campaign.send_date ? new Date(campaign.send_date).toLocaleDateString() : 'Not scheduled'}
+                      </td>
+                      <td className="text-right text-white/60 text-sm py-4">
+                        {campaign.send_date ? (() => {
+                          const date = new Date(campaign.send_date)
+                          const hours = date.getHours()
+                          const minutes = date.getMinutes()
+                          const ampm = hours >= 12 ? 'PM' : 'AM'
+                          const displayHour = hours === 0 ? 12 : hours > 12 ? hours - 12 : hours
+                          return `${displayHour}:${minutes.toString().padStart(2, '0')} ${ampm}`
+                        })() : '-'}
                       </td>
                       <td className="text-right text-white text-sm py-4">
                         {campaign.recipients_count?.toLocaleString() || '0'}
