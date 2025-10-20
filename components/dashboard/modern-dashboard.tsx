@@ -1359,13 +1359,24 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
     const sendTimeAnalysis = campaigns
       .filter((c: any) => c.send_date)
       .reduce((acc: any, campaign: any) => {
-        const date = new Date(campaign.send_date)
-        
-        // ✅ FIX: Database appears to store send_date in a shifted timezone
-        // Based on SQL analysis: UTC 20 → "EST 0" means database is storing in +4 offset
-        // Solution: Just use the raw hour from database (it's already in correct timezone)
+        // ✅ FIX: Parse time from string directly (same logic as Send Time column)
+        // This ensures Peak Hours matches the Send Time displayed
         try {
-          const hour = date.getHours()
+          const dateStr = campaign.send_date
+          let hour = 0
+          
+          // Parse hour from ISO string directly
+          if (typeof dateStr === 'string' && dateStr.includes('T')) {
+            const timePart = dateStr.split('T')[1]
+            const [hourStr] = timePart.split(':')
+            hour = parseInt(hourStr)
+          } else {
+            const date = new Date(dateStr)
+            hour = date.getHours()
+          }
+          
+          // Get day of week from Date object (this is usually fine)
+          const date = new Date(dateStr)
           const dayOfWeek = date.getDay()
           
           const hourKey = `${hour}:00`
