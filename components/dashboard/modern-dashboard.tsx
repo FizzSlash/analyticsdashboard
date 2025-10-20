@@ -96,6 +96,7 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
   const [selectedFlowPeriod, setSelectedFlowPeriod] = useState<string | null>(null)
   const [creativesPage, setCreativesPage] = useState(1)
   const [expandedInsights, setExpandedInsights] = useState<Set<number>>(new Set())
+  const [showAllPeakHours, setShowAllPeakHours] = useState(false)
 
   // Chart data processing functions
   const getRevenueRecipientsComboData = (campaigns: any[], timeframe: number) => {
@@ -1857,12 +1858,18 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
                 <div className="border-t border-white/20 pt-4">
                   <div className="flex items-center justify-between mb-3">
                     <p className="text-white font-medium text-sm">🕐 Peak Hours</p>
-                    <span className="text-white/60 text-xs">Top 6 performing hours</span>
+                    <button
+                      onClick={() => setShowAllPeakHours(!showAllPeakHours)}
+                      className="text-white/60 hover:text-white text-xs transition-colors flex items-center gap-1"
+                    >
+                      {showAllPeakHours ? 'Show Top 6' : 'Show All Hours'} 
+                      <ArrowDown className={`h-3 w-3 transition-transform ${showAllPeakHours ? 'rotate-180' : ''}`} />
+                    </button>
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     {Object.entries(sendTimeAnalysis.byHour)
                       .sort(([,a]: any, [,b]: any) => b.avgOpenRate - a.avgOpenRate)
-                      .slice(0, 6)
+                      .slice(0, showAllPeakHours ? undefined : 6)
                       .map(([hour, data]: any, index: number) => {
                         const isTop3 = index < 3
                         const hourNum = parseInt(hour.split(':')[0])
