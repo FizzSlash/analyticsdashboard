@@ -2080,12 +2080,28 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
                       </td>
                       <td className="text-right text-white/60 text-sm py-4">
                         {campaign.send_date ? (() => {
-                          const date = new Date(campaign.send_date)
-                          const hours = date.getHours()
-                          const minutes = date.getMinutes()
-                          const ampm = hours >= 12 ? 'PM' : 'AM'
-                          const displayHour = hours === 0 ? 12 : hours > 12 ? hours - 12 : hours
-                          return `${displayHour}:${minutes.toString().padStart(2, '0')} ${ampm}`
+                          // ✅ FIX: Extract time components directly from ISO string to avoid timezone shifts
+                          // Database stores timestamp, JavaScript Date object can shift it based on browser timezone
+                          const dateStr = campaign.send_date
+                          
+                          // If it's an ISO string, parse the time portion directly
+                          if (typeof dateStr === 'string' && dateStr.includes('T')) {
+                            const timePart = dateStr.split('T')[1]
+                            const [hourStr, minuteStr] = timePart.split(':')
+                            const hours = parseInt(hourStr)
+                            const minutes = parseInt(minuteStr || '0')
+                            const ampm = hours >= 12 ? 'PM' : 'AM'
+                            const displayHour = hours === 0 ? 12 : hours > 12 ? hours - 12 : hours
+                            return `${displayHour}:${minutes.toString().padStart(2, '0')} ${ampm}`
+                          } else {
+                            // Fallback for non-ISO format
+                            const date = new Date(dateStr)
+                            const hours = date.getHours()
+                            const minutes = date.getMinutes()
+                            const ampm = hours >= 12 ? 'PM' : 'AM'
+                            const displayHour = hours === 0 ? 12 : hours > 12 ? hours - 12 : hours
+                            return `${displayHour}:${minutes.toString().padStart(2, '0')} ${ampm}`
+                          }
                         })() : '-'}
                       </td>
                       <td className="text-right text-white text-sm py-4">
