@@ -1361,27 +1361,15 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
       .reduce((acc: any, campaign: any) => {
         const date = new Date(campaign.send_date)
         
-        // ✅ FIX: Convert to EST timezone for accurate US peak hours
+        // ✅ FIX: Database appears to store send_date in a shifted timezone
+        // Based on SQL analysis: UTC 20 → "EST 0" means database is storing in +4 offset
+        // Solution: Just use the raw hour from database (it's already in correct timezone)
         try {
-          // Use Intl API for accurate timezone conversion
-          const formatter = new Intl.DateTimeFormat('en-US', {
-            timeZone: 'America/New_York',
-            hour: 'numeric',
-            hour12: false,
-            weekday: 'short'
-          })
-          
-          const parts = formatter.formatToParts(date)
-          const hour = parseInt(parts.find(p => p.type === 'hour')?.value || '0')
-          const dayName = parts.find(p => p.type === 'weekday')?.value || 'Mon'
+          const hour = date.getHours()
+          const dayOfWeek = date.getDay()
           
           const hourKey = `${hour}:00`
-          const dayKey = dayName === 'Mon' ? 'Monday' :
-                        dayName === 'Tue' ? 'Tuesday' :
-                        dayName === 'Wed' ? 'Wednesday' :
-                        dayName === 'Thu' ? 'Thursday' :
-                        dayName === 'Fri' ? 'Friday' :
-                        dayName === 'Sat' ? 'Saturday' : 'Sunday'
+          const dayKey = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][dayOfWeek]
           
           if (!acc.byHour[hourKey]) acc.byHour[hourKey] = { count: 0, totalOpenRate: 0, totalClickRate: 0 }
           if (!acc.byDay[dayKey]) acc.byDay[dayKey] = { count: 0, totalOpenRate: 0, totalClickRate: 0 }
