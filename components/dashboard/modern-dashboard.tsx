@@ -1868,12 +1868,22 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     {Object.entries(sendTimeAnalysis.byHour)
-                      .sort(([,a]: any, [,b]: any) => b.avgOpenRate - a.avgOpenRate)
+                      .sort(([hourA]: any, [hourB]: any) => {
+                        // Sort chronologically by hour (0-23)
+                        const numA = parseInt(hourA.split(':')[0])
+                        const numB = parseInt(hourB.split(':')[0])
+                        return numA - numB
+                      })
                       .slice(0, showAllPeakHours ? undefined : 6)
                       .map(([hour, data]: any, index: number) => {
-                        const isTop3 = index < 3
                         const hourNum = parseInt(hour.split(':')[0])
                         const nextHourNum = (hourNum + 1) % 24
+                        
+                        // Determine if this is a top performer (top 3 by open rate)
+                        const allHoursSorted = Object.entries(sendTimeAnalysis.byHour)
+                          .sort(([,a]: any, [,b]: any) => b.avgOpenRate - a.avgOpenRate)
+                        const topHours = allHoursSorted.slice(0, 3).map(([h]) => h)
+                        const isTopPerformer = topHours.includes(hour)
                         
                         // Format as range: "9-10 AM"
                         const getHourDisplay = (h: number) => {
@@ -1893,11 +1903,11 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
                         
                         return (
                           <div key={hour} className={`flex items-center justify-between p-2 rounded-lg ${
-                            isTop3 ? 'bg-blue-500/20 border border-blue-500/30' : 'bg-white/5'
+                            isTopPerformer ? 'bg-blue-500/20 border border-blue-500/30' : 'bg-white/5'
                           }`}>
                             <div>
                               <div className={`text-sm font-bold ${
-                                isTop3 ? 'text-blue-300' : 'text-white'
+                                isTopPerformer ? 'text-blue-300' : 'text-white'
                               }`}>
                                 {displayRange}
                               </div>
@@ -1907,7 +1917,7 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
                             </div>
                             <div className="text-right">
                               <div className={`text-xs font-semibold ${
-                                isTop3 ? 'text-blue-300' : 'text-white'
+                                isTopPerformer ? 'text-blue-300' : 'text-white'
                               }`}>
                                 {(data.avgOpenRate * 100).toFixed(1)}%
                               </div>
