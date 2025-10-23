@@ -157,16 +157,20 @@ export const calculateTimeframeSummary = (filteredData: {
 }) => {
   const { campaigns, flows, revenueAttribution, listGrowth } = filteredData
 
-  // Campaign summary
+  // Campaign summary - calculate from raw data for accuracy
+  const totalRecipients = campaigns.reduce((sum, c) => sum + (c.recipients_count || 0), 0)
+  const totalOpens = campaigns.reduce((sum, c) => sum + (c.opened_count || c.opens_unique || 0), 0)
+  const totalClicks = campaigns.reduce((sum, c) => sum + (c.clicked_count || c.clicks_unique || 0), 0)
+  
   const campaignSummary = {
     total_campaigns: campaigns.length,
-    total_sent: campaigns.reduce((sum, c) => sum + (c.recipients_count || 0), 0),
+    total_sent: totalRecipients,
     total_revenue: campaigns.reduce((sum, c) => sum + (c.revenue || 0), 0),
-    avg_open_rate: campaigns.length > 0 
-      ? campaigns.reduce((sum, c) => sum + (c.open_rate || 0), 0) / campaigns.length * 100
+    avg_open_rate: totalRecipients > 0 
+      ? (totalOpens / totalRecipients) * 100
       : 0,
-    avg_click_rate: campaigns.length > 0 
-      ? campaigns.reduce((sum, c) => sum + (c.click_rate || 0), 0) / campaigns.length * 100
+    avg_click_rate: totalRecipients > 0 
+      ? (totalClicks / totalRecipients) * 100
       : 0
   }
 
