@@ -99,6 +99,7 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
   const [showAllPeakHours, setShowAllPeakHours] = useState(false)
   const [creativeViewMode, setCreativeViewMode] = useState<Record<string, 'desktop' | 'mobile'>>({})
   const [creativesFilter, setCreativesFilter] = useState<'sent' | 'drafts'>('sent')
+  const [allCampaignsForCreatives, setAllCampaignsForCreatives] = useState<any[]>([])
 
   // Chart data processing functions
   const getRevenueRecipientsComboData = (campaigns: any[], timeframe: number) => {
@@ -740,6 +741,28 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
   useEffect(() => {
     setSelectedCategory(null)
   }, [analysisTab])
+
+  // Fetch ALL campaigns for Creatives tab (including drafts)
+  useEffect(() => {
+    const fetchAllCampaigns = async () => {
+      if (!client?.brand_slug) return
+      
+      try {
+        // Fetch campaigns without timeframe filter to get drafts
+        const response = await fetch(`/api/dashboard?clientSlug=${client.brand_slug}&timeframe=36500`) // 100 years = all campaigns
+        const result = await response.json()
+        
+        if (response.ok && result.data?.campaigns) {
+          setAllCampaignsForCreatives(result.data.campaigns)
+          console.log(`✅ FETCHED: ${result.data.campaigns.length} total campaigns for Creatives (including drafts)`)
+        }
+      } catch (error) {
+        console.error('❌ ERROR fetching all campaigns:', error)
+      }
+    }
+    
+    fetchAllCampaigns()
+  }, [client?.brand_slug])
 
   // Fetch data when timeframe changes (with intelligent caching)
   useEffect(() => {
@@ -2885,7 +2908,8 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
   }
 
   const renderCreativesTab = () => {
-    const allCampaigns = data?.campaigns || []
+    // Use allCampaignsForCreatives which includes drafts (fetched separately without timeframe filter)
+    const allCampaigns = allCampaignsForCreatives.length > 0 ? allCampaignsForCreatives : (data?.campaigns || [])
     
     // Filter by sent vs drafts based on toggle
     const campaigns = creativesFilter === 'sent'
