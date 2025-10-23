@@ -2696,7 +2696,7 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
       date: point.date_recorded,
       email_subscriptions: point.email_subscriptions || 0,
       email_unsubscribes: point.email_unsubscribes || 0,
-      net_growth: point.overall_net_growth || 0, // Use overall_net_growth, not email_net_growth
+      net_growth: point.email_subscriptions || 0, // Use email_subscriptions to match Klaviyo's "Everyone" list
       sms_subscriptions: point.sms_subscriptions || 0,
       form_submissions: point.form_submissions || 0
     }))
