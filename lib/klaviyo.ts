@@ -1004,24 +1004,6 @@ export class KlaviyoAPI {
 
   // FLOW STRUCTURE METHODS
 
-  // Get Flow Actions (steps in flow)
-  async getFlowActions(flowId: string, cursor?: string) {
-    let endpoint = `/flows/${flowId}/flow-actions`
-    const params = new URLSearchParams()
-    
-    if (cursor) {
-      params.set('page[cursor]', cursor)
-    }
-    
-    const queryString = params.toString()
-    if (queryString) {
-      endpoint += `?${queryString}`
-    }
-    
-    console.log(`🔄 FLOW ACTIONS API: Full endpoint: ${endpoint}`)
-    return this.makeRequest(endpoint)
-  }
-
   // Get Flow Messages (emails in each action/step)
   async getFlowActionMessages(actionId: string, cursor?: string) {
     let endpoint = `/flow-actions/${actionId}/flow-messages`
