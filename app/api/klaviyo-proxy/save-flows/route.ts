@@ -1,6 +1,45 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { DatabaseService } from '@/lib/database'
 
+// Helper function to parse flow actions and calculate sequence
+function parseFlowActions(actions: any[], clientId: string, flowId: string) {
+  let cumulativeHours = 0
+  
+  return actions.map((action, index) => {
+    const actionType = action.attributes?.action_type || 'unknown'
+    const settings = action.attributes?.settings || {}
+    const delay = settings.delay || {}
+    
+    // Calculate delay for this action
+    let delayHours = 0
+    if (delay.type === 'delay') {
+      const value = delay.value || 0
+      const unit = delay.unit || 'hours'
+      delayHours = unit === 'days' ? value * 24 : unit === 'weeks' ? value * 168 : value
+      cumulativeHours += delayHours
+    }
+    
+    // Extract message ID if this is an email action
+    const messageId = action.relationships?.['flow-message']?.data?.id || null
+    
+    return {
+      client_id: clientId,
+      flow_id: flowId,
+      action_id: action.id,
+      action_type: actionType,
+      action_status: action.attributes?.status || 'unknown',
+      sequence_position: index,
+      delay_type: delay.type || null,
+      delay_value: delay.value || null,
+      delay_unit: delay.unit || null,
+      cumulative_delay_hours: cumulativeHours,
+      flow_message_id: messageId,
+      condition_type: settings.condition?.type || null,
+      trigger_type: settings.trigger?.type || null
+    }
+  })
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
