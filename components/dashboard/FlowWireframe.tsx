@@ -26,8 +26,11 @@ export function FlowWireframe({ actions, emails, flowId }: FlowWireframeProps) {
   // Helper to format delay
   const formatDelay = (action: any) => {
     if (action.delay_type === 'immediate') return 'Immediately'
-    if (action.delay_value && action.delay_unit) {
-      return `Wait ${action.delay_value} ${action.delay_unit}`
+    if (action.delay_value) {
+      const hours = action.delay_value
+      if (hours < 24) return `Wait ${hours} hours`
+      if (hours % 24 === 0) return `Wait ${hours / 24} day${hours / 24 > 1 ? 's' : ''}`
+      return `Wait ${hours} hours`
     }
     return 'Delay'
   }
@@ -50,7 +53,7 @@ export function FlowWireframe({ actions, emails, flowId }: FlowWireframeProps) {
           const messageData = action.flow_message_id ? getEmailData(action.flow_message_id) : null
           
           // Render different block types
-          if (actionType === 'trigger') {
+          if (actionType === 'trigger' || index === 0) {
             return (
               <div key={action.action_id} className="flex items-start gap-3">
                 <div className="flex-shrink-0 w-8 h-8 rounded-full bg-purple-500/20 border border-purple-500/40 flex items-center justify-center">
@@ -64,7 +67,7 @@ export function FlowWireframe({ actions, emails, flowId }: FlowWireframeProps) {
             )
           }
           
-          if (actionType === 'email') {
+          if (actionType === 'send_email' || actionType === 'email') {
             return (
               <div key={action.action_id}>
                 {/* Connector line */}
