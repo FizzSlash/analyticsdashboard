@@ -128,9 +128,24 @@ export async function POST(request: NextRequest) {
           open_rate: totalOpens > 0 ? totalClicks / totalOpens : 0,
           click_rate: totalClicks > 0 ? totalClicks / totalOpens : 0
         })
+        
+        // Save flow actions if available
+        if (flowDetail.flowActions && flowDetail.flowActions.length > 0) {
+          console.log(`🔄 SAVE FLOWS: Parsing and saving ${flowDetail.flowActions.length} actions for flow ${flowDetail.flow_id}`)
+          
+          try {
+            const parsedActions = parseFlowActions(flowDetail.flowActions, clientId, flowDetail.flow_id)
+            await DatabaseService.upsertFlowActions(clientId, flowDetail.flow_id, parsedActions)
+            results.actionsStored += parsedActions.length
+            console.log(`✅ SAVE FLOWS: Saved ${parsedActions.length} flow actions`)
+          } catch (actionError: any) {
+            console.error(`⚠️ SAVE FLOWS: Failed to save actions for flow ${flowDetail.flow_id}:`, actionError.message)
+            // Continue - actions are optional, don't fail the whole flow
+          }
+        }
 
-         results.successful++
-         console.log(`✅ SAVE FLOWS: Successfully saved ${flowDetail.weeklyData?.length || 0} weekly records for flow ${flowDetail.flow_id}`)
+        results.successful++
+        console.log(`✅ SAVE FLOWS: Successfully saved ${flowDetail.weeklyData?.length || 0} weekly records for flow ${flowDetail.flow_id}`)
 
       } catch (error: any) {
         results.failed++
