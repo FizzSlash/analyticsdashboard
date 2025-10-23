@@ -167,6 +167,43 @@ export class DatabaseService {
     return data || []
   }
 
+  // Get ALL campaigns including drafts (no date filter)
+  static async getAllCampaigns(clientId: string): Promise<CampaignMetric[]> {
+    let allCampaigns: any[] = []
+    let hasMore = true
+    let pageNumber = 0
+    const pageSize = 1000
+    
+    while (hasMore) {
+      const { data, error } = await supabaseAdmin
+        .from('campaign_metrics')
+        .select('*')
+        .eq('client_id', clientId)
+        .order('created_at', { ascending: false })
+        .range(pageNumber * pageSize, (pageNumber + 1) * pageSize - 1)
+
+      if (error) {
+        console.error(`Error fetching all campaigns page ${pageNumber}:`, error)
+        break
+      }
+
+      if (data && data.length > 0) {
+        allCampaigns = allCampaigns.concat(data)
+        
+        if (data.length < pageSize) {
+          hasMore = false
+        } else {
+          pageNumber++
+        }
+      } else {
+        hasMore = false
+      }
+    }
+
+    console.log(`✅ DATABASE: Fetched ${allCampaigns.length} total campaigns (including drafts)`)
+    return allCampaigns
+  }
+
   static async getRecentCampaignMetrics(clientId: string, days: number = 30): Promise<CampaignMetric[]> {
     const startDate = new Date()
     startDate.setDate(startDate.getDate() - days)

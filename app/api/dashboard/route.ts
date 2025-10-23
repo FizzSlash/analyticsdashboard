@@ -27,6 +27,9 @@ export async function GET(request: NextRequest) {
     console.log(`DASHBOARD API: Fetched agency branding:`, agency?.agency_name)
 
     // Fetch all dashboard data in parallel with dynamic timeframe
+    // Use getAllCampaigns if timeframe is > 10 years (for Creatives tab to get drafts)
+    const useAllCampaigns = timeframe > 3650 // More than 10 years means "get everything"
+    
     const [
       summary,
       campaigns,
@@ -41,7 +44,7 @@ export async function GET(request: NextRequest) {
       revenueAttributionSummary
     ] = await Promise.all([
       DatabaseService.getDashboardSummary(client.id, timeframe),
-      DatabaseService.getRecentCampaignMetrics(client.id, timeframe),
+      useAllCampaigns ? DatabaseService.getAllCampaigns(client.id) : DatabaseService.getRecentCampaignMetrics(client.id, timeframe),
       DatabaseService.getRecentFlowMetrics(client.id, timeframe),
       DatabaseService.getAudienceMetrics(client.id, timeframe),
       DatabaseService.getTopCampaigns(client.id, 'open_rate', 5),
