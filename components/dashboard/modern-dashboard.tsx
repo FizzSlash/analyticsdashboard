@@ -98,6 +98,7 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
   const [expandedInsights, setExpandedInsights] = useState<Set<number>>(new Set())
   const [showAllPeakHours, setShowAllPeakHours] = useState(false)
   const [creativeViewMode, setCreativeViewMode] = useState<Record<string, 'desktop' | 'mobile'>>({})
+  const [creativesFilter, setCreativesFilter] = useState<'sent' | 'drafts'>('sent')
 
   // Chart data processing functions
   const getRevenueRecipientsComboData = (campaigns: any[], timeframe: number) => {
@@ -2885,10 +2886,13 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
 
   const renderCreativesTab = () => {
     const allCampaigns = data?.campaigns || []
-    // Don't filter by timeframe for creatives - include drafts and all statuses
-    const campaigns = allCampaigns
     
-    // Only campaigns with email_html (includes drafts, sent, scheduled)
+    // Filter by sent vs drafts based on toggle
+    const campaigns = creativesFilter === 'sent'
+      ? allCampaigns.filter((c: any) => c.campaign_status && c.campaign_status.toLowerCase() !== 'draft')
+      : allCampaigns.filter((c: any) => c.campaign_status && c.campaign_status.toLowerCase() === 'draft')
+    
+    // Only campaigns with email_html
     const creativeCampaigns = campaigns.filter((c: any) => c.email_html)
     
     // Extract first image from HTML
@@ -2935,12 +2939,46 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
                 <h3 className="text-white font-bold text-lg">Email Creatives Gallery</h3>
                 <p className="text-white/60 text-sm mt-1">
                   {sortedCreatives.length > itemsPerPage 
-                    ? `Showing ${startIndex + 1}-${Math.min(endIndex, sortedCreatives.length)} of ${sortedCreatives.length} campaigns` 
-                    : `${sortedCreatives.length} campaigns with email templates`}
+                    ? `Showing ${startIndex + 1}-${Math.min(endIndex, sortedCreatives.length)} of ${sortedCreatives.length} ${creativesFilter === 'sent' ? 'sent campaigns' : 'drafts'}` 
+                    : `${sortedCreatives.length} ${creativesFilter === 'sent' ? 'sent campaigns' : 'drafts'}`}
                 </p>
               </div>
               
               <div className="flex items-center gap-4">
+                {/* Sent/Drafts Toggle */}
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => {
+                      setCreativesFilter('sent')
+                      setCreativesPage(1)
+                    }}
+                    className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${
+                      creativesFilter === 'sent'
+                        ? 'bg-blue-500 text-white'
+                        : 'bg-white/10 text-white/60 hover:bg-white/20'
+                    }`}
+                  >
+                    📤 Sent
+                  </button>
+                  <button
+                    onClick={() => {
+                      setCreativesFilter('drafts')
+                      setCreativesPage(1)
+                    }}
+                    className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${
+                      creativesFilter === 'drafts'
+                        ? 'bg-blue-500 text-white'
+                        : 'bg-white/10 text-white/60 hover:bg-white/20'
+                    }`}
+                  >
+                    📝 Drafts
+                  </button>
+                </div>
+                
+                <div className="border-l border-white/20 h-8"></div>
+                
+                {/* Sort and Above Fold Controls */}
+                <div className="flex items-center gap-4">
                 {/* Above the Fold Toggle */}
                 <button
                   onClick={() => setShowAboveFold(!showAboveFold)}
