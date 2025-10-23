@@ -238,6 +238,14 @@ export class KlaviyoAPI {
     return this.makeRequest(`/flows/${flowId}`)
   }
 
+  // Get Flow Actions (structure, sequence, delays)
+  async getFlowActions(flowId: string) {
+    console.log(`🔄 FLOW ACTIONS: Getting actions for flow ${flowId}`)
+    const response = await this.makeRequest(`/flows/${flowId}/flow-actions/`)
+    console.log(`✅ FLOW ACTIONS: Got ${response.data?.length || 0} actions for flow ${flowId}`)
+    return response
+  }
+
   // Get Flow Messages by message IDs (direct API calls)
   async getFlowMessages(messageIds: string[]) {
     console.log(`🔄 FLOW MESSAGES: Getting ${messageIds.length} messages directly by ID`)
