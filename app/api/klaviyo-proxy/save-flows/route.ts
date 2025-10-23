@@ -59,7 +59,8 @@ export async function POST(request: NextRequest) {
       total: flowDetails.length,
       successful: 0,
       failed: 0,
-      errors: [] as Array<{ flowId: string; error: string }>
+      errors: [] as Array<{ flowId: string; error: string }>,
+      actionsStored: 0
     }
     
         // Save flow message weekly performance data to flow_message_metrics
