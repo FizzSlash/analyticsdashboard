@@ -46,6 +46,7 @@ import {
   X
 } from 'lucide-react'
 import { calculatePreciseClickRate, calculatePreciseOpenRate } from '@/lib/utils'
+import { FlowWireframe } from './FlowWireframe'
 
 interface ModernDashboardProps {
   client: any
