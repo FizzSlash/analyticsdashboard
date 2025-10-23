@@ -2978,7 +2978,6 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
                 <div className="border-l border-white/20 h-8"></div>
                 
                 {/* Sort and Above Fold Controls */}
-                <div className="flex items-center gap-4">
                 {/* Above the Fold Toggle */}
                 <button
                   onClick={() => setShowAboveFold(!showAboveFold)}
