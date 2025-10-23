@@ -8,34 +8,36 @@ function parseFlowActions(actions: any[], clientId: string, flowId: string) {
   return actions.map((action, index) => {
     const actionType = action.attributes?.action_type || 'unknown'
     const settings = action.attributes?.settings || {}
-    const delay = settings.delay || {}
     
-    // Calculate delay for this action
+    // Calculate delay for TIME_DELAY actions
     let delayHours = 0
-    if (delay.type === 'delay') {
-      const value = delay.value || 0
-      const unit = delay.unit || 'hours'
-      delayHours = unit === 'days' ? value * 24 : unit === 'weeks' ? value * 168 : value
+    let delaySeconds = null
+    if (actionType === 'TIME_DELAY' && settings.delay_seconds) {
+      delaySeconds = settings.delay_seconds
+      delayHours = Math.round(delaySeconds / 3600) // Convert seconds to hours
       cumulativeHours += delayHours
     }
     
-    // Extract message ID if this is an email action
-    const messageId = action.relationships?.['flow-message']?.data?.id || null
+    // Extract message ID from relationships (for SEND_EMAIL actions)
+    // Note: flow-messages is a relationship link, not direct data
+    // We'll need to get the actual message ID from flow-messages lookup
+    const messageRelationship = action.relationships?.['flow-messages']
+    const messageId = null // Will be populated later by matching message data
     
     return {
       client_id: clientId,
       flow_id: flowId,
       action_id: action.id,
-      action_type: actionType,
+      action_type: actionType.toLowerCase(), // Normalize: SEND_EMAIL → send_email
       action_status: action.attributes?.status || 'unknown',
       sequence_position: index,
-      delay_type: delay.type || null,
-      delay_value: delay.value || null,
-      delay_unit: delay.unit || null,
+      delay_type: actionType === 'TIME_DELAY' ? 'delay' : null,
+      delay_value: delayHours || null,
+      delay_unit: delayHours ? 'hours' : null,
       cumulative_delay_hours: cumulativeHours,
-      flow_message_id: messageId,
-      condition_type: settings.condition?.type || null,
-      trigger_type: settings.trigger?.type || null
+      flow_message_id: messageId, // Will need separate logic to link
+      condition_type: null, // Would need to parse conditional_split actions
+      trigger_type: null // Trigger actions would have specific settings
     }
   })
 }
