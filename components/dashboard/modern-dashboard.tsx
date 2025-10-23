@@ -2975,67 +2975,17 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
           {paginatedCreatives.map((campaign: any) => {
             const firstImage = extractFirstImage(campaign.email_html)
             const revenuePerRecipient = (campaign.revenue || 0) / (campaign.recipients_count || 1)
-            const viewMode = creativeViewMode[campaign.campaign_id] || 'desktop'
-            const klaviyoUrl = `https://www.klaviyo.com/campaign/${campaign.campaign_id}/content`
             
             return (
               <Card 
                 key={campaign.campaign_id}
-                className="bg-white/10 backdrop-blur-md border-white/20 hover:bg-white/15 transition-all group"
+                className="bg-white/10 backdrop-blur-md border-white/20 hover:bg-white/15 transition-all cursor-pointer group"
+                onClick={() => setSelectedCreative(campaign)}
               >
                 {/* Email Preview Container with Status Badge */}
-                <div className="relative cursor-pointer" onClick={() => setSelectedCreative(campaign)}>
-                  {/* Mobile/Desktop Toggle */}
-                  <div className="absolute top-2 left-2 z-10 flex items-center gap-1">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        setCreativeViewMode(prev => ({
-                          ...prev,
-                          [campaign.campaign_id]: 'desktop'
-                        }))
-                      }}
-                      className={`px-2 py-1 rounded text-xs font-medium transition-colors ${
-                        viewMode === 'desktop'
-                          ? 'bg-blue-500 text-white'
-                          : 'bg-black/40 text-white/60 hover:bg-black/60'
-                      }`}
-                    >
-                      💻
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        setCreativeViewMode(prev => ({
-                          ...prev,
-                          [campaign.campaign_id]: 'mobile'
-                        }))
-                      }}
-                      className={`px-2 py-1 rounded text-xs font-medium transition-colors ${
-                        viewMode === 'mobile'
-                          ? 'bg-blue-500 text-white'
-                          : 'bg-black/40 text-white/60 hover:bg-black/60'
-                      }`}
-                    >
-                      📱
-                    </button>
-                  </div>
-
-                  {/* Klaviyo Link */}
-                  <a
-                    href={klaviyoUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={(e) => e.stopPropagation()}
-                    className="absolute top-2 right-2 z-10 bg-black/60 hover:bg-black/80 text-white px-2 py-1 rounded text-xs flex items-center gap-1 transition-colors"
-                    title="View in Klaviyo"
-                  >
-                    <ExternalLink className="h-3 w-3" />
-                    Klaviyo
-                  </a>
-                  
-                  {/* Email Preview - Toggle between mobile or desktop */}
-                  {viewMode === 'mobile' ? (
+                <div className="relative">
+                  {/* Email Preview - Simple desktop preview */}
+                  {showAboveFold ? (
                     // Mobile phone mockup with custom SVG
                     <div className="h-[500px] bg-gradient-to-b from-gray-900 to-gray-800 overflow-hidden relative flex items-center justify-center">
                       <div className="relative" style={{ width: '234px', height: '424px' }}>
@@ -3279,11 +3229,54 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
                       )}
                     </div>
                   </div>
+                  <div className="flex items-center gap-2 ml-4">
+                    <a
+                      href={`https://www.klaviyo.com/campaign/${selectedCreative.campaign_id}/wizard`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="bg-white/10 hover:bg-white/20 text-white px-3 py-2 rounded flex items-center gap-2 transition-colors text-sm"
+                      title="View in Klaviyo"
+                    >
+                      <ExternalLink className="h-4 w-4" />
+                      View in Klaviyo
+                    </a>
+                    <button
+                      onClick={() => setSelectedCreative(null)}
+                      className="text-white/60 hover:text-white p-2 hover:bg-white/10 rounded-lg transition-colors"
+                    >
+                      <AlertCircle className="h-6 w-6" />
+                    </button>
+                  </div>
+                </div>
+                
+                {/* Mobile/Desktop Toggle */}
+                <div className="flex items-center gap-2 mb-4">
+                  <span className="text-white/60 text-xs">View:</span>
                   <button
-                    onClick={() => setSelectedCreative(null)}
-                    className="text-white/60 hover:text-white p-2 ml-4 hover:bg-white/10 rounded-lg transition-colors"
+                    onClick={() => setCreativeViewMode(prev => ({
+                      ...prev,
+                      [selectedCreative.campaign_id]: 'desktop'
+                    }))}
+                    className={`px-3 py-1.5 rounded text-xs font-medium transition-colors flex items-center gap-1 ${
+                      (creativeViewMode[selectedCreative.campaign_id] || 'desktop') === 'desktop'
+                        ? 'bg-blue-500 text-white'
+                        : 'bg-white/10 text-white/60 hover:bg-white/20'
+                    }`}
                   >
-                    <AlertCircle className="h-6 w-6" />
+                    💻 Desktop
+                  </button>
+                  <button
+                    onClick={() => setCreativeViewMode(prev => ({
+                      ...prev,
+                      [selectedCreative.campaign_id]: 'mobile'
+                    }))}
+                    className={`px-3 py-1.5 rounded text-xs font-medium transition-colors flex items-center gap-1 ${
+                      creativeViewMode[selectedCreative.campaign_id] === 'mobile'
+                        ? 'bg-blue-500 text-white'
+                        : 'bg-white/10 text-white/60 hover:bg-white/20'
+                    }`}
+                  >
+                    📱 Mobile
                   </button>
                 </div>
                 
@@ -3311,10 +3304,14 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
               {/* Email Preview */}
               <div className="bg-white" style={{ height: '70vh' }}>
                 <iframe
-                  srcDoc={selectedCreative.email_html}
+                  srcDoc={(creativeViewMode[selectedCreative.campaign_id] === 'mobile' && selectedCreative.email_html) 
+                    ? selectedCreative.email_html.replace(/desktop-only/g, 'desktop-only-hidden').replace(/mobile-only/g, 'mobile-only-show')
+                    : selectedCreative.email_html
+                  }
                   className="w-full h-full border-0"
                   title={selectedCreative.campaign_name}
                   sandbox="allow-same-origin"
+                  style={creativeViewMode[selectedCreative.campaign_id] === 'mobile' ? { maxWidth: '375px', margin: '0 auto' } : {}}
                 />
               </div>
               
