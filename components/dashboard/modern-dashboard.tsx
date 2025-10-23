@@ -84,6 +84,7 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
   const [flowEmails, setFlowEmails] = useState<{ [flowId: string]: any[] }>({})
   const [flowEmailsLoading, setFlowEmailsLoading] = useState<{ [flowId: string]: boolean }>({})
   const [flowEmailsError, setFlowEmailsError] = useState<{ [flowId: string]: string }>({})
+  const [flowActions, setFlowActions] = useState<{ [flowId: string]: any[] }>({})
   const [expandedCampaigns, setExpandedCampaigns] = useState<Set<string>>(new Set())
   const [analysisTab, setAnalysisTab] = useState<'conversion' | 'aov'>('conversion')
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
@@ -2270,7 +2271,7 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
       } else {
         newExpanded.add(flowId)
         
-        // Load emails for this flow if not already loaded
+        // Load emails and actions for this flow if not already loaded
         if (!flowEmails[flowId]) {
           console.log(`📧 FRONTEND: Attempting to load emails for flow ${flowId}`)
           console.log(`📧 FRONTEND: API URL: /api/flow-emails?flowId=${flowId}&clientSlug=${client?.brand_slug}&timeframe=${timeframe}`)
@@ -2280,25 +2281,47 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
           setFlowEmailsError(prev => ({ ...prev, [flowId]: '' }))
           
           try {
-            const response = await fetch(`/api/flow-emails?flowId=${flowId}&clientSlug=${client?.brand_slug}&timeframe=${timeframe}`)
+            // Fetch emails and actions in parallel
+            const [emailsResponse, actionsResponse] = await Promise.all([
+              fetch(`/api/flow-emails?flowId=${flowId}&clientSlug=${client?.brand_slug}&timeframe=${timeframe}`),
+              fetch('/api/klaviyo-proxy/flow-actions', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  clientSlug: client?.brand_slug,
+                  flowId: flowId
+                })
+              })
+            ])
             
-            console.log(`📧 FRONTEND: API Response status: ${response.status}`)
+            console.log(`📧 FRONTEND: Emails API Response status: ${emailsResponse.status}`)
+            console.log(`🔄 FRONTEND: Actions API Response status: ${actionsResponse.status}`)
             
-            if (!response.ok) {
-              throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+            if (!emailsResponse.ok) {
+              throw new Error(`HTTP ${emailsResponse.status}: ${emailsResponse.statusText}`)
             }
             
-            const result = await response.json()
-            console.log(`📧 FRONTEND: API Response:`, result)
+            const emailsResult = await emailsResponse.json()
+            console.log(`📧 FRONTEND: API Response:`, emailsResult)
             
             setFlowEmails(prev => ({
               ...prev,
-              [flowId]: result.emails || []
+              [flowId]: emailsResult.emails || []
             }))
-            console.log(`📧 FRONTEND: Successfully loaded ${result.emails?.length || 0} emails for flow ${flowId}`)
+            console.log(`📧 FRONTEND: Successfully loaded ${emailsResult.emails?.length || 0} emails for flow ${flowId}`)
+            
+            // Load actions if successful
+            if (actionsResponse.ok) {
+              const actionsResult = await actionsResponse.json()
+              setFlowActions(prev => ({
+                ...prev,
+                [flowId]: actionsResult.data?.data || []
+              }))
+              console.log(`🔄 FRONTEND: Successfully loaded ${actionsResult.data?.data?.length || 0} actions for flow ${flowId}`)
+            }
           } catch (error) {
-            console.error('📧 FRONTEND: Error loading flow emails:', error)
-            const errorMessage = error instanceof Error ? error.message : 'Failed to load flow emails'
+            console.error('📧 FRONTEND: Error loading flow data:', error)
+            const errorMessage = error instanceof Error ? error.message : 'Failed to load flow data'
             setFlowEmailsError(prev => ({
               ...prev,
               [flowId]: errorMessage
