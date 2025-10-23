@@ -586,6 +586,52 @@ export class DatabaseService {
     }
   }
 
+  // Flow Actions Methods
+  static async upsertFlowActions(clientId: string, flowId: string, actions: any[]): Promise<void> {
+    console.log(`💾 DATABASE: Saving ${actions.length} flow actions for flow ${flowId}`)
+    
+    // Delete existing actions for this flow to avoid duplicates
+    const { error: deleteError } = await supabaseAdmin
+      .from('flow_actions')
+      .delete()
+      .eq('client_id', clientId)
+      .eq('flow_id', flowId)
+    
+    if (deleteError) {
+      console.error('Error deleting old flow actions:', deleteError)
+    }
+    
+    // Insert new actions
+    if (actions.length > 0) {
+      const { error } = await supabaseAdmin
+        .from('flow_actions')
+        .insert(actions)
+      
+      if (error) {
+        console.error('Error inserting flow actions:', error)
+        throw error
+      }
+      
+      console.log(`✅ DATABASE: Saved ${actions.length} flow actions for flow ${flowId}`)
+    }
+  }
+
+  static async getFlowActions(clientId: string, flowId: string): Promise<any[]> {
+    const { data, error } = await supabaseAdmin
+      .from('flow_actions')
+      .select('*')
+      .eq('client_id', clientId)
+      .eq('flow_id', flowId)
+      .order('sequence_position', { ascending: true })
+    
+    if (error) {
+      console.error('Error fetching flow actions:', error)
+      return []
+    }
+    
+    return data || []
+  }
+
   // Get weekly flow trend data for charts
   static async getFlowWeeklyTrends(clientId: string, days: number = 30): Promise<any[]> {
     const cutoffDate = new Date()

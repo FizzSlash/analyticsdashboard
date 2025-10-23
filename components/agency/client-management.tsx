@@ -945,7 +945,7 @@ ${campaignDetails.slice(0, 3).map((c: any, i: number) =>
       console.log('📧 FRONTEND: Extracted message IDs from series:', messageIds)
       
       // Step 4: Get flow messages by message IDs
-      setSuccess('Step 4/4: Getting flow message details...')
+      setSuccess('Step 4/5: Getting flow message details...')
       console.log('📡 FRONTEND: Calling flow messages API with message IDs')
       
       const messagesResponse = await fetch('/api/klaviyo-proxy/flow-messages', {
@@ -966,6 +966,47 @@ ${campaignDetails.slice(0, 3).map((c: any, i: number) =>
       const messagesResult = await messagesResponse.json()
       console.log('📧 FRONTEND: Flow messages response:', messagesResult)
       console.log('📩 FRONTEND: Got messages:', messagesResult.data?.data?.length || 0)
+      
+      // Step 4.5: Get flow actions (structure) for each flow
+      setSuccess('Step 4.5/5: Getting flow structure...')
+      console.log('🔄 FRONTEND: Fetching flow actions for structure data')
+      
+      const flowActionsMap: { [flowId: string]: any[] } = {}
+      let actionsSuccessCount = 0
+      let actionsFailCount = 0
+      
+      for (const flowId of flowIds) {
+        try {
+          const actionsResponse = await fetch('/api/klaviyo-proxy/flow-actions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              clientSlug: client.brand_slug,
+              flowId: flowId
+            })
+          })
+          
+          if (actionsResponse.ok) {
+            const actionsResult = await actionsResponse.json()
+            flowActionsMap[flowId] = actionsResult.data?.data || []
+            actionsSuccessCount++
+            console.log(`✅ FRONTEND: Got ${flowActionsMap[flowId].length} actions for flow ${flowId}`)
+          } else {
+            console.warn(`⚠️ FRONTEND: Failed to get actions for flow ${flowId}, continuing...`)
+            actionsFailCount++
+          }
+          
+          // Rate limiting: 3/s, use 400ms delay
+          if (flowIds.indexOf(flowId) < flowIds.length - 1) {
+            await new Promise(resolve => setTimeout(resolve, 400))
+          }
+        } catch (error) {
+          console.error(`❌ FRONTEND: Error getting actions for flow ${flowId}:`, error)
+          actionsFailCount++
+        }
+      }
+      
+      console.log(`📊 FRONTEND: Flow actions fetched - ${actionsSuccessCount} success, ${actionsFailCount} failed`)
       
       // Step 5: Process and combine data
       const flowDetails: any[] = []
@@ -1002,6 +1043,10 @@ ${campaignDetails.slice(0, 3).map((c: any, i: number) =>
           
           console.log(`📧 FRONTEND: Flow ${flow.id} has ${uniqueMessageIds.length} unique messages`)
           
+          // Get flow actions for this flow
+          const flowActions = flowActionsMap[flow.id] || []
+          console.log(`🔄 FRONTEND: Flow ${flow.id} has ${flowActions.length} actions`)
+          
           flowDetails.push({
             flow_id: flow.id,
             flow_name: flow.attributes?.name,
@@ -1018,7 +1063,10 @@ ${campaignDetails.slice(0, 3).map((c: any, i: number) =>
             // Messages mapped by ID
             messages: messages,
             message_count: messages.length,
-            messagesLookup: messagesLookup // Pass the full lookup for save endpoint
+            messagesLookup: messagesLookup, // Pass the full lookup for save endpoint
+            
+            // Flow actions (structure)
+            flowActions: flowActions
           })
         })
       }
