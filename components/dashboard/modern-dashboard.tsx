@@ -2604,19 +2604,18 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
                         <td className="text-right text-white text-sm py-3 px-2">{(flow.clicks || flow.weeklyClicks || 0).toLocaleString()}</td>
                       </tr>
                       
-                      {/* Expanded Email Sequence Details */}
+                      {/* Expanded Flow Structure & Performance */}
                       {expandedFlows.has(flow.flow_id) && (
                         <tr className="bg-white/5">
                           <td colSpan={7} className="py-4 px-2">
                             <div className="ml-6 space-y-3">
-                              <h4 className="text-white font-medium text-sm mb-3">📧 Email Sequence Performance</h4>
                               {(() => {
                                 // Check loading state first
                                 if (flowEmailsLoading[flow.flow_id]) {
                                   return (
                                     <div className="flex items-center justify-center py-8">
                                       <Loader2 className="animate-spin text-white/60 w-5 h-5 mr-2" />
-                                      <span className="text-white/60 text-sm">Loading flow emails...</span>
+                                      <span className="text-white/60 text-sm">Loading flow data...</span>
                                     </div>
                                   )
                                 }
@@ -2636,11 +2635,24 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
                                   )
                                 }
                                 
-                                // Show emails if available
+                                // Get data for this flow  
                                 const emails = flowEmails[flow.flow_id] || []
-                                console.log(`📧 RENDER: Flow ${flow.flow_id} emails in state:`, emails)
-                                console.log(`📧 RENDER: flowEmails state:`, flowEmails)
+                                const actions = flowActions[flow.flow_id] || []
+                                console.log(`📧 RENDER: Flow ${flow.flow_id} emails:`, emails.length)
+                                console.log(`🔄 RENDER: Flow ${flow.flow_id} actions:`, actions.length)
                                 
+                                // Show wireframe if we have actions
+                                if (actions.length > 0) {
+                                  return (
+                                    <FlowWireframe 
+                                      actions={actions}
+                                      emails={emails}
+                                      flowId={flow.flow_id}
+                                    />
+                                  )
+                                }
+                                
+                                // Fallback: Show basic email list if no actions yet
                                 if (emails && emails.length > 0) {
                                   const sequencedEmails = getEmailSequenceForFlow(flow.flow_id, emails)
                                   console.log(`📧 RENDER: Sequenced emails:`, sequencedEmails)
