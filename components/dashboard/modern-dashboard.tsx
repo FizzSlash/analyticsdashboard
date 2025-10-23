@@ -2311,14 +2311,42 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
             }))
             console.log(`📧 FRONTEND: Successfully loaded ${emailsResult.emails?.length || 0} emails for flow ${flowId}`)
             
-            // Load actions if successful
+            // Load and parse actions if successful
             if (actionsResponse.ok) {
               const actionsResult = await actionsResponse.json()
+              const rawActions = actionsResult.data?.data || []
+              
+              // Parse actions to match database format (normalize types, calculate delays)
+              let cumulativeHours = 0
+              const parsedActions = rawActions.map((action: any, idx: number) => {
+                const actionType = action.attributes?.action_type || 'unknown'
+                const settings = action.attributes?.settings || {}
+                
+                // Calculate delay
+                let delayHours = 0
+                if (actionType === 'TIME_DELAY' && settings.delay_seconds) {
+                  delayHours = Math.round(settings.delay_seconds / 3600)
+                  cumulativeHours += delayHours
+                }
+                
+                return {
+                  action_id: action.id,
+                  action_type: actionType.toLowerCase(),
+                  action_status: action.attributes?.status || 'unknown',
+                  sequence_position: idx,
+                  delay_type: actionType === 'TIME_DELAY' ? 'delay' : null,
+                  delay_value: delayHours || null,
+                  delay_unit: delayHours ? 'hours' : null,
+                  cumulative_delay_hours: cumulativeHours,
+                  trigger_type: actionType === 'TRIGGER' ? (settings.trigger?.type || 'Flow Start') : null
+                }
+              })
+              
               setFlowActions(prev => ({
                 ...prev,
-                [flowId]: actionsResult.data?.data || []
+                [flowId]: parsedActions
               }))
-              console.log(`🔄 FRONTEND: Successfully loaded ${actionsResult.data?.data?.length || 0} actions for flow ${flowId}`)
+              console.log(`🔄 FRONTEND: Parsed and loaded ${parsedActions.length} actions for flow ${flowId}`)
             }
           } catch (error) {
             console.error('📧 FRONTEND: Error loading flow data:', error)
