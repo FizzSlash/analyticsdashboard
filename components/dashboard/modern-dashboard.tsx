@@ -97,7 +97,7 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
   const [creativesPage, setCreativesPage] = useState(1)
   const [expandedInsights, setExpandedInsights] = useState<Set<number>>(new Set())
   const [showAllPeakHours, setShowAllPeakHours] = useState(false)
-  const [creativeViewMode, setCreativeViewMode] = useState<{[key: string]: 'desktop' | 'mobile'}>>({})
+  const [creativeViewMode, setCreativeViewMode] = useState<Record<string, 'desktop' | 'mobile'>>({})
 
   // Chart data processing functions
   const getRevenueRecipientsComboData = (campaigns: any[], timeframe: number) => {
