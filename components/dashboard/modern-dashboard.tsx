@@ -2885,9 +2885,10 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
 
   const renderCreativesTab = () => {
     const allCampaigns = data?.campaigns || []
-    const campaigns = filterAndAggregateData.campaigns(allCampaigns, timeframe)
+    // Don't filter by timeframe for creatives - include drafts and all statuses
+    const campaigns = allCampaigns
     
-    // Only campaigns with email_html
+    // Only campaigns with email_html (includes drafts, sent, scheduled)
     const creativeCampaigns = campaigns.filter((c: any) => c.email_html)
     
     // Extract first image from HTML
@@ -3204,7 +3205,7 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
         {/* Full Preview Modal */}
         {selectedCreative && (
           <div 
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+            className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
             onClick={() => setSelectedCreative(null)}
           >
             <div 
