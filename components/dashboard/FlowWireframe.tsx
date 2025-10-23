@@ -68,6 +68,15 @@ export function FlowWireframe({ actions, emails, flowId }: FlowWireframeProps) {
           }
           
           if (actionType === 'send_email' || actionType === 'email') {
+            const emailNumber = actions.filter(a => 
+              (a.action_type === 'send_email' || a.action_type === 'email') && 
+              a.sequence_position <= action.sequence_position
+            ).length
+            
+            // Try to find matching email by sequence
+            const matchingEmail = emails[emailNumber - 1] || null
+            const displayData = messageData || matchingEmail
+            
             return (
               <div key={action.action_id}>
                 {/* Connector line */}
@@ -82,7 +91,7 @@ export function FlowWireframe({ actions, emails, flowId }: FlowWireframeProps) {
                   <div className="flex-1 bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
                     <div className="flex items-center justify-between mb-2">
                       <div className="text-blue-300 text-xs font-medium uppercase tracking-wide">
-                        Email {actions.filter(a => a.action_type === 'email' && a.sequence_position <= action.sequence_position).length}
+                        Email {emailNumber}
                       </div>
                       {action.cumulative_delay_hours > 0 && (
                         <div className="text-white/60 text-xs">
@@ -91,30 +100,32 @@ export function FlowWireframe({ actions, emails, flowId }: FlowWireframeProps) {
                       )}
                     </div>
                     
-                    {messageData ? (
+                    {displayData ? (
                       <>
-                        <div className="text-white font-semibold mb-2">{messageData.subject_line || messageData.message_name || 'Untitled Email'}</div>
+                        <div className="text-white font-semibold mb-2">
+                          {displayData.subject_line || displayData.message_name || `Email ${emailNumber}`}
+                        </div>
                         
                         {/* Performance metrics */}
                         <div className="grid grid-cols-3 gap-3 mt-3 pt-3 border-t border-white/10">
                           <div>
                             <div className="text-white/60 text-xs">Opens</div>
-                            <div className="text-white font-semibold">{(messageData.opens || 0).toLocaleString()}</div>
-                            <div className="text-green-300 text-xs">{((messageData.open_rate || 0) * 100).toFixed(1)}%</div>
+                            <div className="text-white font-semibold">{(displayData.opens || 0).toLocaleString()}</div>
+                            <div className="text-green-300 text-xs">{((displayData.open_rate || 0) * 100).toFixed(1)}%</div>
                           </div>
                           <div>
                             <div className="text-white/60 text-xs">Clicks</div>
-                            <div className="text-white font-semibold">{(messageData.clicks || 0).toLocaleString()}</div>
-                            <div className="text-blue-300 text-xs">{((messageData.click_rate || 0) * 100).toFixed(2)}%</div>
+                            <div className="text-white font-semibold">{(displayData.clicks || 0).toLocaleString()}</div>
+                            <div className="text-blue-300 text-xs">{((displayData.click_rate || 0) * 100).toFixed(2)}%</div>
                           </div>
                           <div>
                             <div className="text-white/60 text-xs">Revenue</div>
-                            <div className="text-white font-semibold">${(messageData.revenue || 0).toLocaleString()}</div>
+                            <div className="text-white font-semibold">${(displayData.revenue || 0).toLocaleString()}</div>
                           </div>
                         </div>
                       </>
                     ) : (
-                      <div className="text-white/60 text-sm">Email action (no performance data)</div>
+                      <div className="text-white font-semibold">Email {emailNumber}</div>
                     )}
                   </div>
                 </div>
