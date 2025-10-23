@@ -2811,8 +2811,8 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
                         labelStyle={{ color: 'white' }}
                         itemStyle={{ color: 'white' }}
                         formatter={(value: any, name: string) => [
-                          `${value} ${value >= 0 ? '(Growth)' : '(Decline)'}`, 
-                          'Net Subscriber Change'
+                          `${value} new subscribers`, 
+                          'Email Subscriptions'
                         ]}
                         labelFormatter={(label: any) => new Date(label).toLocaleDateString('en-US', { 
                           weekday: 'short', 
