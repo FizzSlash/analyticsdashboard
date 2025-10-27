@@ -151,11 +151,11 @@ export function FlowWireframe({ actions, emails, flowId }: FlowWireframeProps) {
             )
           }
           
-          if (actionType === 'conditional_split') {
+          if (actionType === 'boolean_branch' || actionType === 'conditional_split') {
             return (
               <div key={action.action_id}>
                 {/* Connector line */}
-                <div className="ml-4 w-0.5 h-3 bg-white/20"></div>
+                {index > 0 && <div className="ml-4 w-0.5 h-3 bg-white/20"></div>}
                 
                 <div className="flex items-start gap-3">
                   <div className="flex-shrink-0 w-8 h-8 rounded-full bg-orange-500/20 border border-orange-500/40 flex items-center justify-center">
@@ -163,7 +163,10 @@ export function FlowWireframe({ actions, emails, flowId }: FlowWireframeProps) {
                   </div>
                   <div className="flex-1 bg-orange-500/10 border border-orange-500/30 rounded-lg p-3">
                     <div className="text-orange-300 text-xs font-medium uppercase tracking-wide mb-1">Conditional Split</div>
-                    <div className="text-white/80 text-sm">{action.condition_type || 'IF/THEN Logic'}</div>
+                    <div className="text-white/80 text-sm">Flow branches based on conditions</div>
+                    <div className="text-white/50 text-xs mt-2">
+                      Note: Following actions may be on different branch paths
+                    </div>
                   </div>
                 </div>
               </div>
