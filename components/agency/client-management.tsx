@@ -361,12 +361,29 @@ export function ClientManagement({ agency, clients: initialClients }: ClientMana
       const metricsResult = await metricsResponse.json()
       console.log('📊 FRONTEND: Metrics response:', metricsResult)
       
-      // Find Placed Order metric
+      // Find conversion metric
+      console.log('🔍 FRONTEND: Looking for conversion metric in', metricsResult.data?.data?.length, 'metrics')
+      console.log('🔍 FRONTEND: First 20 metric names:', metricsResult.data?.data?.map((m: any) => m.attributes?.name).slice(0, 20))
+      
       const placedOrderMetric = metricsResult.data?.data?.find((m: any) => 
         m.attributes?.name === 'Placed Order'
       )
       const conversionMetricId = placedOrderMetric?.id || null
       console.log('🎯 FRONTEND: Found conversion metric ID:', conversionMetricId)
+      console.log('🎯 FRONTEND: Metric name:', placedOrderMetric?.attributes?.name || 'NOT FOUND - REVENUE WILL BE $0!')
+      
+      if (!conversionMetricId) {
+        console.warn('⚠️⚠️⚠️ FRONTEND: NO "Placed Order" METRIC FOUND! REVENUE WILL BE $0 ⚠️⚠️⚠️')
+        const orderMetrics = metricsResult.data?.data?.filter((m: any) => 
+          m.attributes?.name?.toLowerCase().includes('order') || 
+          m.attributes?.name?.toLowerCase().includes('purchase') ||
+          m.attributes?.name?.toLowerCase().includes('checkout')
+        )
+        console.warn('💡 FRONTEND: Found these order-related metrics instead:', orderMetrics?.map((m: any) => ({
+          name: m.attributes?.name,
+          id: m.id
+        })))
+      }
       
       // Step 2: Get bulk campaign analytics
       setSuccess('Step 2/4: Getting campaign analytics...')
