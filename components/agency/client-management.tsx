@@ -988,45 +988,7 @@ ${campaignDetails.slice(0, 3).map((c: any, i: number) =>
           
           if (actionsResponse.ok) {
             const actionsResult = await actionsResponse.json()
-            const actions = actionsResult.data?.data || []
-            
-            // TEST: Call relationship links for first action to see if we get tree structure
-            if (actions.length > 0 && actions[0].relationships?.flow?.links?.related) {
-              console.log(`🔗 FRONTEND: Testing relationship link for flow ${flowId}...`)
-              try {
-                const relatedLink = actions[0].relationships.flow.links.related
-                console.log(`🔗 FRONTEND: Calling ${relatedLink}`)
-                
-                const relationshipResponse = await fetch('/api/klaviyo-proxy/relationship-test', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                    clientSlug: client.brand_slug,
-                    url: relatedLink
-                  })
-                })
-                
-                if (relationshipResponse.ok) {
-                  const relationshipData = await relationshipResponse.json()
-                  console.log(`🔗 FRONTEND: Relationship link returned:`, relationshipData)
-                  
-                  // Check if it has useful structure data
-                  if (relationshipData.data?.included) {
-                    console.log(`📦 FRONTEND: FOUND INCLUDES! Count: ${relationshipData.data.included.length}`)
-                    console.log(`📦 FRONTEND: Included data:`, relationshipData.data.included)
-                  }
-                  if (relationshipData.data?.data?.relationships) {
-                    console.log(`🔗 FRONTEND: FOUND RELATIONSHIPS!`, relationshipData.data.data.relationships)
-                  }
-                } else {
-                  console.warn(`⚠️ FRONTEND: Relationship link failed with status ${relationshipResponse.status}`)
-                }
-              } catch (relError) {
-                console.warn(`⚠️ FRONTEND: Relationship link error:`, relError)
-              }
-            }
-            
-            flowActionsMap[flowId] = actions
+            flowActionsMap[flowId] = actionsResult.data?.data || []
             actionsSuccessCount++
             console.log(`✅ FRONTEND: Got ${flowActionsMap[flowId].length} actions for flow ${flowId}`)
           } else {
