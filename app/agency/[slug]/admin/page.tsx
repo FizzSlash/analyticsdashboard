@@ -2,8 +2,6 @@
 
 import { useEffect, useState } from 'react'
 import { AgencyAdminDashboard } from '@/components/agency/agency-admin-dashboard'
-import { CleanPortalDashboard } from '@/components/portal/clean-portal-dashboard'
-import { ViewToggle, type ViewMode } from '@/components/ui/view-toggle'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/components/auth/auth-provider'
 
@@ -19,7 +17,6 @@ export default function AgencyAdminPage({ params }: PageProps) {
   const [clientUsers, setClientUsers] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [viewMode, setViewMode] = useState<ViewMode>('analytics')
   const router = useRouter()
   const { supabase, loading: authLoading } = useAuth() // Use centralized Supabase client
 
