@@ -76,7 +76,13 @@ export class KlaviyoAPI {
     
     do {
       const params = new URLSearchParams()
-      params.set('filter', `equals(messages.channel,'${channel}')`)
+      
+      // Filter: Email channel AND last 365 days only
+      const oneYearAgo = new Date()
+      oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1)
+      const dateFilter = oneYearAgo.toISOString()
+      
+      params.set('filter', `and(equals(messages.channel,'${channel}'),greater-than(updated_at,${dateFilter}))`)
       
       if (cursor) {
         params.set('page[cursor]', cursor)
