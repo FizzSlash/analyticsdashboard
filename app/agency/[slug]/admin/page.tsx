@@ -150,31 +150,24 @@ export default function AgencyAdminPage({ params }: PageProps) {
   }
 
   return (
-    <div className="min-h-screen relative" 
+    <div 
+      className="min-h-screen relative"
       style={{
-        background: `linear-gradient(135deg, ${agency.primary_color || '#3B82F6'} 0%, ${agency.secondary_color || '#1D4ED8'} 100%)`
+        background: agency.background_image_url 
+          ? `url(${agency.background_image_url}) center/cover fixed, ${agency.primary_color || '#3B82F6'}` 
+          : `linear-gradient(135deg, ${agency.primary_color || '#3B82F6'} 0%, ${agency.secondary_color || '#1D4ED8'} 100%)`
       }}
     >
-      {/* Background Image Overlay (only if explicitly set) */}
-      {(agency.background_image_url || process.env.NEXT_PUBLIC_PORTAL_BACKGROUND_IMAGE_URL) && (
-        <div 
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-          style={{
-            backgroundImage: `url(${
-              agency.background_image_url || 
-              process.env.NEXT_PUBLIC_PORTAL_BACKGROUND_IMAGE_URL
-            })`,
-            opacity: parseFloat(process.env.NEXT_PUBLIC_PORTAL_BACKGROUND_OPACITY || '0.15')
-          }}
-        />
+      {/* Background overlay for better readability */}
+      {agency.background_image_url && (
+        <div className="absolute inset-0 bg-black/20" />
       )}
       
-      {/* Header with View Toggle */}
+      {/* Header */}
       <div className="py-6 relative z-50">
-        <div className="container mx-auto px-4">
+        <div className="max-w-7xl mx-auto px-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              {/* Agency Logo */}
               {agency.logo_url && (
                 <img 
                   src={agency.logo_url} 
@@ -183,40 +176,23 @@ export default function AgencyAdminPage({ params }: PageProps) {
                 />
               )}
               <div>
-                <h1 className="text-3xl font-bold mb-2 text-white">{agency.agency_name}</h1>
-                <p className="text-blue-100 text-lg">
-                  {viewMode === 'analytics' ? 'Agency Management Dashboard' : 'Campaign & Flow Portal'}
-                </p>
+                <h1 className="text-3xl font-bold text-white">{agency.agency_name}</h1>
+                <p className="text-white/70 text-lg">Agency Management Dashboard</p>
               </div>
             </div>
-            
-            <ViewToggle 
-              currentMode={viewMode}
-              onModeChange={setViewMode}
-            />
           </div>
         </div>
       </div>
 
       {/* Content */}
       <div className="relative z-10">
-        {viewMode === 'analytics' ? (
-          <div className="container mx-auto px-4 py-8">
-            <AgencyAdminDashboard 
-              agency={agency}
-              clients={clients}
-              clientUsers={clientUsers}
-            />
-          </div>
-        ) : (
-          <div className="px-6 py-8">
-            <CleanPortalDashboard 
-              user={{ agency: agency }}
-              userRole="agency_admin"
-              allClients={clients.filter(c => c.is_active)}
-            />
-          </div>
-        )}
+        <div className="max-w-7xl mx-auto px-6 pb-12">
+          <AgencyAdminDashboard 
+            agency={agency}
+            clients={clients}
+            clientUsers={clientUsers}
+          />
+        </div>
       </div>
     </div>
   )
