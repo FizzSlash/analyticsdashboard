@@ -265,21 +265,52 @@ export class KlaviyoAPI {
 
   // Get Flows
   async getFlows(cursor?: string) {
-    // Klaviyo uses cursor-based pagination ONLY
-    let endpoint = `/flows`
-    const params = new URLSearchParams()
+    console.log(`🔄 FLOWS API: Fetching ALL flows with pagination`)
     
-    if (cursor) {
-      params.set('page[cursor]', cursor)
+    let allFlows: any[] = []
+    let nextCursor: string | null = cursor || null
+    let pageCount = 0
+    const maxPages = 10 // Safety limit (500 flows max)
+    
+    do {
+      let endpoint = `/flows`
+      const params = new URLSearchParams()
+      
+      if (nextCursor) {
+        params.set('page[cursor]', nextCursor)
+      }
+      
+      const queryString = params.toString()
+      if (queryString) {
+        endpoint += `?${queryString}`
+      }
+      
+      pageCount++
+      console.log(`🔄 FLOWS API: Fetching page ${pageCount}${nextCursor ? ' (cursor: ' + nextCursor.substring(0, 20) + '...)' : ''}`)
+      
+      const result = await this.makeRequest(endpoint)
+      
+      if (result.data) {
+        allFlows.push(...result.data)
+        console.log(`🔄 FLOWS API: Page ${pageCount}: Got ${result.data.length} flows (total: ${allFlows.length})`)
+      }
+      
+      nextCursor = result.links?.next ? new URL(result.links.next).searchParams.get('page[cursor]') : null
+      
+      // Safety limit
+      if (pageCount >= maxPages) {
+        console.log(`⚠️ FLOWS API: Reached max pages (${maxPages}), stopping. Got ${allFlows.length} flows`)
+        break
+      }
+      
+    } while (nextCursor)
+    
+    console.log(`🔄 FLOWS API: Pagination complete - ${pageCount} pages, ${allFlows.length} total flows`)
+    
+    return {
+      data: allFlows,
+      links: { self: '/flows', next: null, prev: null }
     }
-    
-    const queryString = params.toString()
-    if (queryString) {
-      endpoint += `?${queryString}`
-    }
-    
-    console.log(`🔄 FLOWS API: Full endpoint: ${endpoint}`)
-    return this.makeRequest(endpoint)
   }
 
   // Get Flow by ID
