@@ -72,7 +72,7 @@ export class KlaviyoAPI {
     let allIncluded: any[] = []
     let cursor: string | null = null
     let pageCount = 0
-    const maxPages = 20 // Safety limit to prevent infinite loops
+    const maxPages = 5 // Reduced limit to prevent Vercel timeout (500 campaigns max)
     
     do {
       const params = new URLSearchParams()
@@ -101,9 +101,9 @@ export class KlaviyoAPI {
       
       while (retries <= maxRetries) {
         try {
-          // Add timeout wrapper (30 seconds per page)
+          // Add timeout wrapper (10 seconds per page to prevent Vercel timeout)
           const timeoutPromise = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Page fetch timeout')), 30000)
+            setTimeout(() => reject(new Error('Page fetch timeout')), 10000)
           )
           
           result = await Promise.race([
@@ -127,7 +127,7 @@ export class KlaviyoAPI {
             }
           }
           console.warn(`⚠️ CAMPAIGNS API: Page ${pageCount} attempt ${retries} failed, retrying... (${error.message})`)
-          await new Promise(resolve => setTimeout(resolve, 2000)) // Wait 2s before retry
+          await new Promise(resolve => setTimeout(resolve, 1000)) // Wait 1s before retry
         }
       }
       
