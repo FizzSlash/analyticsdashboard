@@ -77,12 +77,13 @@ export class KlaviyoAPI {
     do {
       const params = new URLSearchParams()
       
-      // Filter: Email channel AND last 365 days only
+      // Filter: Email channel AND last 365 days only (match analytics timeframe)
       const oneYearAgo = new Date()
       oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1)
       const dateFilter = oneYearAgo.toISOString()
       
-      params.set('filter', `and(equals(messages.channel,'${channel}'),greater-than(updated_at,${dateFilter}))`)
+      // Use send_time to match the campaign-values-report 'last_365_days' timeframe
+      params.set('filter', `and(equals(messages.channel,'${channel}'),greater-or-equal(send_time,${dateFilter}))`)
       
       if (cursor) {
         params.set('page[cursor]', cursor)
