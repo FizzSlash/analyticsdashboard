@@ -72,6 +72,7 @@ export class KlaviyoAPI {
     let allIncluded: any[] = []
     let cursor: string | null = null
     let pageCount = 0
+    const maxPages = 20 // Safety limit to prevent infinite loops
     
     do {
       const params = new URLSearchParams()
@@ -93,18 +94,59 @@ export class KlaviyoAPI {
       pageCount++
       console.log(`📧 CAMPAIGNS API: Fetching page ${pageCount}${cursor ? ' (cursor: ' + cursor.substring(0, 20) + '...)' : ''}`)
       
-      const result = await this.makeRequest(endpoint)
+      // Add retry logic with timeout
+      let result: any = null
+      let retries = 0
+      const maxRetries = 2
       
-      if (result.data) {
+      while (retries <= maxRetries) {
+        try {
+          // Add timeout wrapper (30 seconds per page)
+          const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Page fetch timeout')), 30000)
+          )
+          
+          result = await Promise.race([
+            this.makeRequest(endpoint),
+            timeoutPromise
+          ])
+          
+          // Success - break retry loop
+          break
+          
+        } catch (error: any) {
+          retries++
+          if (retries > maxRetries) {
+            console.error(`❌ CAMPAIGNS API: Page ${pageCount} failed after ${maxRetries} retries:`, error.message)
+            console.log(`⚠️ CAMPAIGNS API: Continuing with ${allCampaigns.length} campaigns collected so far`)
+            // Return what we have instead of failing completely
+            return {
+              data: allCampaigns,
+              included: allIncluded,
+              links: { self: '/campaigns', next: null, prev: null }
+            }
+          }
+          console.warn(`⚠️ CAMPAIGNS API: Page ${pageCount} attempt ${retries} failed, retrying... (${error.message})`)
+          await new Promise(resolve => setTimeout(resolve, 2000)) // Wait 2s before retry
+        }
+      }
+      
+      if (result && result.data) {
         allCampaigns.push(...result.data)
         console.log(`📧 CAMPAIGNS API: Page ${pageCount}: Got ${result.data.length} campaigns (total: ${allCampaigns.length})`)
       }
       
-      if (result.included) {
+      if (result && result.included) {
         allIncluded.push(...result.included)
       }
       
-      cursor = result.links?.next ? new URL(result.links.next).searchParams.get('page[cursor]') : null
+      cursor = result?.links?.next ? new URL(result.links.next).searchParams.get('page[cursor]') : null
+      
+      // Safety limit
+      if (pageCount >= maxPages) {
+        console.log(`⚠️ CAMPAIGNS API: Reached max pages (${maxPages}), stopping. Got ${allCampaigns.length} campaigns`)
+        break
+      }
       
     } while (cursor)
     
