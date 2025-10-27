@@ -363,7 +363,7 @@ export function ClientManagement({ agency, clients: initialClients }: ClientMana
       
       // Find conversion metric
       console.log('🔍 FRONTEND: Looking for conversion metric in', metricsResult.data?.data?.length, 'metrics')
-      console.log('🔍 FRONTEND: First 20 metric names:', metricsResult.data?.data?.map((m: any) => m.attributes?.name).slice(0, 20))
+      console.log('🔍 FRONTEND: ALL metric names:', metricsResult.data?.data?.map((m: any) => m.attributes?.name))
       
       const placedOrderMetric = metricsResult.data?.data?.find((m: any) => 
         m.attributes?.name === 'Placed Order'
