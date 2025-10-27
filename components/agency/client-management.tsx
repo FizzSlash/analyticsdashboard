@@ -384,10 +384,14 @@ export function ClientManagement({ agency, clients: initialClients }: ClientMana
         })
       }
       
-      // Prefer integration metrics (Shopify, WooCommerce, etc.) - they have real data
-      let placedOrderMetric = allPlacedOrderMetrics?.find((m: any) => 
-        m.attributes?.integration?.name // Has integration = real e-commerce data
-      )
+      // Prefer e-commerce integration metrics (Shopify, WooCommerce, etc.) - they have real data
+      let placedOrderMetric = allPlacedOrderMetrics?.find((m: any) => {
+        const integrationName = m.attributes?.integration?.name?.toLowerCase() || ''
+        return integrationName === 'shopify' || 
+               integrationName === 'woocommerce' || 
+               integrationName === 'bigcommerce' ||
+               integrationName === 'magento'
+      })
       
       // If no integration metric, use the newest one
       if (!placedOrderMetric && allPlacedOrderMetrics && allPlacedOrderMetrics.length > 0) {
