@@ -462,8 +462,10 @@ export function ClientManagement({ agency, clients: initialClients }: ClientMana
       if (analyticsResult.data?.data) {
         analyticsResult.data.data.forEach((item: any) => {
           analyticsLookup[item.id] = item.attributes
+          console.log(`📊 FRONTEND: Analytics for campaign ${item.id}: revenue=${item.attributes?.conversion_value || 0}`)
         })
       }
+      console.log(`📊 FRONTEND: Created analytics lookup with ${Object.keys(analyticsLookup).length} campaigns`)
       
       // Create messages lookup from included data
       const messagesLookup: { [key: string]: any } = {}
