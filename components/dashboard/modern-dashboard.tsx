@@ -902,7 +902,7 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
                 <span className="text-white/80">📧 Email Revenue</span>
                 <div className="text-right">
                   <span className="text-white font-semibold">
-                    ${(timeframeSummary?.revenueAttributionSummary?.total_email_revenue || 0).toLocaleString()}
+                    {formatCurrency(timeframeSummary?.revenueAttributionSummary?.total_email_revenue || 0, currency)}
                   </span>
                   <div className="text-xs text-white/60">
                     {(timeframeSummary?.revenueAttributionSummary?.avg_email_percentage || 0).toFixed(1)}% of total
@@ -913,7 +913,7 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
                 <span className="text-white/80">📱 SMS Revenue</span>
                 <div className="text-right">
                   <span className="text-white font-semibold">
-                    ${(timeframeSummary?.revenueAttributionSummary?.total_sms_revenue || 0).toLocaleString()}
+                    {formatCurrency(timeframeSummary?.revenueAttributionSummary?.total_sms_revenue || 0, currency)}
                   </span>
                   <div className="text-xs text-white/60">
                     {(timeframeSummary?.revenueAttributionSummary?.avg_sms_percentage || 0).toFixed(1)}% of total
@@ -923,7 +923,7 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
               <div className="flex justify-between items-center border-t border-white/20 pt-4">
                 <span className="text-white font-medium">💰 Total Store Revenue</span>
                 <span className="text-white font-bold text-lg">
-                  ${(timeframeSummary?.revenueAttributionSummary?.total_revenue || 0).toLocaleString()}
+                  {formatCurrency(timeframeSummary?.revenueAttributionSummary?.total_revenue || 0, currency)}
                 </span>
               </div>
               {(timeframeSummary?.revenueAttributionSummary?.days_with_data || 0) > 0 && (
@@ -948,13 +948,13 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
               <div className="flex justify-between items-center">
                 <span className="text-white/80">📧 Campaign Revenue</span>
                 <span className="text-white font-semibold text-lg">
-                  ${(timeframeSummary?.campaigns?.total_revenue || 0).toLocaleString()}
+                  {formatCurrency(timeframeSummary?.campaigns?.total_revenue || 0, currency)}
                 </span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-white/80">⚡ Flow Revenue</span>
                 <span className="text-white font-semibold text-lg">
-                  ${(timeframeSummary?.flows?.total_revenue || 0).toLocaleString()}
+                  {formatCurrency(timeframeSummary?.flows?.total_revenue || 0, currency)}
                 </span>
               </div>
               
@@ -986,7 +986,7 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
                         borderRadius: '8px',
                         color: 'white'
                       }}
-                      formatter={(value: any) => [`$${value.toLocaleString()}`, 'Revenue']}
+                      formatter={(value: any) => [formatCurrency(value, currency), 'Revenue']}
                     />
                     <Bar 
                       dataKey="revenue" 
@@ -1050,7 +1050,7 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
                     <p className="text-white/60 text-xs">{flow.flow_type || 'email'}</p>
                   </div>
                   <div className="text-right ml-4">
-                    <p className="text-white font-semibold text-sm">${(flow.revenue || 0).toLocaleString()}</p>
+                    <p className="text-white font-semibold text-sm">{formatCurrency(flow.revenue || 0, currency)}</p>
                     <p className="text-white/60 text-xs">Revenue</p>
                   </div>
                 </div>
