@@ -68,6 +68,24 @@ export class KlaviyoAPI {
   async getAllCampaigns(channel: 'email' | 'sms' | 'mobile_push' | 'all' = 'email', includes?: string[]) {
     console.log(`📧 CAMPAIGNS API: Fetching ALL campaigns with pagination (channel: ${channel})`)
     
+    // Special case: 'all' means fetch email + SMS separately and combine
+    if (channel === 'all') {
+      console.log(`📧 CAMPAIGNS API: Fetching both email AND SMS (2 separate calls)`)
+      const [emailCampaigns, smsCampaigns] = await Promise.all([
+        this.getAllCampaigns('email', includes),
+        this.getAllCampaigns('sms', includes)
+      ])
+      
+      console.log(`📧 CAMPAIGNS API: Email: ${emailCampaigns.data?.length || 0}, SMS: ${smsCampaigns.data?.length || 0}`)
+      
+      return {
+        data: [...(emailCampaigns.data || []), ...(smsCampaigns.data || [])],
+        included: [...(emailCampaigns.included || []), ...(smsCampaigns.included || [])],
+        links: { self: '/campaigns', next: null, prev: null }
+      }
+    }
+    
+    // Single channel fetch
     let allCampaigns: any[] = []
     let allIncluded: any[] = []
     let cursor: string | null = null
@@ -83,8 +101,7 @@ export class KlaviyoAPI {
       const dateFilter = oneYearAgo.toISOString()
       
       // Filter by channel and date
-      // Note: Klaviyo doesn't support OR in filters, so 'all' just uses email for now
-      params.set('filter', `and(equals(messages.channel,'${channel === 'all' ? 'email' : channel}'),greater-or-equal(updated_at,${dateFilter}))`)
+      params.set('filter', `and(equals(messages.channel,'${channel}'),greater-or-equal(updated_at,${dateFilter}))`)
       
       if (cursor) {
         params.set('page[cursor]', cursor)
