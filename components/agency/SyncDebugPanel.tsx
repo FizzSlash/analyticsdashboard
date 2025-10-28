@@ -127,10 +127,26 @@ export function SyncDebugPanel({ clients }: SyncDebugPanelProps) {
           
           const transformedData = Array.from(dateMap.values())
           
-          // Step 4: Save
+          // Debug: Show what we got
+          console.log('📊 LIST GROWTH DEBUG:', {
+            metricsFound: Object.keys(metricLookup).length,
+            queriesMade: aggregateQueries.length,
+            aggregateResultsCount: aggregateResults.length,
+            transformedRecords: transformedData.length,
+            sampleAggregate: aggregateResults[0],
+            sampleTransformed: transformedData[0]
+          })
+          
+          // Step 4: Save (or return debug info if no data)
           endpoint = '/api/klaviyo-proxy/save-list-growth'
           body.growthData = transformedData
           body.interval = 'day'
+          body._debug = {
+            metricsFound: Object.keys(metricLookup),
+            queriesMade: aggregateQueries.length,
+            aggregateResultsReceived: aggregateResults.length,
+            transformedRecords: transformedData.length
+          }
           break
         
         case 'revenue':
