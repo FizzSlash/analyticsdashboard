@@ -1214,7 +1214,7 @@ ${flowDetails.slice(0, 3).map((f: any, i: number) =>
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-2xl font-bold text-white">Client Management</h2>
-          <p className="text-white/60">Manage your agency's clients and their dashnoticed</p>
+          <p className="text-white/60">Manage your agency's clients and their dashboards</p>
         </div>
         <button
           onClick={() => setShowForm(true)}
