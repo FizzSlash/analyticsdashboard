@@ -96,6 +96,14 @@ export async function POST(request: NextRequest) {
     console.log('🔍 BLUEPRINT: Attribution data structure:', JSON.stringify(attributionApiData?.data, null, 2))
     console.log('🔍 BLUEPRINT: Total data structure:', JSON.stringify(totalApiData?.data, null, 2))
     
+    // Extra debug: Show EXACTLY what groupings look like
+    console.log('🔍 DETAILED GROUPINGS:', attributionApiData?.data?.map((d: any, i: number) => ({
+      index: i,
+      groupings: d.groupings,
+      hasMeasurements: !!d.measurements,
+      measurementsKeys: d.measurements ? Object.keys(d.measurements) : []
+    })))
+    
     const emailDataGroup = attributionApiData?.data?.find((d: any) => d.groupings?.$attributed_channel === 'email')
     const smsDataGroup = attributionApiData?.data?.find((d: any) => d.groupings?.$attributed_channel === 'sms')
     const totalDataRecord = totalApiData?.data?.[0]?.measurements || { sum_value: [] }
@@ -220,7 +228,11 @@ export async function POST(request: NextRequest) {
         smsGroupFound: !!smsDataGroup,
         sampleEmailRevenue: emailData.sum_value?.[0] || 0,
         sampleSmsRevenue: smsData.sum_value?.[0] || 0,
-        allGroupings: attributionApiData?.data?.map((d: any) => d.groupings) || []
+        allGroupings: attributionApiData?.data?.map((d: any) => d.groupings) || [],
+        // FULL RAW DATA for debugging
+        fullAttributionData: attributionApiData?.data || [],
+        fullTotalData: totalApiData?.data || [],
+        metricUsed: metricId
       },
       dateRange: { startDate: actualStartDate, endDate: actualEndDate }
     })
