@@ -46,19 +46,56 @@ export function SyncDebugPanel({ clients }: SyncDebugPanelProps) {
           break
         
         case 'list-growth':
-          // List growth needs to fetch data from Klaviyo first
-          const listResponse = await fetch('/api/klaviyo-proxy/list-growth', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-              klaviyoApiKey: client.klaviyo_api_key,
-              timeframe: 'last-365-days'
-            })
-          })
-          const listData = await listResponse.json()
+          // List growth: Get metrics, query aggregates, then save
+          // Step 1: Get all metrics
+          const metricsRes = await fetch(`/api/klaviyo-proxy/metrics?clientSlug=${client.brand_slug}`)
+          const metricsData = await metricsRes.json()
+          const metrics = metricsData.data?.data || []
+          const metricLookup: { [key: string]: string } = {}
           
+          metrics.forEach((metric: any) => {
+            metricLookup[metric.attributes.name] = metric.id
+          })
+          
+          // Step 2: Get metric aggregates for subscription metrics
+          const subscriptionMetrics = [
+            'Subscribed to Email Marketing',
+            'Unsubscribed from Email Marketing',
+            'Subscribed to SMS Marketing',
+            'Unsubscribed from SMS Marketing',
+            'Form submitted by profile'
+          ]
+          
+          const endDate = new Date().toISOString()
+          const startDate = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString()
+          
+          const aggregateQueries = []
+          for (const metricName of subscriptionMetrics) {
+            if (metricLookup[metricName]) {
+              aggregateQueries.push(
+                fetch('/api/klaviyo-proxy/metric-aggregates', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    clientSlug: client.brand_slug,
+                    metricId: metricLookup[metricName],
+                    interval: 'day',
+                    startDate,
+                    endDate
+                  })
+                })
+              )
+            }
+          }
+          
+          const aggregateResponses = await Promise.all(aggregateQueries)
+          const aggregateResults = await Promise.all(
+            aggregateResponses.map(r => r.json())
+          )
+          
+          // Step 3: Save
           endpoint = '/api/klaviyo-proxy/save-list-growth'
-          body.growthData = listData.data
+          body.growthData = aggregateResults
           body.interval = 'day'
           break
         
