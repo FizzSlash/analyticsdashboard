@@ -326,7 +326,7 @@ export async function syncListGrowth(clientSlug: string, clientId: string, onPro
   }
 }
 
-export async function syncRevenueAttribution(clientSlug: string, clientId: string, onProgress?: (message: string) => void) {
+export async function syncRevenueAttribution(clientSlug: string, clientId: string, conversionMetricId?: string, onProgress?: (message: string) => void) {
   try {
     onProgress?.('Syncing revenue attribution...')
     
@@ -335,7 +335,8 @@ export async function syncRevenueAttribution(clientSlug: string, clientId: strin
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ 
         clientSlug,
-        timeframe: 'last-365-days'  // Required parameter!
+        conversionMetricId,  // Pass the saved metric!
+        timeframe: 'last-365-days'
       })
     })
     

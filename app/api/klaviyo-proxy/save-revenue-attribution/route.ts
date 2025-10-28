@@ -9,6 +9,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { 
       clientSlug, 
+      conversionMetricId,  // NEW: Receive saved metric!
       timeframe = 'last-365-days',
       startDate, 
       endDate 
@@ -30,24 +31,30 @@ export async function POST(request: NextRequest) {
     const decryptedKey = decryptApiKey(client.klaviyo_api_key)
     const klaviyo = new KlaviyoAPI(decryptedKey)
     
-    // Get the "Placed Order" metric ID
-    const metricsResponse = await klaviyo.getMetrics()
-    console.log('📊 REVENUE: Metrics response structure:', {
-      hasData: !!metricsResponse.data,
-      dataLength: metricsResponse.data?.length || 0,
-      sampleMetric: metricsResponse.data?.[0]
-    })
+    // Use saved metric or fall back to finding it
+    let metricId = conversionMetricId || client.conversion_metric_id
     
-    const placedOrderMetric = metricsResponse.data?.find((m: any) => 
-      m.attributes?.name === 'Placed Order'
-    )
+    if (!metricId) {
+      console.log('⚠️ REVENUE: No saved metric, auto-detecting...')
+      // Get the "Placed Order" metric ID
+      const metricsResponse = await klaviyo.getMetrics()
+      console.log('📊 REVENUE: Metrics response structure:', {
+        hasData: !!metricsResponse.data,
+        dataLength: metricsResponse.data?.length || 0,
+        sampleMetric: metricsResponse.data?.[0]
+      })
+      
+      const placedOrderMetric = metricsResponse.data?.find((m: any) => 
+        m.attributes?.name === 'Placed Order'
+      )
+      metricId = placedOrderMetric?.id
+    }
     
-    console.log('🔍 REVENUE: Looking for Placed Order metric in', metricsResponse.data?.length || 0, 'metrics')
-    console.log('🎯 REVENUE: Found Placed Order metric:', placedOrderMetric)
+    console.log('🎯 REVENUE: Using metric ID:', metricId)
     
-    if (!placedOrderMetric) {
-      console.error('❌ Placed Order metric not found')
-      return NextResponse.json({ error: 'Placed Order metric not found' }, { status: 404 })
+    if (!metricId) {
+      console.error('❌ REVENUE: No metric ID available')
+      return NextResponse.json({ error: 'Conversion metric not found' }, { status: 404 })
     }
 
     // Determine date range
@@ -69,8 +76,8 @@ export async function POST(request: NextRequest) {
     console.log('📊 BLUEPRINT: Making 2 API calls like Flow LUXE...')
     
     const [attributionData, totalData] = await Promise.all([
-      klaviyo.queryRevenueByAttributedChannel(placedOrderMetric.id, actualStartDate, actualEndDate),
-      klaviyo.queryTotalRevenue(placedOrderMetric.id, actualStartDate, actualEndDate)
+      klaviyo.queryRevenueByAttributedChannel(metricId, actualStartDate, actualEndDate),
+      klaviyo.queryTotalRevenue(metricId, actualStartDate, actualEndDate)
     ])
 
     console.log('📊 BLUEPRINT: API responses received:', {
