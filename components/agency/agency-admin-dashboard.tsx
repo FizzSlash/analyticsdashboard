@@ -5,6 +5,7 @@ import { Agency, Client, UserProfile } from '@/lib/supabase'
 import { ClientManagement } from './client-management'
 import { UserManagement } from './user-management'
 import { AgencySettings } from './agency-settings'
+import { SyncDebugPanel } from './SyncDebugPanel'
 import { 
   Users, 
   Building2, 
