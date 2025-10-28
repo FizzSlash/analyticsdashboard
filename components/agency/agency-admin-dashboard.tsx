@@ -276,7 +276,10 @@ export function AgencyAdminDashboard({ agency, clients, clientUsers }: AgencyAdm
         )}
 
         {activeTab === 'clients' && (
-          <ClientManagement agency={agency} clients={clients} />
+          <>
+            <SyncDebugPanel clients={clients.filter(c => c.is_active)} />
+            <ClientManagement agency={agency} clients={clients} />
+          </>
         )}
 
         {activeTab === 'users' && (
