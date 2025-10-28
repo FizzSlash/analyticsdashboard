@@ -83,13 +83,8 @@ export class KlaviyoAPI {
       const dateFilter = oneYearAgo.toISOString()
       
       // Filter by channel and date
-      if (channel === 'all') {
-        // Fetch both email AND SMS
-        params.set('filter', `and(any(equals(messages.channel,'email'),equals(messages.channel,'sms')),greater-or-equal(updated_at,${dateFilter}))`)
-      } else {
-        // Single channel
-        params.set('filter', `and(equals(messages.channel,'${channel}'),greater-or-equal(updated_at,${dateFilter}))`)
-      }
+      // Note: Klaviyo doesn't support OR in filters, so 'all' just uses email for now
+      params.set('filter', `and(equals(messages.channel,'${channel === 'all' ? 'email' : channel}'),greater-or-equal(updated_at,${dateFilter}))`)
       
       if (cursor) {
         params.set('page[cursor]', cursor)
