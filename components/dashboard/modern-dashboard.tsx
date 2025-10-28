@@ -101,6 +101,7 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
   const [showAllPeakHours, setShowAllPeakHours] = useState(false)
   const [creativeViewMode, setCreativeViewMode] = useState<Record<string, 'desktop' | 'mobile'>>({})
   const [creativesFilter, setCreativesFilter] = useState<'sent' | 'drafts'>('sent')
+  const [channelFilter, setChannelFilter] = useState<'all' | 'email' | 'sms'>('all')
   const [allCampaignsForCreatives, setAllCampaignsForCreatives] = useState<any[]>([])
 
   // Chart data processing functions
@@ -152,8 +153,8 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
         }
         
         if (revenueRecipientsByPeriod[period]) {
-          revenueRecipientsByPeriod[period].revenue += campaign.revenue || 0
-          revenueRecipientsByPeriod[period].recipients += campaign.recipients_count || 0
+        revenueRecipientsByPeriod[period].revenue += campaign.revenue || 0
+        revenueRecipientsByPeriod[period].recipients += campaign.recipients_count || 0
         }
       }
     })
@@ -218,8 +219,8 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
         }
         
         if (rprByPeriod[period]) {
-          rprByPeriod[period].revenue += campaign.revenue
-          rprByPeriod[period].recipients += campaign.recipients_count
+        rprByPeriod[period].revenue += campaign.revenue
+        rprByPeriod[period].recipients += campaign.recipients_count
         }
       }
     })
@@ -287,10 +288,10 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
       // Generate all months in range with zero values
       while (currentDate <= endDate) {
         const monthKey = currentDate.toLocaleDateString('en-US', { year: 'numeric', month: 'short' })
-        monthlyData[monthKey] = {
-          period: monthKey,
-          revenue: 0,
-          recipients: 0,
+          monthlyData[monthKey] = {
+            period: monthKey,
+            revenue: 0,
+            recipients: 0,
           clicks: 0,
           monthDate: new Date(currentDate) // For sorting
         }
@@ -334,9 +335,9 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
         const monthKey = date.toLocaleDateString('en-US', { year: 'numeric', month: 'short' })
         
         if (monthlyData[monthKey]) {
-          monthlyData[monthKey].revenue += week.revenue || 0
-          monthlyData[monthKey].recipients += week.opens || 0 // Use opens as recipients proxy
-          monthlyData[monthKey].clicks += week.clicks || 0
+        monthlyData[monthKey].revenue += week.revenue || 0
+        monthlyData[monthKey].recipients += week.opens || 0 // Use opens as recipients proxy
+        monthlyData[monthKey].clicks += week.clicks || 0
           processedWeeks++
           totalRevenue += week.revenue || 0
         } else {
@@ -1143,22 +1144,22 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
                         return (
                           <div key={i} className="bg-white/5 rounded-lg border border-white/10 overflow-hidden">
                             <div className="p-4">
-                              <div className="font-medium text-white mb-1">{rec.action}</div>
-                              <p className="text-white/70 text-xs mb-2">{rec.why}</p>
-                              {rec.expected_improvement && (
+                          <div className="font-medium text-white mb-1">{rec.action}</div>
+                          <p className="text-white/70 text-xs mb-2">{rec.why}</p>
+                          {rec.expected_improvement && (
                                 <div className="text-green-300 text-xs font-medium mb-2">
-                                  Expected: {rec.expected_improvement}
+                              Expected: {rec.expected_improvement}
+                            </div>
+                          )}
+                          {rec.examples && rec.examples.length > 0 && (
+                            <div className="mt-2 space-y-1">
+                              {rec.examples.map((ex: string, j: number) => (
+                                <div key={j} className="text-blue-300 text-xs italic">
+                                  → "{ex}"
                                 </div>
-                              )}
-                              {rec.examples && rec.examples.length > 0 && (
-                                <div className="mt-2 space-y-1">
-                                  {rec.examples.map((ex: string, j: number) => (
-                                    <div key={j} className="text-blue-300 text-xs italic">
-                                      → "{ex}"
-                                    </div>
-                                  ))}
-                                </div>
-                              )}
+                              ))}
+                            </div>
+                          )}
                               
                               {/* Show Evidence Button */}
                               {hasSupporting && (
@@ -1190,8 +1191,8 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
                                   {rec.supporting_campaigns.map((campaign: string, idx: number) => (
                                     <div key={idx} className="bg-white/5 rounded p-2 text-xs text-white/90 border-l-2 border-white/30">
                                       {campaign}
-                                    </div>
-                                  ))}
+                        </div>
+                      ))}
                                 </div>
                               </div>
                             )}
@@ -1404,21 +1405,21 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
           
           // Get day of week from Date object (this is usually fine)
           const date = new Date(dateStr)
-          const dayOfWeek = date.getDay()
-          
-          const hourKey = `${hour}:00`
-          const dayKey = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][dayOfWeek]
-          
-          if (!acc.byHour[hourKey]) acc.byHour[hourKey] = { count: 0, totalOpenRate: 0, totalClickRate: 0 }
-          if (!acc.byDay[dayKey]) acc.byDay[dayKey] = { count: 0, totalOpenRate: 0, totalClickRate: 0 }
-          
-          acc.byHour[hourKey].count++
-          acc.byHour[hourKey].totalOpenRate += campaign.open_rate || 0
-          acc.byHour[hourKey].totalClickRate += campaign.click_rate || 0
-          
-          acc.byDay[dayKey].count++
-          acc.byDay[dayKey].totalOpenRate += campaign.open_rate || 0
-          acc.byDay[dayKey].totalClickRate += campaign.click_rate || 0
+        const dayOfWeek = date.getDay()
+        
+        const hourKey = `${hour}:00`
+        const dayKey = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][dayOfWeek]
+        
+        if (!acc.byHour[hourKey]) acc.byHour[hourKey] = { count: 0, totalOpenRate: 0, totalClickRate: 0 }
+        if (!acc.byDay[dayKey]) acc.byDay[dayKey] = { count: 0, totalOpenRate: 0, totalClickRate: 0 }
+        
+        acc.byHour[hourKey].count++
+        acc.byHour[hourKey].totalOpenRate += campaign.open_rate || 0
+        acc.byHour[hourKey].totalClickRate += campaign.click_rate || 0
+        
+        acc.byDay[dayKey].count++
+        acc.byDay[dayKey].totalOpenRate += campaign.open_rate || 0
+        acc.byDay[dayKey].totalClickRate += campaign.click_rate || 0
         } catch (error) {
           console.warn('Failed to process send time for campaign:', campaign.campaign_id, error)
         }
@@ -2976,9 +2977,14 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
     const allCampaigns = allCampaignsForCreatives.length > 0 ? allCampaignsForCreatives : (data?.campaigns || [])
     
     // Filter by sent vs drafts based on toggle
-    const campaigns = creativesFilter === 'sent'
+    let campaigns = creativesFilter === 'sent'
       ? allCampaigns.filter((c: any) => c.campaign_status && c.campaign_status.toLowerCase() !== 'draft')
       : allCampaigns.filter((c: any) => c.campaign_status && c.campaign_status.toLowerCase() === 'draft')
+    
+    // Filter by channel
+    if (channelFilter !== 'all') {
+      campaigns = campaigns.filter((c: any) => (c.channel || 'email') === channelFilter)
+    }
     
     // Only campaigns with email_html
     const creativeCampaigns = campaigns.filter((c: any) => c.email_html)
@@ -3060,6 +3066,42 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
                     }`}
                   >
                     📝 Drafts
+                  </button>
+                </div>
+                
+                <div className="border-l border-white/20 h-8"></div>
+                
+                {/* Channel Filter */}
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setChannelFilter('all')}
+                    className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${
+                      channelFilter === 'all'
+                        ? 'bg-blue-500 text-white'
+                        : 'bg-white/10 text-white/60 hover:bg-white/20'
+                    }`}
+                  >
+                    All
+                  </button>
+                  <button
+                    onClick={() => setChannelFilter('email')}
+                    className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${
+                      channelFilter === 'email'
+                        ? 'bg-blue-500 text-white'
+                        : 'bg-white/10 text-white/60 hover:bg-white/20'
+                    }`}
+                  >
+                    📧 Email
+                  </button>
+                  <button
+                    onClick={() => setChannelFilter('sms')}
+                    className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${
+                      channelFilter === 'sms'
+                        ? 'bg-blue-500 text-white'
+                        : 'bg-white/10 text-white/60 hover:bg-white/20'
+                    }`}
+                  >
+                    📱 SMS
                   </button>
                 </div>
                 
@@ -3347,7 +3389,7 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
                       <div className="border-l-4 border-white/40 pl-3 py-1">
                         <p className="text-white/60 text-xs uppercase tracking-wide font-medium mb-1">Subject Line</p>
                         <p className="text-white font-semibold text-base">{selectedCreative.subject_line || 'No subject line'}</p>
-                      </div>
+                </div>
                       {selectedCreative.preview_text && (
                         <div className="border-l-4 border-white/40 pl-3 py-1">
                           <p className="text-white/60 text-xs uppercase tracking-wide font-medium mb-1">Preview Text</p>
@@ -3367,12 +3409,12 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
                       <ExternalLink className="h-4 w-4" />
                       View in Klaviyo
                     </a>
-                    <button
-                      onClick={() => setSelectedCreative(null)}
+                <button
+                  onClick={() => setSelectedCreative(null)}
                       className="text-white/60 hover:text-white p-2 hover:bg-white/10 rounded-lg transition-colors"
-                    >
+                >
                       <AlertCircle className="h-6 w-6" />
-                    </button>
+                </button>
                   </div>
                 </div>
                 
