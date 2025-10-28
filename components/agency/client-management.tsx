@@ -345,6 +345,27 @@ export function ClientManagement({ agency, clients: initialClients }: ClientMana
     }
   }
 
+  const checkAndPrepareMetric = async (client: Client): Promise<string | null> => {
+    // Check if client has saved metric
+    if (client.conversion_metric_id) {
+      console.log('✅ FRONTEND: Using saved conversion metric:', client.conversion_metric_id)
+      return client.conversion_metric_id
+    }
+    
+    // No saved metric - fetch and show modal
+    console.log('🎯 FRONTEND: No saved metric - fetching available metrics')
+    const metricsResponse = await fetch(`/api/klaviyo-proxy/metrics?clientSlug=${client.brand_slug}`)
+    if (!metricsResponse.ok) {
+      throw new Error('Failed to fetch metrics')
+    }
+    
+    const metricsResult = await metricsResponse.json()
+    setMetricSelectionClient(client)
+    setAvailableMetrics(metricsResult.data?.data || [])
+    setShowMetricSelector(true)
+    return null // Signal to wait for selection
+  }
+
   const triggerCampaignSync = async (client: Client) => {
     setLoading(true)
     setError('')
@@ -353,30 +374,16 @@ export function ClientManagement({ agency, clients: initialClients }: ClientMana
     try {
       console.log('📧 CAMPAIGN SYNC: Starting campaign sync for:', client.brand_slug)
       
-      // Step 1: Get conversion metric ID
-      setSuccess('Step 1/4: Getting conversion metric ID...')
-      console.log('📡 FRONTEND: Calling metrics proxy API')
-      
-      const metricsResponse = await fetch(`/api/klaviyo-proxy/metrics?clientSlug=${client.brand_slug}`)
-      if (!metricsResponse.ok) {
-        throw new Error(`Metrics API failed: ${metricsResponse.status}`)
-      }
-      
-      const metricsResult = await metricsResponse.json()
-      console.log('📊 FRONTEND: Metrics response:', metricsResult)
-      
-      // Check if client has saved conversion metric
-      if (!client.conversion_metric_id) {
-        console.log('🎯 FRONTEND: No saved metric for this client - showing selector modal')
-        setMetricSelectionClient(client)
-        setAvailableMetrics(metricsResult.data?.data || [])
-        setShowMetricSelector(true)
+      // Step 0: Check/get conversion metric FIRST
+      const conversionMetricId = await checkAndPrepareMetric(client)
+      if (!conversionMetricId) {
         setLoading(false)
-        return // Wait for user to select metric
+        return // Wait for metric selection via modal
       }
       
-      console.log('✅ FRONTEND: Using saved conversion metric:', client.conversion_metric_id)
-      const conversionMetricId = client.conversion_metric_id
+      // Step 1: Get conversion metric ID (already have it, just logging)
+      setSuccess('Step 1/4: Using saved metric...')
+      console.log('🎯 FRONTEND: Conversion metric ID:', conversionMetricId)
       
       // Step 2: Get bulk campaign analytics
       setSuccess('Step 2/4: Getting campaign analytics...')
@@ -863,30 +870,16 @@ ${campaignDetails.slice(0, 3).map((c: any, i: number) =>
     try {
       console.log('🔄 FLOW SYNC: Starting optimized 4-call flow sync for:', client.brand_slug)
       
-      // Step 1: Get conversion metric ID
-      setSuccess('Step 1/4: Getting conversion metric ID...')
-      console.log('📡 FRONTEND: Calling metrics proxy API')
-      
-      const metricsResponse = await fetch(`/api/klaviyo-proxy/metrics?clientSlug=${client.brand_slug}`)
-      if (!metricsResponse.ok) {
-        throw new Error(`Metrics API failed: ${metricsResponse.status}`)
-      }
-      
-      const metricsResult = await metricsResponse.json()
-      console.log('📊 FRONTEND: Metrics response:', metricsResult)
-      
-      // Check if client has saved conversion metric
-      if (!client.conversion_metric_id) {
-        console.log('🎯 FRONTEND: No saved metric for this client - showing selector modal')
-        setMetricSelectionClient(client)
-        setAvailableMetrics(metricsResult.data?.data || [])
-        setShowMetricSelector(true)
+      // Step 0: Check/get conversion metric FIRST
+      const conversionMetricId = await checkAndPrepareMetric(client)
+      if (!conversionMetricId) {
         setLoading(false)
-        return // Wait for user to select metric
+        return // Wait for metric selection via modal
       }
       
-      console.log('✅ FRONTEND: Using saved conversion metric:', client.conversion_metric_id)
-      const conversionMetricId = client.conversion_metric_id
+      // Step 1: Using saved metric
+      setSuccess('Step 1/4: Using saved metric...')
+      console.log('🎯 FRONTEND: Conversion metric ID:', conversionMetricId)
       
       // Step 2: Get ALL flows with metadata FIRST
       setSuccess('Step 2/4: Getting all flow details...')
