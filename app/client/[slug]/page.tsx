@@ -132,7 +132,7 @@ export default function ClientDashboardPage({ params }: PageProps) {
       // Step 4: Sync Revenue Attribution
       setSyncProgress(prev => ({ ...prev, step: 4, currentTask: 'Revenue Attribution' }))
       try {
-        await syncRevenueAttribution(params.slug, clientId, (msg) => console.log(msg))
+        await syncRevenueAttribution(params.slug, clientId, undefined, (msg) => console.log(msg))
         setSyncProgress(prev => ({ ...prev, completed: [...prev.completed, 'Revenue Attribution'] }))
       } catch (err) {
         console.error('Revenue sync error:', err)
