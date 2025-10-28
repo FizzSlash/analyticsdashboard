@@ -1213,8 +1213,8 @@ ${flowDetails.slice(0, 3).map((f: any, i: number) =>
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Client Management</h2>
-          <p className="text-gray-600">Manage your agency's clients and their dashboards</p>
+          <h2 className="text-2xl font-bold text-white">Client Management</h2>
+          <p className="text-white/60">Manage your agency's clients and their dashnoticed</p>
         </div>
         <button
           onClick={() => setShowForm(true)}
@@ -1291,7 +1291,7 @@ ${flowDetails.slice(0, 3).map((f: any, i: number) =>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-900 mb-1">
                     Brand Name *
                   </label>
                   <input
@@ -1305,7 +1305,7 @@ ${flowDetails.slice(0, 3).map((f: any, i: number) =>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-900 mb-1">
                     Brand Slug * (URL-friendly)
                   </label>
                   <input
@@ -1319,7 +1319,7 @@ ${flowDetails.slice(0, 3).map((f: any, i: number) =>
                 </div>
 
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-900 mb-1">
                     Klaviyo API Key {!editingClient && '*'}
                   </label>
                   <div className="relative">
@@ -1334,7 +1334,7 @@ ${flowDetails.slice(0, 3).map((f: any, i: number) =>
                     <button
                       type="button"
                       onClick={() => setShowApiKey(showApiKey === 'form' ? null : 'form')}
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-600 hover:text-gray-800"
                     >
                       {showApiKey === 'form' ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
@@ -1343,7 +1343,7 @@ ${flowDetails.slice(0, 3).map((f: any, i: number) =>
 
                 {/* Portal Title */}
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-900 mb-1">
                     Portal Title (Optional)
                   </label>
                   <input
@@ -1361,7 +1361,7 @@ ${flowDetails.slice(0, 3).map((f: any, i: number) =>
                 {/* Revenue Metric Display */}
                 {editingClient && editingClient.conversion_metric_id && (
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-gray-900 mb-1">
                       Revenue Tracking Metric
                     </label>
                     <div className="bg-gray-50 border border-gray-300 rounded-md p-3">

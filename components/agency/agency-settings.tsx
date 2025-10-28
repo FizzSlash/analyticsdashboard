@@ -222,13 +222,13 @@ export function AgencySettings({ agency: initialAgency }: AgencySettingsProps) {
                     type="color"
                     value={formData.primary_color}
                     onChange={(e) => setFormData({ ...formData, primary_color: e.target.value })}
-                    className="w-12 h-10 border border-gray-300 rounded cursor-pointer"
+                    className="w-12 h-10 border border-white/30 rounded cursor-pointer bg-white/10"
                   />
                   <input
                     type="text"
                     value={formData.primary_color}
                     onChange={(e) => setFormData({ ...formData, primary_color: e.target.value })}
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="flex-1 px-3 py-2 border border-white/20 bg-white/10 text-white rounded-md focus:ring-2 focus:ring-white/30 focus:border-white/40"
                     placeholder="#3B82F6"
                   />
                 </div>
@@ -243,13 +243,13 @@ export function AgencySettings({ agency: initialAgency }: AgencySettingsProps) {
                     type="color"
                     value={formData.secondary_color}
                     onChange={(e) => setFormData({ ...formData, secondary_color: e.target.value })}
-                    className="w-12 h-10 border border-gray-300 rounded cursor-pointer"
+                    className="w-12 h-10 border border-white/30 rounded cursor-pointer bg-white/10"
                   />
                   <input
                     type="text"
                     value={formData.secondary_color}
                     onChange={(e) => setFormData({ ...formData, secondary_color: e.target.value })}
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="flex-1 px-3 py-2 border border-white/20 bg-white/10 text-white rounded-md focus:ring-2 focus:ring-white/30 focus:border-white/40"
                     placeholder="#EF4444"
                   />
                 </div>
@@ -257,7 +257,7 @@ export function AgencySettings({ agency: initialAgency }: AgencySettingsProps) {
             </div>
 
             {/* Chart & UI Colors */}
-            <div className="pt-4 border-t">
+            <div className="pt-4 border-t border-white/20">
               <h4 className="text-sm font-semibold text-white mb-4">Chart & UI Colors</h4>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
@@ -269,7 +269,7 @@ export function AgencySettings({ agency: initialAgency }: AgencySettingsProps) {
                       type="color"
                       value={formData.bar_chart_color}
                       onChange={(e) => setFormData({ ...formData, bar_chart_color: e.target.value })}
-                      className="w-12 h-10 border border-gray-300 rounded cursor-pointer"
+                      className="w-12 h-10 border border-white/30 rounded cursor-pointer bg-white/10"
                     />
                     <input
                       type="text"
@@ -291,7 +291,7 @@ export function AgencySettings({ agency: initialAgency }: AgencySettingsProps) {
                       type="color"
                       value={formData.line_chart_color}
                       onChange={(e) => setFormData({ ...formData, line_chart_color: e.target.value })}
-                      className="w-12 h-10 border border-gray-300 rounded cursor-pointer"
+                      className="w-12 h-10 border border-white/30 rounded cursor-pointer bg-white/10"
                     />
                     <input
                       type="text"
@@ -313,7 +313,7 @@ export function AgencySettings({ agency: initialAgency }: AgencySettingsProps) {
                       type="color"
                       value={formData.ui_accent_color}
                       onChange={(e) => setFormData({ ...formData, ui_accent_color: e.target.value })}
-                      className="w-12 h-10 border border-gray-300 rounded cursor-pointer"
+                      className="w-12 h-10 border border-white/30 rounded cursor-pointer bg-white/10"
                     />
                     <input
                       type="text"
