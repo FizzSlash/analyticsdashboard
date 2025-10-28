@@ -93,9 +93,43 @@ export function SyncDebugPanel({ clients }: SyncDebugPanelProps) {
             aggregateResponses.map(r => r.json())
           )
           
-          // Step 3: Save
+          // Step 3: Transform aggregate data into growthData format
+          const dateMap = new Map()
+          
+          aggregateResults.forEach((result, index) => {
+            const metricName = subscriptionMetrics[index]
+            const dates = result.data?.attributes?.dates || []
+            const counts = result.data?.attributes?.data?.[0]?.measurements?.count_value || []
+            
+            dates.forEach((date: string, i: number) => {
+              const dateKey = date.split('T')[0]
+              if (!dateMap.has(dateKey)) {
+                dateMap.set(dateKey, { date: dateKey })
+              }
+              
+              const record = dateMap.get(dateKey)
+              const count = counts[i] || 0
+              
+              // Map metric names to field names
+              if (metricName === 'Subscribed to Email Marketing') {
+                record.email_subscriptions = count
+              } else if (metricName === 'Unsubscribed from Email Marketing') {
+                record.email_unsubscribes = count
+              } else if (metricName === 'Subscribed to SMS Marketing') {
+                record.sms_subscriptions = count
+              } else if (metricName === 'Unsubscribed from SMS Marketing') {
+                record.sms_unsubscribes = count
+              } else if (metricName === 'Form submitted by profile') {
+                record.form_submissions = count
+              }
+            })
+          })
+          
+          const transformedData = Array.from(dateMap.values())
+          
+          // Step 4: Save
           endpoint = '/api/klaviyo-proxy/save-list-growth'
-          body.growthData = aggregateResults
+          body.growthData = transformedData
           body.interval = 'day'
           break
         
