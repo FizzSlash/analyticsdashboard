@@ -36,6 +36,7 @@ export async function POST(request: NextRequest) {
           client_id: clientId,
           campaign_id: campaign.id,
           campaign_name: campaign.campaign_name || 'Unknown Campaign',
+          channel: campaign.channel || 'email',
           subject_line: campaign.subject_line || null,
           send_date: campaign.send_date || null,
           // NEW FIELDS - Campaign metadata
