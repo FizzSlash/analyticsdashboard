@@ -192,6 +192,7 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
     startDate.setDate(startDate.getDate() - timeframe)
     
     const useMonthly = timeframe > 90
+    const useDaily = timeframe <= 7  // NEW: Daily for 7 days or less
     
     if (useMonthly) {
       // Generate all months in range
