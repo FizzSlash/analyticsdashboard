@@ -378,69 +378,6 @@ export function ClientManagement({ agency, clients: initialClients }: ClientMana
       console.log('✅ FRONTEND: Using saved conversion metric:', client.conversion_metric_id)
       const conversionMetricId = client.conversion_metric_id
       
-      // OLD LOGIC BELOW (only used if somehow metric is missing)
-      // Find conversion metric
-      console.log('🔍 FRONTEND: Looking for conversion metric in', metricsResult.data?.data?.length, 'metrics')
-      console.log('🔍 FRONTEND: ALL metric names:', metricsResult.data?.data?.map((m: any) => m.attributes?.name))
-      
-      // Find ALL "Placed Order" metrics (there might be duplicates!)
-      const allPlacedOrderMetrics = metricsResult.data?.data?.filter((m: any) => 
-        m.attributes?.name === 'Placed Order'
-      )
-      
-      console.log('🔍 FRONTEND: Found', allPlacedOrderMetrics?.length || 0, '"Placed Order" metrics')
-      
-      if (allPlacedOrderMetrics && allPlacedOrderMetrics.length > 1) {
-        console.warn('⚠️ FRONTEND: MULTIPLE "Placed Order" metrics detected!')
-        allPlacedOrderMetrics.forEach((m: any, idx: number) => {
-          console.log(`📊 FRONTEND: Metric ${idx + 1}:`, {
-            id: m.id,
-            name: m.attributes?.name,
-            integration: m.attributes?.integration || 'none',
-            created: m.attributes?.created
-          })
-        })
-      }
-      
-      // Prefer e-commerce integration metrics (Shopify, WooCommerce, etc.) - they have real data
-      let placedOrderMetric = allPlacedOrderMetrics?.find((m: any) => {
-        const integrationName = m.attributes?.integration?.name?.toLowerCase() || ''
-        return integrationName === 'shopify' || 
-               integrationName === 'woocommerce' || 
-               integrationName === 'bigcommerce' ||
-               integrationName === 'magento'
-      })
-      
-      // If no integration metric, use the newest one
-      if (!placedOrderMetric && allPlacedOrderMetrics && allPlacedOrderMetrics.length > 0) {
-        placedOrderMetric = allPlacedOrderMetrics.sort((a: any, b: any) => 
-          new Date(b.attributes?.created || 0).getTime() - new Date(a.attributes?.created || 0).getTime()
-        )[0]
-        console.log('📊 FRONTEND: No integration metric, using newest "Placed Order"')
-      }
-      
-      const conversionMetricId = placedOrderMetric?.id || null
-      console.log('🎯 FRONTEND: Selected conversion metric ID:', conversionMetricId)
-      console.log('🎯 FRONTEND: Metric details:', placedOrderMetric ? {
-        name: placedOrderMetric.attributes?.name,
-        integration: placedOrderMetric.attributes?.integration?.name || 'none',
-        created: placedOrderMetric.attributes?.created
-      } : 'NOT FOUND')
-      
-      if (!conversionMetricId) {
-        console.warn('⚠️⚠️⚠️ FRONTEND: NO "Placed Order" METRIC FOUND! REVENUE WILL BE $0 ⚠️⚠️⚠️')
-        const orderMetrics = metricsResult.data?.data?.filter((m: any) => 
-          m.attributes?.name?.toLowerCase().includes('order') || 
-          m.attributes?.name?.toLowerCase().includes('purchase') ||
-          m.attributes?.name?.toLowerCase().includes('checkout')
-        )
-        console.warn('💡 FRONTEND: Found these order-related metrics instead:', orderMetrics?.map((m: any) => ({
-          name: m.attributes?.name,
-          id: m.id,
-          integration: m.attributes?.integration?.name || 'none'
-        })))
-      }
-      
       // Step 2: Get bulk campaign analytics
       setSuccess('Step 2/4: Getting campaign analytics...')
       console.log('📡 FRONTEND: Calling campaign analytics proxy API')
@@ -950,68 +887,6 @@ ${campaignDetails.slice(0, 3).map((c: any, i: number) =>
       
       console.log('✅ FRONTEND: Using saved conversion metric:', client.conversion_metric_id)
       const conversionMetricId = client.conversion_metric_id
-      
-      // Find conversion metric (fallback logic if needed)
-      console.log('🔍 FRONTEND: Looking for conversion metric in', metricsResult.data?.data?.length, 'metrics')
-      console.log('🔍 FRONTEND: ALL metric names:', metricsResult.data?.data?.map((m: any) => m.attributes?.name))
-      
-      // Find ALL "Placed Order" metrics (there might be duplicates!)
-      const allPlacedOrderMetrics = metricsResult.data?.data?.filter((m: any) => 
-        m.attributes?.name === 'Placed Order'
-      )
-      
-      console.log('🔍 FRONTEND: Found', allPlacedOrderMetrics?.length || 0, '"Placed Order" metrics')
-      
-      if (allPlacedOrderMetrics && allPlacedOrderMetrics.length > 1) {
-        console.warn('⚠️ FRONTEND: MULTIPLE "Placed Order" metrics detected!')
-        allPlacedOrderMetrics.forEach((m: any, idx: number) => {
-          console.log(`📊 FRONTEND: Metric ${idx + 1}:`, {
-            id: m.id,
-            name: m.attributes?.name,
-            integration: m.attributes?.integration || 'none',
-            created: m.attributes?.created
-          })
-        })
-      }
-      
-      // Prefer e-commerce integration metrics (Shopify, WooCommerce, etc.)
-      let placedOrderMetric = allPlacedOrderMetrics?.find((m: any) => {
-        const integrationName = m.attributes?.integration?.name?.toLowerCase() || ''
-        return integrationName === 'shopify' || 
-               integrationName === 'woocommerce' || 
-               integrationName === 'bigcommerce' ||
-               integrationName === 'magento'
-      })
-      
-      // If no e-commerce integration, use the newest one
-      if (!placedOrderMetric && allPlacedOrderMetrics && allPlacedOrderMetrics.length > 0) {
-        placedOrderMetric = allPlacedOrderMetrics.sort((a: any, b: any) => 
-          new Date(b.attributes?.created || 0).getTime() - new Date(a.attributes?.created || 0).getTime()
-        )[0]
-        console.log('📊 FRONTEND: No e-commerce integration, using newest "Placed Order"')
-      }
-      
-      const conversionMetricId = placedOrderMetric?.id || null
-      console.log('🎯 FRONTEND: Selected conversion metric ID:', conversionMetricId)
-      console.log('🎯 FRONTEND: Metric details:', placedOrderMetric ? {
-        name: placedOrderMetric.attributes?.name,
-        integration: placedOrderMetric.attributes?.integration?.name || 'none',
-        created: placedOrderMetric.attributes?.created
-      } : 'NOT FOUND')
-      
-      if (!conversionMetricId) {
-        console.warn('⚠️⚠️⚠️ FRONTEND: NO "Placed Order" METRIC FOUND! REVENUE WILL BE $0 ⚠️⚠️⚠️')
-        const orderMetrics = metricsResult.data?.data?.filter((m: any) => 
-          m.attributes?.name?.toLowerCase().includes('order') || 
-          m.attributes?.name?.toLowerCase().includes('purchase') ||
-          m.attributes?.name?.toLowerCase().includes('checkout')
-        )
-        console.warn('💡 FRONTEND: Found these order-related metrics instead:', orderMetrics?.map((m: any) => ({
-          name: m.attributes?.name,
-          id: m.id,
-          integration: m.attributes?.integration?.name || 'none'
-        })))
-      }
       
       // Step 2: Get ALL flows with metadata FIRST
       setSuccess('Step 2/4: Getting all flow details...')
