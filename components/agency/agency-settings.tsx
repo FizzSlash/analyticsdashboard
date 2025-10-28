@@ -100,6 +100,22 @@ export function AgencySettings({ agency: initialAgency }: AgencySettingsProps) {
     }
   }
 
+  const resetForm = () => {
+    setFormData({
+      agency_name: agency.agency_name,
+      logo_url: agency.logo_url || '',
+      primary_color: agency.primary_color,
+      secondary_color: agency.secondary_color,
+      bar_chart_color: agency.bar_chart_color || '#3B82F6',
+      line_chart_color: agency.line_chart_color || '#34D399',
+      ui_accent_color: agency.ui_accent_color || '#6366F1',
+      background_image_url: agency.background_image_url || '',
+      custom_domain: agency.custom_domain || ''
+    })
+    setError('')
+    setSuccess('')
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -165,21 +181,23 @@ export function AgencySettings({ agency: initialAgency }: AgencySettingsProps) {
         </div>
 
         {/* Branding */}
-        <div className="bg-white/10 backdrop-blur-md rounded-lg border border-white/20 p-6">
-          <div className="flex items-center gap-2 mb-6">
-            <Palette className="h-5 w-5 text-white/70" />
-            <h3 className="text-xl font-semibold text-white">Branding</h3>
-          </div>
-          <div className="space-y-4">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Palette className="h-5 w-5" />
+              Branding
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-white/80 mb-1">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
                 Logo URL
               </label>
               <input
                 type="url"
                 value={formData.logo_url}
                 onChange={(e) => setFormData({ ...formData, logo_url: e.target.value })}
-                className="w-full px-3 py-2 border border-white/20 bg-white/10 text-white rounded-md focus:ring-2 focus:ring-white/30 focus:border-white/40 placeholder-white/40"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="https://example.com/logo.png"
               />
               {formData.logo_url && (
@@ -198,7 +216,7 @@ export function AgencySettings({ agency: initialAgency }: AgencySettingsProps) {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-white/80 mb-1">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
                   Primary Color
                 </label>
                 <div className="flex items-center gap-3">
@@ -212,14 +230,14 @@ export function AgencySettings({ agency: initialAgency }: AgencySettingsProps) {
                     type="text"
                     value={formData.primary_color}
                     onChange={(e) => setFormData({ ...formData, primary_color: e.target.value })}
-                    className="flex-1 px-3 py-2 border border-white/20 bg-white/10 text-white rounded-md focus:ring-2 focus:ring-white/30 focus:border-white/40 placeholder-white/40"
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="#3B82F6"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-white/80 mb-1">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
                   Secondary Color
                 </label>
                 <div className="flex items-center gap-3">
@@ -233,7 +251,7 @@ export function AgencySettings({ agency: initialAgency }: AgencySettingsProps) {
                     type="text"
                     value={formData.secondary_color}
                     onChange={(e) => setFormData({ ...formData, secondary_color: e.target.value })}
-                    className="flex-1 px-3 py-2 border border-white/20 bg-white/10 text-white rounded-md focus:ring-2 focus:ring-white/30 focus:border-white/40 placeholder-white/40"
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="#EF4444"
                   />
                 </div>
@@ -245,7 +263,7 @@ export function AgencySettings({ agency: initialAgency }: AgencySettingsProps) {
               <h4 className="text-sm font-semibold text-gray-900 mb-4">Chart & UI Colors</h4>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-white/80 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
                     Bar Chart Color
                   </label>
                   <div className="flex items-center gap-3">
@@ -263,11 +281,11 @@ export function AgencySettings({ agency: initialAgency }: AgencySettingsProps) {
                       placeholder="#3B82F6"
                     />
                   </div>
-                  <p className="text-xs text-white/50 mt-1">All bar charts & graphs</p>
+                  <p className="text-xs text-gray-500 mt-1">All bar charts & graphs</p>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-white/80 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
                     Line Chart Color
                   </label>
                   <div className="flex items-center gap-3">
@@ -285,11 +303,11 @@ export function AgencySettings({ agency: initialAgency }: AgencySettingsProps) {
                       placeholder="#34D399"
                     />
                   </div>
-                  <p className="text-xs text-white/50 mt-1">All line charts & trends</p>
+                  <p className="text-xs text-gray-500 mt-1">All line charts & trends</p>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-white/80 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
                     UI Accent Color
                   </label>
                   <div className="flex items-center gap-3">
@@ -307,7 +325,7 @@ export function AgencySettings({ agency: initialAgency }: AgencySettingsProps) {
                       placeholder="#6366F1"
                     />
                   </div>
-                  <p className="text-xs text-white/50 mt-1">Success, errors, highlights, badges</p>
+                  <p className="text-xs text-gray-500 mt-1">Success, errors, highlights, badges</p>
                 </div>
               </div>
             </div>
@@ -333,28 +351,30 @@ export function AgencySettings({ agency: initialAgency }: AgencySettingsProps) {
                 </div>
               </div>
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
         {/* Background Image */}
-        <div className="bg-white/10 backdrop-blur-md rounded-lg border border-white/20 p-6">
-          <div className="flex items-center gap-2 mb-6">
-            <Image className="h-5 w-5 text-white/70" />
-            <h3 className="text-xl font-semibold text-white">Background Image</h3>
-          </div>
-          <div className="space-y-4">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Image className="h-5 w-5" />
+              Background Image
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-white/80 mb-1">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
                 Background Image URL (Optional)
               </label>
               <input
                 type="url"
                 value={formData.background_image_url}
                 onChange={(e) => setFormData({ ...formData, background_image_url: e.target.value })}
-                className="w-full px-3 py-2 border border-white/20 bg-white/10 text-white rounded-md focus:ring-2 focus:ring-white/30 focus:border-white/40 placeholder-white/40"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="https://example.com/background.jpg"
               />
-              <p className="text-xs text-white/50 mt-1">
+              <p className="text-xs text-gray-500 mt-1">
                 Background image for client dashboards (will be overlaid with gradient)
               </p>
               {formData.background_image_url && (

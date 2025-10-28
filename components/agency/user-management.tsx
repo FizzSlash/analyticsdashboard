@@ -114,7 +114,11 @@ export function UserManagement({ agency, clients, clientUsers: initialUsers }: U
     }
   }
 
-  const handleRemoveUser = async (userId: string) => {
+  const handleRemoveUser = async (userId: string, userName: string) => {
+    if (!confirm(`Are you sure you want to remove ${userName}? They will lose access to their dashboard.`)) {
+      return
+    }
+
     setLoading(true)
     try {
       const response = await fetch(`/api/users/${userId}`, {
@@ -134,6 +138,8 @@ export function UserManagement({ agency, clients, clientUsers: initialUsers }: U
       setLoading(false)
     }
   }
+
+  // Removed resendInvite - email not configured, users get magic link in modal instead
 
   return (
     <div className="space-y-6">
@@ -247,33 +253,35 @@ export function UserManagement({ agency, clients, clientUsers: initialUsers }: U
 
       {/* Invite Form */}
       {showInviteForm && (
-        <div className="bg-white/10 backdrop-blur-md rounded-lg border border-white/20 p-6">
-          <h3 className="text-xl font-semibold text-white mb-6">Invite New User</h3>
-          <div>
+        <Card>
+          <CardHeader>
+            <CardTitle>Invite New User</CardTitle>
+          </CardHeader>
+          <CardContent>
             <form onSubmit={handleInvite} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-white/80 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
                     Email Address *
                   </label>
                   <input
                     type="email"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="w-full px-3 py-2 border border-white/20 bg-white/10 text-white rounded-md focus:ring-2 focus:ring-white/30 focus:border-white/40 placeholder-white/40"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="user@example.com"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-white/80 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
                     Client *
                   </label>
                   <select
                     value={formData.client_id}
                     onChange={(e) => setFormData({ ...formData, client_id: e.target.value })}
-                    className="w-full px-3 py-2 border border-white/20 bg-white/10 text-white rounded-md focus:ring-2 focus:ring-white/30 focus:border-white/40"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     required
                   >
                     <option value="">Select a client</option>
@@ -286,27 +294,27 @@ export function UserManagement({ agency, clients, clientUsers: initialUsers }: U
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-white/80 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
                     First Name
                   </label>
                   <input
                     type="text"
                     value={formData.first_name}
                     onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
-                    className="w-full px-3 py-2 border border-white/20 bg-white/10 text-white rounded-md focus:ring-2 focus:ring-white/30 focus:border-white/40 placeholder-white/40"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="John"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-white/80 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
                     Last Name
                   </label>
                   <input
                     type="text"
                     value={formData.last_name}
                     onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
-                    className="w-full px-3 py-2 border border-white/20 bg-white/10 text-white rounded-md focus:ring-2 focus:ring-white/30 focus:border-white/40 placeholder-white/40"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="Doe"
                   />
                 </div>
