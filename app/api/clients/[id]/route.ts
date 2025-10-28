@@ -21,7 +21,10 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       brand_slug: body.brand_slug,
       logo_url: body.logo_url || undefined,
       audit_enabled: body.audit_enabled !== undefined ? body.audit_enabled : undefined,
-      share_enabled: body.share_enabled !== undefined ? body.share_enabled : undefined
+      share_enabled: body.share_enabled !== undefined ? body.share_enabled : undefined,
+      conversion_metric_id: body.conversion_metric_id !== undefined ? body.conversion_metric_id : undefined,
+      conversion_metric_name: body.conversion_metric_name !== undefined ? body.conversion_metric_name : undefined,
+      conversion_metric_integration: body.conversion_metric_integration !== undefined ? body.conversion_metric_integration : undefined
     }
 
     // Only update API key if provided
