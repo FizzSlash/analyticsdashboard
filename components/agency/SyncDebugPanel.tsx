@@ -46,7 +46,20 @@ export function SyncDebugPanel({ clients }: SyncDebugPanelProps) {
           break
         
         case 'list-growth':
+          // List growth needs to fetch data from Klaviyo first
+          const listResponse = await fetch('/api/klaviyo-proxy/list-growth', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+              klaviyoApiKey: client.klaviyo_api_key,
+              timeframe: 'last-365-days'
+            })
+          })
+          const listData = await listResponse.json()
+          
           endpoint = '/api/klaviyo-proxy/save-list-growth'
+          body.growthData = listData.data
+          body.interval = 'day'
           break
         
         case 'revenue':
