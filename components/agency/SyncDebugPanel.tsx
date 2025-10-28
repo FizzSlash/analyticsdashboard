@@ -13,7 +13,7 @@ export function SyncDebugPanel({ clients }: SyncDebugPanelProps) {
   const [results, setResults] = useState<any>(null)
   const [error, setError] = useState('')
 
-  const runSync = async (type: 'campaigns' | 'flows' | 'list-growth' | 'revenue') => {
+  const runSync = async (type: 'campaigns' | 'flows' | 'list-growth' | 'revenue' | 'account') => {
     const client = clients.find(c => c.brand_slug === selectedClient)
     if (!client) return
 
@@ -26,6 +26,47 @@ export function SyncDebugPanel({ clients }: SyncDebugPanelProps) {
       let body: any = { clientSlug: client.brand_slug }
 
       switch (type) {
+        case 'account':
+          // Fetch account info (currency, timezone)
+          const accountRes = await fetch('/api/klaviyo-proxy/account', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ klaviyoApiKey: client.klaviyo_api_key })
+          })
+          const accountData = await accountRes.json()
+          
+          if (accountRes.ok && accountData.data?.data?.[0]?.attributes) {
+            const attrs = accountData.data.data[0].attributes
+            const currency = attrs.preferred_currency || 'USD'
+            const timezone = attrs.timezone || 'America/New_York'
+            
+            // Save to client
+            const saveRes = await fetch(`/api/clients/${client.id}`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ 
+                preferred_currency: currency,
+                timezone: timezone
+              })
+            })
+            
+            const saveResult = await saveRes.json()
+            setResults({ 
+              type, 
+              result: { 
+                ...accountData, 
+                saved: saveRes.ok,
+                savedData: { currency, timezone }
+              }, 
+              timestamp: new Date().toISOString(), 
+              status: accountRes.status 
+            })
+          } else {
+            setResults({ type, result: accountData, timestamp: new Date().toISOString(), status: accountRes.status })
+          }
+          return
+        
+        case:
         case 'campaigns':
           endpoint = '/api/klaviyo-proxy/save-campaigns'
           // First get campaigns
@@ -209,55 +250,72 @@ export function SyncDebugPanel({ clients }: SyncDebugPanelProps) {
         
           {/* Sync Buttons */}
           {selectedClient && (
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
-              <button
-                onClick={() => runSync('campaigns')}
-                disabled={loading !== null}
-                className="px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1 text-sm transition-colors"
-              >
-                {loading === 'campaigns' ? (
-                  <div className="animate-spin h-3 w-3 border-2 border-white border-t-transparent rounded-full" />
-                ) : (
-                  <>📧 Campaigns</>
-                )}
-              </button>
+            <>
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+                <button
+                  onClick={() => runSync('campaigns')}
+                  disabled={loading !== null}
+                  className="px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1 text-sm transition-colors"
+                >
+                  {loading === 'campaigns' ? (
+                    <div className="animate-spin h-3 w-3 border-2 border-white border-t-transparent rounded-full" />
+                  ) : (
+                    <>📧 Campaigns</>
+                  )}
+                </button>
+                
+                <button
+                  onClick={() => runSync('flows')}
+                  disabled={loading !== null}
+                  className="px-3 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1 text-sm transition-colors"
+                >
+                  {loading === 'flows' ? (
+                    <div className="animate-spin h-3 w-3 border-2 border-white border-t-transparent rounded-full" />
+                  ) : (
+                    <>🔄 Flows</>
+                  )}
+                </button>
+                
+                <button
+                  onClick={() => runSync('list-growth')}
+                  disabled={loading !== null}
+                  className="px-3 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1 text-sm transition-colors"
+                >
+                  {loading === 'list-growth' ? (
+                    <div className="animate-spin h-3 w-3 border-2 border-white border-t-transparent rounded-full" />
+                  ) : (
+                    <>📈 List</>
+                  )}
+                </button>
+                
+                <button
+                  onClick={() => runSync('revenue')}
+                  disabled={loading !== null}
+                  className="px-3 py-2 bg-orange-600 text-white rounded hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1 text-sm transition-colors"
+                >
+                  {loading === 'revenue' ? (
+                    <div className="animate-spin h-3 w-3 border-2 border-white border-t-transparent rounded-full" />
+                  ) : (
+                    <>💰 Revenue</>
+                  )}
+                </button>
+              </div>
               
-              <button
-                onClick={() => runSync('flows')}
-                disabled={loading !== null}
-                className="px-3 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1 text-sm transition-colors"
-              >
-                {loading === 'flows' ? (
-                  <div className="animate-spin h-3 w-3 border-2 border-white border-t-transparent rounded-full" />
-                ) : (
-                  <>🔄 Flows</>
-                )}
-              </button>
-              
-              <button
-                onClick={() => runSync('list-growth')}
-                disabled={loading !== null}
-                className="px-3 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1 text-sm transition-colors"
-              >
-                {loading === 'list-growth' ? (
-                  <div className="animate-spin h-3 w-3 border-2 border-white border-t-transparent rounded-full" />
-                ) : (
-                  <>📈 List</>
-                )}
-              </button>
-              
-              <button
-                onClick={() => runSync('revenue')}
-                disabled={loading !== null}
-                className="px-3 py-2 bg-orange-600 text-white rounded hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1 text-sm transition-colors"
-              >
-                {loading === 'revenue' ? (
-                  <div className="animate-spin h-3 w-3 border-2 border-white border-t-transparent rounded-full" />
-                ) : (
-                  <>💰 Revenue</>
-                )}
-              </button>
-            </div>
+              {/* Account Info Button (separate row) */}
+              <div className="mt-2">
+                <button
+                  onClick={() => runSync('account')}
+                  disabled={loading !== null}
+                  className="w-full px-3 py-2 bg-teal-600 text-white rounded hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1 text-sm transition-colors"
+                >
+                  {loading === 'account' ? (
+                    <div className="animate-spin h-3 w-3 border-2 border-white border-t-transparent rounded-full" />
+                  ) : (
+                    <>🏢 Fetch Account Info (Currency & Timezone)</>
+                  )}
+                </button>
+              </div>
+            </>
           )}
           
           {/* Results Display */}
