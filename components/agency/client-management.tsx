@@ -512,9 +512,14 @@ export function ClientManagement({ agency, clients: initialClients }: ClientMana
           const templateId = messageInfo.template_id || null
           const template = templateId ? templateLookup[templateId] : null
           
+          // Determine channel from campaign data
+          const messageData = messagesLookup[campaign.id]?.attributes || {}
+          const campaignChannel = messageData?.definition?.channel || 'email'
+          
           const completeData = {
             id: campaign.id,
             attributes: analytics,
+            channel: campaignChannel, // Email or SMS
             // Campaign details
             campaign_name: campaign.attributes?.name || 'Unknown Campaign',
             campaign_status: campaign.attributes?.status || 'unknown',
