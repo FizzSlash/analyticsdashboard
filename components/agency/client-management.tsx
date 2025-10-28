@@ -938,7 +938,20 @@ ${campaignDetails.slice(0, 3).map((c: any, i: number) =>
       const metricsResult = await metricsResponse.json()
       console.log('📊 FRONTEND: Metrics response:', metricsResult)
       
-      // Find conversion metric (same enhanced logic as campaigns)
+      // Check if client has saved conversion metric
+      if (!client.conversion_metric_id) {
+        console.log('🎯 FRONTEND: No saved metric for this client - showing selector modal')
+        setMetricSelectionClient(client)
+        setAvailableMetrics(metricsResult.data?.data || [])
+        setShowMetricSelector(true)
+        setLoading(false)
+        return // Wait for user to select metric
+      }
+      
+      console.log('✅ FRONTEND: Using saved conversion metric:', client.conversion_metric_id)
+      const conversionMetricId = client.conversion_metric_id
+      
+      // Find conversion metric (fallback logic if needed)
       console.log('🔍 FRONTEND: Looking for conversion metric in', metricsResult.data?.data?.length, 'metrics')
       console.log('🔍 FRONTEND: ALL metric names:', metricsResult.data?.data?.map((m: any) => m.attributes?.name))
       
@@ -1295,8 +1308,10 @@ ${flowDetails.slice(0, 3).map((f: any, i: number) =>
       setSuccess(`Metric selected: ${metric.name} (${metric.integration?.name || 'Custom'}). Retrying sync...`)
       
       // Retry the sync with the selected metric
+      // Determine which sync was attempted based on which function called the modal
       setTimeout(() => {
-        triggerCampaignSync(metricSelectionClient)
+        // Try campaign sync first (most common)
+        triggerCampaignSync({ ...metricSelectionClient, conversion_metric_id: metric.id })
       }, 500)
       
     } catch (error) {
