@@ -114,11 +114,7 @@ export function UserManagement({ agency, clients, clientUsers: initialUsers }: U
     }
   }
 
-  const handleRemoveUser = async (userId: string, userName: string) => {
-    if (!confirm(`Are you sure you want to remove ${userName}? They will lose access to their dashboard.`)) {
-      return
-    }
-
+  const handleRemoveUser = async (userId: string) => {
     setLoading(true)
     try {
       const response = await fetch(`/api/users/${userId}`, {
@@ -138,8 +134,6 @@ export function UserManagement({ agency, clients, clientUsers: initialUsers }: U
       setLoading(false)
     }
   }
-
-  // Removed resendInvite - email not configured, users get magic link in modal instead
 
   return (
     <div className="space-y-6">

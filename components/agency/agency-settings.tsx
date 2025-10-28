@@ -100,22 +100,6 @@ export function AgencySettings({ agency: initialAgency }: AgencySettingsProps) {
     }
   }
 
-  const resetForm = () => {
-    setFormData({
-      agency_name: agency.agency_name,
-      logo_url: agency.logo_url || '',
-      primary_color: agency.primary_color,
-      secondary_color: agency.secondary_color,
-      bar_chart_color: agency.bar_chart_color || '#3B82F6',
-      line_chart_color: agency.line_chart_color || '#34D399',
-      ui_accent_color: agency.ui_accent_color || '#6366F1',
-      background_image_url: agency.background_image_url || '',
-      custom_domain: agency.custom_domain || ''
-    })
-    setError('')
-    setSuccess('')
-  }
-
   return (
     <div className="space-y-6">
       {/* Header */}
