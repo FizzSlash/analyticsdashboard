@@ -521,11 +521,6 @@ export class KlaviyoAPI {
     return this.makeRequest(endpoint)
   }
 
-  // Get Account
-  async getAccount() {
-    return this.makeRequest('/accounts')
-  }
-
   // REVENUE ATTRIBUTION - CUSTOM METRICS API
 
   // Get Placed Order Metric ID
