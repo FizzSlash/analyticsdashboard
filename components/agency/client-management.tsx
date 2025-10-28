@@ -32,6 +32,7 @@ import { MetricSelectorModal } from './MetricSelectorModal'
 interface ClientManagementProps {
   agency: Agency
   clients: Client[]
+  showDebugPanel?: boolean
 }
 
 interface ClientFormData {
