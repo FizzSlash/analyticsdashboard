@@ -374,23 +374,20 @@ export function ClientManagement({ agency, clients: initialClients }: ClientMana
   }
 
   const triggerCampaignSync = async (client: Client) => {
+    // NOTE: Metric check happens in unified sync button, not here
+    const conversionMetricId = client.conversion_metric_id
+    
     setLoading(true)
     setError('')
     setSuccess('')
     
     try {
       console.log('📧 CAMPAIGN SYNC: Starting campaign sync for:', client.brand_slug)
+      console.log('🎯 FRONTEND: Using conversion metric ID:', conversionMetricId)
       
-      // Step 0: Check/get conversion metric FIRST
-      const conversionMetricId = await checkAndPrepareMetric(client)
-      if (!conversionMetricId) {
-        setLoading(false)
-        return // Wait for metric selection via modal
-      }
-      
-      // Step 1: Get conversion metric ID (already have it, just logging)
-      setSuccess('Step 1/4: Using saved metric...')
-      console.log('🎯 FRONTEND: Conversion metric ID:', conversionMetricId)
+      // Step 1: Get bulk campaign analytics
+      setSuccess('Step 1/4: Getting campaign analytics...')
+      console.log('📡 FRONTEND: Calling campaign analytics proxy API')
       
       // Step 2: Get bulk campaign analytics
       setSuccess('Step 2/4: Getting campaign analytics...')
@@ -870,23 +867,20 @@ ${campaignDetails.slice(0, 3).map((c: any, i: number) =>
   }
 
   const triggerFlowSync = async (client: Client) => {
+    // NOTE: Metric check happens in unified sync button, not here
+    const conversionMetricId = client.conversion_metric_id
+    
     setLoading(true)
     setError('')
     setSuccess('')
     
     try {
       console.log('🔄 FLOW SYNC: Starting optimized 4-call flow sync for:', client.brand_slug)
+      console.log('🎯 FRONTEND: Using conversion metric ID:', conversionMetricId)
       
-      // Step 0: Check/get conversion metric FIRST
-      const conversionMetricId = await checkAndPrepareMetric(client)
-      if (!conversionMetricId) {
-        setLoading(false)
-        return // Wait for metric selection via modal
-      }
-      
-      // Step 1: Using saved metric
-      setSuccess('Step 1/4: Using saved metric...')
-      console.log('🎯 FRONTEND: Conversion metric ID:', conversionMetricId)
+      // Step 1: Get ALL flows with metadata FIRST
+      setSuccess('Step 1/4: Getting all flow details...')
+      console.log('📡 FRONTEND: Calling bulk flows API')
       
       // Step 2: Get ALL flows with metadata FIRST
       setSuccess('Step 2/4: Getting all flow details...')
@@ -1615,11 +1609,22 @@ ${flowDetails.slice(0, 3).map((f: any, i: number) =>
                       onClick={async () => {
                         setLoading(true)
                         setError('')
+                        
+                        // Step 0: Check metric ONCE for all syncs
+                        const metricId = await checkAndPrepareMetric(client)
+                        if (!metricId) {
+                          setLoading(false)
+                          return // Wait for metric selection
+                        }
+                        
+                        // Update client with metric for subsequent calls
+                        const clientWithMetric = { ...client, conversion_metric_id: metricId }
+                        
                         try {
-                          await triggerCampaignSync(client)
-                          await triggerFlowSync(client)
-                          await triggerListGrowthSync(client)
-                          await triggerRevenueAttributionSync(client)
+                          await triggerCampaignSync(clientWithMetric)
+                          await triggerFlowSync(clientWithMetric)
+                          await triggerListGrowthSync(clientWithMetric)
+                          await triggerRevenueAttributionSync(clientWithMetric)
                           setSuccess(`✅ Complete sync finished for ${client.brand_name}!`)
                         } catch (err) {
                           setError(err instanceof Error ? err.message : 'Sync failed')
