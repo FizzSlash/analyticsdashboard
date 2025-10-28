@@ -5,9 +5,11 @@ import { X, CheckCircle, AlertTriangle } from 'lucide-react'
 
 interface Metric {
   id: string
-  name: string
-  integration?: { name: string }
-  created: string
+  attributes?: {
+    name: string
+    integration?: { name: string }
+    created: string
+  }
 }
 
 interface MetricSelectorModalProps {
@@ -20,17 +22,14 @@ interface MetricSelectorModalProps {
 export function MetricSelectorModal({ clientName, metrics, onSelect, onCancel }: MetricSelectorModalProps) {
   const [selectedMetric, setSelectedMetric] = useState<Metric | null>(null)
   
-  // Filter to revenue-related metrics
-  const revenueMetrics = metrics.filter((m: Metric) => 
-    m.name?.toLowerCase().includes('order') || 
-    m.name?.toLowerCase().includes('purchase') ||
-    m.name?.toLowerCase().includes('checkout') ||
-    m.name === 'Placed Order'
+  // Filter to ONLY "Placed Order" metrics specifically
+  const revenueMetrics = metrics.filter((m: any) => 
+    m.attributes?.name === 'Placed Order'
   )
   
   // Suggest the best metric (e-commerce integration preferred)
-  const suggestedMetric = revenueMetrics.find((m: Metric) => {
-    const integrationName = m.integration?.name?.toLowerCase() || ''
+  const suggestedMetric = revenueMetrics.find((m: any) => {
+    const integrationName = m.attributes?.integration?.name?.toLowerCase() || ''
     return integrationName === 'shopify' || 
            integrationName === 'woocommerce' || 
            integrationName === 'bigcommerce' ||
@@ -82,9 +81,9 @@ export function MetricSelectorModal({ clientName, metrics, onSelect, onCancel }:
             </div>
           ) : (
             <div className="space-y-3 max-h-96 overflow-y-auto">
-              {revenueMetrics.map((metric) => {
+              {revenueMetrics.map((metric: any) => {
                 const isRecommended = metric.id === suggestedMetric?.id
-                const integrationName = metric.integration?.name || 'Custom/API'
+                const integrationName = metric.attributes?.integration?.name || 'Custom/API'
                 
                 return (
                   <button
@@ -99,7 +98,7 @@ export function MetricSelectorModal({ clientName, metrics, onSelect, onCancel }:
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-2">
-                          <span className="font-semibold text-gray-900">{metric.name}</span>
+                          <span className="font-semibold text-gray-900">{metric.attributes?.name}</span>
                           {isRecommended && (
                             <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">
                               ⭐ Recommended
@@ -120,7 +119,7 @@ export function MetricSelectorModal({ clientName, metrics, onSelect, onCancel }:
                           <div>
                             <span className="text-gray-500">Created:</span>
                             <span className="ml-2 text-gray-700">
-                              {new Date(metric.created).toLocaleDateString()}
+                              {new Date(metric.attributes?.created || Date.now()).toLocaleDateString()}
                             </span>
                           </div>
                           <div className="col-span-2">
