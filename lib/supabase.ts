@@ -114,6 +114,8 @@ export interface Client {
   conversion_metric_id?: string
   conversion_metric_name?: string
   conversion_metric_integration?: string
+  preferred_currency?: string
+  timezone?: string
 }
 
 export interface CampaignMetric {
