@@ -512,8 +512,7 @@ export function ClientManagement({ agency, clients: initialClients }: ClientMana
           const templateId = messageInfo.template_id || null
           const template = templateId ? templateLookup[templateId] : null
           
-          // Determine channel from campaign data
-          const messageData = messagesLookup[campaign.id]?.attributes || {}
+          // Determine channel from message definition
           const campaignChannel = messageData?.definition?.channel || 'email'
           
           const completeData = {
