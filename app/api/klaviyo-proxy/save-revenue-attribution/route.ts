@@ -96,16 +96,24 @@ export async function POST(request: NextRequest) {
     console.log('🔍 BLUEPRINT: Attribution data structure:', JSON.stringify(attributionApiData?.data, null, 2))
     console.log('🔍 BLUEPRINT: Total data structure:', JSON.stringify(totalApiData?.data, null, 2))
     
-    // Extra debug: Show EXACTLY what groupings look like
-    console.log('🔍 DETAILED GROUPINGS:', attributionApiData?.data?.map((d: any, i: number) => ({
+    // Extra debug: Show EXACTLY what dimensions/groupings look like
+    console.log('🔍 DETAILED DIMENSIONS:', attributionApiData?.data?.map((d: any, i: number) => ({
       index: i,
-      groupings: d.groupings,
+      dimensions: d.dimensions,      // ← The actual field!
+      groupings: d.groupings,        // ← Might not exist
       hasMeasurements: !!d.measurements,
       measurementsKeys: d.measurements ? Object.keys(d.measurements) : []
     })))
     
-    const emailDataGroup = attributionApiData?.data?.find((d: any) => d.groupings?.$attributed_channel === 'email')
-    const smsDataGroup = attributionApiData?.data?.find((d: any) => d.groupings?.$attributed_channel === 'sms')
+    // FIX: The field is called "dimensions" not "groupings"!
+    const emailDataGroup = attributionApiData?.data?.find((d: any) => 
+      d.dimensions?.includes('$email_channel') || 
+      d.groupings?.$attributed_channel === 'email'
+    )
+    const smsDataGroup = attributionApiData?.data?.find((d: any) => 
+      d.dimensions?.includes('$sms_channel') || 
+      d.groupings?.$attributed_channel === 'sms'
+    )
     const totalDataRecord = totalApiData?.data?.[0]?.measurements || { sum_value: [] }
     
     // FALLBACK: If groupings are null, use first data record as email (common for email-only accounts)
