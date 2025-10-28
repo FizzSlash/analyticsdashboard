@@ -1491,7 +1491,7 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-white/60 text-sm font-medium">Total Campaign Revenue</p>
-                  <p className="text-2xl font-bold text-white mt-1">${totalRevenue.toLocaleString()}</p>
+                  <p className="text-2xl font-bold text-white mt-1">{formatCurrency(totalRevenue, currency)}</p>
                 </div>
                 <div className="bg-white/10 p-3 rounded-lg">
                   <DollarSign className="w-6 h-6 text-white" />
@@ -2414,7 +2414,7 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-white/60 text-sm font-medium">Total Flow Revenue</p>
-                  <p className="text-2xl font-bold text-white mt-1">${totalFlowRevenue.toLocaleString()}</p>
+                  <p className="text-2xl font-bold text-white mt-1">{formatCurrency(totalFlowRevenue, currency)}</p>
                   {revenueComparison.previousValue > 0 ? (
                     <div className="flex items-center gap-2 mt-1">
                       <span className={`text-xs ${getComparisonColorClass(revenueComparison)}`}>
