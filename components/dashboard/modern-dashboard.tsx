@@ -9,6 +9,7 @@ import { CustomLineChart, CustomBarChart } from './charts'
 import { AuditTab } from './audit-tab'
 import { filterAndAggregateData, calculateTimeframeSummary, removeOutliers, getSmartYAxisDomain } from '@/lib/timeframe-utils'
 import { calculatePeriodComparison, formatComparison, getComparisonIcon, getComparisonColorClass, getPreviousPeriodData } from '@/lib/comparison-utils'
+import { formatCurrency, formatCompactCurrency, getCurrencySymbol } from '@/lib/currency-utils'
 import { 
   LineChart, 
   Line, 
