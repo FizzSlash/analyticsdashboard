@@ -1364,6 +1364,67 @@ ${flowDetails.slice(0, 3).map((f: any, i: number) =>
                   </p>
                 </div>
 
+                {/* Revenue Metric Display */}
+                {editingClient && editingClient.conversion_metric_id && (
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Revenue Tracking Metric
+                    </label>
+                    <div className="bg-gray-50 border border-gray-300 rounded-md p-3">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="font-semibold text-gray-900">
+                            {editingClient.conversion_metric_name || 'Placed Order'}
+                          </div>
+                          <div className="text-sm text-gray-600 mt-1 space-x-2">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                              {editingClient.conversion_metric_integration || 'Custom'}
+                            </span>
+                            <code className="text-xs bg-gray-200 px-2 py-1 rounded font-mono">
+                              {editingClient.conversion_metric_id}
+                            </code>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            if (confirm('Clear the saved metric? You will be prompted to select a new one on next sync.')) {
+                              try {
+                                const response = await fetch(`/api/clients/${editingClient.id}`, {
+                                  method: 'PATCH',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({
+                                    conversion_metric_id: null,
+                                    conversion_metric_name: null,
+                                    conversion_metric_integration: null
+                                  })
+                                })
+                                if (response.ok) {
+                                  setSuccess('Metric cleared. Select a new one on next sync.')
+                                  setClients(clients.map(c => 
+                                    c.id === editingClient.id 
+                                      ? { ...c, conversion_metric_id: undefined, conversion_metric_name: undefined, conversion_metric_integration: undefined }
+                                      : c
+                                  ))
+                                  resetForm()
+                                }
+                              } catch (error) {
+                                setError('Failed to clear metric')
+                              }
+                            }
+                          }}
+                          className="text-sm text-red-600 hover:text-red-800 px-3 py-1 rounded hover:bg-red-50"
+                        >
+                          Change
+                        </button>
+                      </div>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">
+                      This metric is used to track revenue from campaigns and flows. Click "Change" to select a different metric.
+                    </p>
+                  </div>
+                )}
+
                 {/* Note about branding */}
                 <div className="md:col-span-2 bg-blue-50 border border-blue-200 rounded-lg p-4">
                   <div className="flex items-start gap-3">
