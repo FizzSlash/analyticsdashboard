@@ -64,9 +64,9 @@ export class KlaviyoAPI {
     }
   }
 
-  // Get ALL Campaigns with pagination support
-  async getAllCampaigns(channel: 'email' | 'sms' | 'mobile_push' = 'email', includes?: string[]) {
-    console.log(`📧 CAMPAIGNS API: Fetching ALL campaigns with pagination`)
+  // Get ALL Campaigns with pagination support (supports multiple channels)
+  async getAllCampaigns(channel: 'email' | 'sms' | 'mobile_push' | 'all' = 'email', includes?: string[]) {
+    console.log(`📧 CAMPAIGNS API: Fetching ALL campaigns with pagination (channel: ${channel})`)
     
     let allCampaigns: any[] = []
     let allIncluded: any[] = []
@@ -82,8 +82,14 @@ export class KlaviyoAPI {
       oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1)
       const dateFilter = oneYearAgo.toISOString()
       
-      // Use updated_at (includes drafts, scheduled, and sent campaigns)
-      params.set('filter', `and(equals(messages.channel,'${channel}'),greater-or-equal(updated_at,${dateFilter}))`)
+      // Filter by channel and date
+      if (channel === 'all') {
+        // Fetch both email AND SMS
+        params.set('filter', `and(any(equals(messages.channel,'email'),equals(messages.channel,'sms')),greater-or-equal(updated_at,${dateFilter}))`)
+      } else {
+        // Single channel
+        params.set('filter', `and(equals(messages.channel,'${channel}'),greater-or-equal(updated_at,${dateFilter}))`)
+      }
       
       if (cursor) {
         params.set('page[cursor]', cursor)

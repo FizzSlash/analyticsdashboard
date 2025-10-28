@@ -20,8 +20,8 @@ export async function GET(request: NextRequest) {
     const decryptedKey = decryptApiKey(client.klaviyo_api_key)
     const klaviyo = new KlaviyoAPI(decryptedKey)
 
-    // Get ALL campaigns with pagination (handles 100+ campaigns)
-    const campaigns = await klaviyo.getAllCampaigns('email', [
+    // Get ALL campaigns with pagination (email + SMS)
+    const campaigns = await klaviyo.getAllCampaigns('all', [
       'campaign-messages',
       'tags'
     ])
