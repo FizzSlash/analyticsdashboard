@@ -146,12 +146,12 @@ export function UserManagement({ agency, clients, clientUsers: initialUsers }: U
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">User Management</h2>
-          <p className="text-gray-600">Invite users to access their client dashboards</p>
+          <h2 className="text-2xl font-bold text-white">User Management</h2>
+          <p className="text-white/60">Invite users to access their client dashboards</p>
         </div>
         <button
           onClick={() => setShowInviteForm(true)}
-          className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
+          className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-md transition-colors border border-white/20"
         >
           <UserPlus className="h-4 w-4" />
           Invite User
@@ -160,14 +160,14 @@ export function UserManagement({ agency, clients, clientUsers: initialUsers }: U
 
       {/* Messages */}
       {error && (
-        <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-md text-red-700">
+        <div className="flex items-center gap-2 p-3 bg-red-500/20 border border-red-500/30 rounded-md text-red-300">
           <AlertCircle className="h-4 w-4" />
           {error}
         </div>
       )}
 
       {success && (
-        <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-md text-green-700">
+        <div className="flex items-center gap-2 p-3 bg-green-500/20 border border-green-500/30 rounded-md text-green-300">
           <CheckCircle className="h-4 w-4" />
           {success}
         </div>

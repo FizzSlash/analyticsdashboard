@@ -120,20 +120,20 @@ export function AgencySettings({ agency: initialAgency }: AgencySettingsProps) {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h2 className="text-2xl font-bold text-gray-900">Agency Settings</h2>
-        <p className="text-gray-600">Customize your agency's branding and configuration</p>
+        <h2 className="text-2xl font-bold text-white">Agency Settings</h2>
+        <p className="text-white/60">Customize your agency's branding and configuration</p>
       </div>
 
       {/* Messages */}
       {error && (
-        <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-md text-red-700">
+        <div className="flex items-center gap-2 p-3 bg-red-500/20 border border-red-500/30 rounded-md text-red-300">
           <AlertCircle className="h-4 w-4" />
           {error}
         </div>
       )}
 
       {success && (
-        <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-md text-green-700">
+        <div className="flex items-center gap-2 p-3 bg-green-500/20 border border-green-500/30 rounded-md text-green-300">
           <CheckCircle className="h-4 w-4" />
           {success}
         </div>
@@ -142,45 +142,43 @@ export function AgencySettings({ agency: initialAgency }: AgencySettingsProps) {
       {/* Settings Form */}
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Basic Information */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Settings className="h-5 w-5" />
-              Basic Information
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
+        <div className="bg-white/10 backdrop-blur-md rounded-lg border border-white/20 p-6">
+          <div className="flex items-center gap-2 mb-6">
+            <Settings className="h-5 w-5 text-white/70" />
+            <h3 className="text-xl font-semibold text-white">Basic Information</h3>
+          </div>
+          <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-white/80 mb-1">
                 Agency Name
               </label>
               <input
                 type="text"
                 value={formData.agency_name}
                 onChange={(e) => setFormData({ ...formData, agency_name: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-white/20 bg-white/10 text-white rounded-md focus:ring-2 focus:ring-white/30 focus:border-white/40 placeholder-white/40"
                 placeholder="Your Agency Name"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-white/80 mb-1">
                 Custom Domain (Optional)
               </label>
               <input
                 type="text"
                 value={formData.custom_domain}
                 onChange={(e) => setFormData({ ...formData, custom_domain: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-white/20 bg-white/10 text-white rounded-md focus:ring-2 focus:ring-white/30 focus:border-white/40 placeholder-white/40"
                 placeholder="dashboard.youragency.com"
               />
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-white/50 mt-1">
                 Configure a custom domain for your client dashboards (requires DNS setup)
               </p>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
         {/* Branding */}
         <Card>
