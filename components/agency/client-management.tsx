@@ -1546,42 +1546,39 @@ ${flowDetails.slice(0, 3).map((f: any, i: number) =>
       {/* Clients List */}
       <div className="grid gap-6">
         {clients.length === 0 ? (
-          <Card>
-            <CardContent className="text-center py-12">
-              <Building2 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No clients yet</h3>
-              <p className="text-gray-600 mb-4">
-                Get started by adding your first client to create their analytics dashboard.
-              </p>
-              <button
-                onClick={() => setShowForm(true)}
-                className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
-              >
-                Add Your First Client
-              </button>
-            </CardContent>
-          </Card>
+          <div className="bg-white/10 backdrop-blur-md rounded-lg border border-white/20 p-12 text-center">
+            <Building2 className="h-12 w-12 text-white/40 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-white mb-2">No clients yet</h3>
+            <p className="text-white/60 mb-4">
+              Get started by adding your first client to create their analytics dashboard.
+            </p>
+            <button
+              onClick={() => setShowForm(true)}
+              className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-md border border-white/30 transition-colors"
+            >
+              Add Your First Client
+            </button>
+          </div>
         ) : (
           clients.map((client) => (
-            <Card key={client.id}>
-              <CardContent className="p-6">
+            <div key={client.id} className="bg-white/10 backdrop-blur-md rounded-lg border border-white/20 p-6">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
                       <div>
-                      <h3 className="text-lg font-semibold text-gray-900">
+                      <h3 className="text-lg font-semibold text-white">
                         {client.brand_name}
                       </h3>
-                      <div className="flex items-center gap-4 text-sm text-gray-600">
+                      <div className="flex items-center gap-4 text-sm text-white/60">
                         <span>/{client.brand_slug}</span>
                         <span className={`px-2 py-1 rounded-full text-xs ${
                           client.is_active 
-                            ? 'bg-green-100 text-green-800' 
-                            : 'bg-gray-100 text-gray-800'
+                            ? 'bg-green-500/20 text-green-300 border border-green-500/30' 
+                            : 'bg-gray-500/20 text-gray-300 border border-gray-500/30'
                         }`}>
                           {client.is_active ? 'Active' : 'Inactive'}
                         </span>
                         {client.audit_enabled && (
-                          <span className="inline-flex items-center gap-1 bg-purple-100 text-purple-700 px-2 py-1 rounded-full text-xs font-medium">
+                          <span className="inline-flex items-center gap-1 bg-purple-500/20 text-purple-300 px-2 py-1 rounded-full text-xs font-medium border border-purple-500/30">
                             <Sparkles className="h-3 w-3" />
                             AI Audit
                           </span>
@@ -1601,8 +1598,8 @@ ${flowDetails.slice(0, 3).map((f: any, i: number) =>
                       onClick={() => toggleAudit(client)}
                       className={`p-2 rounded-md transition-colors ${
                         client.audit_enabled
-                          ? 'text-purple-600 bg-purple-50 hover:bg-purple-100'
-                          : 'text-gray-400 hover:text-gray-600 hover:bg-gray-50'
+                          ? 'text-purple-300 bg-purple-500/20 hover:bg-purple-500/30'
+                          : 'text-white/40 hover:text-white/60 hover:bg-white/10'
                       }`}
                       title={client.audit_enabled ? 'AI Audit Enabled - Click to disable' : 'AI Audit Disabled - Click to enable'}
                     >
@@ -1638,7 +1635,7 @@ ${flowDetails.slice(0, 3).map((f: any, i: number) =>
                         }
                       }}
                       disabled={loading}
-                      className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                      className="p-2 text-white/60 hover:text-blue-300 hover:bg-blue-500/20 rounded-md transition-colors"
                       title="Sync All Data (Campaigns, Flows, List Growth, Revenue)"
                     >
                       <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
@@ -1647,7 +1644,7 @@ ${flowDetails.slice(0, 3).map((f: any, i: number) =>
                     <a 
                       href={`/client/${client.brand_slug}`}
                       target="_blank"
-                      className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                      className="p-2 text-white/60 hover:text-blue-300 hover:bg-blue-500/20 rounded-md transition-colors"
                       title="View Dashboard"
                     >
                       <ExternalLink className="h-4 w-4" />
@@ -1655,7 +1652,7 @@ ${flowDetails.slice(0, 3).map((f: any, i: number) =>
 
                     <button
                       onClick={() => generateShareLink(client)}
-                      className="p-2 text-gray-600 hover:text-green-600 hover:bg-green-50 rounded-md transition-colors"
+                      className="p-2 text-white/60 hover:text-green-300 hover:bg-green-500/20 rounded-md transition-colors"
                       title="Generate Share Link"
                     >
                       <Share2 className="h-4 w-4" />
@@ -1663,7 +1660,7 @@ ${flowDetails.slice(0, 3).map((f: any, i: number) =>
 
                     <button
                       onClick={() => handleEdit(client)}
-                      className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                      className="p-2 text-white/60 hover:text-blue-300 hover:bg-blue-500/20 rounded-md transition-colors"
                       title="Edit Client"
                     >
                       <Edit className="h-4 w-4" />
@@ -1672,7 +1669,7 @@ ${flowDetails.slice(0, 3).map((f: any, i: number) =>
                     <button
                       onClick={() => handleDelete(client)}
                       disabled={loading}
-                      className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
+                      className="p-2 text-white/60 hover:text-red-300 hover:bg-red-500/20 rounded-md transition-colors"
                       title="Delete Client"
                     >
                       <Trash2 className="h-4 w-4" />
@@ -1687,19 +1684,18 @@ ${flowDetails.slice(0, 3).map((f: any, i: number) =>
                       className="w-4 h-4 rounded border"
                       style={{ backgroundColor: agency.primary_color }}
                     />
-                    <span className="text-xs text-gray-600">Primary</span>
+                    <span className="text-xs text-white/60">Primary</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <div 
                       className="w-4 h-4 rounded border"
                       style={{ backgroundColor: agency.secondary_color }}
                     />
-                    <span className="text-xs text-gray-600">Secondary</span>
+                    <span className="text-xs text-white/60">Secondary</span>
                   </div>
-                  <span className="text-xs text-gray-500 italic">(from agency)</span>
+                  <span className="text-xs text-white/50 italic">(from agency)</span>
                 </div>
-              </CardContent>
-            </Card>
+            </div>
           ))
         )}
       </div>
