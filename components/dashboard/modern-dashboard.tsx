@@ -1799,8 +1799,8 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
                   </div>
                           <div className="text-xs text-white/60 space-y-1">
                             <div>{category.data.campaigns.length} campaigns</div>
-                            <div>${category.data.avgAOV.toFixed(2)} avg order</div>
-                            <div>${category.data.totalRevenue.toLocaleString()} revenue</div>
+                            <div>{formatCurrency(category.data.avgAOV, currency)} avg order</div>
+                            <div>{formatCurrency(category.data.totalRevenue, currency)} revenue</div>
                     </div>
                         </button>
                       )
