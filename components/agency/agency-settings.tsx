@@ -181,14 +181,12 @@ export function AgencySettings({ agency: initialAgency }: AgencySettingsProps) {
         </div>
 
         {/* Branding */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Palette className="h-5 w-5" />
-              Branding
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
+        <div className="bg-white/10 backdrop-blur-md rounded-lg border border-white/20 p-6">
+          <div className="flex items-center gap-2 mb-6">
+            <Palette className="h-5 w-5 text-white/70" />
+            <h3 className="text-xl font-semibold text-white">Branding</h3>
+          </div>
+          <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Logo URL
