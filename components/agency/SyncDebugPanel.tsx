@@ -181,8 +181,7 @@ export function SyncDebugPanel({ clients }: SyncDebugPanelProps) {
           <span className="ml-auto group-open:rotate-180 transition-transform">▼</span>
         </summary>
         
-        <div className="mt-4 space-y-3"
-
+        <div className="mt-4 space-y-3">
           {error && (
             <div className="bg-red-500/20 border border-red-500/30 text-red-300 px-3 py-2 rounded text-sm mb-3">
               {error}
