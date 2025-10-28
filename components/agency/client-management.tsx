@@ -27,6 +27,7 @@ import {
   Copy,
   X
 } from 'lucide-react'
+import { MetricSelectorModal } from './MetricSelectorModal'
 
 interface ClientManagementProps {
   agency: Agency
@@ -51,6 +52,9 @@ export function ClientManagement({ agency, clients: initialClients }: ClientMana
   const [showShareModal, setShowShareModal] = useState(false)
   const [shareLink, setShareLink] = useState('')
   const [selectedClient, setSelectedClient] = useState<Client | null>(null)
+  const [showMetricSelector, setShowMetricSelector] = useState(false)
+  const [availableMetrics, setAvailableMetrics] = useState<any[]>([])
+  const [metricSelectionClient, setMetricSelectionClient] = useState<Client | null>(null)
   
   // Simplified - no auth dependency to avoid circular imports
 
@@ -361,6 +365,20 @@ export function ClientManagement({ agency, clients: initialClients }: ClientMana
       const metricsResult = await metricsResponse.json()
       console.log('📊 FRONTEND: Metrics response:', metricsResult)
       
+      // Check if client has saved conversion metric
+      if (!client.conversion_metric_id) {
+        console.log('🎯 FRONTEND: No saved metric for this client - showing selector modal')
+        setMetricSelectionClient(client)
+        setAvailableMetrics(metricsResult.data?.data || [])
+        setShowMetricSelector(true)
+        setLoading(false)
+        return // Wait for user to select metric
+      }
+      
+      console.log('✅ FRONTEND: Using saved conversion metric:', client.conversion_metric_id)
+      const conversionMetricId = client.conversion_metric_id
+      
+      // OLD LOGIC BELOW (only used if somehow metric is missing)
       // Find conversion metric
       console.log('🔍 FRONTEND: Looking for conversion metric in', metricsResult.data?.data?.length, 'metrics')
       console.log('🔍 FRONTEND: ALL metric names:', metricsResult.data?.data?.map((m: any) => m.attributes?.name))
@@ -1244,8 +1262,65 @@ ${flowDetails.slice(0, 3).map((f: any, i: number) =>
     }
   }
 
+  const handleMetricSelection = async (metric: any) => {
+    if (!metricSelectionClient) return
+    
+    try {
+      // Save metric to client record
+      const response = await fetch(`/api/clients/${metricSelectionClient.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          conversion_metric_id: metric.id,
+          conversion_metric_name: metric.name,
+          conversion_metric_integration: metric.integration?.name || 'Custom'
+        })
+      })
+      
+      if (!response.ok) {
+        throw new Error('Failed to save metric')
+      }
+      
+      console.log('✅ METRIC SAVED:', metric.id, metric.name)
+      
+      // Update local state
+      setClients(clients.map(c => 
+        c.id === metricSelectionClient.id 
+          ? { ...c, conversion_metric_id: metric.id, conversion_metric_name: metric.name, conversion_metric_integration: metric.integration?.name || 'Custom' }
+          : c
+      ))
+      
+      // Close modal and retry sync
+      setShowMetricSelector(false)
+      setSuccess(`Metric selected: ${metric.name} (${metric.integration?.name || 'Custom'}). Retrying sync...`)
+      
+      // Retry the sync with the selected metric
+      setTimeout(() => {
+        triggerCampaignSync(metricSelectionClient)
+      }, 500)
+      
+    } catch (error) {
+      console.error('❌ ERROR saving metric:', error)
+      setError('Failed to save metric selection')
+      setShowMetricSelector(false)
+    }
+  }
+
   return (
     <div className="space-y-6">
+      {/* Metric Selector Modal */}
+      {showMetricSelector && metricSelectionClient && (
+        <MetricSelectorModal
+          clientName={metricSelectionClient.brand_name}
+          metrics={availableMetrics}
+          onSelect={handleMetricSelection}
+          onCancel={() => {
+            setShowMetricSelector(false)
+            setLoading(false)
+          }}
+        />
+      )}
+      
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
