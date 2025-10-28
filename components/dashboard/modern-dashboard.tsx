@@ -114,6 +114,7 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
     startDate.setDate(startDate.getDate() - timeframe)
     
     const useMonthly = timeframe > 90
+    const useDaily = timeframe <= 7  // NEW: Daily for 7 days or less
     
     if (useMonthly) {
       // Generate all months in range
@@ -125,8 +126,17 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
         revenueRecipientsByPeriod[period] = { revenue: 0, recipients: 0, sortDate: new Date(currentDate) }
         currentDate.setMonth(currentDate.getMonth() + 1)
       }
+    } else if (useDaily) {
+      // Generate all days in range (for 7 days or less)
+      let currentDate = new Date(startDate)
+      
+      while (currentDate <= endDate) {
+        const period = currentDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+        revenueRecipientsByPeriod[period] = { revenue: 0, recipients: 0, sortDate: new Date(currentDate) }
+        currentDate.setDate(currentDate.getDate() + 1) // Next day
+      }
     } else {
-      // Generate all weeks in range
+      // Generate all weeks in range (for 8-90 days)
       let currentDate = new Date(startDate)
       
       while (currentDate <= endDate) {
@@ -146,6 +156,8 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
         
         if (useMonthly) {
           period = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+        } else if (useDaily) {
+          period = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
         } else {
           const weekStart = new Date(date)
           weekStart.setDate(date.getDate() - date.getDay())
