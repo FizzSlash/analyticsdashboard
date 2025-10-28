@@ -66,7 +66,6 @@ export function SyncDebugPanel({ clients }: SyncDebugPanelProps) {
           }
           return
         
-        case:
         case 'campaigns':
           endpoint = '/api/klaviyo-proxy/save-campaigns'
           // First get campaigns
