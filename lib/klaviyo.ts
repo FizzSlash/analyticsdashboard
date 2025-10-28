@@ -65,7 +65,7 @@ export class KlaviyoAPI {
   }
 
   // Get ALL Campaigns with pagination support (supports multiple channels)
-  async getAllCampaigns(channel: 'email' | 'sms' | 'mobile_push' | 'all' = 'email', includes?: string[]) {
+  async getAllCampaigns(channel: 'email' | 'sms' | 'mobile_push' | 'all' = 'email', includes?: string[]): Promise<{ data: any[], included: any[], links: any }> {
     console.log(`📧 CAMPAIGNS API: Fetching ALL campaigns with pagination (channel: ${channel})`)
     
     // Special case: 'all' means fetch email + SMS separately and combine
