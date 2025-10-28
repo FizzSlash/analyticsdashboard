@@ -253,198 +253,187 @@ export function UserManagement({ agency, clients, clientUsers: initialUsers }: U
 
       {/* Invite Form */}
       {showInviteForm && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Invite New User</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleInvite} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Email Address *
-                  </label>
-                  <input
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="user@example.com"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Client *
-                  </label>
-                  <select
-                    value={formData.client_id}
-                    onChange={(e) => setFormData({ ...formData, client_id: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    required
-                  >
-                    <option value="">Select a client</option>
-                    {clients.filter(c => c.is_active).map(client => (
-                      <option key={client.id} value={client.id}>
-                        {client.brand_name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    First Name
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.first_name}
-                    onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="John"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Last Name
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.last_name}
-                    onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Doe"
-                  />
-                </div>
+        <div className="bg-white/10 backdrop-blur-md rounded-lg border border-white/20 p-6">
+          <h3 className="text-xl font-semibold text-white mb-6">Invite New User</h3>
+          <form onSubmit={handleInvite} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-white/80 mb-1">
+                  Email Address *
+                </label>
+                <input
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  className="w-full px-3 py-2 border border-white/20 bg-white/10 text-white rounded-md focus:ring-2 focus:ring-white/30 focus:border-white/40 placeholder-white/40"
+                  placeholder="user@example.com"
+                  required
+                />
               </div>
 
-              <div className="flex gap-3 pt-4">
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
+              <div>
+                <label className="block text-sm font-medium text-white/80 mb-1">
+                  Client *
+                </label>
+                <select
+                  value={formData.client_id}
+                  onChange={(e) => setFormData({ ...formData, client_id: e.target.value })}
+                  className="w-full px-3 py-2 border border-white/20 bg-white/10 text-white rounded-md focus:ring-2 focus:ring-white/30 focus:border-white/40"
+                  required
                 >
-                  {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-                  Send Invitation
-                </button>
-                <button
-                  type="button"
-                  onClick={resetForm}
-                  className="bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400"
-                >
-                  Cancel
-                </button>
+                  <option value="">Select a client</option>
+                  {clients.filter(c => c.is_active).map(client => (
+                    <option key={client.id} value={client.id}>
+                      {client.brand_name}
+                    </option>
+                  ))}
+                </select>
               </div>
-            </form>
-          </CardContent>
-        </Card>
+
+              <div>
+                <label className="block text-sm font-medium text-white/80 mb-1">
+                  First Name
+                </label>
+                <input
+                  type="text"
+                  value={formData.first_name}
+                  onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
+                  className="w-full px-3 py-2 border border-white/20 bg-white/10 text-white rounded-md focus:ring-2 focus:ring-white/30 focus:border-white/40 placeholder-white/40"
+                  placeholder="John"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-white/80 mb-1">
+                  Last Name
+                </label>
+                <input
+                  type="text"
+                  value={formData.last_name}
+                  onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
+                  className="w-full px-3 py-2 border border-white/20 bg-white/10 text-white rounded-md focus:ring-2 focus:ring-white/30 focus:border-white/40 placeholder-white/40"
+                  placeholder="Doe"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3 pt-4">
+              <button
+                type="submit"
+                disabled={loading}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md disabled:opacity-50 flex items-center gap-2 transition-colors"
+              >
+                {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+                Send Invitation
+              </button>
+              <button
+                type="button"
+                onClick={resetForm}
+                className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-md border border-white/20 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
       )}
 
       {/* Users List */}
       <div className="space-y-4">
         {clientUsers.length === 0 ? (
-          <Card>
-            <CardContent className="text-center py-12">
-              <User className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No users invited yet</h3>
-              <p className="text-gray-600 mb-4">
-                Invite users to give them access to their client dashboards.
-              </p>
-              <button
-                onClick={() => setShowInviteForm(true)}
-                className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
-              >
-                Invite Your First User
-              </button>
-            </CardContent>
-          </Card>
+          <div className="bg-white/10 backdrop-blur-md rounded-lg border border-white/20 p-12 text-center">
+            <User className="h-12 w-12 text-white/40 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-white mb-2">No users invited yet</h3>
+            <p className="text-white/60 mb-4">
+              Invite users to give them access to their client dashboards.
+            </p>
+            <button
+              onClick={() => setShowInviteForm(true)}
+              className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-md border border-white/30 transition-colors"
+            >
+              Invite Your First User
+            </button>
+          </div>
         ) : (
           clientUsers.map((user) => (
-            <Card key={user.id}>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                      <User className="h-5 w-5 text-blue-600" />
-                    </div>
-                    <div>
-                      <h3 className="font-medium text-gray-900">
-                        {user.first_name && user.last_name 
-                          ? `${user.first_name} ${user.last_name}` 
-                          : 'Unnamed User'
-                        }
-                      </h3>
-                      <div className="text-sm text-gray-600 space-y-1">
-                        <div className="flex items-center gap-2">
-                          <Mail className="h-3 w-3" />
-                          {/* We'd need to get email from auth.users table */}
-                          User ID: {user.id.slice(0, 8)}...
-                        </div>
-                        {user.clients && (
-                          <div>
-                            Client: {user.clients.brand_name}
-                          </div>
-                        )}
-                      </div>
-                    </div>
+            <div key={user.id} className="bg-white/10 backdrop-blur-md rounded-lg border border-white/20 p-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 bg-blue-500/20 rounded-full flex items-center justify-center">
+                    <User className="h-5 w-5 text-blue-300" />
                   </div>
-
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => handleRemoveUser(
-                        user.id, 
-                        user.first_name && user.last_name 
-                          ? `${user.first_name} ${user.last_name}` 
-                          : 'this user'
+                  <div>
+                    <h3 className="font-medium text-white">
+                      {user.first_name && user.last_name 
+                        ? `${user.first_name} ${user.last_name}` 
+                        : 'Unnamed User'
+                      }
+                    </h3>
+                    <div className="text-sm text-white/60 space-y-1">
+                      <div className="flex items-center gap-2">
+                        <Mail className="h-3 w-3" />
+                        User ID: {user.id.slice(0, 8)}...
+                      </div>
+                      {user.clients && (
+                        <div>
+                          Client: {user.clients.brand_name}
+                        </div>
                       )}
-                      disabled={loading}
-                      className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
-                      title="Remove User"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
+                    </div>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => handleRemoveUser(
+                      user.id, 
+                      user.first_name && user.last_name 
+                        ? `${user.first_name} ${user.last_name}` 
+                        : 'this user'
+                    )}
+                    disabled={loading}
+                    className="p-2 text-white/60 hover:text-red-300 hover:bg-red-500/20 rounded-md transition-colors"
+                    title="Remove User"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
           ))
         )}
       </div>
 
       {/* Instructions */}
-      <Card>
-        <CardHeader>
-          <CardTitle>How User Invitations Work</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3 text-sm text-gray-600">
+      <div className="bg-white/10 backdrop-blur-md rounded-lg border border-white/20 p-6">
+        <h3 className="text-xl font-semibold text-white mb-4">How User Invitations Work</h3>
+        <div className="space-y-3 text-sm text-white/70">
           <div className="flex gap-3">
-            <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-              <span className="text-blue-600 font-medium text-xs">1</span>
+            <div className="w-6 h-6 bg-blue-500/20 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+              <span className="text-blue-300 font-medium text-xs">1</span>
             </div>
             <div>
-              <strong>Invite User:</strong> Enter the user's email and select which client they should have access to.
+              <strong className="text-white">Invite User:</strong> Enter the user's email and select which client they should have access to.
             </div>
           </div>
           <div className="flex gap-3">
-            <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-              <span className="text-blue-600 font-medium text-xs">2</span>
+            <div className="w-6 h-6 bg-blue-500/20 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+              <span className="text-blue-300 font-medium text-xs">2</span>
             </div>
             <div>
-              <strong>Email Sent:</strong> The user receives an email with instructions to set their password.
+              <strong className="text-white">Email Sent:</strong> The user receives an email with instructions to set their password.
             </div>
           </div>
           <div className="flex gap-3">
-            <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-              <span className="text-blue-600 font-medium text-xs">3</span>
+            <div className="w-6 h-6 bg-blue-500/20 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+              <span className="text-blue-300 font-medium text-xs">3</span>
             </div>
             <div>
-              <strong>Dashboard Access:</strong> Once they set their password, they can access their client's dashboard directly.
+              <strong className="text-white">Dashboard Access:</strong> Once they set their password, they can access their client's dashboard directly.
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   )
 }
