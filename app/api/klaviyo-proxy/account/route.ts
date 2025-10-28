@@ -1,16 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { KlaviyoAPI } from '@/lib/klaviyo'
+import { KlaviyoAPI, decryptApiKey } from '@/lib/klaviyo'
+import { DatabaseService } from '@/lib/database'
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { klaviyoApiKey } = body
+    const { klaviyoApiKey, clientSlug } = body
 
-    if (!klaviyoApiKey) {
+    // If clientSlug provided, get encrypted key from database
+    let apiKey = klaviyoApiKey
+    if (clientSlug) {
+      const client = await DatabaseService.getClientBySlug(clientSlug)
+      if (!client) {
+        return NextResponse.json({ error: 'Client not found' }, { status: 404 })
+      }
+      apiKey = decryptApiKey(client.klaviyo_api_key)
+    } else if (klaviyoApiKey) {
+      // Direct API key provided (might be encrypted)
+      // Try to use it as-is first, if it fails, try decrypting
+      apiKey = klaviyoApiKey.startsWith('pk_') ? klaviyoApiKey : decryptApiKey(klaviyoApiKey)
+    }
+
+    if (!apiKey) {
       return NextResponse.json({ error: 'Klaviyo API key is required' }, { status: 400 })
     }
 
-    const klaviyo = new KlaviyoAPI(klaviyoApiKey)
+    const klaviyo = new KlaviyoAPI(apiKey)
     
     console.log('🏢 ACCOUNT API: Fetching account information')
     const accountData = await klaviyo.getAccount()

@@ -31,7 +31,7 @@ export function SyncDebugPanel({ clients }: SyncDebugPanelProps) {
           const accountRes = await fetch('/api/klaviyo-proxy/account', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ klaviyoApiKey: client.klaviyo_api_key })
+            body: JSON.stringify({ clientSlug: client.brand_slug })
           })
           const accountData = await accountRes.json()
           
