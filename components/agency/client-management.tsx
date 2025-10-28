@@ -79,6 +79,13 @@ export function ClientManagement({ agency, clients: initialClients }: ClientMana
   }
 
   const handleEdit = (client: Client) => {
+    console.log('✏️ EDIT CLIENT:', client)
+    console.log('📊 METRIC DATA:', {
+      id: client.conversion_metric_id,
+      name: client.conversion_metric_name,
+      integration: client.conversion_metric_integration
+    })
+    
     setFormData({
       brand_name: client.brand_name,
       brand_slug: client.brand_slug,
