@@ -24,7 +24,9 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       share_enabled: body.share_enabled !== undefined ? body.share_enabled : undefined,
       conversion_metric_id: body.conversion_metric_id !== undefined ? body.conversion_metric_id : undefined,
       conversion_metric_name: body.conversion_metric_name !== undefined ? body.conversion_metric_name : undefined,
-      conversion_metric_integration: body.conversion_metric_integration !== undefined ? body.conversion_metric_integration : undefined
+      conversion_metric_integration: body.conversion_metric_integration !== undefined ? body.conversion_metric_integration : undefined,
+      preferred_currency: body.preferred_currency !== undefined ? body.preferred_currency : undefined,
+      timezone: body.timezone !== undefined ? body.timezone : undefined
     }
 
     // Only update API key if provided

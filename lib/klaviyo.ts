@@ -663,6 +663,12 @@ export class KlaviyoAPI {
     })
   }
 
+  // Get Account Info (currency, timezone, etc.)
+  async getAccount() {
+    console.log('🏢 ACCOUNT: Getting account information (currency, timezone)')
+    return this.makeRequest('/accounts')
+  }
+
   // Query Revenue by Campaign Channel (Flow LUXE Blueprint Module 250)
   async queryRevenueByCampaignChannel(metricId: string, startDate: string, endDate: string) {
     console.log(`📧 REVENUE: Querying CAMPAIGN channel revenue from ${startDate} to ${endDate}`)
