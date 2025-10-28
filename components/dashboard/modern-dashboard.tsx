@@ -61,6 +61,9 @@ type TabType = 'dashboard' | 'campaigns' | 'flows' | 'subject-lines' | 'list-gro
 export function ModernDashboard({ client, data: initialData, timeframe: externalTimeframe, disablePortalMode = false, hideHeader = false }: ModernDashboardProps) {
   const [viewMode, setViewMode] = useState<ViewMode>('analytics')
   const [activeTab, setActiveTab] = useState<TabType>('dashboard')
+  
+  // Get currency for formatting
+  const currency = client.preferred_currency || 'USD'
 
   // Simplified color system - 5 colors total
   const primaryColor = client?.primary_color || '#3B82F6'
@@ -977,7 +980,7 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
                     <YAxis 
                       stroke="rgba(255,255,255,0.6)" 
                       fontSize={12}
-                      tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
+                      tickFormatter={(value) => `${getCurrencySymbol(currency)}${(value / 1000).toFixed(0)}k`}
                     />
                     <Tooltip 
                       contentStyle={{ 
@@ -1331,7 +1334,7 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
                         </div>
                         <div className="text-right">
                           <div className="text-white/80 font-medium">
-                            ${(campaign.revenue || 0).toLocaleString()}
+                            {formatCurrency(campaign.revenue || 0, currency)}
                           </div>
                           <div className="text-white/50">revenue</div>
                         </div>
@@ -1564,7 +1567,7 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
                       orientation="left"
                       tick={{ fill: 'rgba(255,255,255,0.7)', fontSize: 12 }}
                       axisLine={{ stroke: 'rgba(255,255,255,0.2)' }}
-                      tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
+                      tickFormatter={(value) => `${getCurrencySymbol(currency)}${(value / 1000).toFixed(0)}k`}
                     />
                     <YAxis 
                       yAxisId="recipients"
@@ -1581,7 +1584,7 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
                         color: 'white'
                       }}
                       formatter={(value: number, name: string) => [
-                        name === 'revenue' ? `$${value.toLocaleString()}` : `${value.toLocaleString()}`,
+                        name === 'revenue' ? formatCurrency(value, currency) : `${value.toLocaleString()}`,
                         name === 'revenue' ? 'Campaign Revenue' : 'Recipients'
                       ]}
                     />
@@ -1634,7 +1637,7 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
                     <YAxis 
                       tick={{ fill: 'rgba(255,255,255,0.7)', fontSize: 12 }}
                       axisLine={{ stroke: 'rgba(255,255,255,0.2)' }}
-                      tickFormatter={(value) => `$${value.toFixed(2)}`}
+                      tickFormatter={(value) => formatCurrency(value, currency)}
                     />
                     <Tooltip 
                       contentStyle={{
@@ -1643,7 +1646,7 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
                         borderRadius: '8px',
                         color: 'white'
                       }}
-                      formatter={(value: number) => [`$${value.toFixed(2)}`, 'Revenue Per Recipient']}
+                      formatter={(value: number) => [formatCurrency(value, currency), 'Revenue Per Recipient']}
                     />
                     <Line 
                       type="monotone" 
@@ -1838,12 +1841,12 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
                                   {campaign.clicked_count > 0 ? ((campaign.orders_count / campaign.clicked_count) * 100).toFixed(1) : '0.0'}%
                                 </p>
                                 <p className="text-white/60 text-xs">click-to-order</p>
-                                <p className="text-white/40 text-xs">${(campaign.revenue || 0).toLocaleString()}</p>
+                                <p className="text-white/40 text-xs">{formatCurrency(campaign.revenue || 0, currency)}</p>
                               </>
                             ) : (
                               <>
                                 <p className="text-white font-semibold text-sm">
-                                  ${campaign.orders_count > 0 ? (campaign.revenue / campaign.orders_count).toFixed(2) : '0.00'}
+                                  {campaign.orders_count > 0 ? formatCurrency(campaign.revenue / campaign.orders_count, currency) : formatCurrency(0, currency)}
                                 </p>
                                 <p className="text-white/60 text-xs">avg order value</p>
                                 <p className="text-white/40 text-xs">{campaign.orders_count} orders</p>
@@ -2186,14 +2189,14 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
                         </span>
                       </td>
                       <td className="text-right text-white font-semibold text-sm py-4">
-                        ${campaign.revenue?.toLocaleString() || '0'}
+                        {formatCurrency(campaign.revenue || 0, currency)}
                       </td>
                       <td className="text-right text-white text-sm py-4">
                         <span className={`${
                           ((campaign.revenue || 0) / (campaign.recipients_count || 1)) > 0.30 ? 'text-green-300' : 
                           ((campaign.revenue || 0) / (campaign.recipients_count || 1)) > 0.10 ? 'text-yellow-300' : 'text-red-300'
                         }`}>
-                          ${((campaign.revenue || 0) / (campaign.recipients_count || 1)).toFixed(2)}
+                          {formatCurrency((campaign.revenue || 0) / (campaign.recipients_count || 1), currency)}
                         </span>
                       </td>
                     </tr>
@@ -2499,7 +2502,7 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
                       orientation="left"
                       tick={{ fill: 'rgba(255,255,255,0.7)', fontSize: 12 }}
                       axisLine={{ stroke: 'rgba(255,255,255,0.2)' }}
-                      tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
+                      tickFormatter={(value) => `${getCurrencySymbol(currency)}${(value / 1000).toFixed(0)}k`}
                     />
                     <YAxis 
                       yAxisId="recipients"
@@ -2516,7 +2519,7 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
                         color: 'white'
                       }}
                       formatter={(value: number, name: string) => [
-                        name === 'revenue' ? `$${value.toLocaleString()}` : `${value.toLocaleString()}`,
+                        name === 'revenue' ? formatCurrency(value, currency) : `${value.toLocaleString()}`,
                         name === 'revenue' ? 'Flow Revenue' : 'Recipients'
                       ]}
                     />
@@ -2572,7 +2575,7 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
                     <YAxis 
                       tick={{ fill: 'rgba(255,255,255,0.7)', fontSize: 12 }}
                       axisLine={{ stroke: 'rgba(255,255,255,0.2)' }}
-                      tickFormatter={(value) => `$${value.toFixed(2)}`}
+                      tickFormatter={(value) => formatCurrency(value, currency)}
                     />
                     <Tooltip 
                       contentStyle={{
@@ -2581,7 +2584,7 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
                         borderRadius: '8px',
                         color: 'white'
                       }}
-                      formatter={(value: number) => [`$${value.toFixed(2)}`, 'Revenue Per Recipient']}
+                      formatter={(value: number) => [formatCurrency(value, currency), 'Revenue Per Recipient']}
                     />
                     <Line 
                       type="monotone" 
@@ -2649,7 +2652,7 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
                            </div>
                          </div>
                        </td>
-                        <td className="text-right text-white text-sm py-3 px-2">${(flow.revenue || 0).toLocaleString()}</td>
+                        <td className="text-right text-white text-sm py-3 px-2">{formatCurrency(flow.revenue || 0, currency)}</td>
                         <td className="text-right text-white text-sm py-3 px-2">{((flow.open_rate || 0) * 100).toFixed(1)}%</td>
                         <td className="text-right text-white text-sm py-3 px-2">{(calculatePreciseClickRate(flow) * 100).toFixed(2)}%</td>
                         <td className="text-right text-white text-sm py-3 px-2">{(flow.weeklyRecipients || 0).toLocaleString()}</td>
@@ -2727,7 +2730,7 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
                                         <div className="flex items-center gap-4 text-xs">
                                           <span className="text-white/60">Opens: <span className="text-white">{email.opens || 0}</span></span>
                                           <span className="text-white/60">Clicks: <span className="text-white">{email.clicks || 0}</span></span>
-                                          <span className="text-white/60">Revenue: <span className="text-white">${(email.revenue || 0).toLocaleString()}</span></span>
+                                          <span className="text-white/60">Revenue: <span className="text-white">{formatCurrency(email.revenue || 0, currency)}</span></span>
                                           <span className="text-white/60">OR: <span className="text-white">{(email.open_rate * 100)?.toFixed(1) || '0.0'}%</span></span>
                                         </div>
                                       </div>
@@ -3327,7 +3330,7 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
                     <div className="flex justify-between text-xs">
                       <span className="text-white/60">Revenue</span>
                       <span className="text-white font-semibold">
-                        ${campaign.revenue?.toLocaleString() || '0'}
+                        {formatCurrency(campaign.revenue || 0, currency)}
                       </span>
                     </div>
                     
@@ -3489,7 +3492,7 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
                   </div>
                   <div className="bg-white/5 rounded p-2 text-center">
                     <div className="text-white/60 text-xs">Revenue</div>
-                    <div className="text-white font-bold text-sm">${(selectedCreative.revenue || 0).toLocaleString()}</div>
+                    <div className="text-white font-bold text-sm">{formatCurrency(selectedCreative.revenue || 0, currency)}</div>
                   </div>
                 </div>
               </div>
