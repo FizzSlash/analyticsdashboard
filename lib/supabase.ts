@@ -111,6 +111,9 @@ export interface Client {
   share_expires_at?: string
   share_last_accessed?: string
   share_view_count?: number
+  conversion_metric_id?: string
+  conversion_metric_name?: string
+  conversion_metric_integration?: string
 }
 
 export interface CampaignMetric {
