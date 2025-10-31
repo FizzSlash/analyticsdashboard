@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useAuth } from '@/components/auth/auth-provider'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { OpsCalendar } from '@/components/ops/ops-calendar'
+import { OpsPipeline } from '@/components/ops/ops-pipeline'
 import { 
   Settings, 
   ArrowLeft, 
@@ -365,18 +366,10 @@ export default function OperationsPage({ params }: PageProps) {
 
           {/* Pipeline Tab */}
           {activeTab === 'pipeline' && (
-            <Card className="bg-white/10 backdrop-blur-md border-white/20 shadow-xl">
-              <CardHeader>
-                <CardTitle className="text-white">Campaign Pipeline</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-white/60 text-center py-12">
-                  <Columns className="h-16 w-16 mx-auto mb-4 text-white/40" />
-                  <p className="text-lg">Kanban board coming in Task 8-11</p>
-                  <p className="text-sm mt-2">Drag & drop campaigns between status columns</p>
-                </div>
-              </CardContent>
-            </Card>
+            <OpsPipeline 
+              clients={clients}
+              selectedClient={selectedClient}
+            />
           )}
 
           {/* Content Hub Tab */}
