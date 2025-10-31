@@ -1,12 +1,29 @@
 'use client'
 
 import { useState } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
+import {
+  DndContext,
+  DragOverlay,
+  closestCorners,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragStartEvent,
+  DragEndEvent,
+  useDroppable,
+} from '@dnd-kit/core'
 import { 
-  Calendar as CalendarIcon,
+  useSortable,
+  SortableContext,
+  verticalListSortingStrategy
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
+import { 
   ChevronLeft,
   ChevronRight,
-  X
+  X,
+  GripVertical
 } from 'lucide-react'
 
 interface Campaign {
@@ -26,19 +43,144 @@ interface OpsCalendarProps {
   selectedClient: string
 }
 
+// Draggable Campaign Card
+function DraggableCampaignCard({ campaign }: { campaign: Campaign }) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: campaign.id })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  }
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'strategy': return 'bg-gray-100 text-gray-700 border-gray-300'
+      case 'copy': return 'bg-blue-100 text-blue-700 border-blue-300'
+      case 'design': return 'bg-purple-100 text-purple-700 border-purple-300'
+      case 'qa': return 'bg-yellow-100 text-yellow-700 border-yellow-300'
+      case 'client_approval': return 'bg-orange-100 text-orange-700 border-orange-300'
+      case 'approved': return 'bg-green-100 text-green-700 border-green-300'
+      case 'scheduled': return 'bg-teal-100 text-teal-700 border-teal-300'
+      case 'sent': return 'bg-gray-500 text-white border-gray-600'
+      default: return 'bg-gray-100 text-gray-600 border-gray-300'
+    }
+  }
+
+  const getPriorityEmoji = (priority: string) => {
+    switch (priority) {
+      case 'urgent': return '🔴'
+      case 'high': return '🟡'
+      default: return ''
+    }
+  }
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={{
+        ...style,
+        borderLeftWidth: '4px',
+        borderLeftColor: campaign.client_color,
+        backgroundColor: campaign.campaign_type === 'sms' ? '#FEF9C3' : '#EFF6FF'
+      }}
+      {...attributes}
+      {...listeners}
+      className="p-2 text-xs rounded border cursor-grab active:cursor-grabbing hover:shadow-md transition-all"
+    >
+      <div className="flex items-start justify-between gap-1">
+        <div className="flex-1 min-w-0">
+          <div className="font-semibold text-gray-800 truncate flex items-center gap-1">
+            {getPriorityEmoji(campaign.priority)}
+            {campaign.campaign_name}
+          </div>
+          <div className="text-gray-600 text-xs mt-0.5">
+            {campaign.client_name}
+          </div>
+          <div className="text-gray-600 text-xs">
+            {campaign.send_date.toLocaleTimeString('en-US', { 
+              hour: 'numeric', 
+              minute: '2-digit',
+              hour12: true 
+            })}
+          </div>
+          <div className={`inline-block px-2 py-0.5 rounded-full text-xs mt-1 border ${getStatusColor(campaign.status)}`}>
+            {campaign.status.replace('_', ' ')}
+          </div>
+        </div>
+        <GripVertical className="h-3 w-3 text-gray-400 flex-shrink-0 mt-0.5" />
+      </div>
+    </div>
+  )
+}
+
+// Droppable Calendar Day
+function DroppableDay({ 
+  date, 
+  campaigns,
+  isToday 
+}: { 
+  date: Date
+  campaigns: Campaign[]
+  isToday: boolean
+}) {
+  const { setNodeRef, isOver } = useDroppable({ 
+    id: `day-${date.toISOString()}` 
+  })
+  
+  return (
+    <div
+      ref={setNodeRef}
+      className={`min-h-[140px] max-h-[300px] p-2 transition-colors ${
+        isOver ? 'bg-white/20 ring-2 ring-white/40' : 'bg-white/5 hover:bg-white/10'
+      }`}
+    >
+      <div className="flex justify-between items-center mb-2">
+        <div className={`text-sm font-medium ${
+          isToday 
+            ? 'w-6 h-6 rounded-full bg-blue-500 text-white flex items-center justify-center'
+            : 'text-white/70'
+        }`}>
+          {date.getDate()}
+        </div>
+      </div>
+      
+      {/* Scrollable campaign list - supports unlimited campaigns per day */}
+      <SortableContext items={campaigns.map(c => c.id)} strategy={verticalListSortingStrategy}>
+        <div className="space-y-1 overflow-y-auto max-h-[240px] pr-1" style={{
+          scrollbarWidth: 'thin',
+          scrollbarColor: 'rgba(255,255,255,0.3) transparent'
+        }}>
+          {campaigns.map(campaign => (
+            <DraggableCampaignCard key={campaign.id} campaign={campaign} />
+          ))}
+        </div>
+      </SortableContext>
+    </div>
+  )
+}
+
 export function OpsCalendar({ clients, selectedClient }: OpsCalendarProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date())
   const [statusFilter, setStatusFilter] = useState<string>('all')
-
-  // Mock campaign data (will be replaced with real data later)
-  const mockCampaigns: Campaign[] = [
+  const [activeId, setActiveId] = useState<string | null>(null)
+  
+  // Mock campaign data in state (will be replaced with real data later)
+  const [campaigns, setCampaigns] = useState<Campaign[]>([
     {
       id: '1',
       campaign_name: 'Black Friday Launch',
       client_id: clients[0]?.id || '1',
       client_name: clients[0]?.brand_name || 'Hydrus',
       client_color: clients[0]?.primary_color || '#3B82F6',
-      send_date: new Date(2025, 10, 24, 9, 0), // Nov 24, 9am
+      send_date: new Date(2025, 10, 24, 9, 0),
       status: 'design',
       priority: 'urgent',
       campaign_type: 'email'
@@ -93,12 +235,71 @@ export function OpsCalendar({ clients, selectedClient }: OpsCalendarProps) {
       client_id: clients[0]?.id || '1',
       client_name: clients[0]?.brand_name || 'Hydrus',
       client_color: clients[0]?.primary_color || '#3B82F6',
-      send_date: new Date(2025, 11, 1, 6, 0), // Dec 1
+      send_date: new Date(2025, 11, 1, 6, 0),
       status: 'copy',
       priority: 'urgent',
       campaign_type: 'email'
+    },
+    {
+      id: '7',
+      campaign_name: 'Holiday Strategy',
+      client_id: clients[2]?.id || '3',
+      client_name: clients[2]?.brand_name || 'Make Waves',
+      client_color: clients[2]?.primary_color || '#8B5CF6',
+      send_date: new Date(2025, 10, 20, 10, 0),
+      status: 'strategy',
+      priority: 'normal',
+      campaign_type: 'email'
     }
-  ]
+  ])
+
+  // Drag and drop sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8, // Require 8px movement before drag starts
+      },
+    })
+  )
+
+  // Drag handlers
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveId(event.active.id as string)
+  }
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event
+    setActiveId(null)
+
+    if (!over) return
+
+    const activeId = active.id as string
+    const overId = over.id as string
+
+    // Find the campaign being dragged
+    const activeCampaign = campaigns.find(c => c.id === activeId)
+    if (!activeCampaign) return
+
+    // Check if dropped on a day (id starts with "day-")
+    if (overId.startsWith('day-')) {
+      const newDate = new Date(overId.replace('day-', ''))
+      
+      // Update campaign with new date (keep same time)
+      const updatedDate = new Date(newDate)
+      updatedDate.setHours(activeCampaign.send_date.getHours())
+      updatedDate.setMinutes(activeCampaign.send_date.getMinutes())
+      
+      setCampaigns(campaigns.map(c => 
+        c.id === activeId 
+          ? { ...c, send_date: updatedDate }
+          : c
+      ))
+      
+      console.log(`✅ Campaign "${activeCampaign.campaign_name}" moved to ${updatedDate.toLocaleDateString()}`)
+    }
+  }
+
+  const activeCampaign = activeId ? campaigns.find(c => c.id === activeId) : null
 
   // Navigation
   const prevMonth = () => {
@@ -107,10 +308,6 @@ export function OpsCalendar({ clients, selectedClient }: OpsCalendarProps) {
 
   const nextMonth = () => {
     setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1))
-  }
-
-  const goToToday = () => {
-    setCurrentMonth(new Date())
   }
 
   // Generate calendar days
@@ -143,7 +340,7 @@ export function OpsCalendar({ clients, selectedClient }: OpsCalendarProps) {
   const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
   // Filter campaigns
-  const filteredCampaigns = mockCampaigns.filter(campaign => {
+  const filteredCampaigns = campaigns.filter(campaign => {
     // Filter by selected client
     if (selectedClient !== 'all' && campaign.client_id !== selectedClient) {
       return false
@@ -165,37 +362,14 @@ export function OpsCalendar({ clients, selectedClient }: OpsCalendarProps) {
     return acc
   }, {} as Record<string, Campaign[]>)
 
-  // Status colors (matching portal)
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'strategy': return 'bg-gray-100 text-gray-700 border-gray-300'
-      case 'copy': return 'bg-blue-100 text-blue-700 border-blue-300'
-      case 'design': return 'bg-purple-100 text-purple-700 border-purple-300'
-      case 'qa': return 'bg-yellow-100 text-yellow-700 border-yellow-300'
-      case 'client_approval': return 'bg-orange-100 text-orange-700 border-orange-300'
-      case 'approved': return 'bg-green-100 text-green-700 border-green-300'
-      case 'scheduled': return 'bg-teal-100 text-teal-700 border-teal-300'
-      case 'sent': return 'bg-gray-500 text-white border-gray-600'
-      default: return 'bg-gray-100 text-gray-600 border-gray-300'
-    }
-  }
-
-  const getPriorityEmoji = (priority: string) => {
-    switch (priority) {
-      case 'urgent': return '🔴'
-      case 'high': return '🟡'
-      default: return ''
-    }
-  }
-
   return (
     <div className="space-y-6">
-      {/* Unified Header with Navigation and Filters */}
+      {/* Unified Header: Navigation + Filters */}
       <Card className="bg-white/10 backdrop-blur-md border-white/20 shadow-xl">
         <CardContent className="p-4">
           <div className="flex justify-between items-center">
-            {/* Left: Navigation */}
-            <div className="flex items-center gap-3">
+            {/* Left: Month Navigation */}
+            <div className="flex items-center gap-4">
               <button 
                 onClick={prevMonth}
                 className="flex items-center gap-2 px-4 py-2 bg-white/10 border border-white/20 text-white rounded-lg hover:bg-white/20 transition-colors"
@@ -204,17 +378,9 @@ export function OpsCalendar({ clients, selectedClient }: OpsCalendarProps) {
                 Previous
               </button>
               
-              <div className="flex items-center gap-3">
-                <h2 className="text-xl font-semibold text-white">
-                  {currentMonth.toLocaleString('default', { month: 'long', year: 'numeric' })}
-                </h2>
-                <button
-                  onClick={goToToday}
-                  className="px-3 py-1 bg-blue-500/30 hover:bg-blue-500/40 text-white rounded-lg text-sm font-medium transition-colors border border-blue-400/30"
-                >
-                  Today
-                </button>
-              </div>
+              <h2 className="text-2xl font-bold text-white">
+                {currentMonth.toLocaleString('default', { month: 'long', year: 'numeric' })}
+              </h2>
               
               <button 
                 onClick={nextMonth}
@@ -225,7 +391,7 @@ export function OpsCalendar({ clients, selectedClient }: OpsCalendarProps) {
               </button>
             </div>
 
-            {/* Right: Filters and Stats */}
+            {/* Right: Filters + Stats */}
             <div className="flex items-center gap-3">
               {/* Status Filter */}
               <select
@@ -244,7 +410,7 @@ export function OpsCalendar({ clients, selectedClient }: OpsCalendarProps) {
                 <option value="sent" className="bg-gray-800">Sent</option>
               </select>
 
-              {/* Clear Filter Button */}
+              {/* Clear Filter */}
               {statusFilter !== 'all' && (
                 <button
                   onClick={() => setStatusFilter('all')}
@@ -264,84 +430,66 @@ export function OpsCalendar({ clients, selectedClient }: OpsCalendarProps) {
         </CardContent>
       </Card>
 
-      {/* Calendar Grid */}
-      <Card className="bg-white/10 backdrop-blur-md border-white/20 shadow-xl">
-        <CardContent className="p-0">
-          <div className="grid grid-cols-7 gap-px bg-white/5">
-            {/* Weekday headers */}
-            {weekdays.map(day => (
-              <div key={day} className="p-3 bg-white/5 text-center font-semibold text-white/80 text-sm">
-                {day}
-              </div>
-            ))}
-            
-            {/* Calendar days */}
-            {days.map((day, index) => {
-              const dayCampaigns = day.date ? (campaignsByDate[day.date.toDateString()] || []) : []
-              const isToday = day.date?.toDateString() === new Date().toDateString()
-              
-              return (
-                <div 
-                  key={index}
-                  className={`min-h-[140px] p-2 bg-white/5 hover:bg-white/10 transition-colors ${
-                    !day.isCurrentMonth ? 'opacity-30' : ''
-                  }`}
-                >
-                  {day.date && (
-                    <>
-                      <div className="flex justify-between items-center mb-2">
-                        <div className={`text-sm font-medium ${
-                          isToday 
-                            ? 'w-6 h-6 rounded-full bg-blue-500 text-white flex items-center justify-center'
-                            : 'text-white/70'
-                        }`}>
-                          {day.date.getDate()}
-                        </div>
-                      </div>
-                      
-                      <div className="space-y-1">
-                        {dayCampaigns.map(campaign => (
-                          <div 
-                            key={campaign.id}
-                            className="p-2 text-xs rounded border cursor-pointer hover:shadow-sm transition-all"
-                            style={{ 
-                              borderLeftWidth: '4px',
-                              borderLeftColor: campaign.client_color,
-                              backgroundColor: campaign.campaign_type === 'sms' ? '#FEF9C3' : '#EFF6FF'
-                            }}
-                          >
-                            <div className="flex items-start justify-between gap-1">
-                              <div className="flex-1 min-w-0">
-                                <div className="font-semibold text-gray-800 truncate flex items-center gap-1">
-                                  {getPriorityEmoji(campaign.priority)}
-                                  {campaign.campaign_name}
-                                </div>
-                                <div className="text-gray-600 text-xs mt-0.5">
-                                  {campaign.client_name}
-                                </div>
-                                <div className="text-gray-600 text-xs">
-                                  {campaign.send_date.toLocaleTimeString('en-US', { 
-                                    hour: 'numeric', 
-                                    minute: '2-digit',
-                                    hour12: true 
-                                  })}
-                                </div>
-                                <div className={`inline-block px-2 py-0.5 rounded-full text-xs mt-1 border ${getStatusColor(campaign.status)}`}>
-                                  {campaign.status.replace('_', ' ')}
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </>
-                  )}
+      {/* Calendar Grid with Drag & Drop */}
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCorners}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+      >
+        <Card className="bg-white/10 backdrop-blur-md border-white/20 shadow-xl">
+          <CardContent className="p-0">
+            <div className="grid grid-cols-7 gap-px bg-white/5">
+              {/* Weekday headers */}
+              {weekdays.map(day => (
+                <div key={day} className="p-3 bg-white/5 text-center font-semibold text-white/80 text-sm">
+                  {day}
                 </div>
-              )
-            })}
-          </div>
-        </CardContent>
-      </Card>
+              ))}
+              
+              {/* Calendar days */}
+              {days.map((day, index) => {
+                if (!day.date) {
+                  return (
+                    <div 
+                      key={index}
+                      className="min-h-[140px] p-2 bg-white/5 opacity-30"
+                    />
+                  )
+                }
+                
+                const dayCampaigns = campaignsByDate[day.date.toDateString()] || []
+                const isToday = day.date.toDateString() === new Date().toDateString()
+                
+                return (
+                  <DroppableDay 
+                    key={index} 
+                    date={day.date}
+                    campaigns={dayCampaigns}
+                    isToday={isToday}
+                  />
+                )
+              })}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Drag Overlay */}
+        <DragOverlay>
+          {activeCampaign ? (
+            <div className="p-2 rounded border-l-4 shadow-lg bg-white opacity-90"
+              style={{ borderLeftColor: activeCampaign.client_color }}
+            >
+              <div className="text-xs text-gray-600 font-medium mb-1">
+                {activeCampaign.client_name}
+              </div>
+              <div className="text-sm font-semibold text-gray-900">
+                {activeCampaign.campaign_name}
+              </div>
+            </div>
+          ) : null}
+        </DragOverlay>
+      </DndContext>
 
       {/* Stats */}
       <div className="grid grid-cols-4 gap-4">
@@ -387,4 +535,3 @@ export function OpsCalendar({ clients, selectedClient }: OpsCalendarProps) {
     </div>
   )
 }
-
