@@ -25,7 +25,8 @@ import {
   ChevronRight,
   X,
   GripVertical,
-  Plus
+  Plus,
+  TestTube
 } from 'lucide-react'
 
 interface Campaign {
@@ -45,6 +46,9 @@ interface Campaign {
   design_file_url?: string
   preview_url?: string
   internal_notes?: string
+  is_ab_test?: boolean
+  ab_test_variant?: string
+  ab_test_type?: string
 }
 
 interface OpsCalendarProps {
@@ -128,8 +132,15 @@ function DraggableCampaignCard({
               hour12: true 
             })}
           </div>
-          <div className={`inline-block px-2 py-0.5 rounded-full text-xs mt-1 border ${getStatusColor(campaign.status)}`}>
-            {campaign.status.replace('_', ' ')}
+          <div className="flex items-center gap-1 mt-1">
+            <div className={`inline-block px-2 py-0.5 rounded-full text-xs border ${getStatusColor(campaign.status)}`}>
+              {campaign.status.replace('_', ' ')}
+            </div>
+            {campaign.is_ab_test && (
+              <div className="inline-block px-2 py-0.5 rounded-full text-xs bg-purple-100 text-purple-700 border border-purple-300" title={`A/B Test: ${campaign.ab_test_type}`}>
+                🧪 {campaign.ab_test_variant}
+              </div>
+            )}
           </div>
         </div>
         <div {...listeners} className="cursor-grab active:cursor-grabbing">

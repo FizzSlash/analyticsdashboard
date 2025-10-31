@@ -16,7 +16,8 @@ import {
   ArrowRight,
   MessageSquare,
   Plus,
-  Upload
+  Upload,
+  TestTube
 } from 'lucide-react'
 
 interface Campaign {
@@ -36,6 +37,9 @@ interface Campaign {
   design_file_url?: string
   preview_url?: string
   internal_notes?: string
+  is_ab_test?: boolean
+  ab_test_variant?: string
+  ab_test_type?: string
 }
 
 interface ActivityLog {
@@ -380,6 +384,64 @@ export function CampaignDetailModal({
                   />
                 </div>
               </div>
+            </div>
+
+            {/* A/B Test Section */}
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                  <TestTube className="h-4 w-4" />
+                  A/B Test
+                </h3>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={campaign.is_ab_test || false}
+                    onChange={(e) => setCampaign({ 
+                      ...campaign, 
+                      is_ab_test: e.target.checked,
+                      ab_test_variant: e.target.checked ? campaign.ab_test_variant || 'A' : undefined,
+                      ab_test_type: e.target.checked ? campaign.ab_test_type || 'subject_line' : undefined
+                    })}
+                    className="rounded border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-500"
+                  />
+                  <span className="text-sm text-gray-700">Part of A/B Test</span>
+                </label>
+              </div>
+
+              {campaign.is_ab_test && (
+                <div className="grid grid-cols-2 gap-4 p-4 bg-purple-50 border border-purple-200 rounded-lg">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Variant
+                    </label>
+                    <input
+                      type="text"
+                      value={campaign.ab_test_variant || ''}
+                      onChange={(e) => setCampaign({ ...campaign, ab_test_variant: e.target.value })}
+                      placeholder="A, B, Control..."
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Testing
+                    </label>
+                    <select
+                      value={campaign.ab_test_type || 'subject_line'}
+                      onChange={(e) => setCampaign({ ...campaign, ab_test_type: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                    >
+                      <option value="subject_line">Subject Line</option>
+                      <option value="content">Email Content</option>
+                      <option value="send_time">Send Time</option>
+                      <option value="from_name">From Name</option>
+                      <option value="offer">Offer/Promotion</option>
+                    </select>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Copy & Design Links */}

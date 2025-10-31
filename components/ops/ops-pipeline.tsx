@@ -23,7 +23,7 @@ import {
 } from '@dnd-kit/sortable'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { GripVertical, Clock } from 'lucide-react'
+import { GripVertical, Clock, TestTube } from 'lucide-react'
 
 interface Campaign {
   id: string
@@ -42,6 +42,9 @@ interface Campaign {
   design_file_url?: string
   preview_url?: string
   internal_notes?: string
+  is_ab_test?: boolean
+  ab_test_variant?: string
+  ab_test_type?: string
 }
 
 interface OpsPipelineProps {
@@ -124,11 +127,18 @@ function SortableCampaignCard({
         {formatDate(campaign.send_date)}
       </div>
       
-      {campaign.campaign_type === 'sms' && (
-        <div className="mt-2 inline-block px-2 py-0.5 bg-yellow-100 text-yellow-700 text-xs rounded-full">
-          SMS
-        </div>
-      )}
+      <div className="flex items-center gap-1 mt-2">
+        {campaign.campaign_type === 'sms' && (
+          <div className="inline-block px-2 py-0.5 bg-yellow-100 text-yellow-700 text-xs rounded-full">
+            SMS
+          </div>
+        )}
+        {campaign.is_ab_test && (
+          <div className="inline-block px-2 py-0.5 bg-purple-100 text-purple-700 text-xs rounded-full border border-purple-300" title={`A/B Test: ${campaign.ab_test_type}`}>
+            🧪 {campaign.ab_test_variant}
+          </div>
+        )}
+      </div>
     </div>
   )
 }
