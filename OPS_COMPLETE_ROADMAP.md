@@ -374,12 +374,18 @@ Strategy → Copy → Design → Upload Image → Design QA → QA → Client Ap
 - ✅ Phases 1-5: Foundation, Calendar, Pipeline, Modal, Overview
 
 ### **Week 2: Essential Tools**
-- **Phase 6:** Content Hub (8 tasks)
+- **Phase 6:** Content Hub (8 tasks) ✅
   - Brand asset links (Figma, Drive, etc.)
+  - File uploads (logos, fonts, PDFs)
   - Brand guidelines
   - Copy/design notes per client
-  - Link manager (not file uploads)
-- **Phase 7:** Scope Tracker (10 tasks)
+- **Phase 7:** Dynamic Forms (10 tasks) ⭐ HIGH PRIORITY
+  - Form builder (drag & drop fields)
+  - Pre-built templates (onboarding, strategy, monthly)
+  - Client distribution & tracking
+  - Auto-populate Content Hub from responses
+  - Integration with client portal
+- **Phase 8:** Scope Tracker (10 tasks)
   - Monthly limits tracking
   - **Invoice date tracking**
   - **Monthly documentation** (initiatives, findings)
@@ -387,19 +393,19 @@ Strategy → Copy → Design → Upload Image → Design QA → QA → Client Ap
   - Overage warnings
 
 ### **Week 3: Flow & Testing**
-- **Phase 8:** Flow Management (7 tasks)
+- **Phase 9:** Flow Management (7 tasks)
   - Flow pipeline (same as campaigns)
   - Multi-email sequence builder
   - Flow approval workflow
   - Flow templates
-- **Phase 9:** A/B Test Tracker (8 tasks)
+- **Phase 10:** A/B Test Tracker (8 tasks)
   - Test configuration wizard
   - Variant management
   - Results dashboard
   - Winner declaration + insights
 
 ### **Week 4: Team Views**
-- **Phase 10:** QA/Management View (11 tasks)
+- **Phase 11:** QA/Management View (11 tasks)
   - **Design QA status** (new workflow step)
   - QA review queue
   - **Production metrics** (campaigns/flows written & designed)
