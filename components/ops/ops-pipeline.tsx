@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { CampaignDetailModal } from './campaign-detail-modal'
 import {
   DndContext,
   DragOverlay,
@@ -34,6 +35,13 @@ interface Campaign {
   status: 'strategy' | 'copy' | 'design' | 'qa' | 'client_approval' | 'approved' | 'scheduled' | 'sent'
   priority: 'low' | 'normal' | 'high' | 'urgent'
   campaign_type: 'email' | 'sms'
+  subject_line?: string
+  preview_text?: string
+  target_audience?: string
+  copy_doc_url?: string
+  design_file_url?: string
+  preview_url?: string
+  internal_notes?: string
 }
 
 interface OpsPipelineProps {
@@ -42,7 +50,13 @@ interface OpsPipelineProps {
 }
 
 // Sortable Campaign Card Component
-function SortableCampaignCard({ campaign }: { campaign: Campaign }) {
+function SortableCampaignCard({ 
+  campaign,
+  onClick
+}: { 
+  campaign: Campaign
+  onClick: () => void
+}) {
   const {
     attributes,
     listeners,
@@ -83,22 +97,26 @@ function SortableCampaignCard({ campaign }: { campaign: Campaign }) {
       ref={setNodeRef}
       style={style}
       {...attributes}
-      {...listeners}
-      className={`p-3 rounded-lg border-l-4 shadow-sm hover:shadow-md transition-all cursor-grab active:cursor-grabbing ${getPriorityColor(campaign.priority)}`}
+      className={`p-3 rounded-lg border-l-4 shadow-sm hover:shadow-md transition-all ${getPriorityColor(campaign.priority)}`}
     >
       <div className="flex items-start justify-between gap-2 mb-2">
         <div 
           className="w-2 h-2 rounded-full flex-shrink-0 mt-1"
           style={{ backgroundColor: campaign.client_color }}
         />
-        <div className="flex-1 min-w-0">
+        <div 
+          className="flex-1 min-w-0 cursor-pointer"
+          onClick={onClick}
+        >
           <div className="text-xs text-gray-600 font-medium mb-1">{campaign.client_name}</div>
           <div className="text-sm font-semibold text-gray-900 leading-tight flex items-center gap-1">
             {getPriorityEmoji(campaign.priority)}
             {campaign.campaign_name}
           </div>
         </div>
-        <GripVertical className="h-4 w-4 text-gray-400 flex-shrink-0" />
+        <div {...listeners} className="cursor-grab active:cursor-grabbing">
+          <GripVertical className="h-4 w-4 text-gray-400 flex-shrink-0" />
+        </div>
       </div>
       
       <div className="flex items-center gap-2 text-xs text-gray-600 mt-2">
@@ -138,6 +156,8 @@ function DroppableColumn({
 }
 
 export function OpsPipeline({ clients, selectedClient }: OpsPipelineProps) {
+  const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null)
+  
   // Mock campaign data (same as calendar)
   const initialCampaigns: Campaign[] = [
     {
@@ -299,6 +319,25 @@ export function OpsPipeline({ clients, selectedClient }: OpsPipelineProps) {
 
   const activeCampaign = activeId ? campaigns.find(c => c.id === activeId) : null
 
+  // Campaign modal handlers
+  const handleCampaignClick = (campaign: Campaign) => {
+    setSelectedCampaign(campaign)
+  }
+
+  const handleSaveCampaign = (updatedCampaign: Campaign) => {
+    setCampaigns(campaigns.map(c => 
+      c.id === updatedCampaign.id ? updatedCampaign : c
+    ))
+    setSelectedCampaign(null)
+    console.log('✅ Campaign saved:', updatedCampaign.campaign_name)
+  }
+
+  const handleDeleteCampaign = (campaignId: string) => {
+    setCampaigns(campaigns.filter(c => c.id !== campaignId))
+    setSelectedCampaign(null)
+    console.log('🗑️ Campaign deleted:', campaignId)
+  }
+
   return (
     <div className="space-y-6">
       {/* Pipeline Header */}
@@ -358,7 +397,11 @@ export function OpsPipeline({ clients, selectedClient }: OpsPipelineProps) {
                         </div>
                       ) : (
                         columnCampaigns.map((campaign) => (
-                          <SortableCampaignCard key={campaign.id} campaign={campaign} />
+                          <SortableCampaignCard 
+                            key={campaign.id} 
+                            campaign={campaign}
+                            onClick={() => handleCampaignClick(campaign)}
+                          />
                         ))
                       )}
                     </DroppableColumn>
@@ -424,6 +467,16 @@ export function OpsPipeline({ clients, selectedClient }: OpsPipelineProps) {
           </CardContent>
         </Card>
       </div>
+
+      {/* Campaign Detail Modal */}
+      {selectedCampaign && (
+        <CampaignDetailModal
+          campaign={selectedCampaign}
+          onClose={() => setSelectedCampaign(null)}
+          onSave={handleSaveCampaign}
+          onDelete={handleDeleteCampaign}
+        />
+      )}
     </div>
   )
 }

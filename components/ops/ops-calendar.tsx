@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
+import { CampaignDetailModal } from './campaign-detail-modal'
 import {
   DndContext,
   DragOverlay,
@@ -36,6 +37,13 @@ interface Campaign {
   status: 'strategy' | 'copy' | 'design' | 'qa' | 'client_approval' | 'approved' | 'scheduled' | 'sent'
   priority: 'low' | 'normal' | 'high' | 'urgent'
   campaign_type: 'email' | 'sms'
+  subject_line?: string
+  preview_text?: string
+  target_audience?: string
+  copy_doc_url?: string
+  design_file_url?: string
+  preview_url?: string
+  internal_notes?: string
 }
 
 interface OpsCalendarProps {
@@ -44,7 +52,13 @@ interface OpsCalendarProps {
 }
 
 // Draggable Campaign Card
-function DraggableCampaignCard({ campaign }: { campaign: Campaign }) {
+function DraggableCampaignCard({ 
+  campaign, 
+  onClick 
+}: { 
+  campaign: Campaign
+  onClick: () => void
+}) {
   const {
     attributes,
     listeners,
@@ -92,11 +106,13 @@ function DraggableCampaignCard({ campaign }: { campaign: Campaign }) {
         backgroundColor: campaign.campaign_type === 'sms' ? '#FEF9C3' : '#EFF6FF'
       }}
       {...attributes}
-      {...listeners}
-      className="p-2 text-xs rounded border cursor-grab active:cursor-grabbing hover:shadow-md transition-all"
+      className="p-2 text-xs rounded border hover:shadow-md transition-all"
     >
       <div className="flex items-start justify-between gap-1">
-        <div className="flex-1 min-w-0">
+        <div 
+          className="flex-1 min-w-0 cursor-pointer"
+          onClick={onClick}
+        >
           <div className="font-semibold text-gray-800 truncate flex items-center gap-1">
             {getPriorityEmoji(campaign.priority)}
             {campaign.campaign_name}
@@ -115,7 +131,9 @@ function DraggableCampaignCard({ campaign }: { campaign: Campaign }) {
             {campaign.status.replace('_', ' ')}
           </div>
         </div>
-        <GripVertical className="h-3 w-3 text-gray-400 flex-shrink-0 mt-0.5" />
+        <div {...listeners} className="cursor-grab active:cursor-grabbing">
+          <GripVertical className="h-3 w-3 text-gray-400 flex-shrink-0 mt-0.5" />
+        </div>
       </div>
     </div>
   )
@@ -125,11 +143,13 @@ function DraggableCampaignCard({ campaign }: { campaign: Campaign }) {
 function DroppableDay({ 
   date, 
   campaigns,
-  isToday 
+  isToday,
+  onCampaignClick
 }: { 
   date: Date
   campaigns: Campaign[]
   isToday: boolean
+  onCampaignClick: (campaign: Campaign) => void
 }) {
   const { setNodeRef, isOver } = useDroppable({ 
     id: `day-${date.toISOString()}` 
@@ -159,7 +179,11 @@ function DroppableDay({
           scrollbarColor: 'rgba(255,255,255,0.3) transparent'
         }}>
           {campaigns.map(campaign => (
-            <DraggableCampaignCard key={campaign.id} campaign={campaign} />
+            <DraggableCampaignCard 
+              key={campaign.id} 
+              campaign={campaign}
+              onClick={() => onCampaignClick(campaign)}
+            />
           ))}
         </div>
       </SortableContext>
@@ -171,6 +195,7 @@ export function OpsCalendar({ clients, selectedClient }: OpsCalendarProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date())
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [activeId, setActiveId] = useState<string | null>(null)
+  const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null)
   
   // Mock campaign data in state (will be replaced with real data later)
   const [campaigns, setCampaigns] = useState<Campaign[]>([
@@ -300,6 +325,25 @@ export function OpsCalendar({ clients, selectedClient }: OpsCalendarProps) {
   }
 
   const activeCampaign = activeId ? campaigns.find(c => c.id === activeId) : null
+
+  // Campaign modal handlers
+  const handleCampaignClick = (campaign: Campaign) => {
+    setSelectedCampaign(campaign)
+  }
+
+  const handleSaveCampaign = (updatedCampaign: Campaign) => {
+    setCampaigns(campaigns.map(c => 
+      c.id === updatedCampaign.id ? updatedCampaign : c
+    ))
+    setSelectedCampaign(null)
+    console.log('✅ Campaign saved:', updatedCampaign.campaign_name)
+  }
+
+  const handleDeleteCampaign = (campaignId: string) => {
+    setCampaigns(campaigns.filter(c => c.id !== campaignId))
+    setSelectedCampaign(null)
+    console.log('🗑️ Campaign deleted:', campaignId)
+  }
 
   // Navigation
   const prevMonth = () => {
@@ -467,6 +511,7 @@ export function OpsCalendar({ clients, selectedClient }: OpsCalendarProps) {
                     date={day.date}
                     campaigns={dayCampaigns}
                     isToday={isToday}
+                    onCampaignClick={handleCampaignClick}
                   />
                 )
               })}
@@ -532,6 +577,16 @@ export function OpsCalendar({ clients, selectedClient }: OpsCalendarProps) {
           </CardContent>
         </Card>
       </div>
+
+      {/* Campaign Detail Modal */}
+      {selectedCampaign && (
+        <CampaignDetailModal
+          campaign={selectedCampaign}
+          onClose={() => setSelectedCampaign(null)}
+          onSave={handleSaveCampaign}
+          onDelete={handleDeleteCampaign}
+        />
+      )}
     </div>
   )
 }
