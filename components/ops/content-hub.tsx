@@ -16,7 +16,11 @@ import {
   Briefcase,
   Star,
   Search,
-  Figma
+  Figma,
+  Upload,
+  Download,
+  File,
+  Image as ImageIcon
 } from 'lucide-react'
 
 interface BrandLink {
@@ -27,6 +31,17 @@ interface BrandLink {
   category: 'figma' | 'drive' | 'website' | 'competitor' | 'other'
   description?: string
   is_favorite: boolean
+}
+
+interface BrandFile {
+  id: string
+  client_id: string
+  file_name: string
+  file_url: string
+  file_type: string
+  file_size: number
+  category: 'logo' | 'font' | 'document' | 'other'
+  uploaded_at: Date
 }
 
 interface BrandGuidelines {
@@ -67,6 +82,8 @@ export function ContentHub({ clients, selectedClient }: ContentHubProps) {
   const [searchTerm, setSearchTerm] = useState('')
   const [editingLink, setEditingLink] = useState<BrandLink | null>(null)
   const [showAddLink, setShowAddLink] = useState(false)
+  const [isDragging, setIsDragging] = useState(false)
+  const [uploadingFile, setUploadingFile] = useState(false)
 
   // Get current client info
   const currentClient = clients.find(c => c.id === selectedClient)
@@ -102,6 +119,30 @@ export function ContentHub({ clients, selectedClient }: ContentHubProps) {
       category: 'website',
       description: 'Client website for reference',
       is_favorite: false
+    }
+  ])
+
+  // Mock brand files (will be from database/Supabase Storage later)
+  const [brandFiles, setBrandFiles] = useState<BrandFile[]>([
+    {
+      id: '1',
+      client_id: clients[0]?.id || '1',
+      file_name: 'hydrus-logo-main.png',
+      file_url: '#',
+      file_type: 'image/png',
+      file_size: 45000,
+      category: 'logo',
+      uploaded_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+    },
+    {
+      id: '2',
+      client_id: clients[0]?.id || '1',
+      file_name: 'Montserrat-Bold.ttf',
+      file_url: '#',
+      file_type: 'font/ttf',
+      file_size: 120000,
+      category: 'font',
+      uploaded_at: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000)
     }
   ])
 
@@ -187,6 +228,74 @@ export function ContentHub({ clients, selectedClient }: ContentHubProps) {
       l.id === linkId ? { ...l, is_favorite: !l.is_favorite } : l
     ))
   }
+
+  // File upload handlers
+  const handleFileUpload = (file: File) => {
+    setUploadingFile(true)
+    
+    // In production, upload to Supabase Storage
+    // For now, create mock file entry
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      const newFile: BrandFile = {
+        id: `file-${Date.now()}`,
+        client_id: selectedClient,
+        file_name: file.name,
+        file_url: e.target?.result as string, // In production: Supabase Storage URL
+        file_type: file.type,
+        file_size: file.size,
+        category: file.type.startsWith('font/') ? 'font' : 
+                  file.type.startsWith('image/') ? 'logo' : 
+                  'document',
+        uploaded_at: new Date()
+      }
+      setBrandFiles([...brandFiles, newFile])
+      console.log('✅ File uploaded:', file.name)
+      setUploadingFile(false)
+    }
+    reader.readAsDataURL(file)
+  }
+
+  const handleFileDrop = (e: React.DragEvent) => {
+    e.preventDefault()
+    setIsDragging(false)
+    
+    const files = Array.from(e.dataTransfer.files)
+    files.forEach(file => handleFileUpload(file))
+  }
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (files) {
+      Array.from(files).forEach(file => handleFileUpload(file))
+    }
+  }
+
+  const handleDeleteFile = (fileId: string) => {
+    if (confirm('Delete this file?')) {
+      setBrandFiles(brandFiles.filter(f => f.id !== fileId))
+      console.log('🗑️ File deleted')
+    }
+  }
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes < 1024) return bytes + ' B'
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB'
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB'
+  }
+
+  const getFileIcon = (fileType: string) => {
+    if (fileType.startsWith('image/')) return <ImageIcon className="h-5 w-5 text-blue-600" />
+    if (fileType.startsWith('font/')) return <Type className="h-5 w-5 text-purple-600" />
+    return <File className="h-5 w-5 text-gray-600" />
+  }
+
+  // Filter files
+  const filteredFiles = brandFiles.filter(file => {
+    if (selectedClient !== 'all' && file.client_id !== selectedClient) return false
+    if (searchTerm && !file.file_name.toLowerCase().includes(searchTerm.toLowerCase())) return false
+    return true
+  })
 
   const contentTabs = [
     { id: 'assets', label: 'Brand Assets', icon: LinkIcon },
@@ -282,79 +391,160 @@ export function ContentHub({ clients, selectedClient }: ContentHubProps) {
             </CardContent>
           </Card>
 
-          {/* Links Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {filteredLinks.map(link => (
-              <Card key={link.id} className={`border-2 ${getCategoryColor(link.category)}`}>
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      {getCategoryIcon(link.category)}
-                      <h3 className="font-semibold text-gray-900">{link.link_title}</h3>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => toggleFavorite(link.id)}
-                        className={`p-1 rounded transition-colors ${
-                          link.is_favorite ? 'text-yellow-500' : 'text-gray-400 hover:text-yellow-500'
-                        }`}
+          {/* Links Section */}
+          <Card className="bg-white/10 backdrop-blur-md border-white/20 shadow-xl">
+            <CardHeader>
+              <CardTitle className="text-white text-sm">Resource Links</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {filteredLinks.map(link => (
+                  <Card key={link.id} className={`border-2 ${getCategoryColor(link.category)}`}>
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          {getCategoryIcon(link.category)}
+                          <h3 className="font-semibold text-gray-900">{link.link_title}</h3>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => toggleFavorite(link.id)}
+                            className={`p-1 rounded transition-colors ${
+                              link.is_favorite ? 'text-yellow-500' : 'text-gray-400 hover:text-yellow-500'
+                            }`}
+                          >
+                            <Star className={`h-4 w-4 ${link.is_favorite ? 'fill-current' : ''}`} />
+                          </button>
+                          <button
+                            onClick={() => setEditingLink(link)}
+                            className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteLink(link.id)}
+                            className="p-1 text-gray-400 hover:text-red-600 transition-colors"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </div>
+                      
+                      {link.description && (
+                        <p className="text-gray-600 text-sm mb-3">{link.description}</p>
+                      )}
+                      
+                      <a
+                        href={link.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 text-blue-600 hover:text-blue-700 text-sm font-medium transition-colors"
                       >
-                        <Star className={`h-4 w-4 ${link.is_favorite ? 'fill-current' : ''}`} />
-                      </button>
-                      <button
-                        onClick={() => setEditingLink(link)}
-                        className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
-                      >
-                        <Edit className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteLink(link.id)}
-                        className="p-1 text-gray-400 hover:text-red-600 transition-colors"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </div>
-                  
-                  {link.description && (
-                    <p className="text-gray-600 text-sm mb-3">{link.description}</p>
-                  )}
-                  
-                  <a
-                    href={link.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 text-blue-600 hover:text-blue-700 text-sm font-medium transition-colors"
-                  >
-                    <ExternalLink className="h-3 w-3" />
-                    Open Link
-                  </a>
-                  
-                  <div className="mt-2 text-xs text-gray-500 capitalize">
-                    {link.category}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                        <ExternalLink className="h-3 w-3" />
+                        Open Link
+                      </a>
+                      
+                      <div className="mt-2 text-xs text-gray-500 capitalize">
+                        {link.category}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
 
-          {filteredLinks.length === 0 && (
-            <Card className="bg-white/10 backdrop-blur-md border-white/20 shadow-xl">
-              <CardContent className="p-12 text-center">
-                <LinkIcon className="h-16 w-16 mx-auto mb-4 text-white/40" />
-                <div className="text-white text-lg mb-2">No Links Yet</div>
-                <div className="text-white/60 text-sm mb-4">
-                  Add important links like Figma boards, Google Drives, and brand resources
+              {filteredLinks.length === 0 && (
+                <div className="text-white/60 text-center py-8">
+                  <div className="text-sm">No links yet. Click "Add Link" to get started.</div>
                 </div>
-                <button
-                  onClick={() => setShowAddLink(true)}
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
-                >
-                  Add First Link
-                </button>
-              </CardContent>
-            </Card>
-          )}
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Files Section */}
+          <Card className="bg-white/10 backdrop-blur-md border-white/20 shadow-xl">
+            <CardHeader>
+              <CardTitle className="text-white text-sm">Files (Logos, Fonts, Docs)</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* File Upload Area */}
+              <div
+                onDrop={handleFileDrop}
+                onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                onDragLeave={() => setIsDragging(false)}
+                className={`border-2 border-dashed rounded-lg p-8 text-center transition-all ${
+                  isDragging 
+                    ? 'border-blue-500 bg-blue-500/10' 
+                    : 'border-white/30 bg-white/5 hover:bg-white/10'
+                }`}
+              >
+                <Upload className={`h-12 w-12 mx-auto mb-4 ${
+                  isDragging ? 'text-blue-400' : 'text-white/40'
+                }`} />
+                <div className="text-sm text-white mb-2">
+                  <label htmlFor="file-upload-content" className="cursor-pointer text-blue-400 hover:text-blue-300 font-medium">
+                    Click to upload
+                  </label>
+                  {' '}or drag and drop
+                </div>
+                <div className="text-xs text-white/60">
+                  Logos (PNG, SVG), Fonts (TTF, OTF, WOFF), Documents (PDF)
+                </div>
+                <input
+                  id="file-upload-content"
+                  type="file"
+                  multiple
+                  onChange={handleFileSelect}
+                  className="hidden"
+                />
+              </div>
+
+              {/* Files List */}
+              {filteredFiles.length > 0 && (
+                <div className="space-y-2">
+                  {filteredFiles.map(file => (
+                    <div
+                      key={file.id}
+                      className="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-lg hover:shadow-sm transition-all"
+                    >
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        {getFileIcon(file.file_type)}
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium text-gray-900 truncate">{file.file_name}</div>
+                          <div className="text-xs text-gray-500">
+                            {formatFileSize(file.file_size)} • {file.uploaded_at.toLocaleDateString()}
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center gap-2">
+                        <a
+                          href={file.file_url}
+                          download={file.file_name}
+                          className="p-2 text-gray-400 hover:text-blue-600 transition-colors"
+                          title="Download"
+                        >
+                          <Download className="h-4 w-4" />
+                        </a>
+                        <button
+                          onClick={() => handleDeleteFile(file.id)}
+                          className="p-2 text-gray-400 hover:text-red-600 transition-colors"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {uploadingFile && (
+                <div className="text-center py-4">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
+                  <div className="text-white/60 text-sm mt-2">Uploading...</div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
       )}
 
