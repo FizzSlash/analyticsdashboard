@@ -1306,8 +1306,8 @@ function CallEditorModal({
   })
 
   const handleSubmit = () => {
-    if (!formData.attendees || !formData.call_summary) {
-      alert('Please fill in attendees and call summary')
+    if (!formData.attendees) {
+      alert('Please fill in attendees')
       return
     }
     onSave(call ? { ...(call as CallNote), ...formData } : formData)
@@ -1355,6 +1355,13 @@ function CallEditorModal({
         </CardHeader>
 
         <CardContent className="flex-1 overflow-y-auto p-6 space-y-4">
+          {/* Workflow Helper */}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+            <div className="text-sm text-blue-900">
+              <strong>Workflow:</strong> Create call with agenda before call → After call, click Edit to add recording, notes, and action items
+            </div>
+          </div>
+
           {/* Call Date/Time */}
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -1392,59 +1399,68 @@ function CallEditorModal({
             </div>
           </div>
 
-          {/* Attendees */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Attendees *
-            </label>
-            <input
-              type="text"
-              value={formData.attendees}
-              onChange={(e) => setFormData({ ...formData, attendees: e.target.value })}
-              placeholder="Sarah (PM), Mike (Copywriter), Jamie (Client)"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-              autoFocus
-            />
+          <div className="border-b border-gray-200 pb-4">
+            <div className="text-xs font-semibold text-gray-500 uppercase mb-3">Before Call</div>
+            
+            {/* Attendees */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Attendees *
+              </label>
+              <input
+                type="text"
+                value={formData.attendees}
+                onChange={(e) => setFormData({ ...formData, attendees: e.target.value })}
+                placeholder="Sarah (PM), Mike (Copywriter), Jamie (Client)"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                autoFocus
+              />
+            </div>
+
+            {/* Agenda Link */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Agenda Link (Google Doc)
+              </label>
+              <input
+                type="url"
+                value={formData.agenda_url}
+                onChange={(e) => setFormData({ ...formData, agenda_url: e.target.value })}
+                placeholder="https://docs.google.com/document/d/..."
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              />
+              <div className="text-xs text-gray-500 mt-1">Add your call agenda before the meeting</div>
+            </div>
           </div>
 
-          {/* Agenda Link */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Agenda Link (Google Doc)
-            </label>
-            <input
-              type="url"
-              value={formData.agenda_url}
-              onChange={(e) => setFormData({ ...formData, agenda_url: e.target.value })}
-              placeholder="https://docs.google.com/document/d/..."
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
+            <div className="text-xs font-semibold text-gray-500 uppercase mb-3">After Call</div>
 
-          {/* Recording Link */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Recording Link (Optional)
-            </label>
-            <input
-              type="url"
-              value={formData.recording_url}
-              onChange={(e) => setFormData({ ...formData, recording_url: e.target.value })}
-              placeholder="https://zoom.us/rec/share/..."
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-            />
+            {/* Recording Link */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Recording Link
+              </label>
+              <input
+                type="url"
+                value={formData.recording_url}
+                onChange={(e) => setFormData({ ...formData, recording_url: e.target.value })}
+                placeholder="https://zoom.us/rec/share/..."
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
           </div>
 
           {/* Call Summary */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Call Summary *
+              Call Summary (Add after call)
             </label>
             <textarea
               value={formData.call_summary}
               onChange={(e) => setFormData({ ...formData, call_summary: e.target.value })}
               rows={4}
-              placeholder="What was discussed during the call..."
+              placeholder="Leave blank before call. After call, add summary of what was discussed..."
               className="w-full px-3 py-2 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
@@ -1452,13 +1468,13 @@ function CallEditorModal({
           {/* Internal Notes */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Internal Notes (Team Only)
+              Internal Notes (Add after call)
             </label>
             <textarea
               value={formData.internal_notes}
               onChange={(e) => setFormData({ ...formData, internal_notes: e.target.value })}
               rows={3}
-              placeholder="Internal observations, follow-up items, client feedback..."
+              placeholder="Internal observations, upsell opportunities, client mood, follow-up needed..."
               className="w-full px-3 py-2 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
@@ -1467,7 +1483,7 @@ function CallEditorModal({
           <div>
             <div className="flex items-center justify-between mb-2">
               <label className="block text-sm font-medium text-gray-700">
-                Action Items
+                Action Items (Add after call)
               </label>
               <button
                 type="button"
@@ -1499,6 +1515,12 @@ function CallEditorModal({
                 </div>
               ))}
             </div>
+
+            {formData.action_items.length === 0 && (
+              <div className="text-xs text-gray-500 italic">
+                Add action items after the call to track follow-up tasks
+              </div>
+            )}
           </div>
 
           <div className="flex gap-3 pt-4">
