@@ -4,7 +4,18 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/components/auth/auth-provider'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Settings, ArrowLeft } from 'lucide-react'
+import { 
+  Settings, 
+  ArrowLeft, 
+  BarChart3, 
+  Calendar, 
+  Columns, 
+  FolderOpen, 
+  Target,
+  X
+} from 'lucide-react'
+
+type OpsTab = 'overview' | 'calendar' | 'pipeline' | 'content' | 'scope'
 
 interface PageProps {
   params: {
@@ -17,8 +28,19 @@ export default function OperationsPage({ params }: PageProps) {
   const [clients, setClients] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [activeTab, setActiveTab] = useState<OpsTab>('overview')
+  const [selectedClient, setSelectedClient] = useState<string>('all') // 'all' or client ID
   const router = useRouter()
   const { supabase, loading: authLoading } = useAuth()
+
+  // Define tabs (matching portal style)
+  const opsTabs = [
+    { id: 'overview', label: 'Overview', icon: BarChart3 },
+    { id: 'calendar', label: 'Calendar', icon: Calendar },
+    { id: 'pipeline', label: 'Pipeline', icon: Columns },
+    { id: 'content', label: 'Content Hub', icon: FolderOpen },
+    { id: 'scope', label: 'Scope', icon: Target }
+  ]
 
   useEffect(() => {
     async function loadData() {
@@ -170,7 +192,59 @@ export default function OperationsPage({ params }: PageProps) {
       <div className="relative z-10">
         <div className="max-w-7xl mx-auto px-6 py-8">
           
-          {/* Welcome Card */}
+          {/* Navigation Tabs & Client Selector */}
+          <div className="flex items-center justify-between gap-4 mb-6">
+            {/* Tabs */}
+            <div className="flex gap-3 p-2 bg-white/5 backdrop-blur-sm rounded-2xl border border-white/20 shadow-lg flex-1">
+              {opsTabs.map(tab => {
+                const Icon = tab.icon
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id as OpsTab)}
+                    className={`
+                      flex items-center gap-3 px-6 py-4 rounded-xl text-sm font-semibold transition-all duration-300 backdrop-blur-sm
+                      ${activeTab === tab.id 
+                        ? 'bg-white/30 text-white shadow-lg border border-white/40 transform scale-105' 
+                        : 'text-white/80 hover:text-white hover:bg-white/15 hover:scale-102 hover:shadow-md'
+                      }
+                    `}
+                  >
+                    <Icon className="h-5 w-5" />
+                    {tab.label}
+                  </button>
+                )
+              })}
+            </div>
+
+            {/* Client Selector */}
+            <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-2 shadow-lg">
+              <select
+                value={selectedClient}
+                onChange={(e) => setSelectedClient(e.target.value)}
+                className="bg-white/10 backdrop-blur-sm border border-white/20 text-white rounded-lg px-4 py-3 pr-10 font-semibold focus:outline-none focus:ring-2 focus:ring-white/40 focus:border-white/40 cursor-pointer min-w-[200px]"
+                style={{
+                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
+                  backgroundPosition: 'right 0.75rem center',
+                  backgroundRepeat: 'no-repeat',
+                  backgroundSize: '1.25rem',
+                  appearance: 'none'
+                }}
+              >
+                <option value="all" className="bg-gray-800 text-white">All Clients</option>
+                {clients.map(client => (
+                  <option key={client.id} value={client.id} className="bg-gray-800 text-white">
+                    {client.brand_name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Tab Content */}
+          {activeTab === 'overview' && (
+            <div className="space-y-6">
+              {/* Welcome Card */}
           <Card className="bg-white/10 backdrop-blur-md border-white/20 shadow-xl">
             <CardHeader>
               <CardTitle className="text-white text-xl">
@@ -209,7 +283,23 @@ export default function OperationsPage({ params }: PageProps) {
           {/* Clients List (Temporary - will be replaced with tabs) */}
           <Card className="bg-white/10 backdrop-blur-md border-white/20 shadow-xl mt-6">
             <CardHeader>
-              <CardTitle className="text-white">Your Clients ({clients.length})</CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-white">
+                  {selectedClient === 'all' 
+                    ? `All Clients (${clients.length})`
+                    : `${clients.find(c => c.id === selectedClient)?.brand_name || 'Client'} Campaigns`
+                  }
+                </CardTitle>
+                {selectedClient !== 'all' && (
+                  <button
+                    onClick={() => setSelectedClient('all')}
+                    className="text-white/60 hover:text-white text-sm flex items-center gap-2 transition-colors"
+                  >
+                    <X className="h-4 w-4" />
+                    Clear Filter
+                  </button>
+                )}
+              </div>
             </CardHeader>
             <CardContent>
               {clients.length === 0 ? (
@@ -224,7 +314,9 @@ export default function OperationsPage({ params }: PageProps) {
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {clients.map((client) => (
+                  {clients
+                    .filter(client => selectedClient === 'all' || client.id === selectedClient)
+                    .map((client) => (
                     <div
                       key={client.id}
                       className="bg-white/5 hover:bg-white/10 p-4 rounded-lg border border-white/20 transition-all cursor-pointer"
@@ -253,12 +345,78 @@ export default function OperationsPage({ params }: PageProps) {
             </CardContent>
           </Card>
 
-          {/* Status Info */}
-          <div className="mt-6 text-center">
-            <p className="text-white/60 text-sm">
-              🚧 Task 1 Complete • Tabs and features coming in Tasks 2-20...
-            </p>
-          </div>
+              {/* Status Info */}
+              <div className="mt-6 text-center">
+                <p className="text-white/60 text-sm">
+                  ✅ Task 1 & 2 Complete • Calendar, Pipeline, and more coming soon...
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Calendar Tab */}
+          {activeTab === 'calendar' && (
+            <Card className="bg-white/10 backdrop-blur-md border-white/20 shadow-xl">
+              <CardHeader>
+                <CardTitle className="text-white">Campaign Calendar</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-white/60 text-center py-12">
+                  <Calendar className="h-16 w-16 mx-auto mb-4 text-white/40" />
+                  <p className="text-lg">Calendar view coming in Task 4-7</p>
+                  <p className="text-sm mt-2">Will show campaigns by date with status badges</p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Pipeline Tab */}
+          {activeTab === 'pipeline' && (
+            <Card className="bg-white/10 backdrop-blur-md border-white/20 shadow-xl">
+              <CardHeader>
+                <CardTitle className="text-white">Campaign Pipeline</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-white/60 text-center py-12">
+                  <Columns className="h-16 w-16 mx-auto mb-4 text-white/40" />
+                  <p className="text-lg">Kanban board coming in Task 8-11</p>
+                  <p className="text-sm mt-2">Drag & drop campaigns between status columns</p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Content Hub Tab */}
+          {activeTab === 'content' && (
+            <Card className="bg-white/10 backdrop-blur-md border-white/20 shadow-xl">
+              <CardHeader>
+                <CardTitle className="text-white">Content Hub</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-white/60 text-center py-12">
+                  <FolderOpen className="h-16 w-16 mx-auto mb-4 text-white/40" />
+                  <p className="text-lg">Content management coming soon</p>
+                  <p className="text-sm mt-2">Store assets, brand guidelines, and client notes</p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Scope Tab */}
+          {activeTab === 'scope' && (
+            <Card className="bg-white/10 backdrop-blur-md border-white/20 shadow-xl">
+              <CardHeader>
+                <CardTitle className="text-white">Scope Tracking</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-white/60 text-center py-12">
+                  <Target className="h-16 w-16 mx-auto mb-4 text-white/40" />
+                  <p className="text-lg">Scope management coming soon</p>
+                  <p className="text-sm mt-2">Track monthly campaign limits and usage</p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
         </div>
       </div>
