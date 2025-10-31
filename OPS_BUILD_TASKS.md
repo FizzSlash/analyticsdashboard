@@ -4,6 +4,8 @@
 
 **Design Language:** Match existing portal (glassmorphism, white/10 backgrounds, backdrop-blur)
 
+**Route:** `/agency/[slug]/ops` (matches existing structure like `/agency/[slug]/admin`)
+
 ---
 
 ## ✅ Task Checklist

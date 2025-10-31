@@ -6,18 +6,24 @@ import { useAuth } from '@/components/auth/auth-provider'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Settings, ArrowLeft } from 'lucide-react'
 
-export default function OperationsPage() {
+interface PageProps {
+  params: {
+    slug: string
+  }
+}
+
+export default function OperationsPage({ params }: PageProps) {
   const [agency, setAgency] = useState<any>(null)
   const [clients, setClients] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
-  const { supabase, loading: authLoading } = useAuth() // Use centralized Supabase client
+  const { supabase, loading: authLoading } = useAuth()
 
   useEffect(() => {
     async function loadData() {
       try {
-        console.log('OPS: Loading operations dashboard data')
+        console.log('OPS: Loading operations dashboard for agency:', params.slug)
 
         // Wait for auth to finish loading
         if (authLoading) {
@@ -31,16 +37,17 @@ export default function OperationsPage() {
           return
         }
 
-        // For now, we'll get the first agency (you can make this dynamic later)
+        // Get agency data using slug from URL (same as admin page)
         const { data: agencyData, error: agencyError } = await supabase
           .from('agencies')
           .select('*')
-          .limit(1)
+          .eq('agency_slug', params.slug)
           .single()
 
         console.log('OPS: Agency data:', { agencyData, agencyError })
 
         if (agencyError || !agencyData) {
+          console.error('OPS: Agency not found')
           setError('Agency not found')
           setLoading(false)
           return
@@ -73,7 +80,7 @@ export default function OperationsPage() {
     }
 
     loadData()
-  }, [supabase, authLoading])
+  }, [params.slug, supabase, authLoading])
 
   // Use agency branding colors (same pattern as client dashboard)
   const primaryColor = agency?.primary_color || '#3B82F6'
@@ -97,10 +104,10 @@ export default function OperationsPage() {
         <div className="text-center">
           <p className="text-red-600 mb-4">{error}</p>
           <button 
-            onClick={() => window.location.reload()}
+            onClick={() => router.push(`/agency/${params.slug}/admin`)}
             className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
           >
-            Retry
+            Go to Admin Dashboard
           </button>
         </div>
       </div>
@@ -123,9 +130,9 @@ export default function OperationsPage() {
             <div className="flex items-center gap-4">
               {/* Back Button */}
               <button
-                onClick={() => router.push('/')}
+                onClick={() => router.push(`/agency/${params.slug}/admin`)}
                 className="p-2 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-lg transition-colors border border-white/20"
-                title="Back to home"
+                title="Back to admin"
               >
                 <ArrowLeft className="h-5 w-5 text-white" />
               </button>
@@ -134,7 +141,7 @@ export default function OperationsPage() {
               <div>
                 <h1 className="text-3xl font-bold text-white">Operations Dashboard</h1>
                 <p className="text-blue-100 text-lg">
-                  Internal campaign & workflow management
+                  {agency?.agency_name || 'Agency'} • Internal campaign & workflow management
                 </p>
               </div>
             </div>
@@ -147,7 +154,11 @@ export default function OperationsPage() {
               </div>
 
               {/* Settings Icon */}
-              <button className="p-3 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-xl transition-colors border border-white/20">
+              <button 
+                onClick={() => router.push(`/agency/${params.slug}/admin`)}
+                className="p-3 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-xl transition-colors border border-white/20"
+                title="Agency settings"
+              >
                 <Settings className="h-5 w-5 text-white" />
               </button>
             </div>
@@ -205,7 +216,7 @@ export default function OperationsPage() {
                 <div className="text-white/60 text-center py-8">
                   <p>No clients found. Add clients in the agency admin dashboard.</p>
                   <button
-                    onClick={() => router.push(`/agency/${agency?.agency_slug}/admin`)}
+                    onClick={() => router.push(`/agency/${params.slug}/admin`)}
                     className="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
                   >
                     Go to Admin Dashboard
@@ -222,7 +233,7 @@ export default function OperationsPage() {
                         <div 
                           className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-lg"
                           style={{ 
-                            backgroundColor: client.primary_color || '#3B82F6'
+                            backgroundColor: client.primary_color || primaryColor
                           }}
                         >
                           {client.brand_name.charAt(0)}
@@ -245,7 +256,7 @@ export default function OperationsPage() {
           {/* Status Info */}
           <div className="mt-6 text-center">
             <p className="text-white/60 text-sm">
-              🚧 Tabs and features coming in next tasks...
+              🚧 Task 1 Complete • Tabs and features coming in Tasks 2-20...
             </p>
           </div>
 
