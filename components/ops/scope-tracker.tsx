@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { ScopeDetailModal } from './scope-detail-modal'
 import { 
   Target,
   TrendingUp,
@@ -268,39 +269,19 @@ export function ScopeTracker({ clients, selectedClient, campaigns }: ScopeTracke
         </Card>
       </div>
 
-      {/* Client Detail Modal - Coming in Tasks 32-35 */}
+      {/* Client Detail Modal */}
       {selectedClientDetail && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <Card className="bg-white w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl">
-            <CardHeader className="border-b border-gray-200">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-gray-900">
-                  {clients.find(c => c.id === selectedClientDetail)?.brand_name} - Scope Details
-                </CardTitle>
-                <button 
-                  onClick={() => setSelectedClientDetail(null)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  ✕
-                </button>
-              </div>
-            </CardHeader>
-            <CardContent className="flex-1 overflow-y-auto p-6">
-              <div className="text-center py-12 text-gray-600">
-                Scope detail view coming in Tasks 32-40...
-                <div className="mt-4 text-sm">
-                  Will show: Configuration, Monthly docs, Historical tracking
-                </div>
-                <button
-                  onClick={() => setSelectedClientDetail(null)}
-                  className="mt-4 px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg"
-                >
-                  Close
-                </button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        <ScopeDetailModal
+          client={clients.find(c => c.id === selectedClientDetail)}
+          config={scopeConfigs.find(c => c.client_id === selectedClientDetail)!}
+          usage={scopeUsage[selectedClientDetail]}
+          onSave={(config, monthlyDoc) => {
+            console.log('✅ Scope config saved:', config)
+            console.log('✅ Monthly doc saved:', monthlyDoc)
+            setSelectedClientDetail(null)
+          }}
+          onClose={() => setSelectedClientDetail(null)}
+        />
       )}
     </div>
   )
