@@ -9,6 +9,7 @@ import { OpsPipeline } from '@/components/ops/ops-pipeline'
 import { OpsOverview } from '@/components/ops/ops-overview'
 import { ContentHub } from '@/components/ops/content-hub'
 import { OpsForms } from '@/components/ops/ops-forms'
+import { ScopeTracker } from '@/components/ops/scope-tracker'
 import { 
   Settings, 
   ArrowLeft, 
@@ -395,18 +396,11 @@ export default function OperationsPage({ params }: PageProps) {
 
           {/* Scope Tab */}
           {activeTab === 'scope' && (
-            <Card className="bg-white/10 backdrop-blur-md border-white/20 shadow-xl">
-              <CardHeader>
-                <CardTitle className="text-white">Scope Tracking</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-white/60 text-center py-12">
-                  <Target className="h-16 w-16 mx-auto mb-4 text-white/40" />
-                  <p className="text-lg">Scope management coming soon</p>
-                  <p className="text-sm mt-2">Track monthly campaign limits and usage</p>
-                </div>
-              </CardContent>
-            </Card>
+            <ScopeTracker
+              clients={clients}
+              selectedClient={selectedClient}
+              campaigns={sharedCampaigns}
+            />
           )}
 
         </div>
