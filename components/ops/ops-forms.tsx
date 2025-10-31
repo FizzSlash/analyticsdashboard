@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { FormBuilderModal } from './form-builder-modal'
 import { 
   FileText,
   Plus,
@@ -48,10 +49,102 @@ interface OpsFormsProps {
 
 type FormFilter = 'all' | 'active' | 'completed' | 'draft'
 
+// Pre-built Form Templates
+const FORM_TEMPLATES = {
+  onboarding: {
+    title: "Client Onboarding Questionnaire",
+    description: "Gather essential brand information from new clients",
+    category: 'onboarding' as const,
+    fields: [
+      { id: 'brand_name', type: 'text' as const, label: 'Brand Name', required: true, placeholder: 'Enter your brand name' },
+      { id: 'email', type: 'email' as const, label: 'Primary Contact Email', required: true, placeholder: 'email@brand.com' },
+      { id: 'website', type: 'text' as const, label: 'Website URL', required: false, placeholder: 'https://yourbrand.com' },
+      { id: 'brand_colors', type: 'text' as const, label: 'Brand Colors (hex codes, comma-separated)', placeholder: '#3B82F6, #1D4ED8, #60A5FA', required: false },
+      { id: 'fonts_primary', type: 'text' as const, label: 'Primary Font', placeholder: 'Montserrat', required: false },
+      { id: 'fonts_secondary', type: 'text' as const, label: 'Secondary Font', placeholder: 'Open Sans', required: false },
+      { id: 'brand_voice', type: 'select' as const, label: 'Brand Voice', options: ['Professional', 'Friendly', 'Energetic', 'Luxurious', 'Playful', 'Technical'], required: true },
+      { id: 'key_messages', type: 'textarea' as const, label: 'Key Brand Messages (one per line)', required: false, description: 'Core messages that define your brand' },
+      { id: 'legal_requirements', type: 'textarea' as const, label: 'Legal/Compliance Requirements', required: false },
+      { id: 'design_preferences', type: 'textarea' as const, label: 'Design Preferences', description: 'Colors, layouts, image styles you prefer', required: false },
+      { id: 'design_dislikes', type: 'textarea' as const, label: 'Design Dislikes', description: 'Things to avoid in designs', required: false },
+      { id: 'target_audience', type: 'text' as const, label: 'Target Audience Description', required: true },
+      { id: 'competitors', type: 'textarea' as const, label: 'Top 3-5 Competitors (with URLs)', required: false }
+    ]
+  },
+  monthly: {
+    title: "Monthly Strategy Planning",
+    description: "Gather monthly initiatives and priorities",
+    category: 'monthly' as const,
+    fields: [
+      { id: 'initiatives', type: 'textarea' as const, label: 'Key Initiatives This Month', required: true },
+      { id: 'promotions', type: 'textarea' as const, label: 'Promotional Calendar (sales, launches, events)', required: false },
+      { id: 'themes', type: 'textarea' as const, label: 'Content Themes/Focus Areas', required: false },
+      { id: 'new_products', type: 'textarea' as const, label: 'New Products/Services to Highlight?', required: false },
+      { id: 'priority', type: 'select' as const, label: 'Priority Level This Month', options: ['High', 'Medium', 'Low'], required: true },
+      { id: 'notes', type: 'textarea' as const, label: 'Additional Requests or Notes', required: false }
+    ]
+  },
+  brief: {
+    title: "Campaign Brief",
+    description: "Gather campaign-specific requirements",
+    category: 'brief' as const,
+    fields: [
+      { id: 'campaign_name', type: 'text' as const, label: 'Campaign Name', required: true },
+      { id: 'campaign_goal', type: 'textarea' as const, label: 'Campaign Goal/Objective', required: true },
+      { id: 'target_audience', type: 'text' as const, label: 'Target Audience', required: true },
+      { id: 'key_messages', type: 'textarea' as const, label: 'Key Messages to Include', required: true },
+      { id: 'send_date', type: 'date' as const, label: 'Desired Send Date', required: false },
+      { id: 'offer', type: 'text' as const, label: 'Offer/Promotion (if applicable)', required: false },
+      { id: 'cta', type: 'text' as const, label: 'Call-to-Action', required: true },
+      { id: 'design_notes', type: 'textarea' as const, label: 'Design Direction/Inspiration', required: false },
+      { id: 'competitors_reference', type: 'textarea' as const, label: 'Competitor Examples (URLs)', required: false },
+      { id: 'additional_notes', type: 'textarea' as const, label: 'Additional Notes', required: false }
+    ]
+  },
+  demographic: {
+    title: "Audience Demographics Survey",
+    description: "Gather detailed audience insights",
+    category: 'demographic' as const,
+    fields: [
+      { id: 'age_range', type: 'select' as const, label: 'Primary Age Range', options: ['18-24', '25-34', '35-44', '45-54', '55+'], required: true },
+      { id: 'gender', type: 'select' as const, label: 'Primary Gender Focus', options: ['Female-focused', 'Male-focused', 'Gender-neutral'], required: true },
+      { id: 'income', type: 'select' as const, label: 'Income Level', options: ['$0-50K', '$50-100K', '$100-150K', '$150K+'], required: false },
+      { id: 'interests', type: 'textarea' as const, label: 'Primary Interests/Hobbies', required: false },
+      { id: 'pain_points', type: 'textarea' as const, label: 'Main Pain Points Your Product Solves', required: true },
+      { id: 'purchase_drivers', type: 'textarea' as const, label: 'What Drives Purchase Decisions?', required: false },
+      { id: 'email_frequency', type: 'select' as const, label: 'Preferred Email Frequency', options: ['1-2/week', '3-4/week', 'Daily', 'As needed'], required: false }
+    ]
+  }
+}
+
 export function OpsForms({ clients, selectedClient }: OpsFormsProps) {
   const [activeFilter, setActiveFilter] = useState<FormFilter>('all')
   const [showCreateForm, setShowCreateForm] = useState(false)
   const [selectedForm, setSelectedForm] = useState<FormTemplate | null>(null)
+  const [editingForm, setEditingForm] = useState<Partial<FormTemplate> | null>(null)
+  const [viewingResponse, setViewingResponse] = useState<string | null>(null) // client ID
+
+  // Mock form responses (will be from database later)
+  const mockResponses: Record<string, any> = {
+    'Hydrus': {
+      form_id: '1',
+      client_name: 'Hydrus',
+      submitted_at: new Date(2025, 9, 28),
+      imported: false,
+      response_data: {
+        'brand_name': 'Hydrus',
+        'email': 'hello@hydrus.com',
+        'brand_colors': '#3B82F6, #1D4ED8, #60A5FA',
+        'fonts_primary': 'Montserrat',
+        'fonts_secondary': 'Open Sans',
+        'brand_voice': 'Energetic',
+        'key_messages': '• Hydrate smarter, not harder\n• Science-backed hydration\n• Your body\'s best friend',
+        'target_audience': 'Health-conscious millennials aged 25-40',
+        'design_preferences': 'Bold colors, lifestyle product photography, clean layouts',
+        'design_dislikes': 'Stock photos with models, busy designs, red colors'
+      }
+    }
+  }
 
   // Mock forms data (will be from database later)
   const [forms, setForms] = useState<FormTemplate[]>([
@@ -132,6 +225,46 @@ export function OpsForms({ clients, selectedClient }: OpsFormsProps) {
       setForms(forms.filter(f => f.id !== formId))
       console.log('🗑️ Form deleted')
     }
+  }
+
+  const handleSaveForm = (form: Partial<FormTemplate>) => {
+    if (editingForm && editingForm.id) {
+      // Update existing
+      setForms(forms.map(f => f.id === editingForm.id ? { ...f, ...form } as FormTemplate : f))
+      console.log('✅ Form updated:', form.title)
+    } else {
+      // Create new
+      const newForm: FormTemplate = {
+        id: `form-${Date.now()}`,
+        title: form.title || '',
+        description: form.description || '',
+        category: form.category || 'custom',
+        fields: form.fields || [],
+        status: form.status || 'draft',
+        num_fields: form.fields?.length || 0,
+        assigned_clients: form.assigned_clients || [],
+        responses_count: 0,
+        total_clients: form.assigned_clients?.length || 0,
+        due_date: form.due_date,
+        created_at: new Date()
+      }
+      setForms([newForm, ...forms])
+      console.log('✅ Form created:', newForm.title)
+    }
+    setShowCreateForm(false)
+    setEditingForm(null)
+  }
+
+  const handleImportToContentHub = (clientName: string, responseData: any) => {
+    console.log('📥 Importing to Content Hub for:', clientName)
+    console.log('Data:', responseData)
+    
+    // Mark as imported (in production, this would update database)
+    if (mockResponses[clientName]) {
+      mockResponses[clientName].imported = true
+    }
+    
+    alert(`✅ Successfully imported ${clientName}'s responses to Content Hub!\n\nPopulated:\n• Brand Guidelines\n• Copy Notes\n• Design Notes\n\nGo to Content Hub to review.`)
   }
 
   return (
@@ -238,7 +371,7 @@ export function OpsForms({ clients, selectedClient }: OpsFormsProps) {
                 </button>
                 <button
                   onClick={() => {
-                    setSelectedForm(form)
+                    setEditingForm(form)
                     setShowCreateForm(true)
                   }}
                   className="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
@@ -285,75 +418,155 @@ export function OpsForms({ clients, selectedClient }: OpsFormsProps) {
         </Card>
       )}
 
-      {/* Create/Edit Form Modal - Coming in Task 66 */}
+      {/* Create/Edit Form Modal */}
       {showCreateForm && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <Card className="bg-white w-full max-w-4xl shadow-2xl">
-            <CardHeader className="border-b border-gray-200">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-gray-900">Create New Form</CardTitle>
-                <button 
-                  onClick={() => {
-                    setShowCreateForm(false)
-                    setSelectedForm(null)
-                  }}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  ✕
-                </button>
-              </div>
-            </CardHeader>
-            <CardContent className="p-6">
-              <div className="text-center py-12 text-gray-600">
-                Form builder coming in Task 66-67...
-                <div className="mt-4">
-                  <button
-                    onClick={() => {
-                      setShowCreateForm(false)
-                      setSelectedForm(null)
-                    }}
-                    className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg"
-                  >
-                    Close
-                  </button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        <FormBuilderModal
+          form={editingForm}
+          clients={clients}
+          templates={FORM_TEMPLATES}
+          onSave={handleSaveForm}
+          onClose={() => {
+            setShowCreateForm(false)
+            setEditingForm(null)
+          }}
+        />
       )}
 
-      {/* Response Viewer Modal - Coming in Task 69 */}
-      {selectedForm && !showCreateForm && (
+      {/* Response Viewer Modal */}
+      {selectedForm && !showCreateForm && !viewingResponse && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <Card className="bg-white w-full max-w-4xl shadow-2xl">
+          <Card className="bg-white w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl">
             <CardHeader className="border-b border-gray-200">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-gray-900">
-                  {selectedForm.title} - Responses
+                  {selectedForm.title} - Responses ({selectedForm.responses_count}/{selectedForm.total_clients})
                 </CardTitle>
                 <button 
                   onClick={() => setSelectedForm(null)}
                   className="text-gray-400 hover:text-gray-600"
                 >
-                  ✕
+                  <X className="h-5 w-5" />
                 </button>
               </div>
             </CardHeader>
-            <CardContent className="p-6">
-              <div className="text-center py-12 text-gray-600">
-                Response viewer coming in Task 69...
-                <div className="mt-4 text-sm">
-                  {selectedForm.responses_count} of {selectedForm.total_clients} clients have responded
-                </div>
-                <div className="mt-4">
+            <CardContent className="flex-1 overflow-y-auto p-6 space-y-3">
+              {selectedForm.assigned_clients.map(clientName => {
+                const response = mockResponses[clientName]
+                const hasResponse = !!response
+                
+                return (
+                  <Card key={clientName} className="border border-gray-200">
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold">
+                            {clientName[0]}
+                          </div>
+                          <div>
+                            <div className="font-semibold text-gray-900">{clientName}</div>
+                            {hasResponse ? (
+                              <div className="text-sm text-green-600 flex items-center gap-1">
+                                <CheckCircle className="h-3 w-3" />
+                                Submitted {response.submitted_at.toLocaleDateString()}
+                              </div>
+                            ) : (
+                              <div className="text-sm text-orange-600 flex items-center gap-1">
+                                <Clock className="h-3 w-3" />
+                                Not yet completed
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          {hasResponse ? (
+                            <>
+                              <button
+                                onClick={() => setViewingResponse(clientName)}
+                                className="px-3 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg text-sm font-medium transition-colors"
+                              >
+                                View Response
+                              </button>
+                              {!response.imported && (
+                                <button
+                                  onClick={() => handleImportToContentHub(clientName, response.response_data)}
+                                  className="px-3 py-1 bg-green-100 hover:bg-green-200 text-green-700 rounded-lg text-sm font-medium transition-colors"
+                                >
+                                  Import to Content Hub
+                                </button>
+                              )}
+                              {response.imported && (
+                                <span className="px-3 py-1 bg-green-50 text-green-700 rounded-lg text-sm border border-green-200">
+                                  ✓ Imported
+                                </span>
+                              )}
+                            </>
+                          ) : (
+                            <button className="px-3 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium transition-colors">
+                              Send Reminder
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )
+              })}
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Individual Response Viewer */}
+      {viewingResponse && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <Card className="bg-white w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl">
+            <CardHeader className="border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-gray-900">
+                  {viewingResponse}'s Response
+                </CardTitle>
+                <button 
+                  onClick={() => setViewingResponse(null)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+            </CardHeader>
+            <CardContent className="flex-1 overflow-y-auto p-6 space-y-4">
+              {selectedForm && Object.entries(mockResponses[viewingResponse]?.response_data || {}).map(([fieldId, answer]) => {
+                const field = selectedForm.fields.find((f: FormField) => f.id === fieldId)
+                if (!field) return null
+
+                return (
+                  <div key={fieldId} className="border-b border-gray-200 pb-4">
+                    <div className="text-sm font-semibold text-gray-700 mb-1">{field.label}</div>
+                    <div className="text-gray-900 whitespace-pre-wrap bg-gray-50 p-3 rounded-lg">
+                      {answer || '(No answer)'}
+                    </div>
+                  </div>
+                )
+              })}
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  onClick={() => setViewingResponse(null)}
+                  className="flex-1 px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg transition-colors"
+                >
+                  Close
+                </button>
+                {!mockResponses[viewingResponse]?.imported && (
                   <button
-                    onClick={() => setSelectedForm(null)}
-                    className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg"
+                    onClick={() => {
+                      handleImportToContentHub(viewingResponse, mockResponses[viewingResponse].response_data)
+                      setViewingResponse(null)
+                    }}
+                    className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
                   >
-                    Close
+                    Import to Content Hub
                   </button>
-                </div>
+                )}
               </div>
             </CardContent>
           </Card>
