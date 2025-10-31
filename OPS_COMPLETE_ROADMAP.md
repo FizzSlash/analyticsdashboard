@@ -374,11 +374,13 @@ Strategy → Copy → Design → Upload Image → Design QA → QA → Client Ap
 - ✅ Phases 1-5: Foundation, Calendar, Pipeline, Modal, Overview
 
 ### **Week 2: Essential Tools**
-- **Phase 6:** Content Hub (8 tasks) ✅
+- **Phase 6:** Content Hub (10 tasks) ✅
   - Brand asset links (Figma, Drive, etc.)
   - File uploads (logos, fonts, PDFs)
   - Brand guidelines
   - Copy/design notes per client
+  - **Call notes with recording links**
+  - **Action item checklists from calls**
 - **Phase 7:** Dynamic Forms (10 tasks) ⭐ HIGH PRIORITY
   - Form builder (drag & drop fields)
   - Pre-built templates (onboarding, strategy, monthly)

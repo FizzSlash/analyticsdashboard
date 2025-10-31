@@ -20,7 +20,11 @@ import {
   Upload,
   Download,
   File,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Phone,
+  CheckCircle,
+  Circle,
+  Calendar as CalendarIcon
 } from 'lucide-react'
 
 interface BrandLink {
@@ -70,12 +74,31 @@ interface DesignNotes {
   mobile_notes: string
 }
 
+interface CallNote {
+  id: string
+  client_id: string
+  call_date: Date
+  recording_url?: string
+  attendees: string
+  call_summary: string
+  action_items: CallActionItem[]
+}
+
+interface CallActionItem {
+  id: string
+  description: string
+  is_completed: boolean
+  linked_campaign_id?: string
+  assigned_to?: string
+  completed_at?: Date
+}
+
 interface ContentHubProps {
   clients: any[]
   selectedClient: string
 }
 
-type ContentTab = 'assets' | 'guidelines' | 'copy' | 'design'
+type ContentTab = 'assets' | 'guidelines' | 'copy' | 'design' | 'calls'
 
 export function ContentHub({ clients, selectedClient }: ContentHubProps) {
   const [activeTab, setActiveTab] = useState<ContentTab>('assets')
@@ -174,6 +197,61 @@ export function ContentHub({ clients, selectedClient }: ContentHubProps) {
     image_style: 'Product photography with natural lighting. Lifestyle shots preferred over product-only. Always show product in use.',
     mobile_notes: 'CTAs must be 44px min height. Test all links on mobile. Keep email width under 600px. Single column on mobile.'
   })
+
+  // Mock call notes (will be from database later)
+  const [callNotes, setCallNotes] = useState<CallNote[]>([
+    {
+      id: '1',
+      client_id: clients[0]?.id || '1',
+      call_date: new Date(2025, 9, 28, 14, 0), // Oct 28, 2pm
+      recording_url: 'https://zoom.us/rec/share/abc123',
+      attendees: 'Sarah (PM), Mike (Copywriter), Jamie (Client)',
+      call_summary: 'Discussed Q4 strategy. Client wants to focus on retention campaigns and new product launch in December. Approved Black Friday email series.',
+      action_items: [
+        {
+          id: '1-1',
+          description: 'Create Black Friday email series (3 emails)',
+          is_completed: true,
+          linked_campaign_id: '1',
+          completed_at: new Date(2025, 9, 29)
+        },
+        {
+          id: '1-2',
+          description: 'Update brand guidelines with new color palette',
+          is_completed: true,
+          completed_at: new Date(2025, 9, 29)
+        },
+        {
+          id: '1-3',
+          description: 'Schedule December product launch planning call',
+          is_completed: false,
+          assigned_to: 'Sarah'
+        }
+      ]
+    },
+    {
+      id: '2',
+      client_id: clients[0]?.id || '1',
+      call_date: new Date(2025, 9, 15, 10, 0), // Oct 15, 10am
+      recording_url: undefined,
+      attendees: 'Sarah (PM), Client (Jamie)',
+      call_summary: 'Monthly check-in. Reviewed September performance. Open rates up 12%. Client happy with results. Discussed November campaign calendar.',
+      action_items: [
+        {
+          id: '2-1',
+          description: 'Send performance report for September',
+          is_completed: true,
+          completed_at: new Date(2025, 9, 16)
+        },
+        {
+          id: '2-2',
+          description: 'Draft November campaign calendar',
+          is_completed: true,
+          completed_at: new Date(2025, 9, 20)
+        }
+      ]
+    }
+  ])
 
   // Filter links
   const filteredLinks = brandLinks.filter(link => {
@@ -297,11 +375,34 @@ export function ContentHub({ clients, selectedClient }: ContentHubProps) {
     return true
   })
 
+  // Filter calls
+  const filteredCalls = callNotes.filter(call => {
+    if (selectedClient !== 'all' && call.client_id !== selectedClient) return false
+    return true
+  })
+
+  const toggleActionItem = (callId: string, itemId: string) => {
+    setCallNotes(callNotes.map(call => {
+      if (call.id === callId) {
+        return {
+          ...call,
+          action_items: call.action_items.map(item => 
+            item.id === itemId 
+              ? { ...item, is_completed: !item.is_completed, completed_at: !item.is_completed ? new Date() : undefined }
+              : item
+          )
+        }
+      }
+      return call
+    }))
+  }
+
   const contentTabs = [
     { id: 'assets', label: 'Brand Assets', icon: LinkIcon },
     { id: 'guidelines', label: 'Brand Guidelines', icon: Palette },
     { id: 'copy', label: 'Copy Notes', icon: FileText },
-    { id: 'design', label: 'Design Notes', icon: Type }
+    { id: 'design', label: 'Design Notes', icon: Type },
+    { id: 'calls', label: 'Call Notes', icon: Phone }
   ]
 
   if (selectedClient === 'all') {
@@ -814,6 +915,145 @@ export function ContentHub({ clients, selectedClient }: ContentHubProps) {
             </button>
           </CardContent>
         </Card>
+      )}
+
+      {activeTab === 'calls' && (
+        <div className="space-y-4">
+          {filteredCalls.map(call => {
+            const completedItems = call.action_items.filter(item => item.is_completed).length
+            const totalItems = call.action_items.length
+            
+            return (
+              <Card key={call.id} className="bg-white border border-gray-200 shadow-sm">
+                <CardHeader className="pb-3">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <div className="flex items-center gap-3 mb-2">
+                        <Phone className="h-5 w-5 text-blue-600" />
+                        <CardTitle className="text-gray-900">
+                          {call.call_date.toLocaleDateString('en-US', { 
+                            weekday: 'short',
+                            month: 'short', 
+                            day: 'numeric',
+                            year: 'numeric',
+                            hour: 'numeric',
+                            minute: '2-digit'
+                          })}
+                        </CardTitle>
+                      </div>
+                      <div className="text-sm text-gray-600">
+                        Attendees: {call.attendees}
+                      </div>
+                    </div>
+                    
+                    {call.recording_url && (
+                      <a
+                        href={call.recording_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-3 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+                      >
+                        <ExternalLink className="h-3 w-3" />
+                        View Recording
+                      </a>
+                    )}
+                  </div>
+                </CardHeader>
+                
+                <CardContent className="space-y-4">
+                  {/* Call Summary */}
+                  <div>
+                    <div className="text-sm font-semibold text-gray-700 mb-2">Call Summary</div>
+                    <p className="text-gray-700 text-sm bg-gray-50 p-3 rounded-lg border border-gray-200">
+                      {call.call_summary}
+                    </p>
+                  </div>
+
+                  {/* Action Items */}
+                  {call.action_items.length > 0 && (
+                    <div>
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="text-sm font-semibold text-gray-700">
+                          Action Items ({completedItems}/{totalItems})
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {completedItems === totalItems ? (
+                            <span className="text-green-600 flex items-center gap-1">
+                              <CheckCircle className="h-3 w-3" />
+                              All Complete
+                            </span>
+                          ) : (
+                            <span>{totalItems - completedItems} remaining</span>
+                          )}
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        {call.action_items.map(item => (
+                          <div
+                            key={item.id}
+                            className={`flex items-start gap-3 p-3 rounded-lg border transition-all ${
+                              item.is_completed 
+                                ? 'bg-green-50 border-green-200' 
+                                : 'bg-white border-gray-200 hover:border-blue-300'
+                            }`}
+                          >
+                            <button
+                              onClick={() => toggleActionItem(call.id, item.id)}
+                              className="flex-shrink-0 mt-0.5"
+                            >
+                              {item.is_completed ? (
+                                <CheckCircle className="h-5 w-5 text-green-600" />
+                              ) : (
+                                <Circle className="h-5 w-5 text-gray-400 hover:text-blue-600 transition-colors" />
+                              )}
+                            </button>
+                            
+                            <div className="flex-1">
+                              <div className={`text-sm ${item.is_completed ? 'text-gray-500 line-through' : 'text-gray-900'}`}>
+                                {item.description}
+                              </div>
+                              
+                              {item.assigned_to && (
+                                <div className="text-xs text-gray-500 mt-1">
+                                  Assigned: {item.assigned_to}
+                                </div>
+                              )}
+                              
+                              {item.completed_at && (
+                                <div className="text-xs text-green-600 mt-1">
+                                  Completed {item.completed_at.toLocaleDateString()}
+                                </div>
+                              )}
+                              
+                              {item.linked_campaign_id && (
+                                <div className="text-xs text-blue-600 mt-1">
+                                  → Linked to campaign
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )
+          })}
+
+          {filteredCalls.length === 0 && (
+            <Card className="bg-white/10 backdrop-blur-md border-white/20 shadow-xl">
+              <CardContent className="p-12 text-center">
+                <Phone className="h-16 w-16 mx-auto mb-4 text-white/40" />
+                <div className="text-white text-lg mb-2">No Call Notes Yet</div>
+                <div className="text-white/60 text-sm">
+                  Add call notes to track client conversations and action items
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
       )}
 
       {/* Add/Edit Link Modal */}

@@ -4,12 +4,12 @@
 
 ---
 
-## 🗂️ PHASE 6: Content Hub (8 Tasks)
+## 🗂️ PHASE 6: Content Hub (10 Tasks)
 
 ### **Task 21: Content Hub Layout**
 - Build main content hub page structure
 - Client selector (reuse existing pattern)
-- Tab navigation: Brand Assets | Brand Guidelines | Copy Notes | Design Notes
+- Tab navigation: Brand Assets | Brand Guidelines | Copy Notes | Design Notes | Call Notes
 - Clean, organized layout
 
 ### **Task 22: Brand Assets Section (Link Manager)**
@@ -74,14 +74,38 @@
 - Find specific guidelines quickly
 - Highlight search terms
 
-### **Task 28: Content Hub Dashboard**
+### **Task 28: Call Notes Section**
+- List of all client calls
+- For each call:
+  - Call date/time
+  - Call recording link (optional URL field)
+  - Attendees (text field)
+  - Call notes/summary (textarea)
+  - Action items (checklist)
+- Add new call button
+- Chronological order (newest first)
+
+### **Task 29: Call Action Items (Checklist)**
+- Add action items to each call
+- Each item has:
+  - Description
+  - Checkbox (done/not done)
+  - Optional: Linked campaign (if action was to create campaign)
+  - Optional: Assigned to person
+- Check off when implemented
+- Show "3 of 5 completed" progress
+- Filter: Show incomplete only
+
+### **Task 30: Content Hub Dashboard**
 - Overview showing:
   - Number of links per client
   - Last updated dates
-  - Quick access to most-used resources
+  - Recent calls (last 3)
+  - Incomplete action items count
   - Incomplete guidelines warning (if missing)
+  - Quick stats per client
 
-**Deliverable:** Centralized link manager and client notes system
+**Deliverable:** Centralized link manager, client notes, and call tracking system
 
 ---
 
@@ -408,6 +432,12 @@ ops_brand_links (
   category, description, is_favorite
 )
 
+ops_brand_files (
+  id, client_id, file_name, file_url,
+  file_type, file_size, category,
+  uploaded_at
+)
+
 ops_brand_guidelines (
   id, client_id, brand_colors[], fonts,
   tone_of_voice, legal_requirements,
@@ -423,6 +453,22 @@ ops_design_notes (
   id, client_id, design_preferences,
   client_likes[], client_dislikes[],
   color_rules, image_style, mobile_notes
+)
+
+ops_call_notes (
+  id, client_id, call_date,
+  recording_url, attendees[],
+  call_summary TEXT,
+  created_at, updated_at
+)
+
+ops_call_action_items (
+  id, call_note_id, description,
+  is_completed BOOLEAN DEFAULT false,
+  linked_campaign_id UUID,
+  assigned_to TEXT,
+  completed_at TIMESTAMP,
+  created_at
 )
 ```
 
