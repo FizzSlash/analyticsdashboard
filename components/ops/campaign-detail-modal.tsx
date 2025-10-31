@@ -63,6 +63,9 @@ export function CampaignDetailModal({
 }: CampaignDetailModalProps) {
   const [campaign, setCampaign] = useState<Campaign>(initialCampaign)
   const [isSaving, setIsSaving] = useState(false)
+  const [uploadedImage, setUploadedImage] = useState<string | null>(campaign.preview_url || null)
+  const [isDragging, setIsDragging] = useState(false)
+  const isNewCampaign = campaign.id.startsWith('new-')
 
   // Mock activity log (will be from database later)
   const activityLog: ActivityLog[] = [
@@ -94,7 +97,7 @@ export function CampaignDetailModal({
   const handleSave = () => {
     setIsSaving(true)
     setTimeout(() => {
-      onSave(campaign)
+      onSave({ ...campaign, preview_url: uploadedImage || undefined })
       setIsSaving(false)
     }, 500)
   }
@@ -103,6 +106,56 @@ export function CampaignDetailModal({
     if (confirm(`Delete campaign "${campaign.campaign_name}"?`)) {
       onDelete(campaign.id)
     }
+  }
+
+  const handleFileUpload = (file: File) => {
+    // Validate file type
+    const validTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif']
+    if (!validTypes.includes(file.type)) {
+      alert('Please upload PNG, JPG, or GIF files only')
+      return
+    }
+
+    // Create preview URL (in production, upload to Supabase Storage)
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      const imageUrl = e.target?.result as string
+      setUploadedImage(imageUrl)
+      setCampaign({ ...campaign, preview_url: imageUrl })
+      console.log('✅ Image uploaded:', file.name)
+    }
+    reader.readAsDataURL(file)
+  }
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault()
+    setIsDragging(false)
+    
+    const file = e.dataTransfer.files[0]
+    if (file) {
+      handleFileUpload(file)
+    }
+  }
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault()
+    setIsDragging(true)
+  }
+
+  const handleDragLeave = () => {
+    setIsDragging(false)
+  }
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      handleFileUpload(file)
+    }
+  }
+
+  const handleRemoveImage = () => {
+    setUploadedImage(null)
+    setCampaign({ ...campaign, preview_url: undefined })
   }
 
   const getActivityIcon = (type: string) => {
@@ -137,7 +190,7 @@ export function CampaignDetailModal({
                 style={{ backgroundColor: campaign.client_color }}
               />
               <CardTitle className="text-gray-900 text-xl">
-                {campaign.campaign_name}
+                {isNewCampaign ? 'New Campaign' : campaign.campaign_name}
               </CardTitle>
             </div>
             <button
@@ -323,7 +376,7 @@ export function CampaignDetailModal({
             <div>
               <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
                 <LinkIcon className="h-4 w-4" />
-                Copy & Design
+                Copy & Design Files
               </h3>
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -341,7 +394,7 @@ export function CampaignDetailModal({
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Design File URL
+                    Design File URL (Figma)
                   </label>
                   <input
                     type="url"
@@ -351,20 +404,68 @@ export function CampaignDetailModal({
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
+              </div>
+            </div>
 
-                <div className="col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Preview URL
-                  </label>
+            {/* Campaign Image Upload */}
+            <div>
+              <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                <Upload className="h-4 w-4" />
+                Campaign Preview Image
+              </h3>
+              
+              {uploadedImage ? (
+                /* Image Preview */
+                <div className="relative">
+                  <img 
+                    src={uploadedImage} 
+                    alt="Campaign preview"
+                    className="w-full rounded-lg border border-gray-300 shadow-sm"
+                  />
+                  <button
+                    onClick={handleRemoveImage}
+                    className="absolute top-2 right-2 p-2 bg-red-600 hover:bg-red-700 text-white rounded-lg shadow-lg transition-colors"
+                    title="Remove image"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                  <div className="mt-2 text-xs text-gray-600">
+                    Click the X to remove and upload a different image
+                  </div>
+                </div>
+              ) : (
+                /* Upload Area */
+                <div
+                  onDrop={handleDrop}
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  className={`border-2 border-dashed rounded-lg p-8 text-center transition-all ${
+                    isDragging 
+                      ? 'border-blue-500 bg-blue-50' 
+                      : 'border-gray-300 bg-gray-50 hover:bg-gray-100'
+                  }`}
+                >
+                  <Upload className={`h-12 w-12 mx-auto mb-4 ${
+                    isDragging ? 'text-blue-500' : 'text-gray-400'
+                  }`} />
+                  <div className="text-sm text-gray-700 mb-2">
+                    <label htmlFor="file-upload" className="cursor-pointer text-blue-600 hover:text-blue-700 font-medium">
+                      Click to upload
+                    </label>
+                    {' '}or drag and drop
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    PNG, JPG, or GIF (recommended: 600px wide)
+                  </div>
                   <input
-                    type="url"
-                    value={campaign.preview_url || ''}
-                    onChange={(e) => setCampaign({ ...campaign, preview_url: e.target.value })}
-                    placeholder="https://preview.klaviyo.com/..."
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    id="file-upload"
+                    type="file"
+                    accept="image/png,image/jpeg,image/jpg,image/gif"
+                    onChange={handleFileSelect}
+                    className="hidden"
                   />
                 </div>
-              </div>
+              )}
             </div>
 
             {/* Internal Notes */}
@@ -433,13 +534,17 @@ Examples:
         {/* Modal Footer - Actions */}
         <div className="border-t border-gray-200 p-6 bg-gray-50 flex-shrink-0">
           <div className="flex items-center justify-between">
-            <button
-              onClick={handleDelete}
-              className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors flex items-center gap-2"
-            >
-              <Trash2 className="h-4 w-4" />
-              Delete Campaign
-            </button>
+            {!isNewCampaign ? (
+              <button
+                onClick={handleDelete}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors flex items-center gap-2"
+              >
+                <Trash2 className="h-4 w-4" />
+                Delete Campaign
+              </button>
+            ) : (
+              <div></div>
+            )}
 
             <div className="flex items-center gap-3">
               <button
@@ -454,7 +559,7 @@ Examples:
                 className="px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white rounded-lg transition-colors flex items-center gap-2"
               >
                 <Save className="h-4 w-4" />
-                {isSaving ? 'Saving...' : 'Save Changes'}
+                {isSaving ? (isNewCampaign ? 'Creating...' : 'Saving...') : (isNewCampaign ? 'Create Campaign' : 'Save Changes')}
               </button>
             </div>
           </div>

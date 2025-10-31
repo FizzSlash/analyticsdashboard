@@ -24,7 +24,8 @@ import {
   ChevronLeft,
   ChevronRight,
   X,
-  GripVertical
+  GripVertical,
+  Plus
 } from 'lucide-react'
 
 interface Campaign {
@@ -144,13 +145,16 @@ function DroppableDay({
   date, 
   campaigns,
   isToday,
-  onCampaignClick
+  onCampaignClick,
+  onAddCampaign
 }: { 
   date: Date
   campaigns: Campaign[]
   isToday: boolean
   onCampaignClick: (campaign: Campaign) => void
+  onAddCampaign: (date: Date) => void
 }) {
+  const [isHovered, setIsHovered] = useState(false)
   const { setNodeRef, isOver } = useDroppable({ 
     id: `day-${date.toISOString()}` 
   })
@@ -158,7 +162,10 @@ function DroppableDay({
   return (
     <div
       ref={setNodeRef}
-      className={`min-h-[140px] max-h-[300px] p-2 transition-colors ${
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      onDoubleClick={() => onAddCampaign(date)}
+      className={`min-h-[140px] max-h-[300px] p-2 transition-colors relative group ${
         isOver ? 'bg-white/20 ring-2 ring-white/40' : 'bg-white/5 hover:bg-white/10'
       }`}
     >
@@ -170,6 +177,17 @@ function DroppableDay({
         }`}>
           {date.getDate()}
         </div>
+        
+        {/* Plus icon on hover */}
+        {isHovered && (
+          <button
+            onClick={() => onAddCampaign(date)}
+            className="w-5 h-5 rounded-full bg-blue-500/80 hover:bg-blue-500 flex items-center justify-center text-white transition-colors"
+            title="Add campaign"
+          >
+            <Plus className="h-3 w-3" />
+          </button>
+        )}
       </div>
       
       {/* Scrollable campaign list - supports unlimited campaigns per day */}
@@ -187,6 +205,13 @@ function DroppableDay({
           ))}
         </div>
       </SortableContext>
+      
+      {/* Double-click hint on empty days */}
+      {campaigns.length === 0 && isHovered && (
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <div className="text-white/40 text-xs">Double-click to add</div>
+        </div>
+      )}
     </div>
   )
 }
@@ -331,12 +356,36 @@ export function OpsCalendar({ clients, selectedClient }: OpsCalendarProps) {
     setSelectedCampaign(campaign)
   }
 
+  const handleAddCampaign = (date: Date) => {
+    // Create new campaign with selected date
+    const newCampaign: Campaign = {
+      id: `new-${Date.now()}`,
+      campaign_name: '',
+      client_id: selectedClient === 'all' ? clients[0]?.id : selectedClient,
+      client_name: selectedClient === 'all' ? clients[0]?.brand_name : clients.find(c => c.id === selectedClient)?.brand_name || 'New Client',
+      client_color: selectedClient === 'all' ? clients[0]?.primary_color : clients.find(c => c.id === selectedClient)?.primary_color || '#3B82F6',
+      send_date: new Date(date.getFullYear(), date.getMonth(), date.getDate(), 9, 0), // Default to 9am
+      status: 'strategy',
+      priority: 'normal',
+      campaign_type: 'email'
+    }
+    setSelectedCampaign(newCampaign)
+  }
+
   const handleSaveCampaign = (updatedCampaign: Campaign) => {
-    setCampaigns(campaigns.map(c => 
-      c.id === updatedCampaign.id ? updatedCampaign : c
-    ))
+    // Check if this is a new campaign (ID starts with "new-")
+    if (updatedCampaign.id.startsWith('new-')) {
+      // Add new campaign
+      setCampaigns([...campaigns, updatedCampaign])
+      console.log('✅ Campaign created:', updatedCampaign.campaign_name)
+    } else {
+      // Update existing campaign
+      setCampaigns(campaigns.map(c => 
+        c.id === updatedCampaign.id ? updatedCampaign : c
+      ))
+      console.log('✅ Campaign saved:', updatedCampaign.campaign_name)
+    }
     setSelectedCampaign(null)
-    console.log('✅ Campaign saved:', updatedCampaign.campaign_name)
   }
 
   const handleDeleteCampaign = (campaignId: string) => {
@@ -512,6 +561,7 @@ export function OpsCalendar({ clients, selectedClient }: OpsCalendarProps) {
                     campaigns={dayCampaigns}
                     isToday={isToday}
                     onCampaignClick={handleCampaignClick}
+                    onAddCampaign={handleAddCampaign}
                   />
                 )
               })}
