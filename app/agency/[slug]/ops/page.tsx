@@ -10,6 +10,7 @@ import { OpsOverview } from '@/components/ops/ops-overview'
 import { ContentHub } from '@/components/ops/content-hub'
 import { OpsForms } from '@/components/ops/ops-forms'
 import { ScopeTracker } from '@/components/ops/scope-tracker'
+import { ABTestTracker } from '@/components/ops/ab-test-tracker'
 import { 
   Settings, 
   ArrowLeft, 
@@ -20,10 +21,11 @@ import {
   Target,
   X,
   Zap,
-  FileText
+  FileText,
+  TestTube
 } from 'lucide-react'
 
-type OpsTab = 'overview' | 'campaigns' | 'flows' | 'content' | 'forms' | 'scope'
+type OpsTab = 'overview' | 'campaigns' | 'flows' | 'content' | 'forms' | 'abtests' | 'scope'
 type CampaignView = 'calendar' | 'pipeline'
 
 interface Campaign {
@@ -64,6 +66,7 @@ export default function OperationsPage({ params }: PageProps) {
     { id: 'flows', label: 'Flows', icon: Zap },
     { id: 'content', label: 'Content Hub', icon: FolderOpen },
     { id: 'forms', label: 'Forms', icon: FileText },
+    { id: 'abtests', label: 'A/B Tests', icon: TestTube },
     { id: 'scope', label: 'Scope', icon: Target }
   ]
 
@@ -391,6 +394,15 @@ export default function OperationsPage({ params }: PageProps) {
             <OpsForms
               clients={clients}
               selectedClient={selectedClient}
+            />
+          )}
+
+          {/* A/B Tests Tab */}
+          {activeTab === 'abtests' && (
+            <ABTestTracker
+              clients={clients}
+              selectedClient={selectedClient}
+              campaigns={sharedCampaigns}
             />
           )}
 
