@@ -210,10 +210,10 @@ export function CampaignDetailModal({
         </CardHeader>
 
         {/* Modal Content - Dynamic Layout */}
-        <CardContent className="flex-1 overflow-hidden p-0">
+        <div className="flex-1 overflow-hidden">
           <div className={`grid ${uploadedImage ? 'grid-cols-2' : 'grid-cols-1'} h-full`}>
             {/* Left Column (or Full Width): Form Fields (Scrollable) */}
-            <div className={`overflow-y-auto p-6 ${uploadedImage ? 'border-r border-gray-200' : ''}`}>
+            <div className={`overflow-y-auto p-6 ${uploadedImage ? 'border-r border-gray-200' : ''}`} style={{ maxHeight: 'calc(90vh - 180px)' }}>
               <div className="space-y-6">
             {/* Basic Info Section */}
             <div>
@@ -522,7 +522,7 @@ Examples:
 
             {/* Right Column: Image Preview (Only when image exists) */}
             {uploadedImage && (
-              <div className="overflow-y-auto p-6 bg-gray-50">
+              <div className="overflow-y-auto p-6 bg-gray-50" style={{ maxHeight: 'calc(90vh - 180px)' }}>
                 <div className="sticky top-0 space-y-4">
                   <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
                     <Upload className="h-4 w-4" />
@@ -550,7 +550,7 @@ Examples:
               </div>
             )}
           </div>
-        </CardContent>
+        </div>
 
         {/* Modal Footer - Actions */}
         <div className="border-t border-gray-200 p-6 bg-gray-50 flex-shrink-0">
