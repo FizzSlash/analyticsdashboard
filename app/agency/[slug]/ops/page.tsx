@@ -8,6 +8,7 @@ import { OpsCalendar } from '@/components/ops/ops-calendar'
 import { OpsPipeline } from '@/components/ops/ops-pipeline'
 import { OpsOverview } from '@/components/ops/ops-overview'
 import { ContentHub } from '@/components/ops/content-hub'
+import { OpsForms } from '@/components/ops/ops-forms'
 import { 
   Settings, 
   ArrowLeft, 
@@ -17,10 +18,11 @@ import {
   FolderOpen, 
   Target,
   X,
-  Zap
+  Zap,
+  FileText
 } from 'lucide-react'
 
-type OpsTab = 'overview' | 'campaigns' | 'flows' | 'content' | 'scope'
+type OpsTab = 'overview' | 'campaigns' | 'flows' | 'content' | 'forms' | 'scope'
 type CampaignView = 'calendar' | 'pipeline'
 
 interface Campaign {
@@ -60,6 +62,7 @@ export default function OperationsPage({ params }: PageProps) {
     { id: 'campaigns', label: 'Campaigns', icon: Calendar },
     { id: 'flows', label: 'Flows', icon: Zap },
     { id: 'content', label: 'Content Hub', icon: FolderOpen },
+    { id: 'forms', label: 'Forms', icon: FileText },
     { id: 'scope', label: 'Scope', icon: Target }
   ]
 
@@ -377,6 +380,14 @@ export default function OperationsPage({ params }: PageProps) {
           {/* Content Hub Tab */}
           {activeTab === 'content' && (
             <ContentHub
+              clients={clients}
+              selectedClient={selectedClient}
+            />
+          )}
+
+          {/* Forms Tab */}
+          {activeTab === 'forms' && (
+            <OpsForms
               clients={clients}
               selectedClient={selectedClient}
             />
