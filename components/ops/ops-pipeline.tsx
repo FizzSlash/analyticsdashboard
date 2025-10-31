@@ -303,16 +303,16 @@ export function OpsPipeline({ clients, selectedClient }: OpsPipelineProps) {
     <div className="space-y-6">
       {/* Pipeline Header */}
       <Card className="bg-white/10 backdrop-blur-md border-white/20 shadow-xl">
-        <CardHeader>
+        <CardContent className="p-4">
           <div className="flex justify-between items-center">
-            <div className="flex items-center gap-3">
-              <CardTitle className="text-white">Campaign Pipeline</CardTitle>
-            </div>
             <div className="text-white/70 text-sm">
-              {filteredCampaigns.length} campaigns • Drag to change status
+              💡 Drag campaigns between columns to change status
+            </div>
+            <div className="px-4 py-2 bg-white/10 border border-white/20 rounded-lg">
+              <span className="text-white/70 text-sm">{filteredCampaigns.length} campaigns</span>
             </div>
           </div>
-        </CardHeader>
+        </CardContent>
       </Card>
 
       {/* Kanban Board */}

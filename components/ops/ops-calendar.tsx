@@ -6,7 +6,6 @@ import {
   Calendar as CalendarIcon,
   ChevronLeft,
   ChevronRight,
-  Search,
   X
 } from 'lucide-react'
 
@@ -29,7 +28,6 @@ interface OpsCalendarProps {
 
 export function OpsCalendar({ clients, selectedClient }: OpsCalendarProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date())
-  const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
 
   // Mock campaign data (will be replaced with real data later)
@@ -156,11 +154,6 @@ export function OpsCalendar({ clients, selectedClient }: OpsCalendarProps) {
       return false
     }
     
-    // Filter by search term
-    if (searchTerm && !campaign.campaign_name.toLowerCase().includes(searchTerm.toLowerCase())) {
-      return false
-    }
-    
     return true
   })
 
@@ -197,114 +190,79 @@ export function OpsCalendar({ clients, selectedClient }: OpsCalendarProps) {
 
   return (
     <div className="space-y-6">
-      {/* Calendar Header */}
-      <Card className="bg-white/10 backdrop-blur-md border-white/20 shadow-xl">
-        <CardHeader>
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-3">
-              <CalendarIcon className="h-5 w-5 text-white" />
-              <CardTitle className="text-white">Campaign Calendar</CardTitle>
-            </div>
-            
-            <div className="flex items-center gap-3">
-              <div className="text-white/80 text-sm">
-                {filteredCampaigns.length} campaigns
-              </div>
-            </div>
-          </div>
-        </CardHeader>
-      </Card>
-
-      {/* Filters */}
+      {/* Unified Header with Navigation and Filters */}
       <Card className="bg-white/10 backdrop-blur-md border-white/20 shadow-xl">
         <CardContent className="p-4">
-          <div className="flex flex-wrap gap-3">
-            {/* Search */}
-            <div className="flex-1 min-w-[200px]">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-white/60" />
-                <input
-                  type="text"
-                  placeholder="Search campaigns..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-10 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/40 focus:ring-2 focus:ring-white/40 focus:border-white/40"
-                />
-                {searchTerm && (
-                  <button
-                    onClick={() => setSearchTerm('')}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-white/60 hover:text-white"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                )}
+          <div className="flex justify-between items-center">
+            {/* Left: Navigation */}
+            <div className="flex items-center gap-3">
+              <button 
+                onClick={prevMonth}
+                className="flex items-center gap-2 px-4 py-2 bg-white/10 border border-white/20 text-white rounded-lg hover:bg-white/20 transition-colors"
+              >
+                <ChevronLeft className="h-4 w-4" />
+                Previous
+              </button>
+              
+              <div className="flex items-center gap-3">
+                <h2 className="text-xl font-semibold text-white">
+                  {currentMonth.toLocaleString('default', { month: 'long', year: 'numeric' })}
+                </h2>
+                <button
+                  onClick={goToToday}
+                  className="px-3 py-1 bg-blue-500/30 hover:bg-blue-500/40 text-white rounded-lg text-sm font-medium transition-colors border border-blue-400/30"
+                >
+                  Today
+                </button>
               </div>
+              
+              <button 
+                onClick={nextMonth}
+                className="flex items-center gap-2 px-4 py-2 bg-white/10 border border-white/20 text-white rounded-lg hover:bg-white/20 transition-colors"
+              >
+                Next
+                <ChevronRight className="h-4 w-4" />
+              </button>
             </div>
 
-            {/* Status Filter */}
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:ring-2 focus:ring-white/40 focus:border-white/40"
-            >
-              <option value="all" className="bg-gray-800">All Statuses</option>
-              <option value="strategy" className="bg-gray-800">Strategy</option>
-              <option value="copy" className="bg-gray-800">Copy</option>
-              <option value="design" className="bg-gray-800">Design</option>
-              <option value="qa" className="bg-gray-800">QA</option>
-              <option value="client_approval" className="bg-gray-800">Client Approval</option>
-              <option value="approved" className="bg-gray-800">Approved</option>
-              <option value="scheduled" className="bg-gray-800">Scheduled</option>
-              <option value="sent" className="bg-gray-800">Sent</option>
-            </select>
-
-            {/* Clear Filters */}
-            {(searchTerm || statusFilter !== 'all') && (
-              <button
-                onClick={() => {
-                  setSearchTerm('')
-                  setStatusFilter('all')
-                }}
-                className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors flex items-center gap-2 border border-white/20"
+            {/* Right: Filters and Stats */}
+            <div className="flex items-center gap-3">
+              {/* Status Filter */}
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:ring-2 focus:ring-white/40 focus:border-white/40"
               >
-                <X className="h-4 w-4" />
-                Clear Filters
-              </button>
-            )}
+                <option value="all" className="bg-gray-800">All Statuses</option>
+                <option value="strategy" className="bg-gray-800">Strategy</option>
+                <option value="copy" className="bg-gray-800">Copy</option>
+                <option value="design" className="bg-gray-800">Design</option>
+                <option value="qa" className="bg-gray-800">QA</option>
+                <option value="client_approval" className="bg-gray-800">Client Approval</option>
+                <option value="approved" className="bg-gray-800">Approved</option>
+                <option value="scheduled" className="bg-gray-800">Scheduled</option>
+                <option value="sent" className="bg-gray-800">Sent</option>
+              </select>
+
+              {/* Clear Filter Button */}
+              {statusFilter !== 'all' && (
+                <button
+                  onClick={() => setStatusFilter('all')}
+                  className="px-3 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors border border-white/20"
+                  title="Clear status filter"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+
+              {/* Campaign Count */}
+              <div className="px-4 py-2 bg-white/10 border border-white/20 rounded-lg">
+                <span className="text-white/70 text-sm">{filteredCampaigns.length} campaigns</span>
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>
-
-      {/* Calendar Navigation */}
-      <div className="flex justify-between items-center">
-        <button 
-          onClick={prevMonth}
-          className="flex items-center gap-2 px-4 py-2 bg-white/10 border border-white/20 text-white rounded-lg hover:bg-white/20 transition-colors backdrop-blur-sm"
-        >
-          <ChevronLeft className="h-4 w-4" />
-          Previous
-        </button>
-        
-        <div className="flex items-center gap-4">
-          <h2 className="text-xl font-semibold text-white">
-            {currentMonth.toLocaleString('default', { month: 'long', year: 'numeric' })}
-          </h2>
-          <button
-            onClick={goToToday}
-            className="px-3 py-1 bg-blue-500/30 hover:bg-blue-500/40 text-white rounded-lg text-sm font-medium transition-colors border border-blue-400/30"
-          >
-            Today
-          </button>
-        </div>
-        
-        <button 
-          onClick={nextMonth}
-          className="flex items-center gap-2 px-4 py-2 bg-white/10 border border-white/20 text-white rounded-lg hover:bg-white/20 transition-colors backdrop-blur-sm"
-        >
-          Next
-          <ChevronRight className="h-4 w-4" />
-        </button>
-      </div>
 
       {/* Calendar Grid */}
       <Card className="bg-white/10 backdrop-blur-md border-white/20 shadow-xl">
