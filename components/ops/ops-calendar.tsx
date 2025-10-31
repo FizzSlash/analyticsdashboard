@@ -1,0 +1,432 @@
+'use client'
+
+import { useState } from 'react'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { 
+  Calendar as CalendarIcon,
+  ChevronLeft,
+  ChevronRight,
+  Search,
+  X
+} from 'lucide-react'
+
+interface Campaign {
+  id: string
+  campaign_name: string
+  client_id: string
+  client_name: string
+  client_color: string
+  send_date: Date
+  status: 'strategy' | 'copy' | 'design' | 'qa' | 'client_approval' | 'approved' | 'scheduled' | 'sent'
+  priority: 'low' | 'normal' | 'high' | 'urgent'
+  campaign_type: 'email' | 'sms'
+}
+
+interface OpsCalendarProps {
+  clients: any[]
+  selectedClient: string
+}
+
+export function OpsCalendar({ clients, selectedClient }: OpsCalendarProps) {
+  const [currentMonth, setCurrentMonth] = useState(new Date())
+  const [searchTerm, setSearchTerm] = useState('')
+  const [statusFilter, setStatusFilter] = useState<string>('all')
+
+  // Mock campaign data (will be replaced with real data later)
+  const mockCampaigns: Campaign[] = [
+    {
+      id: '1',
+      campaign_name: 'Black Friday Launch',
+      client_id: clients[0]?.id || '1',
+      client_name: clients[0]?.brand_name || 'Hydrus',
+      client_color: clients[0]?.primary_color || '#3B82F6',
+      send_date: new Date(2025, 10, 24, 9, 0), // Nov 24, 9am
+      status: 'design',
+      priority: 'urgent',
+      campaign_type: 'email'
+    },
+    {
+      id: '2',
+      campaign_name: 'Welcome Series Part 2',
+      client_id: clients[1]?.id || '2',
+      client_name: clients[1]?.brand_name || 'Peak Design',
+      client_color: clients[1]?.primary_color || '#10B981',
+      send_date: new Date(2025, 10, 28, 14, 0),
+      status: 'qa',
+      priority: 'normal',
+      campaign_type: 'email'
+    },
+    {
+      id: '3',
+      campaign_name: 'Product Launch',
+      client_id: clients[2]?.id || '3',
+      client_name: clients[2]?.brand_name || 'Make Waves',
+      client_color: clients[2]?.primary_color || '#8B5CF6',
+      send_date: new Date(2025, 10, 30, 10, 0),
+      status: 'client_approval',
+      priority: 'high',
+      campaign_type: 'email'
+    },
+    {
+      id: '4',
+      campaign_name: 'Newsletter',
+      client_id: clients[0]?.id || '1',
+      client_name: clients[0]?.brand_name || 'Hydrus',
+      client_color: clients[0]?.primary_color || '#3B82F6',
+      send_date: new Date(2025, 10, 25, 8, 0),
+      status: 'approved',
+      priority: 'normal',
+      campaign_type: 'email'
+    },
+    {
+      id: '5',
+      campaign_name: 'Flash Sale SMS',
+      client_id: clients[1]?.id || '2',
+      client_name: clients[1]?.brand_name || 'Peak Design',
+      client_color: clients[1]?.primary_color || '#10B981',
+      send_date: new Date(2025, 10, 26, 11, 0),
+      status: 'scheduled',
+      priority: 'high',
+      campaign_type: 'sms'
+    },
+    {
+      id: '6',
+      campaign_name: 'Cyber Monday',
+      client_id: clients[0]?.id || '1',
+      client_name: clients[0]?.brand_name || 'Hydrus',
+      client_color: clients[0]?.primary_color || '#3B82F6',
+      send_date: new Date(2025, 11, 1, 6, 0), // Dec 1
+      status: 'copy',
+      priority: 'urgent',
+      campaign_type: 'email'
+    }
+  ]
+
+  // Navigation
+  const prevMonth = () => {
+    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1))
+  }
+
+  const nextMonth = () => {
+    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1))
+  }
+
+  const goToToday = () => {
+    setCurrentMonth(new Date())
+  }
+
+  // Generate calendar days
+  const getDaysInMonth = (date: Date) => {
+    const year = date.getFullYear()
+    const month = date.getMonth()
+    const firstDay = new Date(year, month, 1)
+    const lastDay = new Date(year, month + 1, 0)
+    const firstDayOfWeek = firstDay.getDay()
+    
+    const days = []
+    
+    // Add empty days for alignment
+    for (let i = 0; i < firstDayOfWeek; i++) {
+      days.push({ date: null, isCurrentMonth: false })
+    }
+    
+    // Add days of month
+    for (let i = 1; i <= lastDay.getDate(); i++) {
+      days.push({ 
+        date: new Date(year, month, i),
+        isCurrentMonth: true 
+      })
+    }
+    
+    return days
+  }
+
+  const days = getDaysInMonth(currentMonth)
+  const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+
+  // Filter campaigns
+  const filteredCampaigns = mockCampaigns.filter(campaign => {
+    // Filter by selected client
+    if (selectedClient !== 'all' && campaign.client_id !== selectedClient) {
+      return false
+    }
+    
+    // Filter by status
+    if (statusFilter !== 'all' && campaign.status !== statusFilter) {
+      return false
+    }
+    
+    // Filter by search term
+    if (searchTerm && !campaign.campaign_name.toLowerCase().includes(searchTerm.toLowerCase())) {
+      return false
+    }
+    
+    return true
+  })
+
+  // Group campaigns by date
+  const campaignsByDate = filteredCampaigns.reduce((acc, campaign) => {
+    const dateKey = campaign.send_date.toDateString()
+    if (!acc[dateKey]) acc[dateKey] = []
+    acc[dateKey].push(campaign)
+    return acc
+  }, {} as Record<string, Campaign[]>)
+
+  // Status colors (matching portal)
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'strategy': return 'bg-gray-100 text-gray-700 border-gray-300'
+      case 'copy': return 'bg-blue-100 text-blue-700 border-blue-300'
+      case 'design': return 'bg-purple-100 text-purple-700 border-purple-300'
+      case 'qa': return 'bg-yellow-100 text-yellow-700 border-yellow-300'
+      case 'client_approval': return 'bg-orange-100 text-orange-700 border-orange-300'
+      case 'approved': return 'bg-green-100 text-green-700 border-green-300'
+      case 'scheduled': return 'bg-teal-100 text-teal-700 border-teal-300'
+      case 'sent': return 'bg-gray-500 text-white border-gray-600'
+      default: return 'bg-gray-100 text-gray-600 border-gray-300'
+    }
+  }
+
+  const getPriorityEmoji = (priority: string) => {
+    switch (priority) {
+      case 'urgent': return '🔴'
+      case 'high': return '🟡'
+      default: return ''
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Calendar Header */}
+      <Card className="bg-white border border-gray-200 shadow-sm">
+        <CardHeader>
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-3">
+              <CalendarIcon className="h-5 w-5 text-blue-600" />
+              <CardTitle className="text-gray-900">Campaign Calendar</CardTitle>
+            </div>
+            
+            <div className="flex items-center gap-3">
+              <div className="text-gray-600 text-sm">
+                {filteredCampaigns.length} campaigns
+              </div>
+            </div>
+          </div>
+        </CardHeader>
+      </Card>
+
+      {/* Filters */}
+      <Card className="bg-white border border-gray-200 shadow-sm">
+        <CardContent className="p-4">
+          <div className="flex flex-wrap gap-3">
+            {/* Search */}
+            <div className="flex-1 min-w-[200px]">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search campaigns..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+                {searchTerm && (
+                  <button
+                    onClick={() => setSearchTerm('')}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Status Filter */}
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="px-4 py-2 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="all">All Statuses</option>
+              <option value="strategy">Strategy</option>
+              <option value="copy">Copy</option>
+              <option value="design">Design</option>
+              <option value="qa">QA</option>
+              <option value="client_approval">Client Approval</option>
+              <option value="approved">Approved</option>
+              <option value="scheduled">Scheduled</option>
+              <option value="sent">Sent</option>
+            </select>
+
+            {/* Clear Filters */}
+            {(searchTerm || statusFilter !== 'all') && (
+              <button
+                onClick={() => {
+                  setSearchTerm('')
+                  setStatusFilter('all')
+                }}
+                className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors flex items-center gap-2"
+              >
+                <X className="h-4 w-4" />
+                Clear Filters
+              </button>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Calendar Navigation */}
+      <div className="flex justify-between items-center">
+        <button 
+          onClick={prevMonth}
+          className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+        >
+          <ChevronLeft className="h-4 w-4" />
+          Previous
+        </button>
+        
+        <div className="flex items-center gap-4">
+          <h2 className="text-xl font-semibold text-gray-900">
+            {currentMonth.toLocaleString('default', { month: 'long', year: 'numeric' })}
+          </h2>
+          <button
+            onClick={goToToday}
+            className="px-3 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg text-sm font-medium transition-colors"
+          >
+            Today
+          </button>
+        </div>
+        
+        <button 
+          onClick={nextMonth}
+          className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+        >
+          Next
+          <ChevronRight className="h-4 w-4" />
+        </button>
+      </div>
+
+      {/* Calendar Grid */}
+      <Card className="bg-white border border-gray-200 shadow-sm">
+        <CardContent className="p-0">
+          <div className="grid grid-cols-7 gap-px bg-gray-200">
+            {/* Weekday headers */}
+            {weekdays.map(day => (
+              <div key={day} className="p-3 bg-gray-50 text-center font-semibold text-gray-700 text-sm">
+                {day}
+              </div>
+            ))}
+            
+            {/* Calendar days */}
+            {days.map((day, index) => {
+              const dayCampaigns = day.date ? (campaignsByDate[day.date.toDateString()] || []) : []
+              const isToday = day.date?.toDateString() === new Date().toDateString()
+              
+              return (
+                <div 
+                  key={index}
+                  className={`min-h-[140px] p-2 bg-white hover:bg-gray-50 transition-colors ${
+                    !day.isCurrentMonth ? 'opacity-50' : ''
+                  }`}
+                >
+                  {day.date && (
+                    <>
+                      <div className="flex justify-between items-center mb-2">
+                        <div className={`text-sm font-medium ${
+                          isToday 
+                            ? 'w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center'
+                            : 'text-gray-600'
+                        }`}>
+                          {day.date.getDate()}
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-1">
+                        {dayCampaigns.map(campaign => (
+                          <div 
+                            key={campaign.id}
+                            className="p-2 text-xs rounded border cursor-pointer hover:shadow-sm transition-all"
+                            style={{ 
+                              borderLeftWidth: '4px',
+                              borderLeftColor: campaign.client_color,
+                              backgroundColor: campaign.campaign_type === 'sms' ? '#FEF9C3' : '#EFF6FF'
+                            }}
+                          >
+                            <div className="flex items-start justify-between gap-1">
+                              <div className="flex-1 min-w-0">
+                                <div className="font-semibold text-gray-800 truncate flex items-center gap-1">
+                                  {getPriorityEmoji(campaign.priority)}
+                                  {campaign.campaign_name}
+                                </div>
+                                <div className="text-gray-600 text-xs mt-0.5">
+                                  {campaign.client_name}
+                                </div>
+                                <div className="text-gray-600 text-xs">
+                                  {campaign.send_date.toLocaleTimeString('en-US', { 
+                                    hour: 'numeric', 
+                                    minute: '2-digit',
+                                    hour12: true 
+                                  })}
+                                </div>
+                                <div className={`inline-block px-2 py-0.5 rounded-full text-xs mt-1 border ${getStatusColor(campaign.status)}`}>
+                                  {campaign.status.replace('_', ' ')}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Stats */}
+      <div className="grid grid-cols-4 gap-4">
+        <Card className="bg-white border border-gray-200 shadow-sm">
+          <CardContent className="p-4">
+            <div className="text-gray-600 text-sm">This Month</div>
+            <div className="text-2xl font-bold text-gray-900">
+              {filteredCampaigns.filter(c => 
+                c.send_date.getMonth() === currentMonth.getMonth() &&
+                c.send_date.getFullYear() === currentMonth.getFullYear()
+              ).length}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-white border border-gray-200 shadow-sm">
+          <CardContent className="p-4">
+            <div className="text-gray-600 text-sm">Needs Attention</div>
+            <div className="text-2xl font-bold text-orange-600">
+              {filteredCampaigns.filter(c => c.priority === 'urgent' || c.priority === 'high').length}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-white border border-gray-200 shadow-sm">
+          <CardContent className="p-4">
+            <div className="text-gray-600 text-sm">Client Approval</div>
+            <div className="text-2xl font-bold text-blue-600">
+              {filteredCampaigns.filter(c => c.status === 'client_approval').length}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-white border border-gray-200 shadow-sm">
+          <CardContent className="p-4">
+            <div className="text-gray-600 text-sm">Scheduled</div>
+            <div className="text-2xl font-bold text-green-600">
+              {filteredCampaigns.filter(c => c.status === 'scheduled').length}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  )
+}
+

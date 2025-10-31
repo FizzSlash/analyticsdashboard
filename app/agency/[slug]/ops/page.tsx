@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/components/auth/auth-provider'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { OpsCalendar } from '@/components/ops/ops-calendar'
 import { 
   Settings, 
   ArrowLeft, 
@@ -356,18 +357,10 @@ export default function OperationsPage({ params }: PageProps) {
 
           {/* Calendar Tab */}
           {activeTab === 'calendar' && (
-            <Card className="bg-white/10 backdrop-blur-md border-white/20 shadow-xl">
-              <CardHeader>
-                <CardTitle className="text-white">Campaign Calendar</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-white/60 text-center py-12">
-                  <Calendar className="h-16 w-16 mx-auto mb-4 text-white/40" />
-                  <p className="text-lg">Calendar view coming in Task 4-7</p>
-                  <p className="text-sm mt-2">Will show campaigns by date with status badges</p>
-                </div>
-              </CardContent>
-            </Card>
+            <OpsCalendar 
+              clients={clients}
+              selectedClient={selectedClient}
+            />
           )}
 
           {/* Pipeline Tab */}
