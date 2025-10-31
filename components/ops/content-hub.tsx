@@ -78,9 +78,11 @@ interface CallNote {
   id: string
   client_id: string
   call_date: Date
+  agenda_url?: string
   recording_url?: string
   attendees: string
   call_summary: string
+  internal_notes?: string
   action_items: CallActionItem[]
 }
 
@@ -107,6 +109,8 @@ export function ContentHub({ clients, selectedClient }: ContentHubProps) {
   const [showAddLink, setShowAddLink] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
   const [uploadingFile, setUploadingFile] = useState(false)
+  const [editingCall, setEditingCall] = useState<CallNote | null>(null)
+  const [showAddCall, setShowAddCall] = useState(false)
 
   // Get current client info
   const currentClient = clients.find(c => c.id === selectedClient)
@@ -204,9 +208,11 @@ export function ContentHub({ clients, selectedClient }: ContentHubProps) {
       id: '1',
       client_id: clients[0]?.id || '1',
       call_date: new Date(2025, 9, 28, 14, 0), // Oct 28, 2pm
+      agenda_url: 'https://docs.google.com/document/d/agenda-doc-id',
       recording_url: 'https://zoom.us/rec/share/abc123',
       attendees: 'Sarah (PM), Mike (Copywriter), Jamie (Client)',
       call_summary: 'Discussed Q4 strategy. Client wants to focus on retention campaigns and new product launch in December. Approved Black Friday email series.',
+      internal_notes: 'Client mentioned budget increase for Q1. Need to follow up on December product details. Client loved the Black Friday creative.',
       action_items: [
         {
           id: '1-1',
@@ -233,9 +239,11 @@ export function ContentHub({ clients, selectedClient }: ContentHubProps) {
       id: '2',
       client_id: clients[0]?.id || '1',
       call_date: new Date(2025, 9, 15, 10, 0), // Oct 15, 10am
+      agenda_url: 'https://docs.google.com/document/d/monthly-agenda-id',
       recording_url: undefined,
       attendees: 'Sarah (PM), Client (Jamie)',
       call_summary: 'Monthly check-in. Reviewed September performance. Open rates up 12%. Client happy with results. Discussed November campaign calendar.',
+      internal_notes: 'Client seems very satisfied. Good opportunity to upsell SMS campaigns next month.',
       action_items: [
         {
           id: '2-1',
@@ -397,6 +405,19 @@ export function ContentHub({ clients, selectedClient }: ContentHubProps) {
     }))
   }
 
+  const handleAddCall = (call: Omit<CallNote, 'id'>) => {
+    const newCall = { ...call, id: `call-${Date.now()}` }
+    setCallNotes([newCall, ...callNotes])
+    setShowAddCall(false)
+    console.log('✅ Call added')
+  }
+
+  const handleUpdateCall = (call: CallNote) => {
+    setCallNotes(callNotes.map(c => c.id === call.id ? call : c))
+    setEditingCall(null)
+    console.log('✅ Call updated')
+  }
+
   const contentTabs = [
     { id: 'assets', label: 'Brand Assets', icon: LinkIcon },
     { id: 'guidelines', label: 'Brand Guidelines', icon: Palette },
@@ -436,6 +457,15 @@ export function ContentHub({ clients, selectedClient }: ContentHubProps) {
               >
                 <Plus className="h-4 w-4" />
                 Add Link
+              </button>
+            )}
+            {activeTab === 'calls' && (
+              <button
+                onClick={() => setShowAddCall(true)}
+                className="px-4 py-2 bg-blue-500/30 hover:bg-blue-500/40 text-white rounded-lg transition-colors flex items-center gap-2 border border-blue-400/30"
+              >
+                <Plus className="h-4 w-4" />
+                Add Call
               </button>
             )}
           </div>
@@ -946,17 +976,37 @@ export function ContentHub({ clients, selectedClient }: ContentHubProps) {
                       </div>
                     </div>
                     
-                    {call.recording_url && (
-                      <a
-                        href={call.recording_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="px-3 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+                    <div className="flex items-center gap-2">
+                      {call.agenda_url && (
+                        <a
+                          href={call.agenda_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-3 py-1 bg-purple-100 hover:bg-purple-200 text-purple-700 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+                        >
+                          <FileText className="h-3 w-3" />
+                          Agenda
+                        </a>
+                      )}
+                      {call.recording_url && (
+                        <a
+                          href={call.recording_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-3 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+                        >
+                          <ExternalLink className="h-3 w-3" />
+                          Recording
+                        </a>
+                      )}
+                      <button
+                        onClick={() => setEditingCall(call)}
+                        className="p-2 text-gray-400 hover:text-blue-600 transition-colors"
+                        title="Edit call"
                       >
-                        <ExternalLink className="h-3 w-3" />
-                        View Recording
-                      </a>
-                    )}
+                        <Edit className="h-4 w-4" />
+                      </button>
+                    </div>
                   </div>
                 </CardHeader>
                 
@@ -968,6 +1018,16 @@ export function ContentHub({ clients, selectedClient }: ContentHubProps) {
                       {call.call_summary}
                     </p>
                   </div>
+
+                  {/* Internal Notes */}
+                  {call.internal_notes && (
+                    <div>
+                      <div className="text-sm font-semibold text-gray-700 mb-2">Internal Notes</div>
+                      <p className="text-gray-700 text-sm bg-yellow-50 p-3 rounded-lg border border-yellow-200">
+                        {call.internal_notes}
+                      </p>
+                    </div>
+                  )}
 
                   {/* Action Items */}
                   {call.action_items.length > 0 && (
@@ -1066,6 +1126,19 @@ export function ContentHub({ clients, selectedClient }: ContentHubProps) {
           onClose={() => {
             setShowAddLink(false)
             setEditingLink(null)
+          }}
+        />
+      )}
+
+      {/* Add/Edit Call Modal */}
+      {(showAddCall || editingCall) && (
+        <CallEditorModal
+          call={editingCall}
+          clientId={selectedClient}
+          onSave={(call) => editingCall ? handleUpdateCall(call as CallNote) : handleAddCall(call)}
+          onClose={() => {
+            setShowAddCall(false)
+            setEditingCall(null)
           }}
         />
       )}
@@ -1201,6 +1274,246 @@ function LinkEditorModal({
             >
               <Save className="h-4 w-4" />
               {link ? 'Update Link' : 'Add Link'}
+            </button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
+
+// Call Editor Modal Component
+function CallEditorModal({
+  call,
+  clientId,
+  onSave,
+  onClose
+}: {
+  call: CallNote | null
+  clientId: string
+  onSave: (call: Omit<CallNote, 'id'> | CallNote) => void
+  onClose: () => void
+}) {
+  const [formData, setFormData] = useState<Omit<CallNote, 'id'>>({
+    client_id: call?.client_id || clientId,
+    call_date: call?.call_date || new Date(),
+    agenda_url: call?.agenda_url || '',
+    recording_url: call?.recording_url || '',
+    attendees: call?.attendees || '',
+    call_summary: call?.call_summary || '',
+    internal_notes: call?.internal_notes || '',
+    action_items: call?.action_items || []
+  })
+
+  const handleSubmit = () => {
+    if (!formData.attendees || !formData.call_summary) {
+      alert('Please fill in attendees and call summary')
+      return
+    }
+    onSave(call ? { ...(call as CallNote), ...formData } : formData)
+  }
+
+  const addActionItem = () => {
+    setFormData({
+      ...formData,
+      action_items: [
+        ...formData.action_items,
+        {
+          id: `item-${Date.now()}`,
+          description: '',
+          is_completed: false
+        }
+      ]
+    })
+  }
+
+  const updateActionItem = (index: number, description: string) => {
+    const updated = [...formData.action_items]
+    updated[index] = { ...updated[index], description }
+    setFormData({ ...formData, action_items: updated })
+  }
+
+  const removeActionItem = (index: number) => {
+    setFormData({
+      ...formData,
+      action_items: formData.action_items.filter((_, i) => i !== index)
+    })
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <Card className="bg-white w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl">
+        <CardHeader className="border-b border-gray-200">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-gray-900">
+              {call ? 'Edit Call Notes' : 'Add Call Notes'}
+            </CardTitle>
+            <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+        </CardHeader>
+
+        <CardContent className="flex-1 overflow-y-auto p-6 space-y-4">
+          {/* Call Date/Time */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Call Date *
+              </label>
+              <input
+                type="date"
+                value={formData.call_date.toISOString().split('T')[0]}
+                onChange={(e) => {
+                  const newDate = new Date(e.target.value)
+                  newDate.setHours(formData.call_date.getHours())
+                  newDate.setMinutes(formData.call_date.getMinutes())
+                  setFormData({ ...formData, call_date: newDate })
+                }}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Call Time
+              </label>
+              <input
+                type="time"
+                value={`${String(formData.call_date.getHours()).padStart(2, '0')}:${String(formData.call_date.getMinutes()).padStart(2, '0')}`}
+                onChange={(e) => {
+                  const [hours, minutes] = e.target.value.split(':')
+                  const newDate = new Date(formData.call_date)
+                  newDate.setHours(parseInt(hours))
+                  newDate.setMinutes(parseInt(minutes))
+                  setFormData({ ...formData, call_date: newDate })
+                }}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          </div>
+
+          {/* Attendees */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Attendees *
+            </label>
+            <input
+              type="text"
+              value={formData.attendees}
+              onChange={(e) => setFormData({ ...formData, attendees: e.target.value })}
+              placeholder="Sarah (PM), Mike (Copywriter), Jamie (Client)"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              autoFocus
+            />
+          </div>
+
+          {/* Agenda Link */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Agenda Link (Google Doc)
+            </label>
+            <input
+              type="url"
+              value={formData.agenda_url}
+              onChange={(e) => setFormData({ ...formData, agenda_url: e.target.value })}
+              placeholder="https://docs.google.com/document/d/..."
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          {/* Recording Link */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Recording Link (Optional)
+            </label>
+            <input
+              type="url"
+              value={formData.recording_url}
+              onChange={(e) => setFormData({ ...formData, recording_url: e.target.value })}
+              placeholder="https://zoom.us/rec/share/..."
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          {/* Call Summary */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Call Summary *
+            </label>
+            <textarea
+              value={formData.call_summary}
+              onChange={(e) => setFormData({ ...formData, call_summary: e.target.value })}
+              rows={4}
+              placeholder="What was discussed during the call..."
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          {/* Internal Notes */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Internal Notes (Team Only)
+            </label>
+            <textarea
+              value={formData.internal_notes}
+              onChange={(e) => setFormData({ ...formData, internal_notes: e.target.value })}
+              rows={3}
+              placeholder="Internal observations, follow-up items, client feedback..."
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          {/* Action Items */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-sm font-medium text-gray-700">
+                Action Items
+              </label>
+              <button
+                type="button"
+                onClick={addActionItem}
+                className="text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1"
+              >
+                <Plus className="h-3 w-3" />
+                Add Item
+              </button>
+            </div>
+
+            <div className="space-y-2">
+              {formData.action_items.map((item, index) => (
+                <div key={item.id} className="flex gap-2">
+                  <input
+                    type="text"
+                    value={item.description}
+                    onChange={(e) => updateActionItem(index, e.target.value)}
+                    placeholder="Action item description..."
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeActionItem(index)}
+                    className="p-2 text-gray-400 hover:text-red-600 transition-colors"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex gap-3 pt-4">
+            <button
+              onClick={onClose}
+              className="flex-1 px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSubmit}
+              className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center justify-center gap-2"
+            >
+              <Save className="h-4 w-4" />
+              {call ? 'Update Call' : 'Add Call'}
             </button>
           </div>
         </CardContent>
