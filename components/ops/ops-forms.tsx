@@ -14,7 +14,8 @@ import {
   CheckCircle,
   Clock,
   AlertCircle,
-  Download
+  Download,
+  X
 } from 'lucide-react'
 
 interface FormField {
