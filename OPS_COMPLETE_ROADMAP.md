@@ -374,31 +374,37 @@ Strategy → Copy → Design → Upload Image → Design QA → QA → Client Ap
 - ✅ Phases 1-5: Foundation, Calendar, Pipeline, Modal, Overview
 
 ### **Week 2: Essential Tools**
-- **Phase 6:** Content Hub (10 tasks)
-  - Store client assets
+- **Phase 6:** Content Hub (8 tasks)
+  - Brand asset links (Figma, Drive, etc.)
   - Brand guidelines
-  - Copy/design notes
-- **Phase 7:** Scope Tracker (8 tasks)
-  - Monthly limits
-  - Usage tracking
+  - Copy/design notes per client
+  - Link manager (not file uploads)
+- **Phase 7:** Scope Tracker (10 tasks)
+  - Monthly limits tracking
+  - **Invoice date tracking**
+  - **Monthly documentation** (initiatives, findings)
+  - Usage auto-counting
   - Overage warnings
 
 ### **Week 3: Flow & Testing**
 - **Phase 8:** Flow Management (7 tasks)
-  - Flow pipeline
-  - Multi-email sequences
+  - Flow pipeline (same as campaigns)
+  - Multi-email sequence builder
   - Flow approval workflow
+  - Flow templates
 - **Phase 9:** A/B Test Tracker (8 tasks)
-  - Test configuration
+  - Test configuration wizard
+  - Variant management
   - Results dashboard
-  - Winner declaration
+  - Winner declaration + insights
 
 ### **Week 4: Team Views**
 - **Phase 10:** QA/Management View (11 tasks)
-  - Design QA status
-  - Review queue
-  - Production metrics
-  - Revision system
+  - **Design QA status** (new workflow step)
+  - QA review queue
+  - **Production metrics** (campaigns/flows written & designed)
+  - Revision notes system
+  - Team workload display
 
 ### **Future (As Needed):**
 - Writer's View
@@ -426,15 +432,15 @@ Strategy → Copy → Design → Upload Image → Design QA → QA → Client Ap
 
 ## 📊 Estimated Time Per Phase
 
-| Phase | Tasks | Estimated Time | Priority |
-|-------|-------|----------------|----------|
-| Phase 6: Content Hub | 10 | 8-12 hours | High |
-| Phase 7: Scope Tracker | 8 | 6-10 hours | High |
-| Phase 8: Flow Management | 7 | 8-12 hours | Medium |
-| Phase 9: A/B Test Tracker | 8 | 6-10 hours | Medium |
-| Phase 10: QA/Management View | 11 | 10-15 hours | Medium |
+| Phase | Tasks | Estimated Time | Priority | Description |
+|-------|-------|----------------|----------|-------------|
+| Phase 6: Content Hub | 8 | 6-10 hours | High | Link manager, guidelines, notes |
+| Phase 7: Scope Tracker | 10 | 10-15 hours | High | Invoice tracking, monthly docs |
+| Phase 8: Flow Management | 7 | 8-12 hours | High | Flow pipeline & sequences |
+| Phase 9: A/B Test Tracker | 8 | 6-10 hours | Medium | Test config & results |
+| Phase 10: QA/Management View | 11 | 10-15 hours | Medium | Internal review system |
 
-**Total Remaining:** 38-59 hours
+**Total Remaining:** 40-62 hours (about 1-2 weeks of work)
 
 ---
 

@@ -4,42 +4,41 @@
 
 ---
 
-## 🗂️ PHASE 6: Content Hub (10 Tasks)
+## 🗂️ PHASE 6: Content Hub (8 Tasks)
 
 ### **Task 21: Content Hub Layout**
 - Build main content hub page structure
 - Client selector (reuse existing pattern)
-- Tab navigation: Brand Guidelines | Assets | Copy Notes | Design Notes
-- Search bar at top
+- Tab navigation: Brand Assets | Brand Guidelines | Copy Notes | Design Notes
+- Clean, organized layout
 
-### **Task 22: Brand Guidelines Section**
-- Display client brand colors (color picker display)
-- Font specifications
-- Logo files (upload and display)
+### **Task 22: Brand Assets Section (Link Manager)**
+- List of important links per client
+- Types:
+  - Figma Boards (design files)
+  - Google Drive folders (assets)
+  - Brand websites
+  - Competitor sites
+  - Other resources
+- For each link:
+  - Link title
+  - URL
+  - Category/type
+  - Description
+  - "Open Link" button (external)
+- Add/edit/delete links
+- NO file uploads - just link management
+
+### **Task 23: Brand Guidelines Section**
+- Display client brand colors (color swatches)
+- Font specifications (text list)
 - Tone of voice text area
 - Legal requirements text area
+- Key messaging points
 - Save/edit functionality
+- Simple text-based, no uploads
 
-### **Task 23: Asset Library Grid**
-- Folder structure (Logos, Product Images, Email Headers, etc.)
-- Grid view of files with thumbnails
-- File details (name, size, upload date)
-- Click to preview full size
-
-### **Task 24: File Upload**
-- Drag & drop upload area (like campaign images)
-- Multiple file upload
-- Progress bars
-- Automatic folder assignment
-- Support: PNG, JPG, GIF, PDF, SVG
-
-### **Task 25: Folder Management**
-- Create new folders
-- Rename folders
-- Move files between folders
-- Delete folders (with confirmation)
-
-### **Task 26: Copy Notes Editor**
+### **Task 24: Copy Notes Editor**
 - Rich text area or markdown editor
 - Sections:
   - Voice & Tone guidelines
@@ -48,8 +47,9 @@
   - Legal requirements
   - Competitor mentions policy
 - Auto-save
+- Per-client storage
 
-### **Task 27: Design Notes Editor**
+### **Task 25: Design Notes Editor**
 - Same structure as copy notes
 - Sections:
   - Design preferences
@@ -57,38 +57,42 @@
   - Color usage rules
   - Image style guide
   - Mobile considerations
+  - CTA preferences
 - Auto-save
+- Per-client storage
 
-### **Task 28: Asset Search & Filter**
-- Search by filename
-- Filter by folder
-- Filter by file type (images, PDFs, etc.)
-- Filter by upload date
-- Clear filters button
+### **Task 26: Quick Link Access**
+- Search across all links
+- Filter by client
+- Filter by category
+- Recently accessed links
+- Favorite/pin important links
 
-### **Task 29: Tag System**
-- Add tags to files (e.g., "product", "hero", "cta-button")
-- Filter by tags
-- Tag suggestions
-- Bulk tag editing
+### **Task 27: Notes Search**
+- Search across copy and design notes
+- Filter by client
+- Find specific guidelines quickly
+- Highlight search terms
 
-### **Task 30: Quick Attach to Campaigns**
-- "Attach to Campaign" button on assets
-- Opens modal to select campaign
-- Adds reference to campaign
-- Shows in campaign modal
+### **Task 28: Content Hub Dashboard**
+- Overview showing:
+  - Number of links per client
+  - Last updated dates
+  - Quick access to most-used resources
+  - Incomplete guidelines warning (if missing)
 
-**Deliverable:** Centralized content management system
+**Deliverable:** Centralized link manager and client notes system
 
 ---
 
-## 📊 PHASE 7: Scope Tracker (8 Tasks)
+## 📊 PHASE 7: Scope Tracker (10 Tasks)
 
 ### **Task 31: Scope Dashboard Layout**
 - Grid of all clients
 - Progress bars for each
 - Color coding (green < 75%, yellow 75-90%, red > 90%)
 - Click client to see details
+- Show invoice dates prominently
 
 ### **Task 32: Scope Configuration Modal**
 - Set monthly limits per client
@@ -96,7 +100,9 @@
 - SMS campaigns limit
 - Flows limit (e.g., 2 per month)
 - Popups limit
-- Monthly reset date
+- **Invoice date** (when they're billed)
+- **Monthly reset date** (usually same as invoice date)
+- Retainer amount
 
 ### **Task 33: Auto-Count Integration**
 - Count campaigns created this month
@@ -104,40 +110,69 @@
 - Count popups created this month
 - Real-time updates
 - Display: Used / Limit
+- Track by invoice cycle (not calendar month)
 
 ### **Task 34: Client Scope Detail View**
 - Full breakdown for one client
 - Progress bars for each category
+- **Invoice date display** (e.g., "Renews: Nov 15")
+- **Days until renewal** counter
 - List of campaigns/flows this month
 - Overage history
 - Monthly trends (last 6 months)
 
-### **Task 35: Overage Warning System**
+### **Task 35: Monthly Documentation Section**
+- **Rich text editor** for monthly notes per client
+- Sections:
+  - **Scope Initiatives** (what's planned this month)
+  - **Key Findings** (insights, wins, challenges)
+  - **Client Requests** (out-of-scope items discussed)
+  - **Strategic Notes** (future opportunities)
+  - **Performance Highlights** (metrics summary)
+- Save per month per client
+- View historical monthly docs
+- Export to PDF for client reports
+
+### **Task 36: Overage Warning System**
 - Alert at 75% usage
 - Warning at 90% usage
 - Block at 100% (unless approved)
 - Email notifications (optional)
+- Show days until renewal when near limit
 
-### **Task 36: Overage Request Workflow**
+### **Task 37: Overage Request Workflow**
 - "Request Overage" button
 - Specify reason
 - Get approval from admin
 - Track approved overages
 - Show in scope detail
+- Document in monthly notes
 
-### **Task 37: Historical Tracking**
+### **Task 38: Historical Tracking**
 - Month-by-month usage chart
 - Compare to limits
 - Identify trends
 - Export to CSV for billing
+- Link to monthly documentation
 
-### **Task 38: Auto-Reset Monthly**
-- Cron job or trigger to reset on 1st of month
-- Archive previous month data
-- Reset counters to 0
-- Notification to team
+### **Task 39: Invoice Cycle View**
+- Calendar view showing all client renewal dates
+- Upcoming renewals this week/month
+- Auto-reminders before renewal
+- Scope usage summary per client for invoicing
 
-**Deliverable:** Complete scope management system
+### **Task 40: Monthly Report Generator**
+- Auto-generate monthly summary
+- Include:
+  - Campaigns sent
+  - Scope usage
+  - Performance metrics
+  - Monthly documentation notes
+  - Recommendations for next month
+- Export as PDF
+- Send to client (optional)
+
+**Deliverable:** Complete scope management with invoice tracking and monthly documentation
 
 ---
 
@@ -368,17 +403,54 @@
 
 ### **Phase 6: Content Hub**
 ```sql
-ops_content
-ops_brand_guidelines
-ops_content_folders
-ops_content_tags
+ops_brand_links (
+  id, client_id, link_title, url, 
+  category, description, is_favorite
+)
+
+ops_brand_guidelines (
+  id, client_id, brand_colors[], fonts,
+  tone_of_voice, legal_requirements,
+  key_messaging
+)
+
+ops_copy_notes (
+  id, client_id, voice_tone, key_phrases[],
+  avoid_phrases[], legal_notes, competitors_policy
+)
+
+ops_design_notes (
+  id, client_id, design_preferences,
+  client_likes[], client_dislikes[],
+  color_rules, image_style, mobile_notes
+)
 ```
 
 ### **Phase 7: Scope Tracker**
 ```sql
-ops_scope_config
-ops_scope_usage
-ops_overage_requests
+ops_scope_config (
+  id, client_id,
+  campaigns_min, campaigns_max,
+  flows_limit, popups_limit, sms_limit,
+  invoice_date, reset_date,
+  retainer_amount
+)
+
+ops_scope_usage (
+  id, client_id, invoice_month,
+  campaigns_used, flows_used, popups_used,
+  overage_approved, overage_reason
+)
+
+ops_monthly_docs (
+  id, client_id, month_year,
+  scope_initiatives TEXT,
+  key_findings TEXT,
+  client_requests TEXT,
+  strategic_notes TEXT,
+  performance_highlights TEXT,
+  created_by, updated_at
+)
 ```
 
 ### **Phase 8: Flow Management**
