@@ -198,16 +198,16 @@ export function OpsCalendar({ clients, selectedClient }: OpsCalendarProps) {
   return (
     <div className="space-y-6">
       {/* Calendar Header */}
-      <Card className="bg-white border border-gray-200 shadow-sm">
+      <Card className="bg-white/10 backdrop-blur-md border-white/20 shadow-xl">
         <CardHeader>
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-3">
-              <CalendarIcon className="h-5 w-5 text-blue-600" />
-              <CardTitle className="text-gray-900">Campaign Calendar</CardTitle>
+              <CalendarIcon className="h-5 w-5 text-white" />
+              <CardTitle className="text-white">Campaign Calendar</CardTitle>
             </div>
             
             <div className="flex items-center gap-3">
-              <div className="text-gray-600 text-sm">
+              <div className="text-white/80 text-sm">
                 {filteredCampaigns.length} campaigns
               </div>
             </div>
@@ -216,24 +216,24 @@ export function OpsCalendar({ clients, selectedClient }: OpsCalendarProps) {
       </Card>
 
       {/* Filters */}
-      <Card className="bg-white border border-gray-200 shadow-sm">
+      <Card className="bg-white/10 backdrop-blur-md border-white/20 shadow-xl">
         <CardContent className="p-4">
           <div className="flex flex-wrap gap-3">
             {/* Search */}
             <div className="flex-1 min-w-[200px]">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-white/60" />
                 <input
                   type="text"
                   placeholder="Search campaigns..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full pl-10 pr-10 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/40 focus:ring-2 focus:ring-white/40 focus:border-white/40"
                 />
                 {searchTerm && (
                   <button
                     onClick={() => setSearchTerm('')}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-white/60 hover:text-white"
                   >
                     <X className="h-4 w-4" />
                   </button>
@@ -245,17 +245,17 @@ export function OpsCalendar({ clients, selectedClient }: OpsCalendarProps) {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:ring-2 focus:ring-white/40 focus:border-white/40"
             >
-              <option value="all">All Statuses</option>
-              <option value="strategy">Strategy</option>
-              <option value="copy">Copy</option>
-              <option value="design">Design</option>
-              <option value="qa">QA</option>
-              <option value="client_approval">Client Approval</option>
-              <option value="approved">Approved</option>
-              <option value="scheduled">Scheduled</option>
-              <option value="sent">Sent</option>
+              <option value="all" className="bg-gray-800">All Statuses</option>
+              <option value="strategy" className="bg-gray-800">Strategy</option>
+              <option value="copy" className="bg-gray-800">Copy</option>
+              <option value="design" className="bg-gray-800">Design</option>
+              <option value="qa" className="bg-gray-800">QA</option>
+              <option value="client_approval" className="bg-gray-800">Client Approval</option>
+              <option value="approved" className="bg-gray-800">Approved</option>
+              <option value="scheduled" className="bg-gray-800">Scheduled</option>
+              <option value="sent" className="bg-gray-800">Sent</option>
             </select>
 
             {/* Clear Filters */}
@@ -265,7 +265,7 @@ export function OpsCalendar({ clients, selectedClient }: OpsCalendarProps) {
                   setSearchTerm('')
                   setStatusFilter('all')
                 }}
-                className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors flex items-center gap-2"
+                className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors flex items-center gap-2 border border-white/20"
               >
                 <X className="h-4 w-4" />
                 Clear Filters
@@ -279,19 +279,19 @@ export function OpsCalendar({ clients, selectedClient }: OpsCalendarProps) {
       <div className="flex justify-between items-center">
         <button 
           onClick={prevMonth}
-          className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+          className="flex items-center gap-2 px-4 py-2 bg-white/10 border border-white/20 text-white rounded-lg hover:bg-white/20 transition-colors backdrop-blur-sm"
         >
           <ChevronLeft className="h-4 w-4" />
           Previous
         </button>
         
         <div className="flex items-center gap-4">
-          <h2 className="text-xl font-semibold text-gray-900">
+          <h2 className="text-xl font-semibold text-white">
             {currentMonth.toLocaleString('default', { month: 'long', year: 'numeric' })}
           </h2>
           <button
             onClick={goToToday}
-            className="px-3 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg text-sm font-medium transition-colors"
+            className="px-3 py-1 bg-blue-500/30 hover:bg-blue-500/40 text-white rounded-lg text-sm font-medium transition-colors border border-blue-400/30"
           >
             Today
           </button>
@@ -299,7 +299,7 @@ export function OpsCalendar({ clients, selectedClient }: OpsCalendarProps) {
         
         <button 
           onClick={nextMonth}
-          className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+          className="flex items-center gap-2 px-4 py-2 bg-white/10 border border-white/20 text-white rounded-lg hover:bg-white/20 transition-colors backdrop-blur-sm"
         >
           Next
           <ChevronRight className="h-4 w-4" />
@@ -307,12 +307,12 @@ export function OpsCalendar({ clients, selectedClient }: OpsCalendarProps) {
       </div>
 
       {/* Calendar Grid */}
-      <Card className="bg-white border border-gray-200 shadow-sm">
+      <Card className="bg-white/10 backdrop-blur-md border-white/20 shadow-xl">
         <CardContent className="p-0">
-          <div className="grid grid-cols-7 gap-px bg-gray-200">
+          <div className="grid grid-cols-7 gap-px bg-white/5">
             {/* Weekday headers */}
             {weekdays.map(day => (
-              <div key={day} className="p-3 bg-gray-50 text-center font-semibold text-gray-700 text-sm">
+              <div key={day} className="p-3 bg-white/5 text-center font-semibold text-white/80 text-sm">
                 {day}
               </div>
             ))}
@@ -325,8 +325,8 @@ export function OpsCalendar({ clients, selectedClient }: OpsCalendarProps) {
               return (
                 <div 
                   key={index}
-                  className={`min-h-[140px] p-2 bg-white hover:bg-gray-50 transition-colors ${
-                    !day.isCurrentMonth ? 'opacity-50' : ''
+                  className={`min-h-[140px] p-2 bg-white/5 hover:bg-white/10 transition-colors ${
+                    !day.isCurrentMonth ? 'opacity-30' : ''
                   }`}
                 >
                   {day.date && (
@@ -334,8 +334,8 @@ export function OpsCalendar({ clients, selectedClient }: OpsCalendarProps) {
                       <div className="flex justify-between items-center mb-2">
                         <div className={`text-sm font-medium ${
                           isToday 
-                            ? 'w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center'
-                            : 'text-gray-600'
+                            ? 'w-6 h-6 rounded-full bg-blue-500 text-white flex items-center justify-center'
+                            : 'text-white/70'
                         }`}>
                           {day.date.getDate()}
                         </div>
@@ -387,10 +387,10 @@ export function OpsCalendar({ clients, selectedClient }: OpsCalendarProps) {
 
       {/* Stats */}
       <div className="grid grid-cols-4 gap-4">
-        <Card className="bg-white border border-gray-200 shadow-sm">
+        <Card className="bg-white/10 backdrop-blur-md border-white/20 shadow-xl">
           <CardContent className="p-4">
-            <div className="text-gray-600 text-sm">This Month</div>
-            <div className="text-2xl font-bold text-gray-900">
+            <div className="text-white/70 text-sm">This Month</div>
+            <div className="text-2xl font-bold text-white">
               {filteredCampaigns.filter(c => 
                 c.send_date.getMonth() === currentMonth.getMonth() &&
                 c.send_date.getFullYear() === currentMonth.getFullYear()
@@ -399,28 +399,28 @@ export function OpsCalendar({ clients, selectedClient }: OpsCalendarProps) {
           </CardContent>
         </Card>
 
-        <Card className="bg-white border border-gray-200 shadow-sm">
+        <Card className="bg-white/10 backdrop-blur-md border-white/20 shadow-xl">
           <CardContent className="p-4">
-            <div className="text-gray-600 text-sm">Needs Attention</div>
-            <div className="text-2xl font-bold text-orange-600">
+            <div className="text-white/70 text-sm">Needs Attention</div>
+            <div className="text-2xl font-bold text-orange-400">
               {filteredCampaigns.filter(c => c.priority === 'urgent' || c.priority === 'high').length}
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-white border border-gray-200 shadow-sm">
+        <Card className="bg-white/10 backdrop-blur-md border-white/20 shadow-xl">
           <CardContent className="p-4">
-            <div className="text-gray-600 text-sm">Client Approval</div>
-            <div className="text-2xl font-bold text-blue-600">
+            <div className="text-white/70 text-sm">Client Approval</div>
+            <div className="text-2xl font-bold text-blue-400">
               {filteredCampaigns.filter(c => c.status === 'client_approval').length}
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-white border border-gray-200 shadow-sm">
+        <Card className="bg-white/10 backdrop-blur-md border-white/20 shadow-xl">
           <CardContent className="p-4">
-            <div className="text-gray-600 text-sm">Scheduled</div>
-            <div className="text-2xl font-bold text-green-600">
+            <div className="text-white/70 text-sm">Scheduled</div>
+            <div className="text-2xl font-bold text-green-400">
               {filteredCampaigns.filter(c => c.status === 'scheduled').length}
             </div>
           </CardContent>
