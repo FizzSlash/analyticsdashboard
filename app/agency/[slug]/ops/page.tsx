@@ -14,10 +14,12 @@ import {
   Columns, 
   FolderOpen, 
   Target,
-  X
+  X,
+  Zap
 } from 'lucide-react'
 
-type OpsTab = 'overview' | 'calendar' | 'pipeline' | 'content' | 'scope'
+type OpsTab = 'overview' | 'campaigns' | 'flows' | 'content' | 'scope'
+type CampaignView = 'calendar' | 'pipeline'
 
 interface PageProps {
   params: {
@@ -31,6 +33,7 @@ export default function OperationsPage({ params }: PageProps) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<OpsTab>('overview')
+  const [campaignView, setCampaignView] = useState<CampaignView>('calendar')
   const [selectedClient, setSelectedClient] = useState<string>('all') // 'all' or client ID
   const router = useRouter()
   const { supabase, loading: authLoading } = useAuth()
@@ -38,8 +41,8 @@ export default function OperationsPage({ params }: PageProps) {
   // Define tabs (matching portal style)
   const opsTabs = [
     { id: 'overview', label: 'Overview', icon: BarChart3 },
-    { id: 'calendar', label: 'Calendar', icon: Calendar },
-    { id: 'pipeline', label: 'Pipeline', icon: Columns },
+    { id: 'campaigns', label: 'Campaigns', icon: Calendar },
+    { id: 'flows', label: 'Flows', icon: Zap },
     { id: 'content', label: 'Content Hub', icon: FolderOpen },
     { id: 'scope', label: 'Scope', icon: Target }
   ]
@@ -356,20 +359,66 @@ export default function OperationsPage({ params }: PageProps) {
             </div>
           )}
 
-          {/* Calendar Tab */}
-          {activeTab === 'calendar' && (
-            <OpsCalendar 
-              clients={clients}
-              selectedClient={selectedClient}
-            />
+          {/* Campaigns Tab (Calendar + Pipeline Toggle) */}
+          {activeTab === 'campaigns' && (
+            <div className="space-y-6">
+              {/* View Toggle */}
+              <div className="flex justify-end">
+                <div className="inline-flex gap-2 p-1 bg-white/10 backdrop-blur-md rounded-xl border border-white/20">
+                  <button
+                    onClick={() => setCampaignView('calendar')}
+                    className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                      campaignView === 'calendar'
+                        ? 'bg-white/30 text-white shadow-lg'
+                        : 'text-white/60 hover:text-white hover:bg-white/10'
+                    }`}
+                  >
+                    <Calendar className="h-4 w-4 inline mr-2" />
+                    Calendar View
+                  </button>
+                  <button
+                    onClick={() => setCampaignView('pipeline')}
+                    className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                      campaignView === 'pipeline'
+                        ? 'bg-white/30 text-white shadow-lg'
+                        : 'text-white/60 hover:text-white hover:bg-white/10'
+                    }`}
+                  >
+                    <Columns className="h-4 w-4 inline mr-2" />
+                    Pipeline View
+                  </button>
+                </div>
+              </div>
+
+              {/* Show either calendar or pipeline */}
+              {campaignView === 'calendar' ? (
+                <OpsCalendar 
+                  clients={clients}
+                  selectedClient={selectedClient}
+                />
+              ) : (
+                <OpsPipeline 
+                  clients={clients}
+                  selectedClient={selectedClient}
+                />
+              )}
+            </div>
           )}
 
-          {/* Pipeline Tab */}
-          {activeTab === 'pipeline' && (
-            <OpsPipeline 
-              clients={clients}
-              selectedClient={selectedClient}
-            />
+          {/* Flows Tab (Placeholder for future) */}
+          {activeTab === 'flows' && (
+            <Card className="bg-white/10 backdrop-blur-md border-white/20 shadow-xl">
+              <CardHeader>
+                <CardTitle className="text-white">Flow Management</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-white/60 text-center py-12">
+                  <Zap className="h-16 w-16 mx-auto mb-4 text-white/40" />
+                  <p className="text-lg">Flow pipeline coming after campaigns are complete</p>
+                  <p className="text-sm mt-2">Will track flow creation, approval, and performance</p>
+                </div>
+              </CardContent>
+            </Card>
           )}
 
           {/* Content Hub Tab */}
