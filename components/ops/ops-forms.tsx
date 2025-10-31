@@ -544,7 +544,7 @@ export function OpsForms({ clients, selectedClient }: OpsFormsProps) {
                   <div key={fieldId} className="border-b border-gray-200 pb-4">
                     <div className="text-sm font-semibold text-gray-700 mb-1">{field.label}</div>
                     <div className="text-gray-900 whitespace-pre-wrap bg-gray-50 p-3 rounded-lg">
-                      {answer || '(No answer)'}
+                      {String(answer || '(No answer)')}
                     </div>
                   </div>
                 )
