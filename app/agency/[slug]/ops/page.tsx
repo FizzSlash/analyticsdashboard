@@ -6,6 +6,7 @@ import { useAuth } from '@/components/auth/auth-provider'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { OpsCalendar } from '@/components/ops/ops-calendar'
 import { OpsPipeline } from '@/components/ops/ops-pipeline'
+import { OpsOverview } from '@/components/ops/ops-overview'
 import { 
   Settings, 
   ArrowLeft, 
@@ -21,6 +22,18 @@ import {
 type OpsTab = 'overview' | 'campaigns' | 'flows' | 'content' | 'scope'
 type CampaignView = 'calendar' | 'pipeline'
 
+interface Campaign {
+  id: string
+  campaign_name: string
+  client_id: string
+  client_name: string
+  client_color: string
+  send_date: Date
+  status: 'strategy' | 'copy' | 'design' | 'qa' | 'client_approval' | 'approved' | 'scheduled' | 'sent'
+  priority: 'low' | 'normal' | 'high' | 'urgent'
+  campaign_type: 'email' | 'sms'
+}
+
 interface PageProps {
   params: {
     slug: string
@@ -35,6 +48,8 @@ export default function OperationsPage({ params }: PageProps) {
   const [activeTab, setActiveTab] = useState<OpsTab>('overview')
   const [campaignView, setCampaignView] = useState<CampaignView>('calendar')
   const [selectedClient, setSelectedClient] = useState<string>('all') // 'all' or client ID
+  const [sharedCampaigns, setSharedCampaigns] = useState<Campaign[]>([]) // Shared across calendar/pipeline/overview
+  const [selectedCampaignForModal, setSelectedCampaignForModal] = useState<Campaign | null>(null)
   const router = useRouter()
   const { supabase, loading: authLoading } = useAuth()
 
@@ -96,6 +111,46 @@ export default function OperationsPage({ params }: PageProps) {
           setError('Failed to load clients')
         } else {
           setClients(clientsData || [])
+          
+          // Initialize mock campaigns (will be from database later)
+          if (clientsData && clientsData.length > 0) {
+            const mockCampaigns: Campaign[] = [
+              {
+                id: '1',
+                campaign_name: 'Black Friday Launch',
+                client_id: clientsData[0]?.id || '1',
+                client_name: clientsData[0]?.brand_name || 'Client',
+                client_color: clientsData[0]?.primary_color || '#3B82F6',
+                send_date: new Date(2025, 10, 24, 9, 0),
+                status: 'design',
+                priority: 'urgent',
+                campaign_type: 'email'
+              },
+              {
+                id: '2',
+                campaign_name: 'Welcome Series',
+                client_id: clientsData[1]?.id || clientsData[0]?.id,
+                client_name: clientsData[1]?.brand_name || clientsData[0]?.brand_name,
+                client_color: clientsData[1]?.primary_color || '#10B981',
+                send_date: new Date(2025, 10, 28, 14, 0),
+                status: 'qa',
+                priority: 'normal',
+                campaign_type: 'email'
+              },
+              {
+                id: '3',
+                campaign_name: 'Product Launch',
+                client_id: clientsData[2]?.id || clientsData[0]?.id,
+                client_name: clientsData[2]?.brand_name || clientsData[0]?.brand_name,
+                client_color: clientsData[2]?.primary_color || '#8B5CF6',
+                send_date: new Date(2025, 10, 30, 10, 0),
+                status: 'client_approval',
+                priority: 'high',
+                campaign_type: 'email'
+              }
+            ]
+            setSharedCampaigns(mockCampaigns)
+          }
         }
 
       } catch (error) {
@@ -248,115 +303,12 @@ export default function OperationsPage({ params }: PageProps) {
 
           {/* Tab Content */}
           {activeTab === 'overview' && (
-            <div className="space-y-6">
-              {/* Welcome Card */}
-          <Card className="bg-white/10 backdrop-blur-md border-white/20 shadow-xl">
-            <CardHeader>
-              <CardTitle className="text-white text-xl">
-                Welcome to the Operations Dashboard
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-white/80">
-                <p className="mb-4">
-                  This is your internal workspace for managing campaigns, workflows, and team operations.
-                </p>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="bg-white/5 p-4 rounded-lg border border-white/10">
-                    <div className="text-white font-semibold mb-2">📅 Campaign Management</div>
-                    <div className="text-white/70 text-sm">
-                      View calendar, manage pipeline, track status
-                    </div>
-                  </div>
-                  <div className="bg-white/5 p-4 rounded-lg border border-white/10">
-                    <div className="text-white font-semibold mb-2">🗂️ Content Hub</div>
-                    <div className="text-white/70 text-sm">
-                      Store assets, guidelines, and client notes
-                    </div>
-                  </div>
-                  <div className="bg-white/5 p-4 rounded-lg border border-white/10">
-                    <div className="text-white font-semibold mb-2">📊 Scope Tracking</div>
-                    <div className="text-white/70 text-sm">
-                      Monitor monthly usage and limits
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Clients List (Temporary - will be replaced with tabs) */}
-          <Card className="bg-white/10 backdrop-blur-md border-white/20 shadow-xl mt-6">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-white">
-                  {selectedClient === 'all' 
-                    ? `All Clients (${clients.length})`
-                    : `${clients.find(c => c.id === selectedClient)?.brand_name || 'Client'} Campaigns`
-                  }
-                </CardTitle>
-                {selectedClient !== 'all' && (
-                  <button
-                    onClick={() => setSelectedClient('all')}
-                    className="text-white/60 hover:text-white text-sm flex items-center gap-2 transition-colors"
-                  >
-                    <X className="h-4 w-4" />
-                    Clear Filter
-                  </button>
-                )}
-              </div>
-            </CardHeader>
-            <CardContent>
-              {clients.length === 0 ? (
-                <div className="text-white/60 text-center py-8">
-                  <p>No clients found. Add clients in the agency admin dashboard.</p>
-                  <button
-                    onClick={() => router.push(`/agency/${params.slug}/admin`)}
-                    className="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
-                  >
-                    Go to Admin Dashboard
-                  </button>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {clients
-                    .filter(client => selectedClient === 'all' || client.id === selectedClient)
-                    .map((client) => (
-                    <div
-                      key={client.id}
-                      className="bg-white/5 hover:bg-white/10 p-4 rounded-lg border border-white/20 transition-all cursor-pointer"
-                    >
-                      <div className="flex items-center gap-3 mb-2">
-                        <div 
-                          className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-lg"
-                          style={{ 
-                            backgroundColor: client.primary_color || primaryColor
-                          }}
-                        >
-                          {client.brand_name.charAt(0)}
-                        </div>
-                        <div className="flex-1">
-                          <h3 className="text-white font-semibold">{client.brand_name}</h3>
-                          <p className="text-white/60 text-sm">{client.brand_slug}</p>
-                        </div>
-                      </div>
-                      <div className="text-white/40 text-xs mt-2">
-                        Click to manage campaigns →
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-              {/* Status Info */}
-              <div className="mt-6 text-center">
-                <p className="text-white/60 text-sm">
-                  ✅ Task 1 & 2 Complete • Calendar, Pipeline, and more coming soon...
-                </p>
-              </div>
-            </div>
+            <OpsOverview
+              clients={clients}
+              selectedClient={selectedClient}
+              campaigns={sharedCampaigns}
+              onCampaignClick={(campaign: any) => setSelectedCampaignForModal(campaign)}
+            />
           )}
 
           {/* Campaigns Tab (Calendar + Pipeline Toggle) */}
