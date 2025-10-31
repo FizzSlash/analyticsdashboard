@@ -16,7 +16,7 @@ interface ScopeConfig {
   campaigns_min: number
   campaigns_max: number
   flows_limit: number
-  popups_limit: number
+  ab_tests_limit: number
   sms_limit: number
   invoice_date: number
   retainer_amount: number
@@ -255,12 +255,12 @@ Example:
 
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Popups per Month
+                    A/B Tests per Month
                   </label>
                   <input
                     type="number"
-                    value={scopeConfig.popups_limit}
-                    onChange={(e) => setScopeConfig({ ...scopeConfig, popups_limit: parseInt(e.target.value) || 0 })}
+                    value={scopeConfig.ab_tests_limit}
+                    onChange={(e) => setScopeConfig({ ...scopeConfig, ab_tests_limit: parseInt(e.target.value) || 0 })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                   />
                 </div>
@@ -320,8 +320,8 @@ Example:
                     <span className="font-semibold">{usage.flows_used}/{scopeConfig.flows_limit}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Popups:</span>
-                    <span className="font-semibold">{usage.popups_used}/{scopeConfig.popups_limit}</span>
+                    <span className="text-gray-600">A/B Tests:</span>
+                    <span className="font-semibold">{usage.ab_tests_used}/{scopeConfig.ab_tests_limit}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">SMS:</span>
@@ -343,12 +343,12 @@ Example:
 
               <div className="space-y-2">
                 {[
-                  { month: 'Oct 2025', campaigns: usage.campaigns_used, flows: usage.flows_used, popups: usage.popups_used, limit: config.campaigns_max },
-                  { month: 'Sep 2025', campaigns: 10, flows: 1, popups: 3, limit: 12 },
-                  { month: 'Aug 2025', campaigns: 11, flows: 2, popups: 4, limit: 12 },
-                  { month: 'Jul 2025', campaigns: 9, flows: 1, popups: 2, limit: 12 },
-                  { month: 'Jun 2025', campaigns: 12, flows: 2, popups: 4, limit: 12 },
-                  { month: 'May 2025', campaigns: 8, flows: 1, popups: 3, limit: 12 }
+                  { month: 'Oct 2025', campaigns: usage.campaigns_used, flows: usage.flows_used, ab_tests: usage.ab_tests_used, limit: config.campaigns_max },
+                  { month: 'Sep 2025', campaigns: 10, flows: 1, ab_tests: 2, limit: 12 },
+                  { month: 'Aug 2025', campaigns: 11, flows: 2, ab_tests: 3, limit: 12 },
+                  { month: 'Jul 2025', campaigns: 9, flows: 1, ab_tests: 1, limit: 12 },
+                  { month: 'Jun 2025', campaigns: 12, flows: 2, ab_tests: 3, limit: 12 },
+                  { month: 'May 2025', campaigns: 8, flows: 1, ab_tests: 2, limit: 12 }
                 ].map((month, index) => {
                   const percentage = Math.round((month.campaigns / month.limit) * 100)
                   const isOverage = month.campaigns > month.limit
@@ -363,7 +363,7 @@ Example:
                       </div>
                       <div className="grid grid-cols-2 gap-2 text-xs text-gray-600">
                         <div>Flows: {month.flows}</div>
-                        <div>Popups: {month.popups}</div>
+                        <div>A/B Tests: {month.ab_tests}</div>
                       </div>
                     </div>
                   )

@@ -21,7 +21,7 @@ interface ScopeConfig {
   campaigns_min: number
   campaigns_max: number
   flows_limit: number
-  popups_limit: number
+  ab_tests_limit: number
   sms_limit: number
   invoice_date: number // Day of month (1-31)
   retainer_amount: number
@@ -31,7 +31,7 @@ interface ScopeUsage {
   client_id: string
   campaigns_used: number
   flows_used: number
-  popups_used: number
+  ab_tests_used: number
   sms_used: number
   month_year: string
 }
@@ -52,7 +52,7 @@ export function ScopeTracker({ clients, selectedClient, campaigns }: ScopeTracke
     campaigns_min: 8,
     campaigns_max: 12,
     flows_limit: 2,
-    popups_limit: 4,
+    ab_tests_limit: 3,
     sms_limit: 6,
     invoice_date: 15, // 15th of month
     retainer_amount: 3500
@@ -72,7 +72,7 @@ export function ScopeTracker({ clients, selectedClient, campaigns }: ScopeTracke
       client_id: client.id,
       campaigns_used: campaignsThisMonth || (index === 0 ? 8 : index === 1 ? 11 : 6), // Mock data
       flows_used: index === 0 ? 1 : 0,
-      popups_used: index === 0 ? 3 : index === 1 ? 4 : 2,
+      ab_tests_used: index === 0 ? 2 : index === 1 ? 3 : 1,
       sms_used: 0,
       month_year: currentMonth
     }
@@ -184,9 +184,9 @@ export function ScopeTracker({ clients, selectedClient, campaigns }: ScopeTracke
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-gray-600">Popups</span>
+                    <span className="text-gray-600">A/B Tests</span>
                     <span className="font-semibold text-gray-900">
-                      {usage.popups_used}/{config.popups_limit}
+                      {usage.ab_tests_used}/{config.ab_tests_limit}
                     </span>
                   </div>
                 </div>
