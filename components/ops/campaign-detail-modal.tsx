@@ -95,6 +95,13 @@ export function CampaignDetailModal({
   ]
 
   const handleSave = () => {
+    // Validate: Image required for QA, Client Approval, or later stages
+    const requiresImage = ['qa', 'client_approval', 'approved', 'scheduled', 'sent'].includes(campaign.status)
+    if (requiresImage && !uploadedImage) {
+      alert('⚠️ Campaign preview image is required before moving to QA or Client Approval stage.\n\nPlease upload an image showing the email design.')
+      return
+    }
+
     setIsSaving(true)
     setTimeout(() => {
       onSave({ ...campaign, preview_url: uploadedImage || undefined })
@@ -180,7 +187,7 @@ export function CampaignDetailModal({
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <Card className="bg-white w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl">
+      <Card className="bg-white w-full max-w-6xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl">
         {/* Modal Header */}
         <CardHeader className="border-b border-gray-200 flex-shrink-0">
           <div className="flex items-center justify-between">
@@ -202,9 +209,12 @@ export function CampaignDetailModal({
           </div>
         </CardHeader>
 
-        {/* Modal Content - Scrollable */}
-        <CardContent className="flex-1 overflow-y-auto p-6">
-          <div className="space-y-6">
+        {/* Modal Content - Two Column Layout */}
+        <CardContent className="flex-1 overflow-hidden p-0">
+          <div className="grid grid-cols-2 h-full">
+            {/* Left Column: Form Fields (Scrollable) */}
+            <div className="overflow-y-auto p-6 border-r border-gray-200">
+              <div className="space-y-6">
             {/* Basic Info Section */}
             <div>
               <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
@@ -331,12 +341,18 @@ export function CampaignDetailModal({
                     <option value="strategy">Strategy</option>
                     <option value="copy">Copy</option>
                     <option value="design">Design</option>
-                    <option value="qa">QA</option>
-                    <option value="client_approval">Client Approval</option>
-                    <option value="approved">Approved</option>
-                    <option value="scheduled">Scheduled</option>
-                    <option value="sent">Sent</option>
+                    <option value="qa">QA ⚠️ (requires image)</option>
+                    <option value="client_approval">Client Approval ⚠️ (requires image)</option>
+                    <option value="approved">Approved ⚠️ (requires image)</option>
+                    <option value="scheduled">Scheduled ⚠️ (requires image)</option>
+                    <option value="sent">Sent ⚠️ (requires image)</option>
                   </select>
+                  {!uploadedImage && (
+                    <div className="mt-1 text-xs text-orange-600 flex items-center gap-1">
+                      <AlertCircle className="h-3 w-3" />
+                      Image required for QA and beyond
+                    </div>
+                  )}
                 </div>
 
                 {/* Priority */}
@@ -407,67 +423,6 @@ export function CampaignDetailModal({
               </div>
             </div>
 
-            {/* Campaign Image Upload */}
-            <div>
-              <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                <Upload className="h-4 w-4" />
-                Campaign Preview Image
-              </h3>
-              
-              {uploadedImage ? (
-                /* Image Preview */
-                <div className="relative">
-                  <img 
-                    src={uploadedImage} 
-                    alt="Campaign preview"
-                    className="w-full rounded-lg border border-gray-300 shadow-sm"
-                  />
-                  <button
-                    onClick={handleRemoveImage}
-                    className="absolute top-2 right-2 p-2 bg-red-600 hover:bg-red-700 text-white rounded-lg shadow-lg transition-colors"
-                    title="Remove image"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                  <div className="mt-2 text-xs text-gray-600">
-                    Click the X to remove and upload a different image
-                  </div>
-                </div>
-              ) : (
-                /* Upload Area */
-                <div
-                  onDrop={handleDrop}
-                  onDragOver={handleDragOver}
-                  onDragLeave={handleDragLeave}
-                  className={`border-2 border-dashed rounded-lg p-8 text-center transition-all ${
-                    isDragging 
-                      ? 'border-blue-500 bg-blue-50' 
-                      : 'border-gray-300 bg-gray-50 hover:bg-gray-100'
-                  }`}
-                >
-                  <Upload className={`h-12 w-12 mx-auto mb-4 ${
-                    isDragging ? 'text-blue-500' : 'text-gray-400'
-                  }`} />
-                  <div className="text-sm text-gray-700 mb-2">
-                    <label htmlFor="file-upload" className="cursor-pointer text-blue-600 hover:text-blue-700 font-medium">
-                      Click to upload
-                    </label>
-                    {' '}or drag and drop
-                  </div>
-                  <div className="text-xs text-gray-500">
-                    PNG, JPG, or GIF (recommended: 600px wide)
-                  </div>
-                  <input
-                    id="file-upload"
-                    type="file"
-                    accept="image/png,image/jpeg,image/jpg,image/gif"
-                    onChange={handleFileSelect}
-                    className="hidden"
-                  />
-                </div>
-              )}
-            </div>
-
             {/* Internal Notes */}
             <div>
               <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
@@ -528,6 +483,74 @@ Examples:
                 </div>
               </div>
             )}
+              </div>
+            </div>
+
+            {/* Right Column: Image Preview & Upload */}
+            <div className="overflow-y-auto p-6 bg-gray-50">
+              <div className="sticky top-0 space-y-4">
+                <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                  <Upload className="h-4 w-4" />
+                  Campaign Preview Image
+                </h3>
+                
+                {uploadedImage ? (
+                  /* Image Preview */
+                  <div className="relative">
+                    <img 
+                      src={uploadedImage} 
+                      alt="Campaign preview"
+                      className="w-full rounded-lg border border-gray-300 shadow-lg"
+                    />
+                    <button
+                      onClick={handleRemoveImage}
+                      className="absolute top-2 right-2 p-2 bg-red-600 hover:bg-red-700 text-white rounded-lg shadow-lg transition-colors"
+                      title="Remove image"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                    <div className="mt-2 text-xs text-gray-600 text-center">
+                      Click X to replace
+                    </div>
+                  </div>
+                ) : (
+                  /* Upload Area */
+                  <div
+                    onDrop={handleDrop}
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    className={`border-2 border-dashed rounded-lg p-8 text-center transition-all ${
+                      isDragging 
+                        ? 'border-blue-500 bg-blue-50' 
+                        : 'border-gray-300 bg-white hover:bg-gray-50'
+                    }`}
+                  >
+                    <Upload className={`h-12 w-12 mx-auto mb-4 ${
+                      isDragging ? 'text-blue-500' : 'text-gray-400'
+                    }`} />
+                    <div className="text-sm text-gray-700 mb-2">
+                      <label htmlFor="file-upload" className="cursor-pointer text-blue-600 hover:text-blue-700 font-medium">
+                        Click to upload
+                      </label>
+                      {' '}or drag and drop
+                    </div>
+                    <div className="text-xs text-gray-500 mb-2">
+                      PNG, JPG, or GIF
+                    </div>
+                    <div className="text-xs text-orange-600 font-medium">
+                      ⚠️ Required for QA and Client Approval
+                    </div>
+                    <input
+                      id="file-upload"
+                      type="file"
+                      accept="image/png,image/jpeg,image/jpg,image/gif"
+                      onChange={handleFileSelect}
+                      className="hidden"
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </CardContent>
 
