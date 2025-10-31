@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { OpsCalendar } from '@/components/ops/ops-calendar'
 import { OpsPipeline } from '@/components/ops/ops-pipeline'
 import { OpsOverview } from '@/components/ops/ops-overview'
+import { ContentHub } from '@/components/ops/content-hub'
 import { 
   Settings, 
   ArrowLeft, 
@@ -375,18 +376,10 @@ export default function OperationsPage({ params }: PageProps) {
 
           {/* Content Hub Tab */}
           {activeTab === 'content' && (
-            <Card className="bg-white/10 backdrop-blur-md border-white/20 shadow-xl">
-              <CardHeader>
-                <CardTitle className="text-white">Content Hub</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-white/60 text-center py-12">
-                  <FolderOpen className="h-16 w-16 mx-auto mb-4 text-white/40" />
-                  <p className="text-lg">Content management coming soon</p>
-                  <p className="text-sm mt-2">Store assets, brand guidelines, and client notes</p>
-                </div>
-              </CardContent>
-            </Card>
+            <ContentHub
+              clients={clients}
+              selectedClient={selectedClient}
+            />
           )}
 
           {/* Scope Tab */}

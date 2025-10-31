@@ -1,0 +1,781 @@
+'use client'
+
+import { useState } from 'react'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { 
+  Link as LinkIcon,
+  ExternalLink,
+  Plus,
+  Edit,
+  Trash2,
+  Save,
+  X,
+  Palette,
+  Type,
+  FileText,
+  Briefcase,
+  Star,
+  Search,
+  Figma
+} from 'lucide-react'
+
+interface BrandLink {
+  id: string
+  client_id: string
+  link_title: string
+  url: string
+  category: 'figma' | 'drive' | 'website' | 'competitor' | 'other'
+  description?: string
+  is_favorite: boolean
+}
+
+interface BrandGuidelines {
+  client_id: string
+  brand_colors: string[]
+  fonts: string
+  tone_of_voice: string
+  legal_requirements: string
+  key_messaging: string
+}
+
+interface CopyNotes {
+  client_id: string
+  voice_tone: string
+  key_phrases: string
+  avoid_phrases: string
+  legal_notes: string
+}
+
+interface DesignNotes {
+  client_id: string
+  design_preferences: string
+  client_likes: string
+  client_dislikes: string
+  image_style: string
+  mobile_notes: string
+}
+
+interface ContentHubProps {
+  clients: any[]
+  selectedClient: string
+}
+
+type ContentTab = 'assets' | 'guidelines' | 'copy' | 'design'
+
+export function ContentHub({ clients, selectedClient }: ContentHubProps) {
+  const [activeTab, setActiveTab] = useState<ContentTab>('assets')
+  const [searchTerm, setSearchTerm] = useState('')
+  const [editingLink, setEditingLink] = useState<BrandLink | null>(null)
+  const [showAddLink, setShowAddLink] = useState(false)
+
+  // Get current client info
+  const currentClient = clients.find(c => c.id === selectedClient)
+  const clientName = selectedClient === 'all' 
+    ? 'All Clients' 
+    : currentClient?.brand_name || 'Select a client'
+
+  // Mock brand links (will be from database later)
+  const [brandLinks, setBrandLinks] = useState<BrandLink[]>([
+    {
+      id: '1',
+      client_id: clients[0]?.id || '1',
+      link_title: 'Email Design System',
+      url: 'https://figma.com/file/abc123',
+      category: 'figma',
+      description: 'Master email template designs',
+      is_favorite: true
+    },
+    {
+      id: '2',
+      client_id: clients[0]?.id || '1',
+      link_title: 'Brand Assets Folder',
+      url: 'https://drive.google.com/drive/folders/xyz',
+      category: 'drive',
+      description: 'Logos, product images, brand guidelines PDF',
+      is_favorite: true
+    },
+    {
+      id: '3',
+      client_id: clients[0]?.id || '1',
+      link_title: 'Main Website',
+      url: 'https://hydrus.com',
+      category: 'website',
+      description: 'Client website for reference',
+      is_favorite: false
+    }
+  ])
+
+  // Mock brand guidelines (will be from database later)
+  const [guidelines, setGuidelines] = useState<BrandGuidelines>({
+    client_id: clients[0]?.id || '1',
+    brand_colors: ['#3B82F6', '#1D4ED8', '#60A5FA'],
+    fonts: 'Montserrat (headings), Open Sans (body)',
+    tone_of_voice: 'Energetic, friendly, health-focused. Use active voice and speak directly to the customer.',
+    legal_requirements: 'Always include disclaimer: "These statements have not been evaluated by the FDA." Link to privacy policy in footer.',
+    key_messaging: '• Hydrate smarter, not harder\n• Science-backed hydration\n• Your body\'s best friend'
+  })
+
+  // Mock copy notes
+  const [copyNotes, setCopyNotes] = useState<CopyNotes>({
+    client_id: clients[0]?.id || '1',
+    voice_tone: 'Active, energetic, inspiring. Use "you" and "your". Avoid medical claims.',
+    key_phrases: '• "Hydrate smarter, not harder"\n• "Science-backed hydration"\n• "Your body\'s best friend"\n• "Feel the difference"',
+    avoid_phrases: '• Medical claims (cure, treat, prevent)\n• Competitor mentions\n• Negative language\n• All-caps headlines',
+    legal_notes: 'Always include FDA disclaimer. Link privacy policy. Mention subscription can be canceled anytime.'
+  })
+
+  // Mock design notes
+  const [designNotes, setDesignNotes] = useState<DesignNotes>({
+    client_id: clients[0]?.id || '1',
+    design_preferences: 'Hero images must show product in lifestyle setting. Use plenty of white space. Mobile-first design (70% of opens are mobile).',
+    client_likes: '• Bold, vibrant colors\n• Lifestyle product photography\n• Clean, minimal layouts\n• Large, prominent CTAs',
+    client_dislikes: '• Stock photos with models\n• Busy, cluttered designs\n• All-caps headlines\n• Red colors (competitor uses red)',
+    image_style: 'Product photography with natural lighting. Lifestyle shots preferred over product-only. Always show product in use.',
+    mobile_notes: 'CTAs must be 44px min height. Test all links on mobile. Keep email width under 600px. Single column on mobile.'
+  })
+
+  // Filter links
+  const filteredLinks = brandLinks.filter(link => {
+    if (selectedClient !== 'all' && link.client_id !== selectedClient) return false
+    if (searchTerm && !link.link_title.toLowerCase().includes(searchTerm.toLowerCase()) && 
+        !link.url.toLowerCase().includes(searchTerm.toLowerCase())) return false
+    return true
+  })
+
+  const getCategoryIcon = (category: string) => {
+    switch (category) {
+      case 'figma': return <Figma className="h-4 w-4 text-purple-600" />
+      case 'drive': return <Briefcase className="h-4 w-4 text-blue-600" />
+      case 'website': return <LinkIcon className="h-4 w-4 text-green-600" />
+      case 'competitor': return <FileText className="h-4 w-4 text-orange-600" />
+      default: return <LinkIcon className="h-4 w-4 text-gray-600" />
+    }
+  }
+
+  const getCategoryColor = (category: string) => {
+    switch (category) {
+      case 'figma': return 'bg-purple-50 border-purple-200'
+      case 'drive': return 'bg-blue-50 border-blue-200'
+      case 'website': return 'bg-green-50 border-green-200'
+      case 'competitor': return 'bg-orange-50 border-orange-200'
+      default: return 'bg-gray-50 border-gray-200'
+    }
+  }
+
+  const handleAddLink = (link: Omit<BrandLink, 'id'>) => {
+    const newLink = { ...link, id: `new-${Date.now()}` }
+    setBrandLinks([...brandLinks, newLink])
+    setShowAddLink(false)
+    console.log('✅ Link added:', newLink.link_title)
+  }
+
+  const handleUpdateLink = (link: BrandLink) => {
+    setBrandLinks(brandLinks.map(l => l.id === link.id ? link : l))
+    setEditingLink(null)
+    console.log('✅ Link updated:', link.link_title)
+  }
+
+  const handleDeleteLink = (linkId: string) => {
+    if (confirm('Delete this link?')) {
+      setBrandLinks(brandLinks.filter(l => l.id !== linkId))
+      console.log('🗑️ Link deleted')
+    }
+  }
+
+  const toggleFavorite = (linkId: string) => {
+    setBrandLinks(brandLinks.map(l => 
+      l.id === linkId ? { ...l, is_favorite: !l.is_favorite } : l
+    ))
+  }
+
+  const contentTabs = [
+    { id: 'assets', label: 'Brand Assets', icon: LinkIcon },
+    { id: 'guidelines', label: 'Brand Guidelines', icon: Palette },
+    { id: 'copy', label: 'Copy Notes', icon: FileText },
+    { id: 'design', label: 'Design Notes', icon: Type }
+  ]
+
+  if (selectedClient === 'all') {
+    return (
+      <Card className="bg-white/10 backdrop-blur-md border-white/20 shadow-xl">
+        <CardContent className="p-12 text-center">
+          <Briefcase className="h-16 w-16 mx-auto mb-4 text-white/40" />
+          <div className="text-white text-lg mb-2">Select a Client</div>
+          <div className="text-white/60 text-sm">
+            Choose a specific client to view their brand assets, guidelines, and notes
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Content Hub Header */}
+      <Card className="bg-white/10 backdrop-blur-md border-white/20 shadow-xl">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-white text-xl">Content Hub</CardTitle>
+              <div className="text-white/70 text-sm mt-1">{clientName}</div>
+            </div>
+            {activeTab === 'assets' && (
+              <button
+                onClick={() => setShowAddLink(true)}
+                className="px-4 py-2 bg-blue-500/30 hover:bg-blue-500/40 text-white rounded-lg transition-colors flex items-center gap-2 border border-blue-400/30"
+              >
+                <Plus className="h-4 w-4" />
+                Add Link
+              </button>
+            )}
+          </div>
+        </CardHeader>
+      </Card>
+
+      {/* Content Tabs */}
+      <div className="flex gap-3 p-2 bg-white/5 backdrop-blur-sm rounded-2xl border border-white/20">
+        {contentTabs.map(tab => {
+          const Icon = tab.icon
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id as ContentTab)}
+              className={`
+                flex items-center gap-3 px-6 py-3 rounded-xl text-sm font-semibold transition-all duration-300
+                ${activeTab === tab.id 
+                  ? 'bg-white/30 text-white shadow-lg border border-white/40' 
+                  : 'text-white/80 hover:text-white hover:bg-white/15'
+                }
+              `}
+            >
+              <Icon className="h-4 w-4" />
+              {tab.label}
+            </button>
+          )
+        })}
+      </div>
+
+      {/* Tab Content */}
+      {activeTab === 'assets' && (
+        <div className="space-y-6">
+          {/* Search */}
+          <Card className="bg-white/10 backdrop-blur-md border-white/20 shadow-xl">
+            <CardContent className="p-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-white/60" />
+                <input
+                  type="text"
+                  placeholder="Search links..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-10 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/40 focus:ring-2 focus:ring-white/40"
+                />
+                {searchTerm && (
+                  <button
+                    onClick={() => setSearchTerm('')}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-white/60 hover:text-white"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Links Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {filteredLinks.map(link => (
+              <Card key={link.id} className={`border-2 ${getCategoryColor(link.category)}`}>
+                <CardContent className="p-4">
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      {getCategoryIcon(link.category)}
+                      <h3 className="font-semibold text-gray-900">{link.link_title}</h3>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => toggleFavorite(link.id)}
+                        className={`p-1 rounded transition-colors ${
+                          link.is_favorite ? 'text-yellow-500' : 'text-gray-400 hover:text-yellow-500'
+                        }`}
+                      >
+                        <Star className={`h-4 w-4 ${link.is_favorite ? 'fill-current' : ''}`} />
+                      </button>
+                      <button
+                        onClick={() => setEditingLink(link)}
+                        className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteLink(link.id)}
+                        className="p-1 text-gray-400 hover:text-red-600 transition-colors"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                  
+                  {link.description && (
+                    <p className="text-gray-600 text-sm mb-3">{link.description}</p>
+                  )}
+                  
+                  <a
+                    href={link.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 text-blue-600 hover:text-blue-700 text-sm font-medium transition-colors"
+                  >
+                    <ExternalLink className="h-3 w-3" />
+                    Open Link
+                  </a>
+                  
+                  <div className="mt-2 text-xs text-gray-500 capitalize">
+                    {link.category}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {filteredLinks.length === 0 && (
+            <Card className="bg-white/10 backdrop-blur-md border-white/20 shadow-xl">
+              <CardContent className="p-12 text-center">
+                <LinkIcon className="h-16 w-16 mx-auto mb-4 text-white/40" />
+                <div className="text-white text-lg mb-2">No Links Yet</div>
+                <div className="text-white/60 text-sm mb-4">
+                  Add important links like Figma boards, Google Drives, and brand resources
+                </div>
+                <button
+                  onClick={() => setShowAddLink(true)}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+                >
+                  Add First Link
+                </button>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      )}
+
+      {activeTab === 'guidelines' && (
+        <Card className="bg-white border border-gray-200 shadow-sm">
+          <CardHeader>
+            <CardTitle className="text-gray-900 flex items-center gap-2">
+              <Palette className="h-5 w-5" />
+              Brand Guidelines - {clientName}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Brand Colors */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Brand Colors
+              </label>
+              <div className="flex gap-3 mb-2">
+                {guidelines.brand_colors.map((color, index) => (
+                  <div key={index} className="text-center">
+                    <div 
+                      className="w-16 h-16 rounded-lg border-2 border-gray-300 shadow-sm"
+                      style={{ backgroundColor: color }}
+                    />
+                    <div className="text-xs text-gray-600 mt-1 font-mono">{color}</div>
+                  </div>
+                ))}
+              </div>
+              <input
+                type="text"
+                value={guidelines.brand_colors.join(', ')}
+                onChange={(e) => setGuidelines({ ...guidelines, brand_colors: e.target.value.split(',').map(c => c.trim()) })}
+                placeholder="#3B82F6, #1D4ED8, #60A5FA"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+              />
+            </div>
+
+            {/* Fonts */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Fonts
+              </label>
+              <input
+                type="text"
+                value={guidelines.fonts}
+                onChange={(e) => setGuidelines({ ...guidelines, fonts: e.target.value })}
+                placeholder="Montserrat (headings), Open Sans (body)"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+              />
+            </div>
+
+            {/* Tone of Voice */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Tone of Voice
+              </label>
+              <textarea
+                value={guidelines.tone_of_voice}
+                onChange={(e) => setGuidelines({ ...guidelines, tone_of_voice: e.target.value })}
+                rows={3}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg resize-none"
+              />
+            </div>
+
+            {/* Legal Requirements */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Legal Requirements
+              </label>
+              <textarea
+                value={guidelines.legal_requirements}
+                onChange={(e) => setGuidelines({ ...guidelines, legal_requirements: e.target.value })}
+                rows={3}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg resize-none"
+              />
+            </div>
+
+            {/* Key Messaging */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Key Messaging Points
+              </label>
+              <textarea
+                value={guidelines.key_messaging}
+                onChange={(e) => setGuidelines({ ...guidelines, key_messaging: e.target.value })}
+                rows={4}
+                placeholder="• Message 1&#10;• Message 2&#10;• Message 3"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg resize-none font-mono text-sm"
+              />
+            </div>
+
+            {/* Save Button */}
+            <button
+              onClick={() => console.log('✅ Guidelines saved')}
+              className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center justify-center gap-2"
+            >
+              <Save className="h-4 w-4" />
+              Save Guidelines
+            </button>
+          </CardContent>
+        </Card>
+      )}
+
+      {activeTab === 'copy' && (
+        <Card className="bg-white border border-gray-200 shadow-sm">
+          <CardHeader>
+            <CardTitle className="text-gray-900 flex items-center gap-2">
+              <FileText className="h-5 w-5" />
+              Copy Notes - {clientName}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Voice & Tone */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Voice & Tone Guidelines
+              </label>
+              <textarea
+                value={copyNotes.voice_tone}
+                onChange={(e) => setCopyNotes({ ...copyNotes, voice_tone: e.target.value })}
+                rows={3}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg resize-none"
+                placeholder="Describe the brand voice: energetic, professional, friendly, etc."
+              />
+            </div>
+
+            {/* Key Phrases */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Key Phrases to Use
+              </label>
+              <textarea
+                value={copyNotes.key_phrases}
+                onChange={(e) => setCopyNotes({ ...copyNotes, key_phrases: e.target.value })}
+                rows={5}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg resize-none font-mono text-sm"
+                placeholder="• Phrase 1&#10;• Phrase 2&#10;• Phrase 3"
+              />
+            </div>
+
+            {/* Avoid Phrases */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Words/Phrases to Avoid
+              </label>
+              <textarea
+                value={copyNotes.avoid_phrases}
+                onChange={(e) => setCopyNotes({ ...copyNotes, avoid_phrases: e.target.value })}
+                rows={4}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg resize-none font-mono text-sm"
+                placeholder="• Word/phrase 1&#10;• Word/phrase 2"
+              />
+            </div>
+
+            {/* Legal Notes */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Legal/Compliance Notes
+              </label>
+              <textarea
+                value={copyNotes.legal_notes}
+                onChange={(e) => setCopyNotes({ ...copyNotes, legal_notes: e.target.value })}
+                rows={3}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg resize-none"
+                placeholder="Required disclaimers, compliance requirements, etc."
+              />
+            </div>
+
+            {/* Save Button */}
+            <button
+              onClick={() => console.log('✅ Copy notes saved')}
+              className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center justify-center gap-2"
+            >
+              <Save className="h-4 w-4" />
+              Save Copy Notes
+            </button>
+          </CardContent>
+        </Card>
+      )}
+
+      {activeTab === 'design' && (
+        <Card className="bg-white border border-gray-200 shadow-sm">
+          <CardHeader>
+            <CardTitle className="text-gray-900 flex items-center gap-2">
+              <Type className="h-5 w-5" />
+              Design Notes - {clientName}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Design Preferences */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Design Preferences
+              </label>
+              <textarea
+                value={designNotes.design_preferences}
+                onChange={(e) => setDesignNotes({ ...designNotes, design_preferences: e.target.value })}
+                rows={3}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg resize-none"
+                placeholder="Overall design direction, style preferences..."
+              />
+            </div>
+
+            {/* Client Likes */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Client Likes ✅
+              </label>
+              <textarea
+                value={designNotes.client_likes}
+                onChange={(e) => setDesignNotes({ ...designNotes, client_likes: e.target.value })}
+                rows={5}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg resize-none font-mono text-sm"
+                placeholder="• Design element 1&#10;• Design element 2"
+              />
+            </div>
+
+            {/* Client Dislikes */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Client Dislikes ❌
+              </label>
+              <textarea
+                value={designNotes.client_dislikes}
+                onChange={(e) => setDesignNotes({ ...designNotes, client_dislikes: e.target.value })}
+                rows={4}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg resize-none font-mono text-sm"
+                placeholder="• Things to avoid 1&#10;• Things to avoid 2"
+              />
+            </div>
+
+            {/* Image Style */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Image Style Guide
+              </label>
+              <textarea
+                value={designNotes.image_style}
+                onChange={(e) => setDesignNotes({ ...designNotes, image_style: e.target.value })}
+                rows={3}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg resize-none"
+                placeholder="Product photography style, image treatment preferences..."
+              />
+            </div>
+
+            {/* Mobile Considerations */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Mobile Considerations
+              </label>
+              <textarea
+                value={designNotes.mobile_notes}
+                onChange={(e) => setDesignNotes({ ...designNotes, mobile_notes: e.target.value })}
+                rows={3}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg resize-none"
+                placeholder="Mobile-specific requirements, CTA sizes, layout notes..."
+              />
+            </div>
+
+            {/* Save Button */}
+            <button
+              onClick={() => console.log('✅ Design notes saved')}
+              className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center justify-center gap-2"
+            >
+              <Save className="h-4 w-4" />
+              Save Design Notes
+            </button>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Add/Edit Link Modal */}
+      {(showAddLink || editingLink) && (
+        <LinkEditorModal
+          link={editingLink}
+          clientId={selectedClient}
+          clients={clients}
+          onSave={(link) => editingLink ? handleUpdateLink(link as BrandLink) : handleAddLink(link)}
+          onClose={() => {
+            setShowAddLink(false)
+            setEditingLink(null)
+          }}
+        />
+      )}
+    </div>
+  )
+}
+
+// Link Editor Modal Component
+function LinkEditorModal({ 
+  link, 
+  clientId, 
+  clients,
+  onSave, 
+  onClose 
+}: { 
+  link: BrandLink | null
+  clientId: string
+  clients: any[]
+  onSave: (link: Omit<BrandLink, 'id'> | BrandLink) => void
+  onClose: () => void
+}) {
+  const [formData, setFormData] = useState<Omit<BrandLink, 'id'>>({
+    client_id: link?.client_id || clientId,
+    link_title: link?.link_title || '',
+    url: link?.url || '',
+    category: link?.category || 'other',
+    description: link?.description || '',
+    is_favorite: link?.is_favorite || false
+  })
+
+  const handleSubmit = () => {
+    if (!formData.link_title || !formData.url) {
+      alert('Please fill in title and URL')
+      return
+    }
+    onSave(link ? { ...(link as BrandLink), ...formData } : formData)
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <Card className="bg-white w-full max-w-2xl shadow-2xl">
+        <CardHeader className="border-b border-gray-200">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-gray-900">
+              {link ? 'Edit Link' : 'Add New Link'}
+            </CardTitle>
+            <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+        </CardHeader>
+        <CardContent className="p-6 space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Link Title *
+            </label>
+            <input
+              type="text"
+              value={formData.link_title}
+              onChange={(e) => setFormData({ ...formData, link_title: e.target.value })}
+              placeholder="Email Design System"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              autoFocus
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              URL *
+            </label>
+            <input
+              type="url"
+              value={formData.url}
+              onChange={(e) => setFormData({ ...formData, url: e.target.value })}
+              placeholder="https://figma.com/file/..."
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Category
+            </label>
+            <select
+              value={formData.category}
+              onChange={(e) => setFormData({ ...formData, category: e.target.value as BrandLink['category'] })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="figma">Figma Board</option>
+              <option value="drive">Google Drive</option>
+              <option value="website">Website</option>
+              <option value="competitor">Competitor</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Description (Optional)
+            </label>
+            <textarea
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              rows={2}
+              placeholder="Brief description of what this link contains..."
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg resize-none"
+            />
+          </div>
+
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="favorite"
+              checked={formData.is_favorite}
+              onChange={(e) => setFormData({ ...formData, is_favorite: e.target.checked })}
+              className="rounded border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-500"
+            />
+            <label htmlFor="favorite" className="text-sm text-gray-700 cursor-pointer">
+              Mark as favorite (quick access)
+            </label>
+          </div>
+
+          <div className="flex gap-3 pt-4">
+            <button
+              onClick={onClose}
+              className="flex-1 px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSubmit}
+              className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center justify-center gap-2"
+            >
+              <Save className="h-4 w-4" />
+              {link ? 'Update Link' : 'Add Link'}
+            </button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
+
