@@ -535,6 +535,7 @@ export function FlowManager({ clients, selectedClient }: FlowManagerProps) {
           flow={editingFlow}
           clients={clients}
           onSave={handleSaveFlow}
+          onDelete={handleDeleteFlow}
           onClose={() => {
             setShowCreateFlow(false)
             setEditingFlow(null)

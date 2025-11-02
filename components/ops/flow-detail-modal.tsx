@@ -30,10 +30,11 @@ interface FlowDetailModalProps {
   flow: Flow | null
   clients: any[]
   onSave: (flow: Partial<Flow>) => void
+  onDelete?: (flowId: string) => void
   onClose: () => void
 }
 
-export function FlowDetailModal({ flow, clients, onSave, onClose }: FlowDetailModalProps) {
+export function FlowDetailModal({ flow, clients, onSave, onDelete, onClose }: FlowDetailModalProps) {
   const [formData, setFormData] = useState({
     flow_name: flow?.flow_name || '',
     client_id: flow?.client_id || clients[0]?.id || '',
@@ -336,7 +337,22 @@ export function FlowDetailModal({ flow, clients, onSave, onClose }: FlowDetailMo
 
         {/* Footer */}
         <div className="border-t border-gray-200 p-6 bg-gray-50 flex items-center justify-between">
-          <div></div>
+          {!isNewFlow && onDelete ? (
+            <button
+              onClick={() => {
+                if (flow) {
+                  onDelete(flow.id)
+                  onClose()
+                }
+              }}
+              className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors flex items-center gap-2"
+            >
+              <Trash2 className="h-4 w-4" />
+              Delete Flow
+            </button>
+          ) : (
+            <div></div>
+          )}
           <div className="flex gap-3">
             <button
               onClick={onClose}
