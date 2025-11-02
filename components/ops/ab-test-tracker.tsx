@@ -30,6 +30,7 @@ interface ABTest {
   client_name: string
   client_color: string
   test_name: string
+  applies_to: 'campaign' | 'flow' | 'popup'
   test_type: 'subject_line' | 'content' | 'send_time' | 'from_name' | 'offer' | 'design'
   status: 'strategy' | 'in_progress' | 'implementation' | 'finalized'
   priority: 'low' | 'normal' | 'high' | 'urgent'
@@ -59,6 +60,7 @@ export function ABTestTracker({ clients, selectedClient, campaigns }: ABTestTrac
       client_name: clients[0]?.brand_name || 'Hydrus',
       client_color: clients[0]?.primary_color || '#3B82F6',
       test_name: 'Black Friday Subject Line Test',
+      applies_to: 'campaign',
       test_type: 'subject_line',
       status: 'finalized',
       priority: 'high',
@@ -73,6 +75,7 @@ export function ABTestTracker({ clients, selectedClient, campaigns }: ABTestTrac
       client_name: clients[1]?.brand_name || 'Peak Design',
       client_color: clients[1]?.primary_color || '#10B981',
       test_name: 'Send Time Optimization',
+      applies_to: 'campaign',
       test_type: 'send_time',
       status: 'in_progress',
       priority: 'normal',
@@ -84,8 +87,9 @@ export function ABTestTracker({ clients, selectedClient, campaigns }: ABTestTrac
       client_id: clients[2]?.id || '3',
       client_name: clients[2]?.brand_name || 'Make Waves',
       client_color: clients[2]?.primary_color || '#8B5CF6',
-      test_name: 'Email Content - Short vs Long',
-      test_type: 'content',
+      test_name: 'Welcome Flow - Email Timing',
+      applies_to: 'flow',
+      test_type: 'send_time',
       status: 'strategy',
       priority: 'normal',
       num_variants: 2
@@ -95,8 +99,9 @@ export function ABTestTracker({ clients, selectedClient, campaigns }: ABTestTrac
       client_id: clients[0]?.id || '1',
       client_name: clients[0]?.brand_name || 'Hydrus',
       client_color: clients[0]?.primary_color || '#3B82F6',
-      test_name: 'Product Images Test',
-      test_type: 'design',
+      test_name: 'Exit Intent Popup Copy',
+      applies_to: 'popup',
+      test_type: 'content',
       status: 'implementation',
       priority: 'urgent',
       start_date: new Date(2025, 10, 28),
@@ -272,8 +277,12 @@ export function ABTestTracker({ clients, selectedClient, campaigns }: ABTestTrac
                         {test.status === 'in_progress' ? 'In Progress' : test.status.charAt(0).toUpperCase() + test.status.slice(1)}
                       </span>
                     </div>
-                    <div className="text-sm text-gray-600 flex items-center gap-3">
+                    <div className="text-sm text-gray-600 flex items-center gap-3 flex-wrap">
                       <span>{test.client_name}</span>
+                      <span>•</span>
+                      <span className="px-2 py-0.5 rounded bg-blue-100 text-blue-700 text-xs font-medium capitalize">
+                        {test.applies_to}
+                      </span>
                       <span>•</span>
                       <span className="px-2 py-0.5 rounded bg-purple-100 text-purple-700 text-xs">
                         {getTestTypeLabel(test.test_type)}
@@ -364,7 +373,10 @@ export function ABTestTracker({ clients, selectedClient, campaigns }: ABTestTrac
                             {test.test_name}
                           </div>
                           <div className="text-xs text-gray-600 mb-2">{test.client_name}</div>
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-xs px-2 py-0.5 rounded bg-blue-100 text-blue-700 font-medium capitalize">
+                              {test.applies_to}
+                            </span>
                             <span className="text-xs px-2 py-0.5 rounded bg-purple-100 text-purple-700">
                               {getTestTypeLabel(test.test_type)}
                             </span>

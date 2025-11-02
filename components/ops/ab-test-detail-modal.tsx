@@ -16,6 +16,7 @@ interface ABTest {
   client_name: string
   client_color: string
   test_name: string
+  applies_to: 'campaign' | 'flow' | 'popup'
   test_type: 'subject_line' | 'content' | 'send_time' | 'from_name' | 'offer' | 'design'
   status: 'strategy' | 'in_progress' | 'implementation' | 'finalized'
   priority: 'low' | 'normal' | 'high' | 'urgent'
@@ -36,6 +37,7 @@ export function ABTestDetailModal({ test, clients, onSave, onClose }: ABTestDeta
   const [formData, setFormData] = useState({
     test_name: test?.test_name || '',
     client_id: test?.client_id || clients[0]?.id || '',
+    applies_to: test?.applies_to || 'campaign',
     test_type: test?.test_type || 'subject_line',
     status: test?.status || 'strategy',
     priority: test?.priority || 'normal',
@@ -94,7 +96,7 @@ export function ABTestDetailModal({ test, clients, onSave, onClose }: ABTestDeta
             />
           </div>
 
-          {/* Client & Type */}
+          {/* Client & Applies To */}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -113,21 +115,37 @@ export function ABTestDetailModal({ test, clients, onSave, onClose }: ABTestDeta
 
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Test Type
+                Applies To
               </label>
               <select
-                value={formData.test_type}
-                onChange={(e) => setFormData({ ...formData, test_type: e.target.value as any })}
+                value={formData.applies_to}
+                onChange={(e) => setFormData({ ...formData, applies_to: e.target.value as any })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
               >
-                <option value="subject_line">Subject Line</option>
-                <option value="content">Email Content</option>
-                <option value="send_time">Send Time</option>
-                <option value="from_name">From Name</option>
-                <option value="offer">Offer/Promotion</option>
-                <option value="design">Design/Creative</option>
+                <option value="campaign">Campaign</option>
+                <option value="flow">Flow</option>
+                <option value="popup">Popup</option>
               </select>
             </div>
+          </div>
+
+          {/* Test Type */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Test Type
+            </label>
+            <select
+              value={formData.test_type}
+              onChange={(e) => setFormData({ ...formData, test_type: e.target.value as any })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="subject_line">Subject Line</option>
+              <option value="content">Email Content</option>
+              <option value="send_time">Send Time</option>
+              <option value="from_name">From Name</option>
+              <option value="offer">Offer/Promotion</option>
+              <option value="design">Design/Creative</option>
+            </select>
           </div>
 
           {/* Status & Priority */}
