@@ -102,7 +102,7 @@ export function FlowDetailModal({ flow, clients, onSave, onClose }: FlowDetailMo
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <Card className="bg-white w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl">
+      <Card className={`bg-white w-full ${uploadedImage ? 'max-w-6xl' : 'max-w-3xl'} max-h-[90vh] overflow-hidden flex flex-col shadow-2xl transition-all`}>
         <CardHeader className="border-b border-gray-200">
           <div className="flex items-center justify-between">
             <CardTitle className="text-gray-900">
@@ -114,7 +114,12 @@ export function FlowDetailModal({ flow, clients, onSave, onClose }: FlowDetailMo
           </div>
         </CardHeader>
 
-        <CardContent className="flex-1 overflow-y-auto p-6 space-y-6">
+        {/* Dynamic Layout: Full-width or Two-Column */}
+        <div className="flex-1 overflow-hidden">
+          <div className={`grid ${uploadedImage ? 'grid-cols-2' : 'grid-cols-1'} h-full`}>
+            {/* Left (or Full Width): Form Fields */}
+            <div className={`overflow-y-auto p-6 ${uploadedImage ? 'border-r border-gray-200' : ''}`} style={{ maxHeight: 'calc(90vh - 180px)' }}>
+              <div className="space-y-6">
           {/* Flow Name */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -246,28 +251,13 @@ export function FlowDetailModal({ flow, clients, onSave, onClose }: FlowDetailMo
             </div>
           </div>
 
-          {/* Flow Preview Image */}
-          <div>
-            <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
-              <Upload className="h-4 w-4" />
-              Flow Preview Image {formData.status === 'qa' || formData.status === 'client_approval' ? '*' : ''}
-            </h3>
-            
-            {uploadedImage ? (
-              <div className="relative">
-                <img 
-                  src={uploadedImage} 
-                  alt="Flow preview"
-                  className="w-full rounded-lg border border-gray-300 shadow-sm"
-                />
-                <button
-                  onClick={() => setUploadedImage(null)}
-                  className="absolute top-2 right-2 p-2 bg-red-600 hover:bg-red-700 text-white rounded-lg shadow-lg transition-colors"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-            ) : (
+          {/* Flow Preview Image (Inline if no image) */}
+          {!uploadedImage && (
+            <div>
+              <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                <Upload className="h-4 w-4" />
+                Flow Preview Image
+              </h3>
               <div
                 onDrop={handleDrop}
                 onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
@@ -286,7 +276,6 @@ export function FlowDetailModal({ flow, clients, onSave, onClose }: FlowDetailMo
                   {' '}or drag and drop
                 </div>
                 <div className="text-xs text-gray-500">PNG, JPG, or GIF</div>
-                <div className="text-xs text-orange-600 mt-2">Required for Design → QA transition</div>
                 <input
                   id="flow-image-upload"
                   type="file"
@@ -295,8 +284,8 @@ export function FlowDetailModal({ flow, clients, onSave, onClose }: FlowDetailMo
                   className="hidden"
                 />
               </div>
-            )}
-          </div>
+            </div>
+          )}
 
           {/* Notes */}
           <div>
@@ -311,7 +300,39 @@ export function FlowDetailModal({ flow, clients, onSave, onClose }: FlowDetailMo
               className="w-full px-3 py-2 border border-gray-300 rounded-lg resize-none font-mono text-sm focus:ring-2 focus:ring-blue-500"
             />
           </div>
-        </CardContent>
+              </div>
+            </div>
+
+            {/* Right Column: Image Preview (Only when image exists) */}
+            {uploadedImage && (
+              <div className="overflow-y-auto p-6 bg-gray-50" style={{ maxHeight: 'calc(90vh - 180px)' }}>
+                <div className="sticky top-0 space-y-4">
+                  <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                    <Upload className="h-4 w-4" />
+                    Flow Preview
+                  </h3>
+                  
+                  <div className="relative">
+                    <img 
+                      src={uploadedImage} 
+                      alt="Flow preview"
+                      className="w-full rounded-lg border border-gray-300 shadow-lg"
+                    />
+                    <button
+                      onClick={() => setUploadedImage(null)}
+                      className="absolute top-2 right-2 p-2 bg-red-600 hover:bg-red-700 text-white rounded-lg shadow-lg transition-colors"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                    <div className="mt-2 text-xs text-gray-600 text-center">
+                      Click X to replace
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
 
         {/* Footer */}
         <div className="border-t border-gray-200 p-6 bg-gray-50 flex items-center justify-between">
