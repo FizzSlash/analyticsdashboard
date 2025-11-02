@@ -58,6 +58,7 @@ export function ABTestDetailModal({ test, clients, onSave, onClose }: ABTestDeta
     onSave({
       ...test,
       ...formData,
+      start_date: formData.start_date || undefined, // Convert null to undefined
       client_name: selectedClient?.brand_name,
       client_color: selectedClient?.primary_color
     })
