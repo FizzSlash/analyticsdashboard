@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { FormBuilderModal } from './form-builder-modal'
 import { 
@@ -123,7 +123,37 @@ export function OpsForms({ clients, selectedClient }: OpsFormsProps) {
   const [showCreateForm, setShowCreateForm] = useState(false)
   const [selectedForm, setSelectedForm] = useState<FormTemplate | null>(null)
   const [editingForm, setEditingForm] = useState<Partial<FormTemplate> | null>(null)
-  const [viewingResponse, setViewingResponse] = useState<string | null>(null) // client ID
+  const [viewingResponse, setViewingResponse] = useState<string | null>(null)
+  const [forms, setForms] = useState<FormTemplate[]>([])
+  const [loading, setLoading] = useState(true)
+
+  // Fetch forms from API
+  useEffect(() => {
+    const fetchForms = async () => {
+      try {
+        setLoading(true)
+        const response = await fetch('/api/ops/forms')
+        const data = await response.json()
+        
+        if (data.success && data.forms) {
+          setForms(data.forms.map((f: any) => ({
+            ...f,
+            due_date: f.due_date ? new Date(f.due_date) : undefined,
+            created_at: new Date(f.created_at),
+            num_fields: f.fields?.length || 0,
+            responses_count: 0, // Will calculate from responses later
+            total_clients: f.assigned_client_names?.length || 0
+          })))
+        }
+      } catch (error) {
+        console.error('Error fetching forms:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchForms()
+  }, [])
 
   // Mock form responses (will be from database later)
   const mockResponses: Record<string, any> = {
@@ -221,39 +251,69 @@ export function OpsForms({ clients, selectedClient }: OpsFormsProps) {
     }
   }
 
-  const handleDeleteForm = (formId: string) => {
+  const handleDeleteForm = async (formId: string) => {
     if (confirm('Delete this form? This will also delete all responses.')) {
-      setForms(forms.filter(f => f.id !== formId))
-      console.log('🗑️ Form deleted')
+      try {
+        const response = await fetch(`/api/ops/forms?id=${formId}`, { method: 'DELETE' })
+        const data = await response.json()
+        if (data.success) {
+          setForms(forms.filter(f => f.id !== formId))
+          console.log('✅ Form deleted')
+        }
+      } catch (error) {
+        console.error('Error deleting form:', error)
+      }
     }
   }
 
-  const handleSaveForm = (form: Partial<FormTemplate>) => {
-    if (editingForm && editingForm.id) {
-      // Update existing
-      setForms(forms.map(f => f.id === editingForm.id ? { ...f, ...form } as FormTemplate : f))
-      console.log('✅ Form updated:', form.title)
-    } else {
-      // Create new
-      const newForm: FormTemplate = {
-        id: `form-${Date.now()}`,
-        title: form.title || '',
-        description: form.description || '',
-        category: form.category || 'custom',
-        fields: form.fields || [],
-        status: form.status || 'draft',
-        num_fields: form.fields?.length || 0,
-        assigned_clients: form.assigned_clients || [],
-        responses_count: 0,
-        total_clients: form.assigned_clients?.length || 0,
-        due_date: form.due_date,
-        created_at: new Date()
+  const handleSaveForm = async (form: Partial<FormTemplate>) => {
+    try {
+      if (editingForm && editingForm.id) {
+        // Update existing
+        const response = await fetch('/api/ops/forms', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: editingForm.id, ...form })
+        })
+        const data = await response.json()
+        if (data.success) {
+          setForms(forms.map(f => f.id === editingForm.id ? { ...f, ...form } as FormTemplate : f))
+          console.log('✅ Form updated')
+        }
+      } else {
+        // Create new
+        const response = await fetch('/api/ops/forms', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ...form,
+            agency_id: clients[0]?.agency_id
+          })
+        })
+        const data = await response.json()
+        if (data.success) {
+          // Refetch forms
+          const fetchResponse = await fetch('/api/ops/forms')
+          const fetchData = await fetchResponse.json()
+          if (fetchData.success) {
+            setForms(fetchData.forms.map((f: any) => ({
+              ...f,
+              due_date: f.due_date ? new Date(f.due_date) : undefined,
+              created_at: new Date(f.created_at),
+              num_fields: f.fields?.length || 0,
+              responses_count: 0,
+              total_clients: f.assigned_client_names?.length || 0
+            })))
+          }
+          console.log('✅ Form created')
+        }
       }
-      setForms([newForm, ...forms])
-      console.log('✅ Form created:', newForm.title)
+      setShowCreateForm(false)
+      setEditingForm(null)
+    } catch (error) {
+      console.error('Error saving form:', error)
+      alert('Failed to save form')
     }
-    setShowCreateForm(false)
-    setEditingForm(null)
   }
 
   const handleImportToContentHub = (clientName: string, responseData: any) => {

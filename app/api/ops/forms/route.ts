@@ -58,3 +58,25 @@ export async function PATCH(request: NextRequest) {
   }
 }
 
+export async function DELETE(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url)
+    const id = searchParams.get('id')
+
+    if (!id) {
+      return NextResponse.json({ success: false, error: 'Form ID required' }, { status: 400 })
+    }
+
+    const { error } = await supabase
+      .from('ops_forms')
+      .delete()
+      .eq('id', id)
+
+    if (error) throw error
+
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    return NextResponse.json({ success: false, error: 'Failed to delete form' }, { status: 500 })
+  }
+}
+
