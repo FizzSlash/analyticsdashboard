@@ -17,7 +17,7 @@ interface ABTest {
   client_color: string
   test_name: string
   applies_to: 'campaign' | 'flow' | 'popup'
-  test_type: 'subject_line' | 'content' | 'send_time' | 'from_name' | 'offer' | 'design'
+  test_type: string // Free text
   status: 'strategy' | 'in_progress' | 'implementation' | 'finalized'
   priority: 'low' | 'normal' | 'high' | 'urgent'
   start_date?: Date
@@ -38,7 +38,7 @@ export function ABTestDetailModal({ test, clients, onSave, onClose }: ABTestDeta
     test_name: test?.test_name || '',
     client_id: test?.client_id || clients[0]?.id || '',
     applies_to: test?.applies_to || 'campaign',
-    test_type: test?.test_type || 'subject_line',
+    test_type: test?.test_type || '',
     status: test?.status || 'strategy',
     priority: test?.priority || 'normal',
     start_date: test?.start_date || null,
@@ -132,20 +132,18 @@ export function ABTestDetailModal({ test, clients, onSave, onClose }: ABTestDeta
           {/* Test Type */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Test Type
+              What Are You Testing?
             </label>
-            <select
+            <input
+              type="text"
               value={formData.test_type}
-              onChange={(e) => setFormData({ ...formData, test_type: e.target.value as any })}
+              onChange={(e) => setFormData({ ...formData, test_type: e.target.value })}
+              placeholder="e.g., Subject Line, Send Time, Hero Image, CTA Color..."
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="subject_line">Subject Line</option>
-              <option value="content">Email Content</option>
-              <option value="send_time">Send Time</option>
-              <option value="from_name">From Name</option>
-              <option value="offer">Offer/Promotion</option>
-              <option value="design">Design/Creative</option>
-            </select>
+            />
+            <div className="text-xs text-gray-500 mt-1">
+              Examples: Subject Line, Email Length, Send Time, From Name, Offer Type, Hero Image, CTA Button, etc.
+            </div>
           </div>
 
           {/* Status & Priority */}

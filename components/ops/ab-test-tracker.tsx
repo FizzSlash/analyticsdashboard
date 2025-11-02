@@ -31,7 +31,7 @@ interface ABTest {
   client_color: string
   test_name: string
   applies_to: 'campaign' | 'flow' | 'popup'
-  test_type: 'subject_line' | 'content' | 'send_time' | 'from_name' | 'offer' | 'design'
+  test_type: string // Free text field
   status: 'strategy' | 'in_progress' | 'implementation' | 'finalized'
   priority: 'low' | 'normal' | 'high' | 'urgent'
   start_date?: Date
@@ -61,7 +61,7 @@ export function ABTestTracker({ clients, selectedClient, campaigns }: ABTestTrac
       client_color: clients[0]?.primary_color || '#3B82F6',
       test_name: 'Black Friday Subject Line Test',
       applies_to: 'campaign',
-      test_type: 'subject_line',
+      test_type: 'Subject Line',
       status: 'finalized',
       priority: 'high',
       start_date: new Date(2025, 10, 24),
@@ -76,7 +76,7 @@ export function ABTestTracker({ clients, selectedClient, campaigns }: ABTestTrac
       client_color: clients[1]?.primary_color || '#10B981',
       test_name: 'Send Time Optimization',
       applies_to: 'campaign',
-      test_type: 'send_time',
+      test_type: 'Send Time',
       status: 'in_progress',
       priority: 'normal',
       start_date: new Date(2025, 11, 1),
@@ -89,7 +89,7 @@ export function ABTestTracker({ clients, selectedClient, campaigns }: ABTestTrac
       client_color: clients[2]?.primary_color || '#8B5CF6',
       test_name: 'Welcome Flow - Email Timing',
       applies_to: 'flow',
-      test_type: 'send_time',
+      test_type: 'Email Timing',
       status: 'strategy',
       priority: 'normal',
       num_variants: 2
@@ -101,7 +101,7 @@ export function ABTestTracker({ clients, selectedClient, campaigns }: ABTestTrac
       client_color: clients[0]?.primary_color || '#3B82F6',
       test_name: 'Exit Intent Popup Copy',
       applies_to: 'popup',
-      test_type: 'content',
+      test_type: 'Popup Copy',
       status: 'implementation',
       priority: 'urgent',
       start_date: new Date(2025, 10, 28),
@@ -123,18 +123,6 @@ export function ABTestTracker({ clients, selectedClient, campaigns }: ABTestTrac
       case 'implementation': return 'bg-purple-100 text-purple-700 border-purple-300'
       case 'finalized': return 'bg-green-100 text-green-700 border-green-300'
       default: return 'bg-gray-100 text-gray-600 border-gray-300'
-    }
-  }
-
-  const getTestTypeLabel = (type: string) => {
-    switch (type) {
-      case 'subject_line': return 'Subject Line'
-      case 'content': return 'Content'
-      case 'send_time': return 'Send Time'
-      case 'from_name': return 'From Name'
-      case 'offer': return 'Offer'
-      case 'design': return 'Design'
-      default: return type
     }
   }
 
@@ -285,7 +273,7 @@ export function ABTestTracker({ clients, selectedClient, campaigns }: ABTestTrac
                       </span>
                       <span>•</span>
                       <span className="px-2 py-0.5 rounded bg-purple-100 text-purple-700 text-xs">
-                        {getTestTypeLabel(test.test_type)}
+                        {test.test_type}
                       </span>
                       <span>•</span>
                       <span>{test.num_variants} variants</span>
@@ -378,7 +366,7 @@ export function ABTestTracker({ clients, selectedClient, campaigns }: ABTestTrac
                               {test.applies_to}
                             </span>
                             <span className="text-xs px-2 py-0.5 rounded bg-purple-100 text-purple-700">
-                              {getTestTypeLabel(test.test_type)}
+                              {test.test_type}
                             </span>
                             <span className="text-xs text-gray-500">{test.num_variants} variants</span>
                           </div>
