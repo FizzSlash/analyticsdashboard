@@ -16,6 +16,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Client ID required' }, { status: 400 })
     }
 
+    // Calculate current month outside switch
+    const now = new globalThis.Date()
+    const monthYear = now.toISOString().slice(0, 7)
+
     let data, error
 
     switch (type) {
@@ -23,8 +27,7 @@ export async function GET(request: NextRequest) {
         ({ data, error } = await supabase.from('ops_scope_config').select('*').eq('client_id', clientId).single())
         break
       case 'usage':
-        const currentMonth: string = new Date().toISOString().slice(0, 7)
-        ({ data, error } = await supabase.from('ops_scope_usage').select('*').eq('client_id', clientId).eq('month_year', currentMonth).single())
+        ({ data, error } = await supabase.from('ops_scope_usage').select('*').eq('client_id', clientId).eq('month_year', monthYear).single())
         break
       case 'monthly':
         ({ data, error } = await supabase.from('ops_monthly_docs').select('*').eq('client_id', clientId).order('month_year', { ascending: false }))
