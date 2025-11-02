@@ -138,7 +138,9 @@ export function ABTestTracker({ clients, selectedClient, campaigns }: ABTestTrac
       start_date: new Date(2025, 10, 28),
       num_variants: 2
     }
-  ])
+  ]
+
+  // Unused initialTests since we fetch from API now
 
   // Filter tests
   const filteredTests = tests.filter(test => {
