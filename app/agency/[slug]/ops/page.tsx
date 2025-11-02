@@ -12,6 +12,7 @@ import { OpsForms } from '@/components/ops/ops-forms'
 import { ScopeTracker } from '@/components/ops/scope-tracker'
 import { ABTestTracker } from '@/components/ops/ab-test-tracker'
 import { FlowManager } from '@/components/ops/flow-manager'
+import { RoleViews } from '@/components/ops/role-views'
 import { 
   Settings, 
   ArrowLeft, 
@@ -23,10 +24,11 @@ import {
   X,
   Zap,
   FileText,
-  TestTube
+  TestTube,
+  Eye
 } from 'lucide-react'
 
-type OpsTab = 'overview' | 'campaigns' | 'flows' | 'content' | 'forms' | 'abtests' | 'scope'
+type OpsTab = 'overview' | 'campaigns' | 'flows' | 'content' | 'forms' | 'abtests' | 'view' | 'scope'
 type CampaignView = 'calendar' | 'pipeline'
 
 interface Campaign {
@@ -68,6 +70,7 @@ export default function OperationsPage({ params }: PageProps) {
     { id: 'content', label: 'Content Hub', icon: FolderOpen },
     { id: 'forms', label: 'Forms', icon: FileText },
     { id: 'abtests', label: 'A/B Tests', icon: TestTube },
+    { id: 'view', label: 'View', icon: Eye },
     { id: 'scope', label: 'Scope', icon: Target }
   ]
 
@@ -396,6 +399,15 @@ export default function OperationsPage({ params }: PageProps) {
               clients={clients}
               selectedClient={selectedClient}
               campaigns={sharedCampaigns}
+            />
+          )}
+
+          {/* View Tab (Role Dashboards) */}
+          {activeTab === 'view' && (
+            <RoleViews
+              clients={clients}
+              campaigns={sharedCampaigns}
+              flows={[]} // Will populate from database later
             />
           )}
 
