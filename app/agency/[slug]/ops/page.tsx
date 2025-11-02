@@ -11,6 +11,7 @@ import { ContentHub } from '@/components/ops/content-hub'
 import { OpsForms } from '@/components/ops/ops-forms'
 import { ScopeTracker } from '@/components/ops/scope-tracker'
 import { ABTestTracker } from '@/components/ops/ab-test-tracker'
+import { FlowManager } from '@/components/ops/flow-manager'
 import { 
   Settings, 
   ArrowLeft, 
@@ -365,20 +366,12 @@ export default function OperationsPage({ params }: PageProps) {
             </div>
           )}
 
-          {/* Flows Tab (Placeholder for future) */}
+          {/* Flows Tab */}
           {activeTab === 'flows' && (
-            <Card className="bg-white/10 backdrop-blur-md border-white/20 shadow-xl">
-              <CardHeader>
-                <CardTitle className="text-white">Flow Management</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-white/60 text-center py-12">
-                  <Zap className="h-16 w-16 mx-auto mb-4 text-white/40" />
-                  <p className="text-lg">Flow pipeline coming after campaigns are complete</p>
-                  <p className="text-sm mt-2">Will track flow creation, approval, and performance</p>
-                </div>
-              </CardContent>
-            </Card>
+            <FlowManager
+              clients={clients}
+              selectedClient={selectedClient}
+            />
           )}
 
           {/* Content Hub Tab */}
