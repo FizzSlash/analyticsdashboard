@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { FlowDetailModal } from './flow-detail-modal'
 import { 
   Zap,
   Plus,
@@ -277,45 +278,17 @@ export function FlowManager({ clients, selectedClient }: FlowManagerProps) {
         </Card>
       </div>
 
-      {/* Flow Detail Modal - Placeholder */}
+      {/* Flow Detail Modal */}
       {(showCreateFlow || editingFlow) && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <Card className="bg-white w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl">
-            <CardHeader className="border-b border-gray-200">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-gray-900">
-                  {editingFlow ? 'Edit Flow' : 'Create New Flow'}
-                </CardTitle>
-                <button 
-                  onClick={() => {
-                    setShowCreateFlow(false)
-                    setEditingFlow(null)
-                  }}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
-            </CardHeader>
-            <CardContent className="flex-1 overflow-y-auto p-6">
-              <div className="text-center py-12 text-gray-600">
-                Flow detail modal coming in Tasks 40-42...
-                <div className="mt-4 text-sm">
-                  Will include: Flow config, email sequence builder, timing settings
-                </div>
-                <button
-                  onClick={() => {
-                    setShowCreateFlow(false)
-                    setEditingFlow(null)
-                  }}
-                  className="mt-4 px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg"
-                >
-                  Close
-                </button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        <FlowDetailModal
+          flow={editingFlow}
+          clients={clients}
+          onSave={handleSaveFlow}
+          onClose={() => {
+            setShowCreateFlow(false)
+            setEditingFlow(null)
+          }}
+        />
       )}
     </div>
   )
