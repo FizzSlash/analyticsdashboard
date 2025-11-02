@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { CampaignDetailModal } from './campaign-detail-modal'
 import {
@@ -167,8 +167,39 @@ function DroppableColumn({
 
 export function OpsPipeline({ clients, selectedClient }: OpsPipelineProps) {
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null)
+  const [campaigns, setCampaigns] = useState<Campaign[]>([])
+  const [loading, setLoading] = useState(true)
+
+  // Fetch campaigns from API
+  useEffect(() => {
+    const fetchCampaigns = async () => {
+      try {
+        setLoading(true)
+        const response = await fetch(`/api/ops/campaigns?clientId=${selectedClient}`)
+        const data = await response.json()
+        
+        if (data.success && data.campaigns) {
+          const transformedCampaigns = data.campaigns.map((c: any) => ({
+            ...c,
+            send_date: new Date(c.send_date),
+            client_name: clients.find(cl => cl.id === c.client_id)?.brand_name || 'Unknown',
+            client_color: clients.find(cl => cl.id === c.client_id)?.primary_color || '#3B82F6'
+          }))
+          setCampaigns(transformedCampaigns)
+        }
+      } catch (error) {
+        console.error('Error fetching campaigns:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    if (clients.length > 0) {
+      fetchCampaigns()
+    }
+  }, [selectedClient, clients])
   
-  // Mock campaign data (same as calendar)
+  // Mock campaign data (fallback)
   const initialCampaigns: Campaign[] = [
     {
       id: '1',
@@ -305,24 +336,36 @@ export function OpsPipeline({ clients, selectedClient }: OpsPipelineProps) {
     const targetStatus = statusColumns.find(col => col.id === overId)
     
     if (targetStatus && activeCampaign.status !== targetStatus.id) {
-      // Update campaign status
-      setCampaigns(campaigns.map(c => 
-        c.id === activeId 
-          ? { ...c, status: targetStatus.id as Campaign['status'] }
-          : c
-      ))
-      
-      console.log(`✅ Campaign "${activeCampaign.campaign_name}" moved from ${activeCampaign.status} to ${targetStatus.label}`)
-    } else {
-      // Might have dropped on another campaign in the same column, find the column
-      const droppedCampaign = campaigns.find(c => c.id === overId)
-      if (droppedCampaign && droppedCampaign.status !== activeCampaign.status) {
+      // Update campaign status in database
+      fetch('/api/ops/campaigns', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: activeId, status: targetStatus.id })
+      }).then(() => {
+        // Update local state
         setCampaigns(campaigns.map(c => 
           c.id === activeId 
-            ? { ...c, status: droppedCampaign.status }
+            ? { ...c, status: targetStatus.id as Campaign['status'] }
             : c
         ))
-        console.log(`✅ Campaign "${activeCampaign.campaign_name}" moved to ${droppedCampaign.status} column`)
+        console.log(`✅ Campaign "${activeCampaign.campaign_name}" moved to ${targetStatus.label}`)
+      })
+    } else {
+      // Might have dropped on another campaign, find its status
+      const droppedCampaign = campaigns.find(c => c.id === overId)
+      if (droppedCampaign && droppedCampaign.status !== activeCampaign.status) {
+        fetch('/api/ops/campaigns', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: activeId, status: droppedCampaign.status })
+        }).then(() => {
+          setCampaigns(campaigns.map(c => 
+            c.id === activeId 
+              ? { ...c, status: droppedCampaign.status }
+              : c
+          ))
+          console.log(`✅ Campaign moved to ${droppedCampaign.status}`)
+        })
       }
     }
   }
@@ -334,18 +377,42 @@ export function OpsPipeline({ clients, selectedClient }: OpsPipelineProps) {
     setSelectedCampaign(campaign)
   }
 
-  const handleSaveCampaign = (updatedCampaign: Campaign) => {
-    setCampaigns(campaigns.map(c => 
-      c.id === updatedCampaign.id ? updatedCampaign : c
-    ))
-    setSelectedCampaign(null)
-    console.log('✅ Campaign saved:', updatedCampaign.campaign_name)
+  const handleSaveCampaign = async (updatedCampaign: Campaign) => {
+    try {
+      const response = await fetch('/api/ops/campaigns', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedCampaign)
+      })
+      
+      const data = await response.json()
+      if (data.success) {
+        setCampaigns(campaigns.map(c => c.id === updatedCampaign.id ? updatedCampaign : c))
+        console.log('✅ Campaign updated')
+      }
+      
+      setSelectedCampaign(null)
+    } catch (error) {
+      console.error('Error saving campaign:', error)
+    }
   }
 
-  const handleDeleteCampaign = (campaignId: string) => {
-    setCampaigns(campaigns.filter(c => c.id !== campaignId))
-    setSelectedCampaign(null)
-    console.log('🗑️ Campaign deleted:', campaignId)
+  const handleDeleteCampaign = async (campaignId: string) => {
+    try {
+      const response = await fetch(`/api/ops/campaigns?id=${campaignId}`, {
+        method: 'DELETE'
+      })
+      
+      const data = await response.json()
+      if (data.success) {
+        setCampaigns(campaigns.filter(c => c.id !== campaignId))
+        console.log('✅ Campaign deleted')
+      }
+      
+      setSelectedCampaign(null)
+    } catch (error) {
+      console.error('Error deleting campaign:', error)
+    }
   }
 
   return (
