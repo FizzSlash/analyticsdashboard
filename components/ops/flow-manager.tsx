@@ -231,7 +231,9 @@ export function FlowManager({ clients, selectedClient }: FlowManagerProps) {
       priority: 'high',
       num_emails: 3
     }
-  ])
+  ]
+
+  // Delete unused initialFlows since we fetch from API now
 
   // Filter flows
   const filteredFlows = flows.filter(flow => 
