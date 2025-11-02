@@ -3,6 +3,23 @@
 import { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { FlowDetailModal } from './flow-detail-modal'
+import {
+  DndContext,
+  DragOverlay,
+  closestCorners,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragStartEvent,
+  DragEndEvent,
+  useDroppable,
+} from '@dnd-kit/core'
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable'
+import { useSortable } from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 import { 
   Zap,
   Plus,
@@ -12,7 +29,8 @@ import {
   Clock,
   ChevronRight,
   X,
-  Save
+  Save,
+  GripVertical
 } from 'lucide-react'
 
 interface Flow {
@@ -25,6 +43,7 @@ interface Flow {
   status: 'strategy' | 'copy' | 'design' | 'qa' | 'client_approval' | 'approved' | 'live'
   priority: 'low' | 'normal' | 'high' | 'urgent'
   num_emails: number
+  preview_url?: string // Flow preview image (required for QA/client approval, like campaigns)
   notes?: string
 }
 
@@ -33,9 +52,107 @@ interface FlowManagerProps {
   selectedClient: string
 }
 
+// Sortable Flow Card
+function SortableFlowCard({ 
+  flow, 
+  onClick 
+}: { 
+  flow: Flow
+  onClick: () => void
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: flow.id })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  }
+
+  const getPriorityEmoji = (priority: string) => {
+    switch (priority) {
+      case 'urgent': return '🔴'
+      case 'high': return '🟡'
+      default: return ''
+    }
+  }
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={{ ...style, borderLeftColor: flow.client_color }}
+      {...attributes}
+      className="p-3 bg-white rounded-lg border-l-4 shadow-sm hover:shadow-md transition-all"
+    >
+      <div className="flex items-start justify-between gap-2 mb-2">
+        <div 
+          className="flex-1 min-w-0 cursor-pointer"
+          onClick={onClick}
+        >
+          <div className="text-sm font-semibold text-gray-900 mb-1 flex items-center gap-1">
+            {getPriorityEmoji(flow.priority)}
+            {flow.flow_name}
+          </div>
+          <div className="text-xs text-gray-600 mb-2">{flow.client_name}</div>
+          <div className="flex items-center gap-2 flex-wrap text-xs">
+            <span className="px-2 py-0.5 rounded bg-blue-100 text-blue-700">
+              {flow.trigger_type}
+            </span>
+            <span className="text-gray-500">
+              <Mail className="h-3 w-3 inline mr-1" />
+              {flow.num_emails} emails
+            </span>
+          </div>
+        </div>
+        <div {...listeners} className="cursor-grab active:cursor-grabbing">
+          <GripVertical className="h-4 w-4 text-gray-400 flex-shrink-0" />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// Droppable Column
+function DroppableColumn({ 
+  id, 
+  children 
+}: { 
+  id: string
+  children: React.ReactNode 
+}) {
+  const { setNodeRef, isOver } = useDroppable({ id })
+  
+  return (
+    <div
+      ref={setNodeRef}
+      className={`min-h-[400px] bg-white/5 backdrop-blur-sm rounded-xl border p-3 space-y-3 transition-colors ${
+        isOver ? 'border-white/40 bg-white/10' : 'border-white/10'
+      }`}
+    >
+      {children}
+    </div>
+  )
+}
+
 export function FlowManager({ clients, selectedClient }: FlowManagerProps) {
   const [editingFlow, setEditingFlow] = useState<Flow | null>(null)
   const [showCreateFlow, setShowCreateFlow] = useState(false)
+  const [activeId, setActiveId] = useState<string | null>(null)
+
+  // Drag and drop sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    })
+  )
 
   // Mock flows (will be from database later)
   const [flows, setFlows] = useState<Flow[]>([

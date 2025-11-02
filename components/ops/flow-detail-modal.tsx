@@ -8,7 +8,8 @@ import {
   Mail,
   Plus,
   Trash2,
-  Clock
+  Clock,
+  Upload
 } from 'lucide-react'
 
 interface Flow {
@@ -21,6 +22,7 @@ interface Flow {
   status: 'strategy' | 'copy' | 'design' | 'qa' | 'client_approval' | 'approved' | 'live'
   priority: 'low' | 'normal' | 'high' | 'urgent'
   num_emails: number
+  preview_url?: string
   notes?: string
 }
 
@@ -203,6 +205,14 @@ export function FlowDetailModal({ flow, clients, onSave, onClose }: FlowDetailMo
             </div>
             <div className="text-xs text-gray-500 mt-2">
               💡 Email timing and content will be configured during implementation
+            </div>
+          </div>
+
+          {/* Image Upload Placeholder */}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="text-sm text-blue-900">
+              <Upload className="h-4 w-4 inline mr-2" />
+              <strong>Flow Preview Image:</strong> Image upload will be added (same as campaigns). Required for QA → Client Approval transition. Flows will auto-send to client portal for approval.
             </div>
           </div>
 
