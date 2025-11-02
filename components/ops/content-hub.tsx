@@ -372,7 +372,7 @@ export function ContentHub({ clients, selectedClient }: ContentHubProps) {
       const response = await fetch('/api/ops/content', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: 'call', id: call.id, ...call })
+        body: JSON.stringify({ type: 'call', ...call })
       })
       const data = await response.json()
       if (data.success) {
