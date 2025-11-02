@@ -43,24 +43,28 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
+    const { client_name, client_color, ...dbData } = body // Remove UI-only fields
 
     const { data: flow, error } = await supabase
       .from('ops_flows')
       .insert([{
-        client_id: body.client_id,
-        agency_id: body.agency_id,
-        flow_name: body.flow_name,
-        trigger_type: body.trigger_type,
-        num_emails: body.num_emails || 3,
-        status: body.status || 'strategy',
-        priority: body.priority || 'normal',
-        preview_url: body.preview_url,
-        notes: body.notes
+        client_id: dbData.client_id,
+        agency_id: dbData.agency_id,
+        flow_name: dbData.flow_name,
+        trigger_type: dbData.trigger_type,
+        num_emails: dbData.num_emails || 3,
+        status: dbData.status || 'strategy',
+        priority: dbData.priority || 'normal',
+        preview_url: dbData.preview_url,
+        notes: dbData.notes
       }])
       .select()
       .single()
 
-    if (error) throw error
+    if (error) {
+      console.error('Supabase error:', error)
+      throw error
+    }
 
     return NextResponse.json({ success: true, flow })
   } catch (error) {
@@ -76,7 +80,7 @@ export async function POST(request: NextRequest) {
 export async function PATCH(request: NextRequest) {
   try {
     const body = await request.json()
-    const { id, ...updates } = body
+    const { id, client_name, client_color, ...updates } = body // Remove UI-only fields
 
     const { data: flow, error } = await supabase
       .from('ops_flows')
@@ -85,7 +89,10 @@ export async function PATCH(request: NextRequest) {
       .select()
       .single()
 
-    if (error) throw error
+    if (error) {
+      console.error('Supabase error:', error)
+      throw error
+    }
 
     return NextResponse.json({ success: true, flow })
   } catch (error) {

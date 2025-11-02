@@ -84,7 +84,7 @@ export async function POST(request: NextRequest) {
 export async function PATCH(request: NextRequest) {
   try {
     const body = await request.json()
-    const { id, ...updates } = body
+    const { id, client_name, client_color, ...updates } = body // Remove UI-only fields
 
     const { data: campaign, error } = await supabase
       .from('ops_campaigns')
@@ -93,7 +93,10 @@ export async function PATCH(request: NextRequest) {
       .select()
       .single()
 
-    if (error) throw error
+    if (error) {
+      console.error('Supabase error:', error)
+      throw error
+    }
 
     return NextResponse.json({ success: true, campaign })
   } catch (error) {

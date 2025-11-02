@@ -29,17 +29,22 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
+    const { client_name, client_color, ...dbData } = body // Remove UI-only fields
 
     const { data: test, error } = await supabase
       .from('ops_ab_tests')
-      .insert([body])
+      .insert([dbData])
       .select()
       .single()
 
-    if (error) throw error
+    if (error) {
+      console.error('Supabase error:', error)
+      throw error
+    }
 
     return NextResponse.json({ success: true, test })
   } catch (error) {
+    console.error('Error creating test:', error)
     return NextResponse.json({ success: false, error: 'Failed to create test' }, { status: 500 })
   }
 }
@@ -47,7 +52,7 @@ export async function POST(request: NextRequest) {
 export async function PATCH(request: NextRequest) {
   try {
     const body = await request.json()
-    const { id, ...updates } = body
+    const { id, client_name, client_color, ...updates } = body // Remove UI-only fields
 
     const { data: test, error } = await supabase
       .from('ops_ab_tests')
@@ -56,10 +61,14 @@ export async function PATCH(request: NextRequest) {
       .select()
       .single()
 
-    if (error) throw error
+    if (error) {
+      console.error('Supabase error:', error)
+      throw error
+    }
 
     return NextResponse.json({ success: true, test })
   } catch (error) {
+    console.error('Error updating test:', error)
     return NextResponse.json({ success: false, error: 'Failed to update test' }, { status: 500 })
   }
 }
