@@ -177,51 +177,7 @@ export function OpsForms({ clients, selectedClient }: OpsFormsProps) {
     }
   }
 
-  // Mock forms data (will be from database later)
-  const [forms, setForms] = useState<FormTemplate[]>([
-    {
-      id: '1',
-      title: 'Client Onboarding Questionnaire',
-      description: 'Gather essential brand information from new clients',
-      category: 'onboarding',
-      fields: [], // Will populate in Task 67
-      status: 'active',
-      num_fields: 12,
-      assigned_clients: ['Hydrus', 'Peak Design'],
-      responses_count: 1,
-      total_clients: 2,
-      due_date: new Date(2025, 10, 30),
-      created_at: new Date(2025, 9, 20)
-    },
-    {
-      id: '2',
-      title: 'Monthly Strategy Check-in - November',
-      description: 'Gather monthly initiatives and priorities',
-      category: 'monthly',
-      fields: [],
-      status: 'completed',
-      num_fields: 8,
-      assigned_clients: ['Hydrus', 'Peak Design', 'Make Waves'],
-      responses_count: 3,
-      total_clients: 3,
-      created_at: new Date(2025, 10, 1)
-    },
-    {
-      id: '3',
-      title: 'Brand Guidelines Deep Dive',
-      description: 'Comprehensive brand identity questionnaire',
-      category: 'onboarding',
-      fields: [],
-      status: 'draft',
-      num_fields: 15,
-      assigned_clients: ['Make Waves'],
-      responses_count: 0,
-      total_clients: 1,
-      created_at: new Date(2025, 10, 5)
-    }
-  ])
-
-  // Filter forms
+  // Filter forms (using state from API fetch above)
   const filteredForms = forms.filter(form => {
     if (activeFilter !== 'all' && form.status !== activeFilter) return false
     if (selectedClient !== 'all' && !form.assigned_clients.includes(
