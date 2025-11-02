@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ABTestDetailModal } from './ab-test-detail-modal'
 import { 
@@ -51,9 +51,40 @@ export function ABTestTracker({ clients, selectedClient, campaigns }: ABTestTrac
   const [showCreateTest, setShowCreateTest] = useState(false)
   const [editingTest, setEditingTest] = useState<ABTest | null>(null)
   const [activeFilter, setActiveFilter] = useState<'all' | 'strategy' | 'in_progress' | 'implementation' | 'finalized'>('all')
+  const [tests, setTests] = useState<ABTest[]>([])
+  const [loading, setLoading] = useState(true)
 
-  // Mock A/B tests (will be from database later)
-  const [tests, setTests] = useState<ABTest[]>([
+  // Fetch A/B tests from API
+  useEffect(() => {
+    const fetchTests = async () => {
+      try {
+        setLoading(true)
+        const response = await fetch(`/api/ops/ab-tests?clientId=${selectedClient}`)
+        const data = await response.json()
+        
+        if (data.success && data.tests) {
+          const transformedTests = data.tests.map((t: any) => ({
+            ...t,
+            start_date: t.start_date ? new Date(t.start_date) : undefined,
+            client_name: clients.find(c => c.id === t.client_id)?.brand_name || 'Unknown',
+            client_color: clients.find(c => c.id === t.client_id)?.primary_color || '#3B82F6'
+          }))
+          setTests(transformedTests)
+        }
+      } catch (error) {
+        console.error('Error fetching tests:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    if (clients.length > 0) {
+      fetchTests()
+    }
+  }, [selectedClient, clients])
+
+  // Mock A/B tests (fallback)
+  const initialTests: ABTest[] = [
     {
       id: '1',
       client_id: clients[0]?.id || '1',
@@ -134,29 +165,61 @@ export function ABTestTracker({ clients, selectedClient, campaigns }: ABTestTrac
     }
   }
 
-  const handleDeleteTest = (testId: string) => {
+  const handleDeleteTest = async (testId: string) => {
     if (confirm('Delete this A/B test?')) {
-      setTests(tests.filter(t => t.id !== testId))
-      console.log('🗑️ Test deleted')
+      try {
+        const response = await fetch(`/api/ops/ab-tests?id=${testId}`, { method: 'DELETE' })
+        const data = await response.json()
+        if (data.success) {
+          setTests(tests.filter(t => t.id !== testId))
+          console.log('✅ Test deleted')
+        }
+      } catch (error) {
+        console.error('Error deleting test:', error)
+      }
     }
   }
 
-  const handleSaveTest = (testData: Partial<ABTest>) => {
-    if (editingTest && editingTest.id) {
-      // Update existing
-      setTests(tests.map(t => t.id === editingTest.id ? { ...t, ...testData } as ABTest : t))
-      console.log('✅ Test updated')
-    } else {
-      // Create new
-      const newTest: ABTest = {
-        ...testData as ABTest,
-        id: `test-${Date.now()}`
+  const handleSaveTest = async (testData: Partial<ABTest>) => {
+    try {
+      if (editingTest && editingTest.id) {
+        const response = await fetch('/api/ops/ab-tests', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: editingTest.id, ...testData })
+        })
+        const data = await response.json()
+        if (data.success) {
+          setTests(tests.map(t => t.id === editingTest.id ? { ...t, ...testData } as ABTest : t))
+          console.log('✅ Test updated')
+        }
+      } else {
+        const response = await fetch('/api/ops/ab-tests', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...testData, agency_id: clients[0]?.agency_id })
+        })
+        const data = await response.json()
+        if (data.success) {
+          const fetchResponse = await fetch(`/api/ops/ab-tests?clientId=${selectedClient}`)
+          const fetchData = await fetchResponse.json()
+          if (fetchData.success) {
+            setTests(fetchData.tests.map((t: any) => ({
+              ...t,
+              start_date: t.start_date ? new Date(t.start_date) : undefined,
+              client_name: clients.find(c => c.id === t.client_id)?.brand_name,
+              client_color: clients.find(c => c.id === t.client_id)?.primary_color
+            })))
+          }
+          console.log('✅ Test created')
+        }
       }
-      setTests([newTest, ...tests])
-      console.log('✅ Test created')
+      setShowCreateTest(false)
+      setEditingTest(null)
+    } catch (error) {
+      console.error('Error saving test:', error)
+      alert('Failed to save test')
     }
-    setShowCreateTest(false)
-    setEditingTest(null)
   }
 
   // Group tests by status for pipeline view
