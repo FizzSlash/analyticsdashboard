@@ -330,13 +330,54 @@ CREATE TABLE IF NOT EXISTS ops_activity (
 );
 
 -- =====================================================
--- 9. LINK PORTAL TABLES TO OPS
+-- 9. CREATE PORTAL TABLES (If They Don't Exist)
 -- =====================================================
-ALTER TABLE campaign_approvals
-ADD COLUMN IF NOT EXISTS ops_campaign_id UUID REFERENCES ops_campaigns(id);
 
-ALTER TABLE flow_approvals
-ADD COLUMN IF NOT EXISTS ops_flow_id UUID REFERENCES ops_flows(id);
+CREATE TABLE IF NOT EXISTS campaign_approvals (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  ops_campaign_id UUID REFERENCES ops_campaigns(id),
+  
+  client_id UUID REFERENCES clients(id) NOT NULL,
+  agency_id UUID REFERENCES agencies(id) NOT NULL,
+  
+  campaign_name TEXT NOT NULL,
+  campaign_type TEXT CHECK (campaign_type IN ('email', 'sms')) DEFAULT 'email',
+  subject_line TEXT,
+  preview_url TEXT,
+  scheduled_date TIMESTAMP WITH TIME ZONE,
+  
+  status TEXT CHECK (status IN ('draft', 'client_approval', 'approved', 'revisions_requested', 'sent')) DEFAULT 'client_approval',
+  
+  client_revisions TEXT,
+  client_approved BOOLEAN DEFAULT false,
+  approval_date TIMESTAMP WITH TIME ZONE,
+  revision_date TIMESTAMP WITH TIME ZONE,
+  
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  
+  UNIQUE(ops_campaign_id)
+);
+
+CREATE TABLE IF NOT EXISTS flow_approvals (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  ops_flow_id UUID REFERENCES ops_flows(id),
+  
+  client_id UUID REFERENCES clients(id) NOT NULL,
+  agency_id UUID REFERENCES agencies(id) NOT NULL,
+  
+  flow_id TEXT,
+  flow_name TEXT NOT NULL,
+  flow_status TEXT DEFAULT 'pending',
+  
+  flow_approved BOOLEAN DEFAULT false,
+  flow_notes TEXT,
+  
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  
+  UNIQUE(ops_flow_id)
+);
 
 -- =====================================================
 -- 10. INDEXES FOR PERFORMANCE
@@ -364,7 +405,10 @@ CREATE INDEX IF NOT EXISTS idx_ops_scope_usage_month ON ops_scope_usage(month_ye
 CREATE INDEX IF NOT EXISTS idx_ops_activity_campaign ON ops_activity(campaign_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_ops_activity_flow ON ops_activity(flow_id, created_at DESC);
 
+CREATE INDEX IF NOT EXISTS idx_campaign_approvals_client ON campaign_approvals(client_id, status);
 CREATE INDEX IF NOT EXISTS idx_campaign_approvals_ops_id ON campaign_approvals(ops_campaign_id);
+
+CREATE INDEX IF NOT EXISTS idx_flow_approvals_client ON flow_approvals(client_id);
 CREATE INDEX IF NOT EXISTS idx_flow_approvals_ops_id ON flow_approvals(ops_flow_id);
 
 -- =====================================================
@@ -646,6 +690,8 @@ ALTER TABLE ops_scope_config ENABLE ROW LEVEL SECURITY;
 ALTER TABLE ops_scope_usage ENABLE ROW LEVEL SECURITY;
 ALTER TABLE ops_monthly_docs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE ops_activity ENABLE ROW LEVEL SECURITY;
+ALTER TABLE campaign_approvals ENABLE ROW LEVEL SECURITY;
+ALTER TABLE flow_approvals ENABLE ROW LEVEL SECURITY;
 
 -- Agency team can manage everything
 CREATE POLICY "Agency team full access" ON ops_campaigns FOR ALL
@@ -733,6 +779,28 @@ USING (
     SELECT agency_id FROM user_profiles WHERE id = auth.uid()
   ))
 );
+
+-- Portal tables - Agency can manage, clients can view their own
+CREATE POLICY "Agency team manage approvals" ON campaign_approvals FOR ALL
+USING (agency_id IN (SELECT agency_id FROM user_profiles WHERE id = auth.uid()));
+
+CREATE POLICY "Clients view own approvals" ON campaign_approvals FOR SELECT
+USING (client_id IN (
+  SELECT client_id FROM user_profiles WHERE id = auth.uid() AND role = 'client_user'
+));
+
+CREATE POLICY "Clients update own approvals" ON campaign_approvals FOR UPDATE
+USING (client_id IN (
+  SELECT client_id FROM user_profiles WHERE id = auth.uid() AND role = 'client_user'
+));
+
+CREATE POLICY "Agency team manage flow approvals" ON flow_approvals FOR ALL
+USING (agency_id IN (SELECT agency_id FROM user_profiles WHERE id = auth.uid()));
+
+CREATE POLICY "Clients view own flow approvals" ON flow_approvals FOR SELECT
+USING (client_id IN (
+  SELECT client_id FROM user_profiles WHERE id = auth.uid() AND role = 'client_user'
+));
 
 -- =====================================================
 -- SUCCESS!
