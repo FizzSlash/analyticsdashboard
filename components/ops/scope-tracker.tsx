@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ScopeDetailModal } from './scope-detail-modal'
 import { 
@@ -44,40 +44,69 @@ interface ScopeTrackerProps {
 
 export function ScopeTracker({ clients, selectedClient, campaigns }: ScopeTrackerProps) {
   const [selectedClientDetail, setSelectedClientDetail] = useState<string | null>(null)
+  const [scopeConfigs, setScopeConfigs] = useState<ScopeConfig[]>([])
+  const [scopeUsage, setScopeUsage] = useState<Record<string, ScopeUsage>>({})
+  const [loading, setLoading] = useState(true)
 
-  // Mock scope configurations (will be from database later)
-  const scopeConfigs: ScopeConfig[] = clients.map((client, index) => ({
-    client_id: client.id,
-    client_name: client.brand_name,
-    campaigns_min: 8,
-    campaigns_max: 12,
-    flows_limit: 2,
-    ab_tests_limit: 3,
-    sms_limit: 6,
-    invoice_date: 15, // 15th of month
-    retainer_amount: 3500
-  }))
-
-  // Mock usage (auto-counted from campaigns later)
-  const currentMonth = new Date().toISOString().slice(0, 7) // YYYY-MM
-
-  const scopeUsage: Record<string, ScopeUsage> = clients.reduce((acc, client, index) => {
-    // Count campaigns for this client this month
-    const campaignsThisMonth = campaigns.filter(c => 
-      c.client_id === client.id &&
-      c.send_date.toISOString().slice(0, 7) === currentMonth
-    ).length
-
-    acc[client.id] = {
-      client_id: client.id,
-      campaigns_used: campaignsThisMonth || (index === 0 ? 8 : index === 1 ? 11 : 6), // Mock data
-      flows_used: index === 0 ? 1 : 0,
-      ab_tests_used: index === 0 ? 2 : index === 1 ? 3 : 1,
-      sms_used: 0,
-      month_year: currentMonth
+  // Fetch scope data from API
+  useEffect(() => {
+    const fetchScopeData = async () => {
+      try {
+        setLoading(true)
+        
+        // Fetch config and usage for each client
+        const configPromises = clients.map(async (client) => {
+          const configResponse = await fetch(`/api/ops/scope?type=config&clientId=${client.id}`)
+          const usageResponse = await fetch(`/api/ops/scope?type=usage&clientId=${client.id}`)
+          
+          const configData = await configResponse.json()
+          const usageData = await usageResponse.json()
+          
+          return {
+            config: configData.data || {
+              client_id: client.id,
+              client_name: client.brand_name,
+              campaigns_min: 8,
+              campaigns_max: 12,
+              flows_limit: 2,
+              ab_tests_limit: 3,
+              sms_limit: 6,
+              invoice_date: 15,
+              retainer_amount: 3500
+            },
+            usage: usageData.data || {
+              client_id: client.id,
+              campaigns_used: 0,
+              flows_used: 0,
+              ab_tests_used: 0,
+              sms_used: 0
+            }
+          }
+        })
+        
+        const results = await Promise.all(configPromises)
+        
+        setScopeConfigs(results.map(r => ({ ...r.config, client_name: clients.find(c => c.id === r.config.client_id)?.brand_name })))
+        
+        const usageMap = results.reduce((acc, r) => {
+          acc[r.usage.client_id] = r.usage
+          return acc
+        }, {} as Record<string, ScopeUsage>)
+        setScopeUsage(usageMap)
+        
+      } catch (error) {
+        console.error('Error fetching scope data:', error)
+      } finally {
+        setLoading(false)
+      }
     }
-    return acc
-  }, {} as Record<string, ScopeUsage>)
+
+    if (clients.length > 0) {
+      fetchScopeData()
+    }
+  }, [clients])
+
+  // Data now comes from API fetch above
 
   const getUsagePercentage = (used: number, max: number) => {
     return Math.round((used / max) * 100)
@@ -275,10 +304,28 @@ export function ScopeTracker({ clients, selectedClient, campaigns }: ScopeTracke
           client={clients.find(c => c.id === selectedClientDetail)}
           config={scopeConfigs.find(c => c.client_id === selectedClientDetail)!}
           usage={scopeUsage[selectedClientDetail]}
-          onSave={(config, monthlyDoc) => {
-            console.log('✅ Scope config saved:', config)
-            console.log('✅ Monthly doc saved:', monthlyDoc)
-            setSelectedClientDetail(null)
+          onSave={async (config, monthlyDoc) => {
+            try {
+              // Save scope config
+              await fetch('/api/ops/scope', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ type: 'config', client_id: selectedClientDetail, ...config })
+              })
+              
+              // Save monthly doc
+              await fetch('/api/ops/scope', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ type: 'monthly', client_id: selectedClientDetail, ...monthlyDoc })
+              })
+              
+              console.log('✅ Scope data saved')
+              setSelectedClientDetail(null)
+            } catch (error) {
+              console.error('Error saving scope data:', error)
+              alert('Failed to save scope data')
+            }
           }}
           onClose={() => setSelectedClientDetail(null)}
         />
