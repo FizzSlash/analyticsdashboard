@@ -247,6 +247,48 @@ export function FlowManager({ clients, selectedClient }: FlowManagerProps) {
     }
   }
 
+  // Drag handlers
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveId(event.active.id as string)
+  }
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event
+    setActiveId(null)
+
+    if (!over) return
+
+    const activeId = active.id as string
+    const overId = over.id as string
+
+    const activeFlow = flows.find(f => f.id === activeId)
+    if (!activeFlow) return
+
+    // Check if dropped on a status column
+    const statusColumns = ['strategy', 'copy', 'design', 'qa', 'client_approval', 'approved', 'live']
+    if (statusColumns.includes(overId)) {
+      setFlows(flows.map(f => 
+        f.id === activeId 
+          ? { ...f, status: overId as Flow['status'] }
+          : f
+      ))
+      console.log(`✅ Flow "${activeFlow.flow_name}" moved to ${overId}`)
+    } else {
+      // Dropped on another flow, find its status
+      const droppedFlow = flows.find(f => f.id === overId)
+      if (droppedFlow && droppedFlow.status !== activeFlow.status) {
+        setFlows(flows.map(f => 
+          f.id === activeId 
+            ? { ...f, status: droppedFlow.status }
+            : f
+        ))
+        console.log(`✅ Flow moved to ${droppedFlow.status}`)
+      }
+    }
+  }
+
+  const activeFlow = activeId ? flows.find(f => f.id === activeId) : null
+
   const handleSaveFlow = (flowData: Partial<Flow>) => {
     if (editingFlow && editingFlow.id) {
       setFlows(flows.map(f => f.id === editingFlow.id ? { ...f, ...flowData } as Flow : f))
@@ -292,71 +334,76 @@ export function FlowManager({ clients, selectedClient }: FlowManagerProps) {
         </CardHeader>
       </Card>
 
-      {/* Flow Pipeline */}
-      <div className="overflow-x-auto pb-4">
-        <div className="flex gap-4 min-w-max">
-          {[
-            { id: 'strategy', label: 'Strategy' },
-            { id: 'copy', label: 'Copy' },
-            { id: 'design', label: 'Design' },
-            { id: 'qa', label: 'QA' },
-            { id: 'client_approval', label: 'Client Approval' },
-            { id: 'approved', label: 'Approved' },
-            { id: 'live', label: 'Live' }
-          ].map(column => {
-            const columnFlows = flowsByStatus[column.id as keyof typeof flowsByStatus]
-            
-            return (
-              <div key={column.id} className="flex-shrink-0 w-[280px]">
-                <Card className={`${getStatusColor(column.id)} backdrop-blur-md border shadow-lg mb-3`}>
-                  <CardHeader className="p-4">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-white text-sm font-bold">
-                        {column.label}
-                      </CardTitle>
-                      <div className="bg-white/20 px-2 py-1 rounded-full text-white text-xs font-bold">
-                        {columnFlows.length}
+      {/* Flow Pipeline with Drag & Drop */}
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCorners}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+      >
+        <div className="overflow-x-auto pb-4">
+          <div className="flex gap-4 min-w-max">
+            {[
+              { id: 'strategy', label: 'Strategy' },
+              { id: 'copy', label: 'Copy' },
+              { id: 'design', label: 'Design' },
+              { id: 'qa', label: 'QA' },
+              { id: 'client_approval', label: 'Client Approval' },
+              { id: 'approved', label: 'Approved' },
+              { id: 'live', label: 'Live' }
+            ].map(column => {
+              const columnFlows = flowsByStatus[column.id as keyof typeof flowsByStatus]
+              
+              return (
+                <div key={column.id} className="flex-shrink-0 w-[280px]">
+                  <Card className={`${getStatusColor(column.id)} backdrop-blur-md border shadow-lg mb-3`}>
+                    <CardHeader className="p-4">
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-white text-sm font-bold">
+                          {column.label}
+                        </CardTitle>
+                        <div className="bg-white/20 px-2 py-1 rounded-full text-white text-xs font-bold">
+                          {columnFlows.length}
+                        </div>
                       </div>
-                    </div>
-                  </CardHeader>
-                </Card>
+                    </CardHeader>
+                  </Card>
 
-                <div className="min-h-[400px] bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 p-3 space-y-3">
-                  {columnFlows.length === 0 ? (
-                    <div className="text-white/40 text-center py-8 text-sm">
-                      No flows in {column.label}
-                    </div>
-                  ) : (
-                    columnFlows.map(flow => (
-                      <div
-                        key={flow.id}
-                        onClick={() => setEditingFlow(flow)}
-                        className="p-3 bg-white rounded-lg border-l-4 shadow-sm hover:shadow-md transition-all cursor-pointer"
-                        style={{ borderLeftColor: flow.client_color }}
-                      >
-                        <div className="text-sm font-semibold text-gray-900 mb-1 flex items-center gap-1">
-                          {getPriorityEmoji(flow.priority)}
-                          {flow.flow_name}
+                  <SortableContext items={columnFlows.map(f => f.id)} strategy={verticalListSortingStrategy}>
+                    <DroppableColumn id={column.id}>
+                      {columnFlows.length === 0 ? (
+                        <div className="text-white/40 text-center py-8 text-sm">
+                          No flows in {column.label}
                         </div>
-                        <div className="text-xs text-gray-600 mb-2">{flow.client_name}</div>
-                        <div className="flex items-center gap-2 flex-wrap text-xs">
-                          <span className="px-2 py-0.5 rounded bg-blue-100 text-blue-700">
-                            {flow.trigger_type}
-                          </span>
-                          <span className="text-gray-500">
-                            <Mail className="h-3 w-3 inline mr-1" />
-                            {flow.num_emails} emails
-                          </span>
-                        </div>
-                      </div>
-                    ))
-                  )}
+                      ) : (
+                        columnFlows.map(flow => (
+                          <SortableFlowCard 
+                            key={flow.id} 
+                            flow={flow}
+                            onClick={() => setEditingFlow(flow)}
+                          />
+                        ))
+                      )}
+                    </DroppableColumn>
+                  </SortableContext>
                 </div>
-              </div>
-            )
-          })}
+              )
+            })}
+          </div>
         </div>
-      </div>
+
+        {/* Drag Overlay */}
+        <DragOverlay>
+          {activeFlow ? (
+            <div className="p-3 bg-white rounded-lg border-l-4 shadow-lg opacity-90"
+              style={{ borderLeftColor: activeFlow.client_color }}
+            >
+              <div className="text-sm font-semibold text-gray-900">{activeFlow.flow_name}</div>
+              <div className="text-xs text-gray-600">{activeFlow.client_name}</div>
+            </div>
+          ) : null}
+        </DragOverlay>
+      </DndContext>
 
       {/* Summary Stats */}
       <div className="grid grid-cols-4 gap-4">

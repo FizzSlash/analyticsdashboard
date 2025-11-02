@@ -44,11 +44,48 @@ export function FlowDetailModal({ flow, clients, onSave, onClose }: FlowDetailMo
     notes: flow?.notes || ''
   })
 
+  const [uploadedImage, setUploadedImage] = useState<string | null>(flow?.preview_url || null)
+  const [isDragging, setIsDragging] = useState(false)
   const isNewFlow = !flow
+
+  const handleFileUpload = (file: File) => {
+    const validTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif']
+    if (!validTypes.includes(file.type)) {
+      alert('Please upload PNG, JPG, or GIF files only')
+      return
+    }
+
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      const imageUrl = e.target?.result as string
+      setUploadedImage(imageUrl)
+      console.log('✅ Flow image uploaded')
+    }
+    reader.readAsDataURL(file)
+  }
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault()
+    setIsDragging(false)
+    const file = e.dataTransfer.files[0]
+    if (file) handleFileUpload(file)
+  }
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) handleFileUpload(file)
+  }
 
   const handleSubmit = () => {
     if (!formData.flow_name || !formData.trigger_type) {
       alert('Please fill in flow name and trigger type')
+      return
+    }
+
+    // Validate image for Design → QA (same as campaigns)
+    const movingToQA = formData.status === 'qa' && flow?.status === 'design'
+    if (movingToQA && !uploadedImage) {
+      alert('⚠️ Please upload a flow preview image before moving to QA.\n\nThe QA team needs to see the design.')
       return
     }
     
@@ -57,6 +94,7 @@ export function FlowDetailModal({ flow, clients, onSave, onClose }: FlowDetailMo
     onSave({
       ...flow,
       ...formData,
+      preview_url: uploadedImage || undefined,
       client_name: selectedClient?.brand_name,
       client_color: selectedClient?.primary_color
     })
@@ -208,12 +246,56 @@ export function FlowDetailModal({ flow, clients, onSave, onClose }: FlowDetailMo
             </div>
           </div>
 
-          {/* Image Upload Placeholder */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <div className="text-sm text-blue-900">
-              <Upload className="h-4 w-4 inline mr-2" />
-              <strong>Flow Preview Image:</strong> Image upload will be added (same as campaigns). Required for QA → Client Approval transition. Flows will auto-send to client portal for approval.
-            </div>
+          {/* Flow Preview Image */}
+          <div>
+            <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+              <Upload className="h-4 w-4" />
+              Flow Preview Image {formData.status === 'qa' || formData.status === 'client_approval' ? '*' : ''}
+            </h3>
+            
+            {uploadedImage ? (
+              <div className="relative">
+                <img 
+                  src={uploadedImage} 
+                  alt="Flow preview"
+                  className="w-full rounded-lg border border-gray-300 shadow-sm"
+                />
+                <button
+                  onClick={() => setUploadedImage(null)}
+                  className="absolute top-2 right-2 p-2 bg-red-600 hover:bg-red-700 text-white rounded-lg shadow-lg transition-colors"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            ) : (
+              <div
+                onDrop={handleDrop}
+                onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                onDragLeave={() => setIsDragging(false)}
+                className={`border-2 border-dashed rounded-lg p-8 text-center transition-all ${
+                  isDragging 
+                    ? 'border-blue-500 bg-blue-50' 
+                    : 'border-gray-300 bg-gray-50 hover:bg-gray-100'
+                }`}
+              >
+                <Upload className={`h-12 w-12 mx-auto mb-4 ${isDragging ? 'text-blue-500' : 'text-gray-400'}`} />
+                <div className="text-sm text-gray-700 mb-2">
+                  <label htmlFor="flow-image-upload" className="cursor-pointer text-blue-600 hover:text-blue-700 font-medium">
+                    Click to upload
+                  </label>
+                  {' '}or drag and drop
+                </div>
+                <div className="text-xs text-gray-500">PNG, JPG, or GIF</div>
+                <div className="text-xs text-orange-600 mt-2">Required for Design → QA transition</div>
+                <input
+                  id="flow-image-upload"
+                  type="file"
+                  accept="image/png,image/jpeg,image/jpg,image/gif"
+                  onChange={handleFileSelect}
+                  className="hidden"
+                />
+              </div>
+            )}
           </div>
 
           {/* Notes */}
