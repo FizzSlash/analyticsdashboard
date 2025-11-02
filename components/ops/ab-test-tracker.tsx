@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { ABTestDetailModal } from './ab-test-detail-modal'
 import { 
   TestTube,
   Plus,
@@ -16,8 +17,12 @@ import {
   AlertCircle,
   X,
   Save,
-  Target
+  Target,
+  LayoutGrid,
+  Columns
 } from 'lucide-react'
+
+type ViewMode = 'list' | 'pipeline'
 
 interface ABTest {
   id: string
@@ -41,8 +46,9 @@ interface ABTestTrackerProps {
 }
 
 export function ABTestTracker({ clients, selectedClient, campaigns }: ABTestTrackerProps) {
+  const [viewMode, setViewMode] = useState<ViewMode>('list')
   const [showCreateTest, setShowCreateTest] = useState(false)
-  const [selectedTest, setSelectedTest] = useState<ABTest | null>(null)
+  const [editingTest, setEditingTest] = useState<ABTest | null>(null)
   const [activeFilter, setActiveFilter] = useState<'all' | 'strategy' | 'in_progress' | 'implementation' | 'finalized'>('all')
 
   // Mock A/B tests (will be from database later)
@@ -136,10 +142,36 @@ export function ABTestTracker({ clients, selectedClient, campaigns }: ABTestTrac
   }
 
   const handleDeleteTest = (testId: string) => {
-    if (confirm('Delete this A/B test and all results?')) {
+    if (confirm('Delete this A/B test?')) {
       setTests(tests.filter(t => t.id !== testId))
       console.log('🗑️ Test deleted')
     }
+  }
+
+  const handleSaveTest = (testData: Partial<ABTest>) => {
+    if (editingTest && editingTest.id) {
+      // Update existing
+      setTests(tests.map(t => t.id === editingTest.id ? { ...t, ...testData } as ABTest : t))
+      console.log('✅ Test updated')
+    } else {
+      // Create new
+      const newTest: ABTest = {
+        id: `test-${Date.now()}`,
+        ...testData as ABTest
+      }
+      setTests([newTest, ...tests])
+      console.log('✅ Test created')
+    }
+    setShowCreateTest(false)
+    setEditingTest(null)
+  }
+
+  // Group tests by status for pipeline view
+  const testsByStatus = {
+    strategy: filteredTests.filter(t => t.status === 'strategy'),
+    in_progress: filteredTests.filter(t => t.status === 'in_progress'),
+    implementation: filteredTests.filter(t => t.status === 'implementation'),
+    finalized: filteredTests.filter(t => t.status === 'finalized')
   }
 
   return (
@@ -168,34 +200,64 @@ export function ABTestTracker({ clients, selectedClient, campaigns }: ABTestTrac
         </CardHeader>
       </Card>
 
-      {/* Filter Tabs */}
-      <div className="flex gap-2 p-2 bg-white/5 backdrop-blur-sm rounded-xl border border-white/20">
-        {(['all', 'strategy', 'in_progress', 'implementation', 'finalized'] as const).map(filter => (
+      {/* View Toggle & Filters */}
+      <div className="flex items-center justify-between gap-4">
+        {/* Filter Tabs */}
+        <div className="flex gap-2 p-2 bg-white/5 backdrop-blur-sm rounded-xl border border-white/20 flex-1">
+          {(['all', 'strategy', 'in_progress', 'implementation', 'finalized'] as const).map(filter => (
+            <button
+              key={filter}
+              onClick={() => setActiveFilter(filter)}
+              className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                activeFilter === filter
+                  ? 'bg-white/30 text-white shadow-lg border border-white/40'
+                  : 'text-white/80 hover:text-white hover:bg-white/15'
+              }`}
+            >
+              {filter === 'all' ? 'All' : filter === 'in_progress' ? 'In Progress' : filter.charAt(0).toUpperCase() + filter.slice(1)}
+              <span className="ml-2 text-xs opacity-70">
+                ({tests.filter(t => filter === 'all' || t.status === filter).length})
+              </span>
+            </button>
+          ))}
+        </div>
+
+        {/* View Toggle */}
+        <div className="inline-flex gap-2 p-1 bg-white/10 backdrop-blur-md rounded-xl border border-white/20">
           <button
-            key={filter}
-            onClick={() => setActiveFilter(filter)}
+            onClick={() => setViewMode('list')}
             className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
-              activeFilter === filter
-                ? 'bg-white/30 text-white shadow-lg border border-white/40'
-                : 'text-white/80 hover:text-white hover:bg-white/15'
+              viewMode === 'list'
+                ? 'bg-white/30 text-white shadow-lg'
+                : 'text-white/60 hover:text-white hover:bg-white/10'
             }`}
           >
-            {filter === 'all' ? 'All' : filter === 'in_progress' ? 'In Progress' : filter.charAt(0).toUpperCase() + filter.slice(1)}
-            <span className="ml-2 text-xs opacity-70">
-              ({tests.filter(t => filter === 'all' || t.status === filter).length})
-            </span>
+            <LayoutGrid className="h-4 w-4 inline mr-2" />
+            List View
           </button>
-        ))}
+          <button
+            onClick={() => setViewMode('pipeline')}
+            className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+              viewMode === 'pipeline'
+                ? 'bg-white/30 text-white shadow-lg'
+                : 'text-white/60 hover:text-white hover:bg-white/10'
+            }`}
+          >
+            <Columns className="h-4 w-4 inline mr-2" />
+            Pipeline View
+          </button>
+        </div>
       </div>
 
-      {/* Tests List */}
-      <div className="grid grid-cols-1 gap-4">
+      {/* List View */}
+      {viewMode === 'list' && (
+        <div className="grid grid-cols-1 gap-4">
         {filteredTests.map(test => {
           return (
             <Card 
               key={test.id} 
               className="bg-white border-2 border-gray-200 shadow-sm hover:shadow-md transition-all cursor-pointer"
-              onClick={() => setSelectedTest(test)}
+              onClick={() => setEditingTest(test)}
               style={{ borderLeftColor: test.client_color, borderLeftWidth: '4px' }}
             >
               <CardContent className="p-4">
@@ -254,7 +316,76 @@ export function ABTestTracker({ clients, selectedClient, campaigns }: ABTestTrac
             </Card>
           )
         })}
-      </div>
+        </div>
+      )}
+
+      {/* Pipeline View */}
+      {viewMode === 'pipeline' && (
+        <div className="overflow-x-auto pb-4">
+          <div className="flex gap-4 min-w-max">
+            {[
+              { id: 'strategy', label: 'Strategy', color: 'bg-gray-500/20 border-gray-400/30' },
+              { id: 'in_progress', label: 'In Progress', color: 'bg-blue-500/20 border-blue-400/30' },
+              { id: 'implementation', label: 'Implementation', color: 'bg-purple-500/20 border-purple-400/30' },
+              { id: 'finalized', label: 'Finalized', color: 'bg-green-500/20 border-green-400/30' }
+            ].map(column => {
+              const columnTests = testsByStatus[column.id as keyof typeof testsByStatus]
+              
+              return (
+                <div key={column.id} className="flex-shrink-0 w-[300px]">
+                  <Card className={`${column.color} backdrop-blur-md border shadow-lg mb-3`}>
+                    <CardHeader className="p-4">
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-white text-sm font-bold">
+                          {column.label}
+                        </CardTitle>
+                        <div className="bg-white/20 px-2 py-1 rounded-full text-white text-xs font-bold">
+                          {columnTests.length}
+                        </div>
+                      </div>
+                    </CardHeader>
+                  </Card>
+
+                  <div className="min-h-[400px] bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 p-3 space-y-3">
+                    {columnTests.length === 0 ? (
+                      <div className="text-white/40 text-center py-8 text-sm">
+                        No tests in {column.label}
+                      </div>
+                    ) : (
+                      columnTests.map(test => (
+                        <div
+                          key={test.id}
+                          onClick={() => setEditingTest(test)}
+                          className="p-3 bg-white rounded-lg border-l-4 shadow-sm hover:shadow-md transition-all cursor-pointer"
+                          style={{ borderLeftColor: test.client_color }}
+                        >
+                          <div className="text-sm font-semibold text-gray-900 mb-1 flex items-center gap-1">
+                            {getPriorityEmoji(test.priority)}
+                            {test.test_name}
+                          </div>
+                          <div className="text-xs text-gray-600 mb-2">{test.client_name}</div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs px-2 py-0.5 rounded bg-purple-100 text-purple-700">
+                              {getTestTypeLabel(test.test_type)}
+                            </span>
+                            <span className="text-xs text-gray-500">{test.num_variants} variants</span>
+                          </div>
+                          {test.winner && (
+                            <div className="mt-2 text-xs text-green-600 flex items-center gap-1">
+                              <Trophy className="h-3 w-3" />
+                              Winner declared
+                            </div>
+                          )}
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       {filteredTests.length === 0 && (
         <Card className="bg-white/10 backdrop-blur-md border-white/20 shadow-xl">
@@ -311,45 +442,17 @@ export function ABTestTracker({ clients, selectedClient, campaigns }: ABTestTrac
         </Card>
       </div>
 
-      {/* Test Detail/Create Modal - Coming in Tasks 47-52 */}
-      {(showCreateTest || selectedTest) && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <Card className="bg-white w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl">
-            <CardHeader className="border-b border-gray-200">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-gray-900">
-                  {selectedTest ? selectedTest.test_name : 'Create New A/B Test'}
-                </CardTitle>
-                <button 
-                  onClick={() => {
-                    setShowCreateTest(false)
-                    setSelectedTest(null)
-                  }}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
-            </CardHeader>
-            <CardContent className="flex-1 overflow-y-auto p-6">
-              <div className="text-center py-12 text-gray-600">
-                Test detail view and creation wizard coming in Tasks 47-52...
-                <div className="mt-4 text-sm">
-                  Will include: Test config, variant builder, results analysis, winner declaration, insights
-                </div>
-                <button
-                  onClick={() => {
-                    setShowCreateTest(false)
-                    setSelectedTest(null)
-                  }}
-                  className="mt-4 px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg"
-                >
-                  Close
-                </button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+      {/* Test Detail/Create Modal */}
+      {(showCreateTest || editingTest) && (
+        <ABTestDetailModal
+          test={editingTest}
+          clients={clients}
+          onSave={handleSaveTest}
+          onClose={() => {
+            setShowCreateTest(false)
+            setEditingTest(null)
+          }}
+        />
       )}
     </div>
   )
