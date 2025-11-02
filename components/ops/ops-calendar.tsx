@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { CampaignDetailModal } from './campaign-detail-modal'
 import {
@@ -232,9 +232,41 @@ export function OpsCalendar({ clients, selectedClient }: OpsCalendarProps) {
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [activeId, setActiveId] = useState<string | null>(null)
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null)
-  
-  // Mock campaign data in state (will be replaced with real data later)
-  const [campaigns, setCampaigns] = useState<Campaign[]>([
+  const [campaigns, setCampaigns] = useState<Campaign[]>([])
+  const [loading, setLoading] = useState(true)
+
+  // Fetch campaigns from API
+  useEffect(() => {
+    const fetchCampaigns = async () => {
+      try {
+        setLoading(true)
+        const response = await fetch(`/api/ops/campaigns?clientId=${selectedClient}`)
+        const data = await response.json()
+        
+        if (data.success && data.campaigns) {
+          // Transform database campaigns to component format
+          const transformedCampaigns = data.campaigns.map((c: any) => ({
+            ...c,
+            send_date: new Date(c.send_date),
+            client_name: clients.find(cl => cl.id === c.client_id)?.brand_name || 'Unknown',
+            client_color: clients.find(cl => cl.id === c.client_id)?.primary_color || '#3B82F6'
+          }))
+          setCampaigns(transformedCampaigns)
+        }
+      } catch (error) {
+        console.error('Error fetching campaigns:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    if (clients.length > 0) {
+      fetchCampaigns()
+    }
+  }, [selectedClient, clients])
+
+  // Keep mock data as fallback for initial load
+  const [campaigns_old, setCampaigns_old] = useState<Campaign[]>([
     {
       id: '1',
       campaign_name: 'Black Friday Launch',
@@ -350,13 +382,20 @@ export function OpsCalendar({ clients, selectedClient }: OpsCalendarProps) {
       updatedDate.setHours(activeCampaign.send_date.getHours())
       updatedDate.setMinutes(activeCampaign.send_date.getMinutes())
       
-      setCampaigns(campaigns.map(c => 
-        c.id === activeId 
-          ? { ...c, send_date: updatedDate }
-          : c
-      ))
-      
-      console.log(`✅ Campaign "${activeCampaign.campaign_name}" moved to ${updatedDate.toLocaleDateString()}`)
+      // Update in database
+      fetch('/api/ops/campaigns', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: activeId, send_date: updatedDate.toISOString() })
+      }).then(() => {
+        // Update local state
+        setCampaigns(campaigns.map(c => 
+          c.id === activeId 
+            ? { ...c, send_date: updatedDate }
+            : c
+        ))
+        console.log(`✅ Campaign "${activeCampaign.campaign_name}" moved to ${updatedDate.toLocaleDateString()}`)
+      })
     }
   }
 
@@ -383,26 +422,75 @@ export function OpsCalendar({ clients, selectedClient }: OpsCalendarProps) {
     setSelectedCampaign(newCampaign)
   }
 
-  const handleSaveCampaign = (updatedCampaign: Campaign) => {
-    // Check if this is a new campaign (ID starts with "new-")
-    if (updatedCampaign.id.startsWith('new-')) {
-      // Add new campaign
-      setCampaigns([...campaigns, updatedCampaign])
-      console.log('✅ Campaign created:', updatedCampaign.campaign_name)
-    } else {
-      // Update existing campaign
-      setCampaigns(campaigns.map(c => 
-        c.id === updatedCampaign.id ? updatedCampaign : c
-      ))
-      console.log('✅ Campaign saved:', updatedCampaign.campaign_name)
+  const handleSaveCampaign = async (updatedCampaign: Campaign) => {
+    try {
+      const isNew = updatedCampaign.id.startsWith('new-')
+      
+      if (isNew) {
+        // Create new campaign
+        const response = await fetch('/api/ops/campaigns', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ...updatedCampaign,
+            agency_id: clients[0]?.agency_id // Get from first client
+          })
+        })
+        
+        const data = await response.json()
+        if (data.success) {
+          // Refetch campaigns
+          const fetchResponse = await fetch(`/api/ops/campaigns?clientId=${selectedClient}`)
+          const fetchData = await fetchResponse.json()
+          if (fetchData.success) {
+            setCampaigns(fetchData.campaigns.map((c: any) => ({
+              ...c,
+              send_date: new Date(c.send_date),
+              client_name: clients.find(cl => cl.id === c.client_id)?.brand_name,
+              client_color: clients.find(cl => cl.id === c.client_id)?.primary_color
+            })))
+          }
+          console.log('✅ Campaign created')
+        }
+      } else {
+        // Update existing campaign
+        const response = await fetch('/api/ops/campaigns', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updatedCampaign)
+        })
+        
+        const data = await response.json()
+        if (data.success) {
+          setCampaigns(campaigns.map(c => c.id === updatedCampaign.id ? updatedCampaign : c))
+          console.log('✅ Campaign updated')
+        }
+      }
+      
+      setSelectedCampaign(null)
+    } catch (error) {
+      console.error('Error saving campaign:', error)
+      alert('Failed to save campaign')
     }
-    setSelectedCampaign(null)
   }
 
-  const handleDeleteCampaign = (campaignId: string) => {
-    setCampaigns(campaigns.filter(c => c.id !== campaignId))
-    setSelectedCampaign(null)
-    console.log('🗑️ Campaign deleted:', campaignId)
+  const handleDeleteCampaign = async (campaignId: string) => {
+    try {
+      const response = await fetch(`/api/ops/campaigns?id=${campaignId}`, {
+        method: 'DELETE'
+      })
+      
+      const data = await response.json()
+      if (data.success) {
+        setCampaigns(campaigns.filter(c => c.id !== campaignId))
+        console.log('✅ Campaign deleted')
+      }
+      
+      setSelectedCampaign(null)
+    } catch (error) {
+      console.error('Error deleting campaign:', error)
+      alert('Failed to delete campaign')
+    }
   }
 
   // Navigation
