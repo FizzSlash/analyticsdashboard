@@ -280,7 +280,6 @@ export function OpsPipeline({ clients, selectedClient }: OpsPipelineProps) {
     }
   ]
 
-  const [campaigns, setCampaigns] = useState<Campaign[]>(initialCampaigns)
   const [activeId, setActiveId] = useState<string | null>(null)
 
   // Drag and drop sensors
