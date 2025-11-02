@@ -156,8 +156,8 @@ export function ABTestTracker({ clients, selectedClient, campaigns }: ABTestTrac
     } else {
       // Create new
       const newTest: ABTest = {
-        id: `test-${Date.now()}`,
-        ...testData as ABTest
+        ...testData as ABTest,
+        id: `test-${Date.now()}`
       }
       setTests([newTest, ...tests])
       console.log('✅ Test created')
