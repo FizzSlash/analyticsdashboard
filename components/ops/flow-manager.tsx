@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { FlowDetailModal } from './flow-detail-modal'
 import {
@@ -144,6 +144,36 @@ export function FlowManager({ clients, selectedClient }: FlowManagerProps) {
   const [editingFlow, setEditingFlow] = useState<Flow | null>(null)
   const [showCreateFlow, setShowCreateFlow] = useState(false)
   const [activeId, setActiveId] = useState<string | null>(null)
+  const [flows, setFlows] = useState<Flow[]>([])
+  const [loading, setLoading] = useState(true)
+
+  // Fetch flows from API
+  useEffect(() => {
+    const fetchFlows = async () => {
+      try {
+        setLoading(true)
+        const response = await fetch(`/api/ops/flows?clientId=${selectedClient}`)
+        const data = await response.json()
+        
+        if (data.success && data.flows) {
+          const transformedFlows = data.flows.map((f: any) => ({
+            ...f,
+            client_name: clients.find(c => c.id === f.client_id)?.brand_name || 'Unknown',
+            client_color: clients.find(c => c.id === f.client_id)?.primary_color || '#3B82F6'
+          }))
+          setFlows(transformedFlows)
+        }
+      } catch (error) {
+        console.error('Error fetching flows:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    if (clients.length > 0) {
+      fetchFlows()
+    }
+  }, [selectedClient, clients])
 
   // Drag and drop sensors
   const sensors = useSensors(
@@ -154,8 +184,8 @@ export function FlowManager({ clients, selectedClient }: FlowManagerProps) {
     })
   )
 
-  // Mock flows (will be from database later)
-  const [flows, setFlows] = useState<Flow[]>([
+  // Mock flows (fallback)
+  const initialFlows: Flow[] = [
     {
       id: '1',
       client_id: clients[0]?.id || '1',
@@ -240,10 +270,21 @@ export function FlowManager({ clients, selectedClient }: FlowManagerProps) {
     }
   }
 
-  const handleDeleteFlow = (flowId: string) => {
+  const handleDeleteFlow = async (flowId: string) => {
     if (confirm('Delete this flow?')) {
-      setFlows(flows.filter(f => f.id !== flowId))
-      console.log('🗑️ Flow deleted')
+      try {
+        const response = await fetch(`/api/ops/flows?id=${flowId}`, {
+          method: 'DELETE'
+        })
+        
+        const data = await response.json()
+        if (data.success) {
+          setFlows(flows.filter(f => f.id !== flowId))
+          console.log('✅ Flow deleted')
+        }
+      } catch (error) {
+        console.error('Error deleting flow:', error)
+      }
     }
   }
 
@@ -266,46 +307,90 @@ export function FlowManager({ clients, selectedClient }: FlowManagerProps) {
 
     // Check if dropped on a status column
     const statusColumns = ['strategy', 'copy', 'design', 'qa', 'client_approval', 'approved', 'live']
-    if (statusColumns.includes(overId)) {
-      setFlows(flows.map(f => 
-        f.id === activeId 
-          ? { ...f, status: overId as Flow['status'] }
-          : f
-      ))
-      console.log(`✅ Flow "${activeFlow.flow_name}" moved to ${overId}`)
-    } else {
-      // Dropped on another flow, find its status
-      const droppedFlow = flows.find(f => f.id === overId)
-      if (droppedFlow && droppedFlow.status !== activeFlow.status) {
+    if (statusColumns.includes(overId) && activeFlow.status !== overId) {
+      // Update in database
+      fetch('/api/ops/flows', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: activeId, status: overId })
+      }).then(() => {
         setFlows(flows.map(f => 
           f.id === activeId 
-            ? { ...f, status: droppedFlow.status }
+            ? { ...f, status: overId as Flow['status'] }
             : f
         ))
-        console.log(`✅ Flow moved to ${droppedFlow.status}`)
+        console.log(`✅ Flow "${activeFlow.flow_name}" moved to ${overId}`)
+      })
+    } else {
+      // Dropped on another flow
+      const droppedFlow = flows.find(f => f.id === overId)
+      if (droppedFlow && droppedFlow.status !== activeFlow.status) {
+        fetch('/api/ops/flows', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: activeId, status: droppedFlow.status })
+        }).then(() => {
+          setFlows(flows.map(f => 
+            f.id === activeId 
+              ? { ...f, status: droppedFlow.status }
+              : f
+          ))
+          console.log(`✅ Flow moved to ${droppedFlow.status}`)
+        })
       }
     }
   }
 
   const activeFlow = activeId ? flows.find(f => f.id === activeId) : null
 
-  const handleSaveFlow = (flowData: Partial<Flow>) => {
-    if (editingFlow && editingFlow.id) {
-      setFlows(flows.map(f => f.id === editingFlow.id ? { ...f, ...flowData } as Flow : f))
-      console.log('✅ Flow updated')
-    } else {
-      const selectedClient = clients.find(c => c.id === flowData.client_id)
-      const newFlow: Flow = {
-        ...flowData as Flow,
-        id: `flow-${Date.now()}`,
-        client_name: selectedClient?.brand_name,
-        client_color: selectedClient?.primary_color
+  const handleSaveFlow = async (flowData: Partial<Flow>) => {
+    try {
+      if (editingFlow && editingFlow.id) {
+        // Update existing flow
+        const response = await fetch('/api/ops/flows', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: editingFlow.id, ...flowData })
+        })
+        
+        const data = await response.json()
+        if (data.success) {
+          setFlows(flows.map(f => f.id === editingFlow.id ? { ...f, ...flowData } as Flow : f))
+          console.log('✅ Flow updated')
+        }
+      } else {
+        // Create new flow
+        const response = await fetch('/api/ops/flows', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ...flowData,
+            agency_id: clients[0]?.agency_id
+          })
+        })
+        
+        const data = await response.json()
+        if (data.success) {
+          // Refetch flows
+          const fetchResponse = await fetch(`/api/ops/flows?clientId=${selectedClient}`)
+          const fetchData = await fetchResponse.json()
+          if (fetchData.success) {
+            setFlows(fetchData.flows.map((f: any) => ({
+              ...f,
+              client_name: clients.find(c => c.id === f.client_id)?.brand_name,
+              client_color: clients.find(c => c.id === f.client_id)?.primary_color
+            })))
+          }
+          console.log('✅ Flow created')
+        }
       }
-      setFlows([newFlow, ...flows])
-      console.log('✅ Flow created')
+      
+      setShowCreateFlow(false)
+      setEditingFlow(null)
+    } catch (error) {
+      console.error('Error saving flow:', error)
+      alert('Failed to save flow')
     }
-    setShowCreateFlow(false)
-    setEditingFlow(null)
   }
 
   return (
