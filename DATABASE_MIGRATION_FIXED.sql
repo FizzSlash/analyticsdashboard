@@ -380,12 +380,14 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER IF NOT EXISTS update_ops_campaigns_updated_at
+DROP TRIGGER IF EXISTS update_ops_campaigns_updated_at ON ops_campaigns;
+CREATE TRIGGER update_ops_campaigns_updated_at
   BEFORE UPDATE ON ops_campaigns
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at_column();
 
-CREATE TRIGGER IF NOT EXISTS update_ops_flows_updated_at
+DROP TRIGGER IF EXISTS update_ops_flows_updated_at ON ops_flows;
+CREATE TRIGGER update_ops_flows_updated_at
   BEFORE UPDATE ON ops_flows
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at_column();
@@ -449,7 +451,8 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER IF NOT EXISTS log_campaign_activity
+DROP TRIGGER IF EXISTS log_campaign_activity ON ops_campaigns;
+CREATE TRIGGER log_campaign_activity
   AFTER INSERT OR UPDATE ON ops_campaigns
   FOR EACH ROW
   EXECUTE FUNCTION log_ops_activity();
@@ -503,7 +506,8 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER IF NOT EXISTS ops_to_portal_campaign
+DROP TRIGGER IF EXISTS ops_to_portal_campaign ON ops_campaigns;
+CREATE TRIGGER ops_to_portal_campaign
   AFTER INSERT OR UPDATE ON ops_campaigns
   FOR EACH ROW
   EXECUTE FUNCTION create_portal_approval_from_campaign();
@@ -522,7 +526,8 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER IF NOT EXISTS portal_to_ops_campaign
+DROP TRIGGER IF EXISTS portal_to_ops_campaign ON campaign_approvals;
+CREATE TRIGGER portal_to_ops_campaign
   AFTER UPDATE ON campaign_approvals
   FOR EACH ROW
   EXECUTE FUNCTION sync_campaign_approval_to_ops();
@@ -561,7 +566,8 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER IF NOT EXISTS ops_to_portal_flow
+DROP TRIGGER IF EXISTS ops_to_portal_flow ON ops_flows;
+CREATE TRIGGER ops_to_portal_flow
   AFTER INSERT OR UPDATE ON ops_flows
   FOR EACH ROW
   EXECUTE FUNCTION create_portal_approval_from_flow();
@@ -604,17 +610,20 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER IF NOT EXISTS increment_campaign_scope
+DROP TRIGGER IF EXISTS increment_campaign_scope ON ops_campaigns;
+CREATE TRIGGER increment_campaign_scope
   AFTER INSERT ON ops_campaigns
   FOR EACH ROW
   EXECUTE FUNCTION increment_scope_usage();
 
-CREATE TRIGGER IF NOT EXISTS increment_flow_scope
+DROP TRIGGER IF EXISTS increment_flow_scope ON ops_flows;
+CREATE TRIGGER increment_flow_scope
   AFTER INSERT ON ops_flows
   FOR EACH ROW
   EXECUTE FUNCTION increment_scope_usage();
 
-CREATE TRIGGER IF NOT EXISTS increment_abtest_scope
+DROP TRIGGER IF EXISTS increment_abtest_scope ON ops_ab_tests;
+CREATE TRIGGER increment_abtest_scope
   AFTER INSERT ON ops_ab_tests
   FOR EACH ROW
   EXECUTE FUNCTION increment_scope_usage();
