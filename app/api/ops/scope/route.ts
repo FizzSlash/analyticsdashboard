@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
         ({ data, error } = await supabase.from('ops_scope_config').select('*').eq('client_id', clientId).single())
         break
       case 'usage':
-        const currentMonth = new Date().toISOString().slice(0, 7)
+        const currentMonth: string = new Date().toISOString().slice(0, 7)
         ({ data, error } = await supabase.from('ops_scope_usage').select('*').eq('client_id', clientId).eq('month_year', currentMonth).single())
         break
       case 'monthly':
