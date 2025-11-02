@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { 
   Link as LinkIcon,
@@ -111,6 +111,60 @@ export function ContentHub({ clients, selectedClient }: ContentHubProps) {
   const [uploadingFile, setUploadingFile] = useState(false)
   const [editingCall, setEditingCall] = useState<CallNote | null>(null)
   const [showAddCall, setShowAddCall] = useState(false)
+  const [loading, setLoading] = useState(true)
+
+  const [brandLinks, setBrandLinks] = useState<BrandLink[]>([])
+  const [brandFiles, setBrandFiles] = useState<BrandFile[]>([])
+  const [guidelines, setGuidelines] = useState<BrandGuidelines | null>(null)
+  const [copyNotes, setCopyNotes] = useState<CopyNotes | null>(null)
+  const [designNotes, setDesignNotes] = useState<DesignNotes | null>(null)
+  const [callNotes, setCallNotes] = useState<CallNote[]>([])
+
+  // Fetch all content hub data for selected client
+  useEffect(() => {
+    const fetchContentData = async () => {
+      if (selectedClient === 'all' || !selectedClient) return
+      
+      try {
+        setLoading(true)
+        
+        // Fetch all data in parallel
+        const [linksRes, filesRes, guidelinesRes, copyRes, designRes, callsRes] = await Promise.all([
+          fetch(`/api/ops/content?type=links&clientId=${selectedClient}`),
+          fetch(`/api/ops/content?type=files&clientId=${selectedClient}`),
+          fetch(`/api/ops/content?type=guidelines&clientId=${selectedClient}`),
+          fetch(`/api/ops/content?type=copy&clientId=${selectedClient}`),
+          fetch(`/api/ops/content?type=design&clientId=${selectedClient}`),
+          fetch(`/api/ops/content?type=calls&clientId=${selectedClient}`)
+        ])
+        
+        const [linksData, filesData, guidelinesData, copyData, designData, callsData] = await Promise.all([
+          linksRes.json(), filesRes.json(), guidelinesRes.json(), 
+          copyRes.json(), designRes.json(), callsRes.json()
+        ])
+        
+        if (linksData.success) setBrandLinks(linksData.data || [])
+        if (filesData.success) setBrandFiles(filesData.data || [])
+        if (guidelinesData.success) setGuidelines(guidelinesData.data)
+        if (copyData.success) setCopyNotes(copyData.data)
+        if (designData.success) setDesignNotes(designData.data)
+        if (callsData.success) {
+          setCallNotes((callsData.data || []).map((call: any) => ({
+            ...call,
+            call_date: new Date(call.call_date),
+            action_items: call.action_items || []
+          })))
+        }
+        
+      } catch (error) {
+        console.error('Error fetching content:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchContentData()
+  }, [selectedClient])
 
   // Get current client info
   const currentClient = clients.find(c => c.id === selectedClient)
@@ -118,8 +172,8 @@ export function ContentHub({ clients, selectedClient }: ContentHubProps) {
     ? 'All Clients' 
     : currentClient?.brand_name || 'Select a client'
 
-  // Mock brand links (will be from database later)
-  const [brandLinks, setBrandLinks] = useState<BrandLink[]>([
+  // Remove old mock data - now fetched from API above
+  const oldBrandLinks = [
     {
       id: '1',
       client_id: clients[0]?.id || '1',
@@ -289,23 +343,54 @@ export function ContentHub({ clients, selectedClient }: ContentHubProps) {
     }
   }
 
-  const handleAddLink = (link: Omit<BrandLink, 'id'>) => {
-    const newLink = { ...link, id: `new-${Date.now()}` }
-    setBrandLinks([...brandLinks, newLink])
-    setShowAddLink(false)
-    console.log('✅ Link added:', newLink.link_title)
+  const handleAddLink = async (link: Omit<BrandLink, 'id'>) => {
+    try {
+      const response = await fetch('/api/ops/content', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'link', ...link })
+      })
+      const data = await response.json()
+      if (data.success) {
+        setBrandLinks([...brandLinks, data.data])
+        setShowAddLink(false)
+        console.log('✅ Link added')
+      }
+    } catch (error) {
+      console.error('Error adding link:', error)
+    }
   }
 
-  const handleUpdateLink = (link: BrandLink) => {
-    setBrandLinks(brandLinks.map(l => l.id === link.id ? link : l))
-    setEditingLink(null)
-    console.log('✅ Link updated:', link.link_title)
+  const handleUpdateLink = async (link: BrandLink) => {
+    try {
+      const response = await fetch('/api/ops/content', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'link', ...link })
+      })
+      const data = await response.json()
+      if (data.success) {
+        setBrandLinks(brandLinks.map(l => l.id === link.id ? link : l))
+        setEditingLink(null)
+        console.log('✅ Link updated')
+      }
+    } catch (error) {
+      console.error('Error updating link:', error)
+    }
   }
 
-  const handleDeleteLink = (linkId: string) => {
+  const handleDeleteLink = async (linkId: string) => {
     if (confirm('Delete this link?')) {
-      setBrandLinks(brandLinks.filter(l => l.id !== linkId))
-      console.log('🗑️ Link deleted')
+      try {
+        const response = await fetch(`/api/ops/content?type=link&id=${linkId}`, { method: 'DELETE' })
+        const data = await response.json()
+        if (data.success) {
+          setBrandLinks(brandLinks.filter(l => l.id !== linkId))
+          console.log('✅ Link deleted')
+        }
+      } catch (error) {
+        console.error('Error deleting link:', error)
+      }
     }
   }
 
@@ -405,17 +490,40 @@ export function ContentHub({ clients, selectedClient }: ContentHubProps) {
     }))
   }
 
-  const handleAddCall = (call: Omit<CallNote, 'id'>) => {
-    const newCall = { ...call, id: `call-${Date.now()}` }
-    setCallNotes([newCall, ...callNotes])
-    setShowAddCall(false)
-    console.log('✅ Call added')
+  const handleAddCall = async (call: Omit<CallNote, 'id'>) => {
+    try {
+      const response = await fetch('/api/ops/content', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'call', ...call })
+      })
+      const data = await response.json()
+      if (data.success) {
+        setCallNotes([{ ...data.data, call_date: new Date(data.data.call_date), action_items: [] }, ...callNotes])
+        setShowAddCall(false)
+        console.log('✅ Call added')
+      }
+    } catch (error) {
+      console.error('Error adding call:', error)
+    }
   }
 
-  const handleUpdateCall = (call: CallNote) => {
-    setCallNotes(callNotes.map(c => c.id === call.id ? call : c))
-    setEditingCall(null)
-    console.log('✅ Call updated')
+  const handleUpdateCall = async (call: CallNote) => {
+    try {
+      const response = await fetch('/api/ops/content', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'call', id: call.id, ...call })
+      })
+      const data = await response.json()
+      if (data.success) {
+        setCallNotes(callNotes.map(c => c.id === call.id ? call : c))
+        setEditingCall(null)
+        console.log('✅ Call updated')
+      }
+    } catch (error) {
+      console.error('Error updating call:', error)
+    }
   }
 
   const contentTabs = [
@@ -769,7 +877,23 @@ export function ContentHub({ clients, selectedClient }: ContentHubProps) {
 
             {/* Save Button */}
             <button
-              onClick={() => console.log('✅ Guidelines saved')}
+              onClick={async () => {
+                try {
+                  const response = await fetch('/api/ops/content', {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ type: 'guidelines', client_id: selectedClient, ...guidelines })
+                  })
+                  const data = await response.json()
+                  if (data.success) {
+                    console.log('✅ Guidelines saved')
+                    alert('Brand Guidelines saved successfully!')
+                  }
+                } catch (error) {
+                  console.error('Error saving guidelines:', error)
+                  alert('Failed to save guidelines')
+                }
+              }}
               className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center justify-center gap-2"
             >
               <Save className="h-4 w-4" />
@@ -846,7 +970,19 @@ export function ContentHub({ clients, selectedClient }: ContentHubProps) {
 
             {/* Save Button */}
             <button
-              onClick={() => console.log('✅ Copy notes saved')}
+              onClick={async () => {
+                try {
+                  await fetch('/api/ops/content', {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ type: 'copy', client_id: selectedClient, ...copyNotes })
+                  })
+                  console.log('✅ Copy notes saved')
+                  alert('Copy Notes saved!')
+                } catch (error) {
+                  console.error('Error:', error)
+                }
+              }}
               className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center justify-center gap-2"
             >
               <Save className="h-4 w-4" />
@@ -937,7 +1073,19 @@ export function ContentHub({ clients, selectedClient }: ContentHubProps) {
 
             {/* Save Button */}
             <button
-              onClick={() => console.log('✅ Design notes saved')}
+              onClick={async () => {
+                try {
+                  await fetch('/api/ops/content', {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ type: 'design', client_id: selectedClient, ...designNotes })
+                  })
+                  console.log('✅ Design notes saved')
+                  alert('Design Notes saved!')
+                } catch (error) {
+                  console.error('Error:', error)
+                }
+              }}
               className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center justify-center gap-2"
             >
               <Save className="h-4 w-4" />
