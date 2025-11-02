@@ -40,6 +40,8 @@ interface ClientFormData {
   brand_slug: string
   klaviyo_api_key: string
   portal_title: string
+  enable_analytics: boolean
+  enable_portal: boolean
 }
 
 export function ClientManagement({ agency, clients: initialClients }: ClientManagementProps) {
@@ -63,7 +65,9 @@ export function ClientManagement({ agency, clients: initialClients }: ClientMana
     brand_name: '',
     brand_slug: '',
     klaviyo_api_key: '',
-    portal_title: ''
+    portal_title: '',
+    enable_analytics: true,
+    enable_portal: true
   })
 
   const resetForm = () => {
@@ -71,7 +75,9 @@ export function ClientManagement({ agency, clients: initialClients }: ClientMana
       brand_name: '',
       brand_slug: '',
       klaviyo_api_key: '',
-      portal_title: ''
+      portal_title: '',
+      enable_analytics: true,
+      enable_portal: true
     })
     setEditingClient(null)
     setShowForm(false)
@@ -91,7 +97,9 @@ export function ClientManagement({ agency, clients: initialClients }: ClientMana
       brand_name: client.brand_name,
       brand_slug: client.brand_slug,
       klaviyo_api_key: '', // Don't pre-fill encrypted API key
-      portal_title: (client as any).portal_title || ''
+      portal_title: (client as any).portal_title || '',
+      enable_analytics: (client as any).enable_analytics !== false, // Default true
+      enable_portal: (client as any).enable_portal !== false // Default true
     })
     setEditingClient(client)
     setShowForm(true)
@@ -225,6 +233,8 @@ export function ClientManagement({ agency, clients: initialClients }: ClientMana
         brand_name: formData.brand_name,
         brand_slug: cleanSlug,
         portal_title: formData.portal_title || undefined,
+        enable_analytics: formData.enable_analytics,
+        enable_portal: formData.enable_portal,
         is_active: true
       }
       
@@ -238,7 +248,9 @@ export function ClientManagement({ agency, clients: initialClients }: ClientMana
           brand_name: formData.brand_name,
           brand_slug: cleanSlug,
           agency_id: agency.id,
-          portal_title: formData.portal_title || undefined
+          portal_title: formData.portal_title || undefined,
+          enable_analytics: formData.enable_analytics,
+          enable_portal: formData.enable_portal
         }
         
         // Only include API key if provided
@@ -1355,6 +1367,40 @@ ${flowDetails.slice(0, 3).map((f: any, i: number) =>
                   />
                   <p className="text-xs text-gray-500 mt-1">
                     This appears in the portal header. Defaults to brand name.
+                  </p>
+                </div>
+
+                {/* Access Toggles */}
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-900 mb-3">
+                    Client Access
+                  </label>
+                  <div className="flex gap-6">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={formData.enable_analytics}
+                        onChange={(e) => setFormData({ ...formData, enable_analytics: e.target.checked })}
+                        className="rounded border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-500"
+                      />
+                      <span className="text-sm text-gray-700">
+                        <strong>Analytics Dashboard</strong> - Can view metrics and charts
+                      </span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={formData.enable_portal}
+                        onChange={(e) => setFormData({ ...formData, enable_portal: e.target.checked })}
+                        className="rounded border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-500"
+                      />
+                      <span className="text-sm text-gray-700">
+                        <strong>Portal</strong> - Can approve campaigns/flows
+                      </span>
+                    </label>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-2">
+                    Controls what the client can access. Portal clients automatically appear in Ops dashboard.
                   </p>
                 </div>
 
