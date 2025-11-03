@@ -182,12 +182,12 @@ ${blocks.map(block => {
             formatted_copy: copyText
           },
           copy_blocks: blocks,
-          copy_doc_url: `Generated AI Copy - ${new Date().toLocaleString()}`
+          copy_doc_url: `${window.location.origin}/agency/${params.slug}/copy/${params.campaignId}`
         })
       })
 
       if (response.ok) {
-        alert('✅ Copy saved to campaign!\n\nCopy has been saved. You can export to Google Docs or view in the campaign modal.')
+        alert('✅ Copy saved to campaign!\n\nClick the Copy Doc URL in the campaign modal to view your generated copy.')
         window.close()
       }
     } catch (error) {
