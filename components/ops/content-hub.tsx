@@ -813,7 +813,13 @@ export function ContentHub({ clients, selectedClient }: ContentHubProps) {
               </label>
               <textarea
                 value={copyNotes?.voice_tone || ''}
-                onChange={(e) => setCopyNotes({ ...(copyNotes || { client_id: selectedClient }), voice_tone: e.target.value })}
+                onChange={(e) => setCopyNotes({
+                  client_id: copyNotes?.client_id || selectedClient,
+                  voice_tone: e.target.value,
+                  key_phrases: copyNotes?.key_phrases || '',
+                  avoid_phrases: copyNotes?.avoid_phrases || '',
+                  legal_notes: copyNotes?.legal_notes || ''
+                })}
                 rows={3}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg resize-none"
                 placeholder="Describe the brand voice: energetic, professional, friendly, etc."
@@ -827,7 +833,13 @@ export function ContentHub({ clients, selectedClient }: ContentHubProps) {
               </label>
               <textarea
                 value={copyNotes?.key_phrases || ''}
-                onChange={(e) => setCopyNotes({ ...(copyNotes || { client_id: selectedClient }), key_phrases: e.target.value })}
+                onChange={(e) => setCopyNotes({
+                  client_id: copyNotes?.client_id || selectedClient,
+                  voice_tone: copyNotes?.voice_tone || '',
+                  key_phrases: e.target.value,
+                  avoid_phrases: copyNotes?.avoid_phrases || '',
+                  legal_notes: copyNotes?.legal_notes || ''
+                })}
                 rows={5}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg resize-none font-mono text-sm"
                 placeholder="• Phrase 1&#10;• Phrase 2&#10;• Phrase 3"
@@ -841,7 +853,13 @@ export function ContentHub({ clients, selectedClient }: ContentHubProps) {
               </label>
               <textarea
                 value={copyNotes?.avoid_phrases || ''}
-                onChange={(e) => setCopyNotes({ ...(copyNotes || { client_id: selectedClient }), avoid_phrases: e.target.value })}
+                onChange={(e) => setCopyNotes({
+                  client_id: copyNotes?.client_id || selectedClient,
+                  voice_tone: copyNotes?.voice_tone || '',
+                  key_phrases: copyNotes?.key_phrases || '',
+                  avoid_phrases: e.target.value,
+                  legal_notes: copyNotes?.legal_notes || ''
+                })}
                 rows={4}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg resize-none font-mono text-sm"
                 placeholder="• Word/phrase 1&#10;• Word/phrase 2"
@@ -855,7 +873,13 @@ export function ContentHub({ clients, selectedClient }: ContentHubProps) {
               </label>
               <textarea
                 value={copyNotes?.legal_notes || ''}
-                onChange={(e) => setCopyNotes({ ...(copyNotes || { client_id: selectedClient }), legal_notes: e.target.value })}
+                onChange={(e) => setCopyNotes({
+                  client_id: copyNotes?.client_id || selectedClient,
+                  voice_tone: copyNotes?.voice_tone || '',
+                  key_phrases: copyNotes?.key_phrases || '',
+                  avoid_phrases: copyNotes?.avoid_phrases || '',
+                  legal_notes: e.target.value
+                })}
                 rows={3}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg resize-none"
                 placeholder="Required disclaimers, compliance requirements, etc."
@@ -902,7 +926,14 @@ export function ContentHub({ clients, selectedClient }: ContentHubProps) {
               </label>
               <textarea
                 value={designNotes?.design_preferences || ''}
-                onChange={(e) => setDesignNotes({ ...(designNotes || { client_id: selectedClient }), design_preferences: e.target.value })}
+                onChange={(e) => setDesignNotes({
+                  client_id: designNotes?.client_id || selectedClient,
+                  design_preferences: e.target.value,
+                  client_likes: designNotes?.client_likes || '',
+                  client_dislikes: designNotes?.client_dislikes || '',
+                  image_style: designNotes?.image_style || '',
+                  mobile_notes: designNotes?.mobile_notes || ''
+                })}
                 rows={3}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg resize-none"
                 placeholder="Overall design direction, style preferences..."
@@ -916,7 +947,14 @@ export function ContentHub({ clients, selectedClient }: ContentHubProps) {
               </label>
               <textarea
                 value={designNotes?.client_likes || ''}
-                onChange={(e) => setDesignNotes({ ...(designNotes || { client_id: selectedClient }), client_likes: e.target.value })}
+                onChange={(e) => setDesignNotes({
+                  client_id: designNotes?.client_id || selectedClient,
+                  design_preferences: designNotes?.design_preferences || '',
+                  client_likes: e.target.value,
+                  client_dislikes: designNotes?.client_dislikes || '',
+                  image_style: designNotes?.image_style || '',
+                  mobile_notes: designNotes?.mobile_notes || ''
+                })}
                 rows={5}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg resize-none font-mono text-sm"
                 placeholder="• Design element 1&#10;• Design element 2"
@@ -930,7 +968,14 @@ export function ContentHub({ clients, selectedClient }: ContentHubProps) {
               </label>
               <textarea
                 value={designNotes?.client_dislikes || ''}
-                onChange={(e) => setDesignNotes({ ...(designNotes || { client_id: selectedClient }), client_dislikes: e.target.value })}
+                onChange={(e) => setDesignNotes({
+                  client_id: designNotes?.client_id || selectedClient,
+                  design_preferences: designNotes?.design_preferences || '',
+                  client_likes: designNotes?.client_likes || '',
+                  client_dislikes: e.target.value,
+                  image_style: designNotes?.image_style || '',
+                  mobile_notes: designNotes?.mobile_notes || ''
+                })}
                 rows={4}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg resize-none font-mono text-sm"
                 placeholder="• Things to avoid 1&#10;• Things to avoid 2"
@@ -944,7 +989,14 @@ export function ContentHub({ clients, selectedClient }: ContentHubProps) {
               </label>
               <textarea
                 value={designNotes?.image_style || ''}
-                onChange={(e) => setDesignNotes({ ...(designNotes || { client_id: selectedClient }), image_style: e.target.value })}
+                onChange={(e) => setDesignNotes({
+                  client_id: designNotes?.client_id || selectedClient,
+                  design_preferences: designNotes?.design_preferences || '',
+                  client_likes: designNotes?.client_likes || '',
+                  client_dislikes: designNotes?.client_dislikes || '',
+                  image_style: e.target.value,
+                  mobile_notes: designNotes?.mobile_notes || ''
+                })}
                 rows={3}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg resize-none"
                 placeholder="Product photography style, image treatment preferences..."
@@ -958,7 +1010,14 @@ export function ContentHub({ clients, selectedClient }: ContentHubProps) {
               </label>
               <textarea
                 value={designNotes?.mobile_notes || ''}
-                onChange={(e) => setDesignNotes({ ...(designNotes || { client_id: selectedClient }), mobile_notes: e.target.value })}
+                onChange={(e) => setDesignNotes({
+                  client_id: designNotes?.client_id || selectedClient,
+                  design_preferences: designNotes?.design_preferences || '',
+                  client_likes: designNotes?.client_likes || '',
+                  client_dislikes: designNotes?.client_dislikes || '',
+                  image_style: designNotes?.image_style || '',
+                  mobile_notes: e.target.value
+                })}
                 rows={3}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg resize-none"
                 placeholder="Mobile-specific requirements, CTA sizes, layout notes..."
