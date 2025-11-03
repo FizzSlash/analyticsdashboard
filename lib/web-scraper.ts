@@ -106,11 +106,11 @@ export class WebScraper {
       const homepageHtml = await homepageResponse.text()
       
       // Extract key content from homepage
-      const h1Matches = homepageHtml.match(/<h1[^>]*>(.*?)<\/h1>/gi) || []
-      const h2Matches = homepageHtml.match(/<h2[^>]*>(.*?)<\/h2>/gi) || []
-      const pMatches = homepageHtml.match(/<p[^>]*>(.*?)<\/p>/gi) || []
+      const h1Matches: string[] = homepageHtml.match(/<h1[^>]*>(.*?)<\/h1>/gi) || []
+      const h2Matches: string[] = homepageHtml.match(/<h2[^>]*>(.*?)<\/h2>/gi) || []
+      const pMatches: string[] = homepageHtml.match(/<p[^>]*>(.*?)<\/p>/gi) || []
       
-      const headlines = h1Matches.concat(h2Matches)
+      const headlines = [...h1Matches, ...h2Matches]
         .map(h => h.replace(/<[^>]*>/g, '').trim())
         .filter(h => h.length > 0 && h.length < 200)
         .slice(0, 10)
