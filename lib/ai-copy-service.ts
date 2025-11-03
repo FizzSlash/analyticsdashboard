@@ -281,11 +281,11 @@ Keep it concise but comprehensive (300-400 words).`
         }]
       })
 
-      return message.content[0].type === 'text' ? message.content[0].text : brief
+      return message.content[0].type === 'text' ? message.content[0].text : params.brief
       
     } catch (error) {
       console.error('Brief enhancement error:', error)
-      return brief // Return original if fails
+      return params.brief // Return original if fails
     }
   }
 }
