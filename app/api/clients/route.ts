@@ -33,17 +33,17 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     
-    // Validate required fields
+    // Validate required fields (klaviyo_api_key is now optional)
     const { brand_name, brand_slug, klaviyo_api_key, agency_id } = body
-    if (!brand_name || !brand_slug || !klaviyo_api_key || !agency_id) {
+    if (!brand_name || !brand_slug || !agency_id) {
       return NextResponse.json(
-        { error: 'Missing required fields: brand_name, brand_slug, klaviyo_api_key, agency_id' },
+        { error: 'Missing required fields: brand_name, brand_slug, agency_id' },
         { status: 400 }
       )
     }
 
-    // Encrypt the API key before storing
-    const encryptedApiKey = encryptApiKey(klaviyo_api_key)
+    // Encrypt the API key before storing (if provided)
+    const encryptedApiKey = klaviyo_api_key ? encryptApiKey(klaviyo_api_key) : 'NO_API_KEY'
 
     const clientData = {
       agency_id: body.agency_id, // Required field

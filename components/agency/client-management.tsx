@@ -218,10 +218,10 @@ export function ClientManagement({ agency, clients: initialClients }: ClientMana
         throw new Error('Brand name and slug are required')
       }
 
-      // For new clients, API key is required
-      if (!editingClient && !formData.klaviyo_api_key) {
-        console.log('Step 5.2: Missing API key')
-        throw new Error('Klaviyo API key is required for new clients')
+      // API key is now OPTIONAL - clients without analytics don't need it
+      if (!editingClient && !formData.klaviyo_api_key && formData.enable_analytics) {
+        console.log('Step 5.2: Analytics enabled but no API key')
+        throw new Error('Klaviyo API key is required when Analytics is enabled')
       }
 
       console.log('Step 6: Preparing client data...')
@@ -288,14 +288,20 @@ export function ClientManagement({ agency, clients: initialClients }: ClientMana
         }, 2000)
       } else {
         // Create new client
-        console.log('Step 8: Starting encryption...')
-        const encryptedKey = encryptApiKey(formData.klaviyo_api_key)
-        console.log('Step 9: API key encrypted successfully')
+        console.log('Step 8: Creating new client...')
+        
+        // Only encrypt API key if provided
+        const encryptedKey = formData.klaviyo_api_key ? encryptApiKey(formData.klaviyo_api_key) : undefined
+        if (encryptedKey) {
+          console.log('Step 9: API key encrypted successfully')
+        } else {
+          console.log('Step 9: No API key provided (Analytics disabled)')
+        }
         
         const insertData = {
           ...clientData,
           agency_id: agency.id,
-          klaviyo_api_key: encryptedKey
+          klaviyo_api_key: encryptedKey || 'NO_API_KEY'  // Use placeholder if no key provided
         }
         
         console.log('Step 10: About to insert data using service role:', insertData)
@@ -1332,21 +1338,26 @@ ${flowDetails.slice(0, 3).map((f: any, i: number) =>
 
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-gray-900 mb-1">
-                    Klaviyo API Key {!editingClient && '*'}
+                    Klaviyo API Key {!editingClient && formData.enable_analytics && '*'}
+                    {!formData.enable_analytics && (
+                      <span className="text-gray-500 text-xs ml-2">(Optional - Analytics disabled)</span>
+                    )}
                   </label>
                   <div className="relative">
                     <input
                       type={showApiKey === 'form' ? 'text' : 'password'}
                       value={formData.klaviyo_api_key}
                       onChange={(e) => setFormData({ ...formData, klaviyo_api_key: e.target.value })}
-                      className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder={editingClient ? "Leave blank to keep existing key" : "pk_..."}
-                      required={!editingClient}
+                      className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+                      placeholder={editingClient ? "Leave blank to keep existing key" : formData.enable_analytics ? "pk_..." : "Not needed (Analytics disabled)"}
+                      required={!editingClient && formData.enable_analytics}
+                      disabled={!formData.enable_analytics}
                     />
                     <button
                       type="button"
                       onClick={() => setShowApiKey(showApiKey === 'form' ? null : 'form')}
                       className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-600 hover:text-gray-800"
+                      disabled={!formData.enable_analytics}
                     >
                       {showApiKey === 'form' ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
