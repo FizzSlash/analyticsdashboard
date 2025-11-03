@@ -26,6 +26,7 @@ export default function OpsSharePage() {
   const [error, setError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<OpsTab>('campaigns')
   const [campaignView, setCampaignView] = useState<'calendar' | 'pipeline'>('calendar')
+  const [selectedClient, setSelectedClient] = useState<string>('all')
 
   useEffect(() => {
     fetchOpsData()
@@ -85,42 +86,83 @@ export default function OpsSharePage() {
         </div>
       </div>
 
-      {/* Tabs */}
+      {/* Tabs & Client Selector */}
       <div className="max-w-7xl mx-auto px-6 mb-6">
-        <div className="flex gap-2 p-2 bg-white/5 backdrop-blur-sm rounded-2xl border border-white/20">
-          {[
-            { id: 'overview', label: 'Overview', icon: BarChart3 },
-            { id: 'campaigns', label: 'Campaigns', icon: Calendar },
-            { id: 'flows', label: 'Flows', icon: Zap },
-            { id: 'popups', label: 'Popups', icon: MousePointer },
-            { id: 'abtests', label: 'A/B Tests', icon: TestTube },
-            { id: 'content', label: 'Content', icon: FolderOpen },
-            { id: 'forms', label: 'Forms', icon: FileText },
-            { id: 'view', label: 'View', icon: Eye },
-            { id: 'scope', label: 'Scope', icon: Target }
-          ].map(tab => {
-            const Icon = tab.icon
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id as OpsTab)}
-                className={`flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold transition-all ${
-                  activeTab === tab.id 
-                    ? 'bg-white/30 text-white shadow-lg border border-white/40' 
-                    : 'text-white/80 hover:text-white hover:bg-white/15'
-                }`}
-              >
-                <Icon className="h-4 w-4" />
-                {tab.label}
-              </button>
-            )
-          })}
+        <div className="flex items-center justify-between gap-4">
+          {/* Main Tabs */}
+          <div className="flex gap-2 p-2 bg-white/5 backdrop-blur-sm rounded-2xl border border-white/20">
+            {[
+              { id: 'overview', label: 'Overview', icon: BarChart3 },
+              { id: 'campaigns', label: 'Campaigns', icon: Calendar },
+              { id: 'flows', label: 'Flows', icon: Zap },
+              { id: 'popups', label: 'Popups', icon: MousePointer },
+              { id: 'abtests', label: 'A/B Tests', icon: TestTube }
+            ].map(tab => {
+              const Icon = tab.icon
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id as OpsTab)}
+                  className={`flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold transition-all ${
+                    activeTab === tab.id 
+                      ? 'bg-white/30 text-white shadow-lg border border-white/40' 
+                      : 'text-white/80 hover:text-white hover:bg-white/15'
+                  }`}
+                >
+                  <Icon className="h-4 w-4" />
+                  {tab.label}
+                </button>
+              )
+            })}
+          </div>
+
+          {/* Secondary Tabs */}
+          <div className="flex gap-2 p-1.5 bg-white/5 backdrop-blur-sm rounded-xl border border-white/20">
+            {[
+              { id: 'content', label: 'Content', icon: FolderOpen },
+              { id: 'forms', label: 'Forms', icon: FileText },
+              { id: 'view', label: 'View', icon: Eye },
+              { id: 'scope', label: 'Scope', icon: Target }
+            ].map(tab => {
+              const Icon = tab.icon
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id as OpsTab)}
+                  className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-all ${
+                    activeTab === tab.id 
+                      ? 'bg-white/20 text-white border border-white/30' 
+                      : 'text-white/70 hover:text-white hover:bg-white/10'
+                  }`}
+                >
+                  <Icon className="h-3.5 w-3.5" />
+                  {tab.label}
+                </button>
+              )
+            })}
+          </div>
+
+          {/* Client Selector */}
+          <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-2 shadow-lg">
+            <select
+              value={selectedClient}
+              onChange={(e) => setSelectedClient(e.target.value)}
+              className="bg-transparent text-white font-semibold border-none focus:ring-0 cursor-pointer"
+            >
+              <option value="all" className="bg-gray-800">All Clients</option>
+              {clients.map(client => (
+                <option key={client.id} value={client.id} className="bg-gray-800">
+                  {client.brand_name}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
 
       {/* Content */}
       <div className="max-w-7xl mx-auto px-6 py-8">
-        {activeTab === 'overview' && <OpsOverview clients={clients} selectedClient="all" campaigns={[]} onCampaignClick={() => {}} />}
+        {activeTab === 'overview' && <OpsOverview clients={clients} selectedClient={selectedClient} campaigns={[]} onCampaignClick={() => {}} />}
         
         {activeTab === 'campaigns' && (
           <div className="space-y-4">
@@ -139,20 +181,20 @@ export default function OpsSharePage() {
               </button>
             </div>
             {campaignView === 'calendar' ? (
-              <OpsCalendar clients={clients} selectedClient="all" />
+              <OpsCalendar clients={clients} selectedClient={selectedClient} />
             ) : (
-              <OpsPipeline clients={clients} selectedClient="all" />
+              <OpsPipeline clients={clients} selectedClient={selectedClient} />
             )}
           </div>
         )}
         
-        {activeTab === 'flows' && <FlowManager clients={clients} selectedClient="all" />}
-        {activeTab === 'popups' && <PopupManager clients={clients} selectedClient="all" />}
-        {activeTab === 'content' && <ContentHub clients={clients} selectedClient="all" />}
-        {activeTab === 'forms' && <OpsForms clients={clients} selectedClient="all" />}
-        {activeTab === 'abtests' && <ABTestTracker clients={clients} selectedClient="all" campaigns={[]} />}
+        {activeTab === 'flows' && <FlowManager clients={clients} selectedClient={selectedClient} />}
+        {activeTab === 'popups' && <PopupManager clients={clients} selectedClient={selectedClient} />}
+        {activeTab === 'content' && <ContentHub clients={clients} selectedClient={selectedClient} />}
+        {activeTab === 'forms' && <OpsForms clients={clients} selectedClient={selectedClient} />}
+        {activeTab === 'abtests' && <ABTestTracker clients={clients} selectedClient={selectedClient} campaigns={[]} />}
         {activeTab === 'view' && <RoleViews clients={clients} campaigns={[]} flows={[]} />}
-        {activeTab === 'scope' && <ScopeTracker clients={clients} selectedClient="all" campaigns={[]} />}
+        {activeTab === 'scope' && <ScopeTracker clients={clients} selectedClient={selectedClient} campaigns={[]} />}
       </div>
     </div>
   )
