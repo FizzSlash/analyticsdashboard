@@ -303,5 +303,85 @@ Keep it concise but comprehensive (300-400 words).`
       return params.brief // Return original if fails
     }
   }
+
+  /**
+   * Revise existing copy based on feedback
+   */
+  async reviseCopy(params: {
+    current_copy: any
+    revision_notes: string
+    copy_notes: any
+  }): Promise<GeneratedCopy> {
+    try {
+      const { current_copy, revision_notes, copy_notes } = params
+
+      const currentBlocks = JSON.stringify(current_copy.email_blocks, null, 2)
+
+      const prompt = `You are revising email copy based on client feedback.
+
+## CURRENT EMAIL COPY (Block Structure):
+${currentBlocks}
+
+## REVISION REQUEST:
+${revision_notes}
+
+## BRAND GUIDELINES (Must Follow):
+Voice & Tone: ${copy_notes.voice_tone || 'N/A'}
+Key Phrases to Use: ${copy_notes.key_phrases?.join(', ') || 'N/A'}
+Words to Avoid: ${copy_notes.words_to_avoid?.join(', ') || 'N/A'}
+
+## TASK:
+Revise the email copy based on the revision request above.
+
+CRITICAL RULES:
+1. Keep the same overall structure and flow
+2. Maintain the EXACT block format (same JSON structure)
+3. Apply the requested revisions precisely
+4. Follow brand guidelines
+5. Keep all product names, links, and details accurate (don't change unless requested)
+6. Return the COMPLETE revised email (all blocks)
+
+Return the revised copy as JSON:
+{
+  "subject_lines": ["Revised subject 1", "Revised subject 2", "Revised subject 3"],
+  "preview_text": "Revised preview...",
+  "email_blocks": [
+    { all blocks, revised as needed }
+  ]
 }
+
+Apply these revisions: ${revision_notes}`
+
+      const message = await anthropic.messages.create({
+        model: 'claude-sonnet-4-0',
+        max_tokens: 4000,
+        temperature: 0.2,
+        messages: [{
+          role: 'user',
+          content: prompt
+        }]
+      })
+
+      const responseText = message.content[0].type === 'text' ? message.content[0].text : ''
+      
+      // Parse JSON response
+      const jsonMatch = responseText.match(/\{[\s\S]*\}/)
+      if (jsonMatch) {
+        const parsed = JSON.parse(jsonMatch[0])
+        return {
+          subject_lines: parsed.subject_lines || current_copy.subject_lines,
+          preview_text: parsed.preview_text || current_copy.preview_text,
+          email_blocks: parsed.email_blocks || current_copy.email_blocks
+        }
+      }
+      
+      throw new Error('Failed to parse revised copy')
+      
+    } catch (error) {
+      console.error('Revision error:', error)
+      throw new Error('Failed to revise copy')
+    }
+  }
+}
+
 

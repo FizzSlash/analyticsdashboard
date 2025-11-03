@@ -234,10 +234,37 @@ ${blocks.map(block => {
 
     setRegenerating(true)
     try {
-      // TODO: Add AI revision endpoint
-      alert('Revision feature coming soon!')
+      const response = await fetch('/api/ai/revise-copy', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          currentCopy: {
+            subject_lines: subjectLines,
+            preview_text: previewText,
+            email_blocks: blocks
+          },
+          revisionNotes: revisionPrompt,
+          copyNotes: {} // Will fetch if needed
+        })
+      })
+
+      const result = await response.json()
+      
+      if (result.success) {
+        setSubjectLines(result.data.subject_lines)
+        setPreviewText(result.data.preview_text)
+        setBlocks(result.data.email_blocks.map((b: any, i: number) => ({
+          id: `block-${Date.now()}-${i}`,
+          ...b
+        })))
+        setRevisionPrompt('')
+        alert('✅ Copy revised based on your feedback!')
+      } else {
+        alert('Failed to revise: ' + result.error)
+      }
     } catch (error) {
       console.error('Regeneration error:', error)
+      alert('Failed to revise copy')
     } finally {
       setRegenerating(false)
     }
