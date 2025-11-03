@@ -105,11 +105,17 @@ export async function POST(request: NextRequest) {
     console.log('✅ USER INVITE: User profile created:', profile.id)
 
     // Step 3: Generate magic link for invitation
+    // Different redirect based on role
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://analytics.retentionharbor.com'
+    const redirectUrl = role === 'employee' 
+      ? `${baseUrl}/agency/${agency_id}/ops` // Employees go straight to Ops
+      : `${baseUrl}/login` // Clients go to login (then redirected to their client page)
+    
     const { data: linkData, error: resetError } = await supabaseAdmin.auth.admin.generateLink({
       type: 'magiclink',
       email: email,
       options: {
-        redirectTo: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/login`
+        redirectTo: redirectUrl
       }
     })
 
