@@ -196,6 +196,11 @@ Generate email copy as JSON with this EXACT structure:
       "type": "checkmarks",
       "items": ["Benefit 1", "Benefit 2", "Benefit 3"]
     },
+    
+IMPORTANT FOR CHECKMARKS:
+- The "items" field is REQUIRED and must be an array of strings
+- Example: "items": ["Fast shipping", "Premium quality", "Expert support"]
+- Do NOT put items in "content" field - use "items" array only!
     {
       "type": "divider"
     },
