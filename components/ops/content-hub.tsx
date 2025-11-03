@@ -800,10 +800,42 @@ export function ContentHub({ clients, selectedClient }: ContentHubProps) {
       {activeTab === 'copy' && (
         <Card className="bg-white border border-gray-200 shadow-sm">
           <CardHeader>
-            <CardTitle className="text-gray-900 flex items-center gap-2">
-              <FileText className="h-5 w-5" />
-              Copy Notes - {clientName}
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-gray-900 flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                Copy Notes - {clientName}
+              </CardTitle>
+              <button
+                onClick={async () => {
+                  if (!confirm('Generate Copy Notes using AI?\n\nThis will analyze the brand and fill in voice, tone, key phrases, and guidelines.\n\nYou can edit after generation.')) {
+                    return
+                  }
+                  
+                  try {
+                    const response = await fetch('/api/ai/generate-copy-notes', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ clientId: selectedClient })
+                    })
+                    
+                    const result = await response.json()
+                    
+                    if (result.success) {
+                      alert('✅ Copy Notes generated!\n\nReview and edit the AI-generated notes below, then save.')
+                      window.location.reload() // Reload to show new notes
+                    } else {
+                      alert('Failed: ' + result.error)
+                    }
+                  } catch (error) {
+                    alert('Error generating copy notes')
+                  }
+                }}
+                className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-4 py-2 rounded-lg font-semibold flex items-center gap-2 shadow-lg"
+              >
+                <Sparkles className="h-4 w-4" />
+                Generate with AI
+              </button>
+            </div>
           </CardHeader>
           <CardContent className="space-y-6">
             {/* Voice & Tone */}
