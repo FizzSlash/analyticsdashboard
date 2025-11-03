@@ -136,8 +136,8 @@ export default function OperationsPage({ params }: PageProps) {
               const transformedCampaigns = campaignsData.campaigns.map((c: any) => ({
                 ...c,
                 send_date: new Date(c.send_date),
-                client_name: portalClients.find(cl => cl.id === c.client_id)?.brand_name || 'Unknown',
-                client_color: portalClients.find(cl => cl.id === c.client_id)?.primary_color || '#3B82F6'
+                client_name: portalClients.find((cl: any) => cl.id === c.client_id)?.brand_name || 'Unknown',
+                client_color: portalClients.find((cl: any) => cl.id === c.client_id)?.primary_color || '#3B82F6'
               }))
               setSharedCampaigns(transformedCampaigns)
               console.log('✅ OPS: Loaded', transformedCampaigns.length, 'campaigns')
