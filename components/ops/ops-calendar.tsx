@@ -107,13 +107,11 @@ function DraggableCampaignCard({
       ref={setNodeRef}
       style={style}
       {...attributes}
-      className={`p-2 text-xs rounded border hover:shadow-md transition-all ${getStatusColor(campaign.status)}`}
+      onClick={onClick}
+      className={`p-2 text-xs rounded border hover:shadow-md transition-all cursor-pointer ${getStatusColor(campaign.status)}`}
     >
       <div className="flex items-start justify-between gap-1 mb-1">
-        <div 
-          className="flex-1 min-w-0 cursor-pointer"
-          onClick={onClick}
-        >
+        <div className="flex-1 min-w-0">
           <div className="font-semibold truncate flex items-center gap-1">
             {getPriorityEmoji(campaign.priority)}
             {campaign.campaign_name}
@@ -122,7 +120,7 @@ function DraggableCampaignCard({
             {campaign.client_name}
           </div>
         </div>
-        <div {...listeners} className="cursor-grab active:cursor-grabbing">
+        <div {...listeners} className="cursor-grab active:cursor-grabbing" onClick={(e) => e.stopPropagation()}>
           <GripVertical className="h-3 w-3 flex-shrink-0 mt-0.5 opacity-60" />
         </div>
       </div>
