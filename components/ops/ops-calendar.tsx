@@ -81,13 +81,14 @@ function DraggableCampaignCard({
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'strategy': return 'bg-gray-100 text-gray-700 border-gray-300'
-      case 'copy': return 'bg-blue-100 text-blue-700 border-blue-300'
-      case 'design': return 'bg-purple-100 text-purple-700 border-purple-300'
-      case 'qa': return 'bg-yellow-100 text-yellow-700 border-yellow-300'
-      case 'client_approval': return 'bg-orange-100 text-orange-700 border-orange-300'
-      case 'approved': return 'bg-green-100 text-green-700 border-green-300'
-      case 'scheduled': return 'bg-teal-100 text-teal-700 border-teal-300'
+      case 'strategy': return 'bg-gray-200 text-gray-800 border-gray-400'
+      case 'copy': return 'bg-blue-200 text-blue-900 border-blue-400'
+      case 'design': return 'bg-purple-200 text-purple-900 border-purple-400'
+      case 'qa': return 'bg-yellow-200 text-yellow-900 border-yellow-400'
+      case 'client_approval': return 'bg-orange-200 text-orange-900 border-orange-400'
+      case 'revisions': return 'bg-red-200 text-red-900 border-red-400'
+      case 'approved': return 'bg-green-200 text-green-900 border-green-400'
+      case 'scheduled': return 'bg-teal-200 text-teal-900 border-teal-400'
       case 'sent': return 'bg-gray-500 text-white border-gray-600'
       default: return 'bg-gray-100 text-gray-600 border-gray-300'
     }
@@ -104,47 +105,30 @@ function DraggableCampaignCard({
   return (
     <div
       ref={setNodeRef}
-      style={{
-        ...style,
-        borderLeftWidth: '4px',
-        borderLeftColor: campaign.client_color,
-        backgroundColor: campaign.campaign_type === 'sms' ? '#FEF9C3' : '#EFF6FF'
-      }}
+      style={style}
       {...attributes}
-      className="p-2 text-xs rounded border hover:shadow-md transition-all"
+      className={`p-2 text-xs rounded border hover:shadow-md transition-all ${getStatusColor(campaign.status)}`}
     >
       <div className="flex items-start justify-between gap-1">
         <div 
           className="flex-1 min-w-0 cursor-pointer"
           onClick={onClick}
         >
-          <div className="font-semibold text-gray-800 truncate flex items-center gap-1">
+          <div className="font-semibold truncate flex items-center gap-1">
             {getPriorityEmoji(campaign.priority)}
             {campaign.campaign_name}
           </div>
-          <div className="text-gray-600 text-xs mt-0.5">
+          <div className="text-xs mt-0.5 opacity-80">
             {campaign.client_name}
           </div>
-          <div className="text-gray-600 text-xs">
-            {campaign.send_date.toLocaleTimeString('en-US', { 
-              hour: 'numeric', 
-              minute: '2-digit',
-              hour12: true 
-            })}
-          </div>
-          <div className="flex items-center gap-1 mt-1">
-            <div className={`inline-block px-2 py-0.5 rounded-full text-xs border ${getStatusColor(campaign.status)}`}>
-              {campaign.status.replace('_', ' ')}
+          {campaign.is_ab_test && (
+            <div className="inline-block px-2 py-0.5 rounded-full text-xs bg-purple-200 text-purple-900 border border-purple-400 mt-1" title={`A/B Test: ${campaign.ab_test_type}`}>
+              🧪 {campaign.ab_test_variant}
             </div>
-            {campaign.is_ab_test && (
-              <div className="inline-block px-2 py-0.5 rounded-full text-xs bg-purple-100 text-purple-700 border border-purple-300" title={`A/B Test: ${campaign.ab_test_type}`}>
-                🧪 {campaign.ab_test_variant}
-              </div>
-            )}
-          </div>
+          )}
         </div>
         <div {...listeners} className="cursor-grab active:cursor-grabbing">
-          <GripVertical className="h-3 w-3 text-gray-400 flex-shrink-0 mt-0.5" />
+          <GripVertical className="h-3 w-3 flex-shrink-0 mt-0.5 opacity-60" />
         </div>
       </div>
     </div>
