@@ -52,7 +52,8 @@ export async function PATCH(request: NextRequest) {
     console.log('📝 PORTAL CAMPAIGNS API: Approved:', clientApproved, '| Revisions:', clientRevisions)
 
     // Determine new status based on approval
-    const newStatus = clientApproved ? 'Approved' : 'Client Revisions'
+    // Valid statuses: strategy, copy, design, qa, client_approval, approved, scheduled, sent, revisions
+    const newStatus = clientApproved ? 'approved' : 'revisions'
 
     // ops_campaigns only has: status, internal_notes
     // We'll use internal_notes to store client feedback
