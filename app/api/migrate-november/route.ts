@@ -69,14 +69,14 @@ function mapAirtableStatusToOps(airtableStage: string): string {
     'Copy': 'copy',
     'Copy QA': 'copy',
     'Design': 'design',
-    'Design QA': 'design',
+    'Design QA': 'qa',  // Changed: Design QA → qa
     'QA': 'qa',
     'Ready For Client Approval': 'client_approval',
     'Client Approval': 'client_approval',
     'Approved': 'approved',
-    'Client Revisions': 'copy', // Send back to copy
+    'Client Revisions': 'revisions',  // Changed: Map to revisions status
     'Ready For Schedule': 'approved',
-    'Ready For Imp QA': 'qa',
+    'Ready For Imp QA': 'approved',  // Changed: Ready For Imp QA → approved
     'Scheduled - Close': 'scheduled',
     'Live in Klaviyo': 'sent',
     'Sent': 'sent'
