@@ -108,50 +108,30 @@ export async function POST(request: NextRequest) {
       const previewUrl = fields.File?.[0]?.url || null
       
       if (type === 'flows') {
+        // Map ONLY to columns that exist in ops_flows
         flows.push({
           client_id: clientId,
-          agency_id: null, // Will be set by trigger or default
           flow_name: fields.Tasks || 'Untitled Flow',
-          flow_type: extractFlowType(fields.Notes || ''),
           trigger_type: extractTriggerCriteria(fields.Notes || '') || 'Custom trigger',
           num_emails: extractNumEmails(fields.Notes || ''),
-          target_audience: extractAudience(fields.Notes || '') || 'All subscribers',
-          description: fields.Notes || '',
-          notes: fields.Notes || '',
           status: fields.Stage || 'Content Strategy',
           priority: 'normal',
-          assignee: fields.Assignee?.name || null,
-          copy_doc_url: fields['Copy Link'] || null,
-          preview_url: previewUrl,
-          go_live_date: sendDate.toISOString(),
-          client_notes: null,
-          client_revisions: fields['Client Revisions'] || null,
-          flow_approved: null
+          notes: fields.Notes || ''
         })
       } else {
-        // Map to ops_campaigns exact columns
+        // Map ONLY to columns that exist in ops_campaigns (from POST route above)
         campaigns.push({
           client_id: clientId,
-          agency_id: null, // Will be set by trigger or default
           campaign_name: fields.Tasks || 'Untitled Campaign',
           campaign_type: fields['Campaign Type']?.[0] || 'email',
           subject_line: fields.Offer || '',
-          preview_text: null,
           target_audience: extractAudience(fields.Notes || '') || 'All subscribers',
           status: fields.Stage || 'Content Strategy',
           priority: 'normal',
           send_date: sendDate.toISOString(),
           copy_doc_url: fields['Copy Link'] || null,
-          design_file_url: null,
           preview_url: previewUrl,
-          is_ab_test: false,
-          ab_test_variant: null,
-          ab_test_type: null,
-          internal_notes: fields.Notes || '',
-          assignee: fields.Assignee?.name || null,
-          client_notes: null,
-          client_revisions: fields['Client Revisions'] || null,
-          client_approved: null
+          internal_notes: fields.Notes || ''
         })
       }
     }
