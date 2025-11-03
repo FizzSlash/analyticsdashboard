@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { DashboardOverview } from './dashboard-overview'
 import { CampaignApprovalCalendar } from './campaign-approval-calendar-v3'
 import { FlowProgressTracker } from './flow-progress-tracker-v2'
-import { ABTestManager } from './ab-test-manager'
+import { ABTestManager } from './ab-test-manager-v2'
 import { EnhancedRequests } from './enhanced-requests'
 import { DynamicForms } from './dynamic-forms'
 import { 
