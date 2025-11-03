@@ -147,37 +147,12 @@ export function ScopeTracker({ clients, selectedClient, campaigns }: ScopeTracke
       {/* Scope Header */}
       <Card className="bg-white/10 backdrop-blur-md border-white/20 shadow-xl">
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="text-white text-xl flex items-center gap-2">
-                <Target className="h-5 w-5" />
-                Scope Tracking
-              </CardTitle>
-              <div className="text-white/70 text-sm mt-1">
-                Monitor monthly campaign limits and invoice cycles
-              </div>
-            </div>
-            <button
-              onClick={async () => {
-                try {
-                  const response = await fetch('/api/ops/scope/recalculate', { method: 'POST' })
-                  const result = await response.json()
-                  
-                  if (result.success) {
-                    alert(`✅ Scope recalculated for ${result.results.length} clients!\n\nRefreshing...`)
-                    window.location.reload()
-                  } else {
-                    alert('Failed to recalculate: ' + result.error)
-                  }
-                } catch (error) {
-                  alert('Error: ' + error)
-                }
-              }}
-              className="bg-blue-600/80 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
-            >
-              <TrendingUp className="h-4 w-4" />
-              Recalculate Usage
-            </button>
+          <CardTitle className="text-white text-xl flex items-center gap-2">
+            <Target className="h-5 w-5" />
+            Scope Tracking
+          </CardTitle>
+          <div className="text-white/70 text-sm mt-1">
+            Monitor monthly campaign limits and invoice cycles
           </div>
         </CardHeader>
       </Card>

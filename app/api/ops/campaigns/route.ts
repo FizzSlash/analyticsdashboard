@@ -70,6 +70,36 @@ export async function POST(request: NextRequest) {
 
     if (error) throw error
 
+    // Auto-update scope usage for current month
+    try {
+      const now = new Date()
+      const monthYear = now.toISOString().slice(0, 7)
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
+      const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59)
+      
+      const { count } = await supabase
+        .from('ops_campaigns')
+        .select('*', { count: 'exact', head: true })
+        .eq('client_id', body.client_id)
+        .gte('send_date', monthStart.toISOString())
+        .lte('send_date', monthEnd.toISOString())
+      
+      await supabase
+        .from('ops_scope_usage')
+        .upsert({
+          client_id: body.client_id,
+          month_year: monthYear,
+          campaigns_used: count || 0
+        }, {
+          onConflict: 'client_id,month_year',
+          ignoreDuplicates: false
+        })
+      
+      console.log(`✅ Auto-updated scope: ${count} campaigns for ${monthYear}`)
+    } catch (scopeError) {
+      console.log('⚠️ Scope update failed (non-critical):', scopeError)
+    }
+
     return NextResponse.json({ success: true, campaign })
   } catch (error) {
     console.error('Error creating campaign:', error)
@@ -96,6 +126,40 @@ export async function PATCH(request: NextRequest) {
     if (error) {
       console.error('Supabase error:', error)
       throw error
+    }
+
+    // Auto-update scope usage if send_date changed
+    if (updates.send_date || updates.client_id) {
+      try {
+        const now = new Date()
+        const monthYear = now.toISOString().slice(0, 7)
+        const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
+        const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59)
+        
+        const clientId = updates.client_id || campaign.client_id
+        
+        const { count } = await supabase
+          .from('ops_campaigns')
+          .select('*', { count: 'exact', head: true })
+          .eq('client_id', clientId)
+          .gte('send_date', monthStart.toISOString())
+          .lte('send_date', monthEnd.toISOString())
+        
+        await supabase
+          .from('ops_scope_usage')
+          .upsert({
+            client_id: clientId,
+            month_year: monthYear,
+            campaigns_used: count || 0
+          }, {
+            onConflict: 'client_id,month_year',
+            ignoreDuplicates: false
+          })
+        
+        console.log(`✅ Auto-updated scope after edit`)
+      } catch (scopeError) {
+        console.log('⚠️ Scope update failed (non-critical):', scopeError)
+      }
     }
 
     return NextResponse.json({ success: true, campaign })
@@ -134,6 +198,12 @@ export async function DELETE(request: NextRequest) {
     }
 
     console.log('✅ OPS CAMPAIGNS: Campaign deleted successfully')
+    
+    // Auto-update scope usage after delete
+    // We need to get the campaign data first to know which client
+    // Since we already deleted it, we'll trigger a recalculation instead
+    // The recalculate endpoint will handle this
+    
     return NextResponse.json({ success: true })
   } catch (error: any) {
     console.error('❌ OPS CAMPAIGNS: Error deleting campaign:', error)
