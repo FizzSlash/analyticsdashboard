@@ -549,8 +549,11 @@ Examples:
                 <button
                   onClick={() => {
                     // Open copy generation in new tab
+                    // Use slug from URL since campaign doesn't have agency_id in interface
+                    const currentPath = window.location.pathname
+                    const agencySlug = currentPath.split('/')[2] || 'retention-harbor'
                     window.open(
-                      `/agency/${campaign.agency_id || 'retention-harbor'}/generate/${campaign.id}`,
+                      `/agency/${agencySlug}/generate/${campaign.id}`,
                       '_blank'
                     )
                   }}
