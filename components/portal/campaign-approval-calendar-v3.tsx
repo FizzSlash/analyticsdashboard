@@ -191,9 +191,6 @@ export function CampaignApprovalCalendar({ client, userRole = 'client_user' }: C
     )
   }
 
-  // Filter campaigns based on toggle
-  const displayedCampaigns = showOnlyApprovals ? pendingApprovals : campaigns
-
   return (
     <div className="space-y-6">
       {/* Filter Toggle */}
@@ -206,7 +203,7 @@ export function CampaignApprovalCalendar({ client, userRole = 'client_user' }: C
               : 'bg-white/5 text-white/70 border border-white/20 hover:bg-white/10'
           }`}
         >
-          All Campaigns ({campaigns.length})
+          Calendar View ({campaigns.length})
         </button>
         <button
           onClick={() => setShowOnlyApprovals(true)}
@@ -225,7 +222,57 @@ export function CampaignApprovalCalendar({ client, userRole = 'client_user' }: C
         </button>
       </div>
 
+      {/* Pending Approvals List View */}
+      {showOnlyApprovals && pendingApprovals.length > 0 && (
+        <Card className="bg-white/5 border-white/10">
+          <CardHeader>
+            <CardTitle className="text-white flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-orange-400" />
+              Pending Your Approval ({pendingApprovals.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {pendingApprovals.map(campaign => (
+                <div
+                  key={campaign.id}
+                  className="bg-white/10 rounded-lg p-4 border border-white/20 hover:bg-white/15 transition-colors cursor-pointer"
+                  onClick={() => setSelectedCampaign(campaign)}
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <h4 className="text-white font-semibold mb-1">{campaign.campaign_name}</h4>
+                      <p className="text-white/70 text-sm mb-2">{campaign.subject_line}</p>
+                      <div className="flex items-center gap-4 text-xs text-white/60">
+                        <span className="flex items-center gap-1">
+                          <Clock className="h-3 w-3" />
+                          {new Date(campaign.send_date).toLocaleDateString()}
+                        </span>
+                        <span className={`px-2 py-1 rounded-md text-xs font-semibold ${getStatusColor(campaign.status)}`}>
+                          {campaign.status}
+                        </span>
+                      </div>
+                    </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setSelectedCampaign(campaign)
+                      }}
+                      className="bg-blue-600/80 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+                    >
+                      <Eye className="h-4 w-4" />
+                      Review
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Calendar View */}
+      {!showOnlyApprovals && (
       <Card className="bg-white/5 border-white/10">
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -306,6 +353,7 @@ export function CampaignApprovalCalendar({ client, userRole = 'client_user' }: C
           </div>
         </CardContent>
       </Card>
+      )}
 
       {/* Campaign Detail Modal */}
       {selectedCampaign && (
@@ -397,19 +445,6 @@ export function CampaignApprovalCalendar({ client, userRole = 'client_user' }: C
                 </div>
               )}
 
-              {/* Previous Revisions - Only show if client actually requested them */}
-              {selectedCampaign.client_revisions && selectedCampaign.client_approved === false && (
-                <div className="bg-orange-500/20 rounded-lg p-4 border border-orange-400/30">
-                  <h5 className="text-orange-300 font-semibold mb-2 flex items-center gap-2">
-                    <Edit className="h-4 w-4" />
-                    You Requested Revisions
-                  </h5>
-                  <p className="text-orange-200/90 whitespace-pre-wrap text-sm">{selectedCampaign.client_revisions}</p>
-                  <p className="text-orange-300/60 text-xs mt-2">
-                    Submitted: {selectedCampaign.revision_date ? new Date(selectedCampaign.revision_date).toLocaleString() : 'Unknown'}
-                  </p>
-                </div>
-              )}
 
               {/* Client Approval Section */}
               {(selectedCampaign.status.toLowerCase().includes('client approval') || 
