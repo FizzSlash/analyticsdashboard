@@ -27,7 +27,7 @@ interface Campaign {
   client_name: string
   client_color: string
   send_date: Date
-  status: 'strategy' | 'copy' | 'design' | 'qa' | 'client_approval' | 'approved' | 'scheduled' | 'sent'
+  status: 'strategy' | 'copy' | 'design' | 'qa' | 'client_approval' | 'approved' | 'scheduled' | 'sent' | 'revisions'
   priority: 'low' | 'normal' | 'high' | 'urgent'
   campaign_type: 'email' | 'sms'
   subject_line?: string
@@ -348,6 +348,7 @@ export function CampaignDetailModal({
                     <option value="design">Design</option>
                     <option value="qa">QA</option>
                     <option value="client_approval">Client Approval</option>
+                    <option value="revisions">Revisions</option>
                     <option value="approved">Approved</option>
                     <option value="scheduled">Scheduled</option>
                     <option value="sent">Sent</option>
