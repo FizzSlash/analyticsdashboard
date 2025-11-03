@@ -71,41 +71,38 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
     const clientId = params.id
     
-    console.log('🗑️ DELETE CLIENT: Soft deleting client (set is_active=false):', clientId)
+    console.log('🗑️ DELETE CLIENT: Deleting client with CASCADE:', clientId)
+    console.log('⚠️  NOTE: Make sure you ran fix_all_client_cascades.sql first!')
 
-    // Use SOFT DELETE instead of hard delete to avoid FK constraint issues
-    // This marks the client as inactive without removing data
-    const { error, data } = await supabaseAdmin
+    // HARD DELETE - Works if CASCADE constraints are set up
+    // If this fails, you need to run database/fix_all_client_cascades.sql
+    const { error } = await supabaseAdmin
       .from('clients')
-      .update({ 
-        is_active: false,
-        updated_at: new Date().toISOString()
-      })
+      .delete()
       .eq('id', clientId)
-      .select()
 
     if (error) {
-      console.error('❌ DELETE CLIENT: Soft delete error:', error)
+      console.error('❌ DELETE CLIENT: Error:', error)
+      
+      // Check if it's a FK constraint error
+      if (error.message.includes('foreign key constraint') || error.code === '23503') {
+        return NextResponse.json({ 
+          error: 'Foreign key constraint violation', 
+          details: error.message,
+          solution: 'Run database/fix_all_client_cascades.sql in Supabase to enable CASCADE deletes'
+        }, { status: 500 })
+      }
+      
       return NextResponse.json({ 
         error: 'Failed to delete client', 
         details: error.message 
       }, { status: 500 })
     }
 
-    console.log('✅ DELETE CLIENT: Client soft deleted (marked inactive)')
-    
-    // Also mark all related ops data as inactive/archived
-    try {
-      await supabaseAdmin.from('ops_campaigns').update({ status: 'Archived' }).eq('client_id', clientId)
-      await supabaseAdmin.from('ops_flows').update({ status: 'Archived' }).eq('client_id', clientId)
-      console.log('✅ DELETE CLIENT: Related campaigns and flows archived')
-    } catch (err) {
-      console.log('⚠️ DELETE CLIENT: Could not archive related data (continuing...)')
-    }
-
+    console.log('✅ DELETE CLIENT: Client and all related data deleted via CASCADE')
     return NextResponse.json({ 
       success: true, 
-      message: 'Client deleted successfully (marked as inactive)'
+      message: 'Client and all related data deleted successfully'
     })
   } catch (error) {
     console.error('❌ DELETE CLIENT: API error:', error)
