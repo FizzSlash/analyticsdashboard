@@ -145,7 +145,18 @@ export async function POST(request: NextRequest) {
         continue
       }
       
-      const sendDate = fields['Send Date'] ? new Date(fields['Send Date']) : new Date()
+      // Fix timezone issue: Parse date as UTC to avoid day shift
+      let sendDate = new Date()
+      if (fields['Send Date']) {
+        // Airtable returns dates like "2025-11-05"
+        // Parse as local date, not UTC, to avoid timezone conversion
+        const dateParts = fields['Send Date'].split('-')
+        if (dateParts.length === 3) {
+          sendDate = new Date(parseInt(dateParts[0]), parseInt(dateParts[1]) - 1, parseInt(dateParts[2]), 9, 0, 0) // Default 9am
+        } else {
+          sendDate = new Date(fields['Send Date'])
+        }
+      }
       const previewUrl = fields.File?.[0]?.url || null
       
       if (type === 'flows') {
