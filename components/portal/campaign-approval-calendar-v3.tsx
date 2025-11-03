@@ -277,8 +277,8 @@ export function CampaignApprovalCalendar({ client, userRole = 'client_user' }: C
       {/* Campaign Detail Modal */}
       {selectedCampaign && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <Card className="bg-gray-800 border-gray-700 w-full max-w-5xl max-h-[90vh] overflow-y-auto">
-            <CardHeader className="border-b border-gray-700">
+          <Card className="bg-white/10 backdrop-blur-md border-white/20 w-full max-w-5xl max-h-[90vh] overflow-y-auto">
+            <CardHeader className="border-b border-white/20">
               <div className="flex justify-between items-start">
                 <div className="flex-1">
                   <CardTitle className="text-white text-xl mb-2">{selectedCampaign.campaign_name}</CardTitle>
@@ -286,7 +286,7 @@ export function CampaignApprovalCalendar({ client, userRole = 'client_user' }: C
                     <span className={`px-3 py-1.5 rounded-md text-sm font-semibold border ${getStatusColor(selectedCampaign.status)}`}>
                       {selectedCampaign.status}
                     </span>
-                    <span className="text-gray-400 text-sm">
+                    <span className="text-white/60 text-sm">
                       {selectedCampaign.campaign_type.toUpperCase()}
                     </span>
                   </div>
@@ -297,7 +297,7 @@ export function CampaignApprovalCalendar({ client, userRole = 'client_user' }: C
                     setSelectedCampaign(null)
                     setRevisionText('')
                   }}
-                  className="text-gray-400 hover:text-white transition-colors p-1 hover:bg-white/10 rounded"
+                  className="text-white/60 hover:text-white transition-colors p-2 hover:bg-white/10 rounded-lg"
                 >
                   <X className="h-6 w-6" />
                 </button>
@@ -306,12 +306,12 @@ export function CampaignApprovalCalendar({ client, userRole = 'client_user' }: C
             <CardContent className="p-6 space-y-6">
               {/* Campaign Info Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="bg-gray-700/50 rounded-lg p-4">
-                  <p className="text-gray-400 text-xs mb-1 uppercase tracking-wide">Subject Line</p>
+                <div className="bg-white/10 rounded-lg p-4 border border-white/20">
+                  <p className="text-white/60 text-xs mb-1 uppercase tracking-wide">Subject Line</p>
                   <p className="text-white font-medium">{selectedCampaign.subject_line || 'Not set'}</p>
                 </div>
-                <div className="bg-gray-700/50 rounded-lg p-4">
-                  <p className="text-gray-400 text-xs mb-1 uppercase tracking-wide">Send Date</p>
+                <div className="bg-white/10 rounded-lg p-4 border border-white/20">
+                  <p className="text-white/60 text-xs mb-1 uppercase tracking-wide">Send Date</p>
                   <p className="text-white font-medium">
                     {new Date(selectedCampaign.send_date).toLocaleString('en-US', {
                       month: 'short',
@@ -323,12 +323,12 @@ export function CampaignApprovalCalendar({ client, userRole = 'client_user' }: C
                     })}
                   </p>
                 </div>
-                <div className="bg-gray-700/50 rounded-lg p-4">
-                  <p className="text-gray-400 text-xs mb-1 uppercase tracking-wide">Target Audience</p>
+                <div className="bg-white/10 rounded-lg p-4 border border-white/20">
+                  <p className="text-white/60 text-xs mb-1 uppercase tracking-wide">Target Audience</p>
                   <p className="text-white font-medium">{selectedCampaign.target_audience || 'All subscribers'}</p>
                 </div>
-                <div className="bg-gray-700/50 rounded-lg p-4">
-                  <p className="text-gray-400 text-xs mb-1 uppercase tracking-wide">Assigned To</p>
+                <div className="bg-white/10 rounded-lg p-4 border border-white/20">
+                  <p className="text-white/60 text-xs mb-1 uppercase tracking-wide">Assigned To</p>
                   <p className="text-white font-medium">{selectedCampaign.assignee || 'Not assigned'}</p>
                 </div>
               </div>
@@ -359,24 +359,24 @@ export function CampaignApprovalCalendar({ client, userRole = 'client_user' }: C
 
               {/* Agency Notes */}
               {selectedCampaign.internal_notes && (
-                <div className="bg-gray-700/30 rounded-lg p-4 border border-gray-600">
+                <div className="bg-white/10 rounded-lg p-4 border border-white/20">
                   <h5 className="text-white font-semibold mb-2 flex items-center gap-2">
                     <MessageSquare className="h-4 w-4" />
                     Agency Notes
                   </h5>
-                  <p className="text-gray-300 whitespace-pre-wrap text-sm">{selectedCampaign.internal_notes}</p>
+                  <p className="text-white/80 whitespace-pre-wrap text-sm">{selectedCampaign.internal_notes}</p>
                 </div>
               )}
 
               {/* Previous Revisions */}
               {selectedCampaign.client_revisions && (
-                <div className="bg-yellow-500/10 rounded-lg p-4 border border-yellow-500/30">
-                  <h5 className="text-yellow-400 font-semibold mb-2 flex items-center gap-2">
+                <div className="bg-orange-500/20 rounded-lg p-4 border border-orange-400/30">
+                  <h5 className="text-orange-300 font-semibold mb-2 flex items-center gap-2">
                     <Edit className="h-4 w-4" />
-                    Your Previous Revisions
+                    You Requested Revisions
                   </h5>
-                  <p className="text-yellow-200/90 whitespace-pre-wrap text-sm">{selectedCampaign.client_revisions}</p>
-                  <p className="text-yellow-400/60 text-xs mt-2">
+                  <p className="text-orange-200/90 whitespace-pre-wrap text-sm">{selectedCampaign.client_revisions}</p>
+                  <p className="text-orange-300/60 text-xs mt-2">
                     Submitted: {selectedCampaign.revision_date ? new Date(selectedCampaign.revision_date).toLocaleString() : 'Unknown'}
                   </p>
                 </div>
@@ -390,14 +390,14 @@ export function CampaignApprovalCalendar({ client, userRole = 'client_user' }: C
                   
                   {/* Revision Input */}
                   <div>
-                    <label className="block text-gray-300 text-sm font-medium mb-2">
+                    <label className="block text-white text-sm font-medium mb-2">
                       Revision Notes (required if requesting changes)
                     </label>
                     <textarea
                       value={revisionText}
                       onChange={(e) => setRevisionText(e.target.value)}
                       placeholder="Describe any changes needed, or leave blank to approve..."
-                      className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white placeholder-gray-500 resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white placeholder-white/50 resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       rows={4}
                     />
                   </div>
