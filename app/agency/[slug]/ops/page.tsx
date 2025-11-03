@@ -13,6 +13,7 @@ import { ScopeTracker } from '@/components/ops/scope-tracker'
 import { ABTestTracker } from '@/components/ops/ab-test-tracker'
 import { FlowManager } from '@/components/ops/flow-manager'
 import { RoleViews } from '@/components/ops/role-views'
+import { PopupManager } from '@/components/ops/popup-manager'
 import { 
   Settings, 
   ArrowLeft, 
@@ -25,10 +26,11 @@ import {
   Zap,
   FileText,
   TestTube,
-  Eye
+  Eye,
+  MousePointer
 } from 'lucide-react'
 
-type OpsTab = 'overview' | 'campaigns' | 'flows' | 'content' | 'forms' | 'abtests' | 'view' | 'scope'
+type OpsTab = 'overview' | 'campaigns' | 'flows' | 'popups' | 'content' | 'forms' | 'abtests' | 'view' | 'scope'
 type CampaignView = 'calendar' | 'pipeline'
 
 interface Campaign {
@@ -68,6 +70,7 @@ export default function OperationsPage({ params }: PageProps) {
     { id: 'overview', label: 'Overview', icon: BarChart3 },
     { id: 'campaigns', label: 'Campaigns', icon: Calendar },
     { id: 'flows', label: 'Flows', icon: Zap },
+    { id: 'popups', label: 'Popups', icon: MousePointer },
     { id: 'content', label: 'Content Hub', icon: FolderOpen },
     { id: 'forms', label: 'Forms', icon: FileText },
     { id: 'abtests', label: 'A/B Tests', icon: TestTube },
@@ -368,6 +371,14 @@ export default function OperationsPage({ params }: PageProps) {
           )}
 
           {/* Content Hub Tab */}
+          {/* Popups Tab */}
+          {activeTab === 'popups' && (
+            <PopupManager
+              clients={clients}
+              selectedClient={selectedClient}
+            />
+          )}
+
           {activeTab === 'content' && (
             <ContentHub
               clients={clients}
