@@ -66,10 +66,10 @@ export async function POST(request: NextRequest) {
   try {
     const { preview } = await request.json().catch(() => ({ preview: false }))
     
-    console.log('📥 MIGRATION: Fetching November 2024 campaigns from Airtable...')
+    console.log('📥 MIGRATION: Fetching November 2025 campaigns from Airtable...')
     
-    // Fetch records with November 2024 send dates
-    const filterFormula = "AND(MONTH({Send Date})=11, YEAR({Send Date})=2024)"
+    // Fetch records with November 2025 send dates
+    const filterFormula = "AND(MONTH({Send Date})=11, YEAR({Send Date})=2025)"
     const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${AIRTABLE_TABLE_ID}?filterByFormula=${encodeURIComponent(filterFormula)}`
     
     const response = await fetch(url, {
