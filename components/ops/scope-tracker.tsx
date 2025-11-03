@@ -147,6 +147,7 @@ export function ScopeTracker({ clients, selectedClient, campaigns }: ScopeTracke
       {/* Scope Header */}
       <Card className="bg-white/10 backdrop-blur-md border-white/20 shadow-xl">
         <CardHeader>
+          <div className="flex items-center justify-between">
             <div>
               <CardTitle className="text-white text-xl flex items-center gap-2">
                 <Target className="h-5 w-5" />
