@@ -42,7 +42,24 @@ export async function POST(request: NextRequest) {
       }, { status: 404 })
     }
 
-    // Scrape products if URLs provided
+    // Get client website for context scraping
+    const { data: client } = await supabase
+      .from('clients')
+      .select('brand_name')
+      .eq('id', campaign.client_id)
+      .single()
+
+    // Scrape website for general context (always)
+    const { WebScraper } = await import('@/lib/web-scraper')
+    const webScraper = new WebScraper()
+    
+    // Try to determine website URL (you could add this to clients table)
+    const websiteUrl = `https://www.${client?.brand_name?.toLowerCase().replace(/\s+/g, '')}.com`
+    console.log('🔍 Scraping website context from:', websiteUrl)
+    
+    const websiteContext = await webScraper.scrapeWebsiteContext(websiteUrl)
+    
+    // Scrape specific products if URLs provided
     const aiService = new AICopyService()
     let scrapedProducts = []
     
@@ -57,7 +74,8 @@ export async function POST(request: NextRequest) {
       brief: campaign.internal_notes || 'No brief provided',
       copy_notes: copyNotes,
       product_urls: productUrls,
-      scraped_products: scrapedProducts
+      scraped_products: scrapedProducts,
+      website_context: websiteContext
     })
 
     // Save generated copy to campaign

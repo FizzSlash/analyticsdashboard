@@ -115,9 +115,10 @@ Return as JSON:
     copy_notes: any
     product_urls?: string[]
     scraped_products?: any[]
+    website_context?: any
   }): Promise<GeneratedCopy> {
     try {
-      const { campaign_name, brief, copy_notes, scraped_products } = params
+      const { campaign_name, brief, copy_notes, scraped_products, website_context } = params
 
       const prompt = `You are an expert email copywriter. Generate email copy in a BLOCK-BASED format.
 
