@@ -674,7 +674,14 @@ export function ContentHub({ clients, selectedClient }: ContentHubProps) {
               <input
                 type="text"
                 value={(guidelines?.brand_colors || []).join(', ')}
-                onChange={(e) => setGuidelines({ ...(guidelines || { client_id: selectedClient }), brand_colors: e.target.value.split(',').map(c => c.trim()) })}
+                onChange={(e) => setGuidelines({
+                  client_id: guidelines?.client_id || selectedClient,
+                  brand_colors: e.target.value.split(',').map(c => c.trim()),
+                  fonts: guidelines?.fonts || '',
+                  tone_of_voice: guidelines?.tone_of_voice || '',
+                  legal_requirements: guidelines?.legal_requirements || '',
+                  key_messaging: guidelines?.key_messaging || ''
+                })}
                 placeholder="#3B82F6, #1D4ED8, #60A5FA"
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
               />
@@ -688,7 +695,14 @@ export function ContentHub({ clients, selectedClient }: ContentHubProps) {
               <input
                 type="text"
                 value={guidelines?.fonts || ''}
-                onChange={(e) => setGuidelines({ ...(guidelines || { client_id: selectedClient }), fonts: e.target.value })}
+                onChange={(e) => setGuidelines({
+                  client_id: guidelines?.client_id || selectedClient,
+                  brand_colors: guidelines?.brand_colors || [],
+                  fonts: e.target.value,
+                  tone_of_voice: guidelines?.tone_of_voice || '',
+                  legal_requirements: guidelines?.legal_requirements || '',
+                  key_messaging: guidelines?.key_messaging || ''
+                })}
                 placeholder="Montserrat (headings), Open Sans (body)"
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg"
               />
@@ -701,7 +715,14 @@ export function ContentHub({ clients, selectedClient }: ContentHubProps) {
               </label>
               <textarea
                 value={guidelines?.tone_of_voice || ''}
-                onChange={(e) => setGuidelines({ ...(guidelines || { client_id: selectedClient }), tone_of_voice: e.target.value })}
+                onChange={(e) => setGuidelines({
+                  client_id: guidelines?.client_id || selectedClient,
+                  brand_colors: guidelines?.brand_colors || [],
+                  fonts: guidelines?.fonts || '',
+                  tone_of_voice: e.target.value,
+                  legal_requirements: guidelines?.legal_requirements || '',
+                  key_messaging: guidelines?.key_messaging || ''
+                })}
                 rows={3}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg resize-none"
               />
@@ -714,7 +735,14 @@ export function ContentHub({ clients, selectedClient }: ContentHubProps) {
               </label>
               <textarea
                 value={guidelines?.legal_requirements || ''}
-                onChange={(e) => setGuidelines({ ...(guidelines || { client_id: selectedClient }), legal_requirements: e.target.value })}
+                onChange={(e) => setGuidelines({
+                  client_id: guidelines?.client_id || selectedClient,
+                  brand_colors: guidelines?.brand_colors || [],
+                  fonts: guidelines?.fonts || '',
+                  tone_of_voice: guidelines?.tone_of_voice || '',
+                  legal_requirements: e.target.value,
+                  key_messaging: guidelines?.key_messaging || ''
+                })}
                 rows={3}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg resize-none"
               />
@@ -727,7 +755,14 @@ export function ContentHub({ clients, selectedClient }: ContentHubProps) {
               </label>
               <textarea
                 value={guidelines?.key_messaging || ''}
-                onChange={(e) => setGuidelines({ ...(guidelines || { client_id: selectedClient }), key_messaging: e.target.value })}
+                onChange={(e) => setGuidelines({
+                  client_id: guidelines?.client_id || selectedClient,
+                  brand_colors: guidelines?.brand_colors || [],
+                  fonts: guidelines?.fonts || '',
+                  tone_of_voice: guidelines?.tone_of_voice || '',
+                  legal_requirements: guidelines?.legal_requirements || '',
+                  key_messaging: e.target.value
+                })}
                 rows={4}
                 placeholder="• Message 1&#10;• Message 2&#10;• Message 3"
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg resize-none font-mono text-sm"
