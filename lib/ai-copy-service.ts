@@ -62,7 +62,7 @@ Return as JSON:
 }`
 
       const message = await anthropic.messages.create({
-        model: 'claude-3-opus-20240229',
+        model: 'claude-sonnet-4-0',
         max_tokens: 2000,
         temperature: 0.3,
         messages: [{
@@ -220,7 +220,7 @@ BLOCK TYPES AVAILABLE:
 Generate 6-8 blocks for a complete email. Use the brand voice and follow best practices.`
 
       const message = await anthropic.messages.create({
-        model: 'claude-3-opus-20240229',
+        model: 'claude-sonnet-4-0',
         max_tokens: 4000,
         temperature: 0.2, // Lower for consistency
         messages: [{
@@ -281,7 +281,7 @@ Expand this into a detailed brief covering:
 Keep it concise but comprehensive (300-400 words).`
 
       const message = await anthropic.messages.create({
-        model: 'claude-3-opus-20240229',
+        model: 'claude-sonnet-4-0',
         max_tokens: 1000,
         temperature: 0.3,
         messages: [{
