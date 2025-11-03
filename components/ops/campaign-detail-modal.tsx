@@ -71,32 +71,8 @@ export function CampaignDetailModal({
   const [isDragging, setIsDragging] = useState(false)
   const isNewCampaign = campaign.id.startsWith('new-')
 
-  // Mock activity log (will be from database later)
-  const activityLog: ActivityLog[] = [
-    {
-      id: '1',
-      type: 'status_change',
-      description: 'Status changed from Copy to Design',
-      user: 'Sarah',
-      timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000),
-      old_value: 'copy',
-      new_value: 'design'
-    },
-    {
-      id: '2',
-      type: 'note_added',
-      description: 'Added internal notes',
-      user: 'Mike',
-      timestamp: new Date(Date.now() - 5 * 60 * 60 * 1000)
-    },
-    {
-      id: '3',
-      type: 'created',
-      description: 'Campaign created',
-      user: 'Sarah',
-      timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000)
-    }
-  ]
+  // Activity log - will be implemented with real data from database
+  const activityLog: ActivityLog[] = []
 
   const handleSave = () => {
     // Validate: Image required for QA, Client Approval, and beyond

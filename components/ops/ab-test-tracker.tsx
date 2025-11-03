@@ -83,65 +83,6 @@ export function ABTestTracker({ clients, selectedClient, campaigns }: ABTestTrac
     }
   }, [selectedClient, clients])
 
-  // Mock A/B tests (fallback)
-  const initialTests: ABTest[] = [
-    {
-      id: '1',
-      client_id: clients[0]?.id || '1',
-      client_name: clients[0]?.brand_name || 'Hydrus',
-      client_color: clients[0]?.primary_color || '#3B82F6',
-      test_name: 'Black Friday Subject Line Test',
-      applies_to: 'campaign',
-      test_type: 'Subject Line',
-      status: 'finalized',
-      priority: 'high',
-      start_date: new Date(2025, 10, 24),
-      winner: 'Variant B: "Limited Time - 50% OFF"',
-      notes: 'Urgency language outperformed by 12%. Use this approach for future sales.',
-      num_variants: 2
-    },
-    {
-      id: '2',
-      client_id: clients[1]?.id || '2',
-      client_name: clients[1]?.brand_name || 'Peak Design',
-      client_color: clients[1]?.primary_color || '#10B981',
-      test_name: 'Send Time Optimization',
-      applies_to: 'campaign',
-      test_type: 'Send Time',
-      status: 'in_progress',
-      priority: 'normal',
-      start_date: new Date(2025, 11, 1),
-      num_variants: 3
-    },
-    {
-      id: '3',
-      client_id: clients[2]?.id || '3',
-      client_name: clients[2]?.brand_name || 'Make Waves',
-      client_color: clients[2]?.primary_color || '#8B5CF6',
-      test_name: 'Welcome Flow - Email Timing',
-      applies_to: 'flow',
-      test_type: 'Email Timing',
-      status: 'strategy',
-      priority: 'normal',
-      num_variants: 2
-    },
-    {
-      id: '4',
-      client_id: clients[0]?.id || '1',
-      client_name: clients[0]?.brand_name || 'Hydrus',
-      client_color: clients[0]?.primary_color || '#3B82F6',
-      test_name: 'Exit Intent Popup Copy',
-      applies_to: 'popup',
-      test_type: 'Popup Copy',
-      status: 'implementation',
-      priority: 'urgent',
-      start_date: new Date(2025, 10, 28),
-      num_variants: 2
-    }
-  ]
-
-  // Unused initialTests since we fetch from API now
-
   // Filter tests
   const filteredTests = tests.filter(test => {
     if (selectedClient !== 'all' && test.client_id !== selectedClient) return false

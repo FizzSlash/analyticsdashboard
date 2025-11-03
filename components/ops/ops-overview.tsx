@@ -81,41 +81,8 @@ export function OpsOverview({
     })
     .slice(0, 5)
 
-  // Recent activity (mock - will be from ops_activity table later)
-  const recentActivity = [
-    {
-      id: '1',
-      type: 'status_change',
-      description: 'Black Friday Launch moved to Design',
-      user: 'Sarah',
-      timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000),
-      campaignName: 'Black Friday Launch'
-    },
-    {
-      id: '2',
-      type: 'created',
-      description: 'New campaign created',
-      user: 'Mike',
-      timestamp: new Date(Date.now() - 5 * 60 * 60 * 1000),
-      campaignName: 'Holiday Strategy'
-    },
-    {
-      id: '3',
-      type: 'approved',
-      description: 'Client approved Newsletter',
-      user: 'Client',
-      timestamp: new Date(Date.now() - 8 * 60 * 60 * 1000),
-      campaignName: 'Newsletter'
-    },
-    {
-      id: '4',
-      type: 'uploaded',
-      description: 'Image uploaded to Product Launch',
-      user: 'Design Team',
-      timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000),
-      campaignName: 'Product Launch'
-    }
-  ]
+  // Recent activity - will be implemented from database activity log
+  const recentActivity: any[] = []
 
   // Upcoming sends
   const upcomingSends = filteredCampaigns
