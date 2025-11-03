@@ -91,10 +91,19 @@ Return as JSON:
    * Scrape product information from URLs
    */
   async scrapeProducts(productUrls: string[]): Promise<any[]> {
-    // TODO: Implement using Playwright or Cheerio
-    // For now, return placeholder
-    console.log('Scraping products:', productUrls)
-    return []
+    if (!productUrls || productUrls.length === 0) {
+      return []
+    }
+
+    try {
+      // Dynamic import to avoid server-side issues
+      const { WebScraper } = await import('@/lib/web-scraper')
+      const scraper = new WebScraper()
+      return await scraper.scrapeProducts(productUrls)
+    } catch (error) {
+      console.error('Scraping error:', error)
+      return []
+    }
   }
 
   /**
