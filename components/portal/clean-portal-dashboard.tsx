@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { DashboardOverview } from './dashboard-overview'
-import { CampaignApprovalCalendar } from './campaign-approval-calendar-v2'
+import { CampaignApprovalCalendar } from './campaign-approval-calendar-v3'
 import { FlowProgressTracker } from './flow-progress-tracker-v2'
 import { ABTestManager } from './ab-test-manager'
 import { EnhancedRequests } from './enhanced-requests'

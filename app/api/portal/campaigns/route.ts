@@ -46,22 +46,35 @@ export async function GET(request: NextRequest) {
 export async function PATCH(request: NextRequest) {
   try {
     const body = await request.json()
-    const { campaignId, clientApproved, clientNotes, approvalDate } = body
+    const { campaignId, clientApproved, clientRevisions, clientNotes, approvalDate, revisionDate } = body
 
     console.log('📝 PORTAL CAMPAIGNS API: Updating approval for campaign:', campaignId)
+    console.log('📝 PORTAL CAMPAIGNS API: Approved:', clientApproved, '| Revisions:', clientRevisions)
 
     // Determine new status based on approval
     const newStatus = clientApproved ? 'Approved' : 'Client Revisions'
 
+    const updateData: any = {
+      client_approved: clientApproved,
+      client_notes: clientNotes,
+      status: newStatus,
+      updated_at: new Date().toISOString()
+    }
+
+    // Add approval date if approved
+    if (clientApproved && approvalDate) {
+      updateData.approval_date = approvalDate
+    }
+
+    // Add revisions if rejected
+    if (!clientApproved && clientRevisions) {
+      updateData.client_revisions = clientRevisions
+      updateData.revision_date = revisionDate || new Date().toISOString()
+    }
+
     const { data: campaign, error } = await supabase
       .from('ops_campaigns')
-      .update({
-        client_approved: clientApproved,
-        client_notes: clientNotes,
-        approval_date: approvalDate,
-        status: newStatus,
-        updated_at: new Date().toISOString()
-      })
+      .update(updateData)
       .eq('id', campaignId)
       .select()
       .single()
@@ -74,10 +87,10 @@ export async function PATCH(request: NextRequest) {
     console.log('✅ PORTAL CAMPAIGNS API: Approval updated successfully')
 
     return NextResponse.json({ success: true, campaign })
-  } catch (error) {
+  } catch (error: any) {
     console.error('❌ PORTAL CAMPAIGNS API: Error:', error)
     return NextResponse.json(
-      { success: false, error: 'Failed to update campaign' },
+      { success: false, error: error.message || 'Failed to update campaign' },
       { status: 500 }
     )
   }
