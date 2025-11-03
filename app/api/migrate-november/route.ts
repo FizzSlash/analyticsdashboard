@@ -62,6 +62,29 @@ function extractAudience(notes: string): string {
   return match ? match[1].trim() : ''
 }
 
+function mapAirtableStatusToOps(airtableStage: string): string {
+  // Map Airtable "Stage" values to valid ops_campaigns status values
+  const statusMap: Record<string, string> = {
+    'Content Strategy': 'strategy',
+    'Copy': 'copy',
+    'Copy QA': 'copy',
+    'Design': 'design',
+    'Design QA': 'design',
+    'QA': 'qa',
+    'Ready For Client Approval': 'client_approval',
+    'Client Approval': 'client_approval',
+    'Approved': 'approved',
+    'Client Revisions': 'copy', // Send back to copy
+    'Ready For Schedule': 'approved',
+    'Ready For Imp QA': 'qa',
+    'Scheduled - Close': 'scheduled',
+    'Live in Klaviyo': 'sent',
+    'Sent': 'sent'
+  }
+  
+  return statusMap[airtableStage] || 'strategy'
+}
+
 export async function POST(request: NextRequest) {
   try {
     const { preview } = await request.json().catch(() => ({ preview: false }))
@@ -133,7 +156,7 @@ export async function POST(request: NextRequest) {
           flow_name: fields.Tasks || 'Untitled Flow',
           trigger_type: extractTriggerCriteria(fields.Notes || '') || 'Custom trigger',
           num_emails: extractNumEmails(fields.Notes || ''),
-          status: fields.Stage || 'Content Strategy',
+          status: mapAirtableStatusToOps(fields.Stage || 'Content Strategy'),
           priority: 'normal',
           notes: fields.Notes || ''
         })
@@ -146,7 +169,7 @@ export async function POST(request: NextRequest) {
           campaign_type: fields['Campaign Type']?.[0] || 'email',
           subject_line: fields.Offer || '',
           target_audience: extractAudience(fields.Notes || '') || 'All subscribers',
-          status: fields.Stage || 'Content Strategy',
+          status: mapAirtableStatusToOps(fields.Stage || 'Content Strategy'),
           priority: 'normal',
           send_date: sendDate.toISOString(),
           copy_doc_url: fields['Copy Link'] || null,
