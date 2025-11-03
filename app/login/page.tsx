@@ -38,14 +38,16 @@ export default function LoginPage() {
     fetchAgency()
   }, [])
   
-  // Redirect if already logged in
+  // Redirect if already logged in (unless ?skip_redirect=true for testing)
   useEffect(() => {
-    if (initialized && user && !redirecting && !redirectInProgress.current) {
+    const skipRedirect = searchParams.get('skip_redirect') === 'true'
+    
+    if (initialized && user && !redirecting && !redirectInProgress.current && !skipRedirect) {
       console.log('LOGIN: User already authenticated, redirecting')
       redirectInProgress.current = true
       handleRedirectAfterAuth()
     }
-  }, [initialized, user])
+  }, [initialized, user, searchParams])
 
   const handleRedirectAfterAuth = async () => {
     if (!supabase || !user) return
