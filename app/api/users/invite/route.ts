@@ -15,14 +15,29 @@ const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { email, client_id, agency_id, first_name, last_name } = body
+    const { email, client_id, agency_id, first_name, last_name, role, employee_type } = body
 
-    console.log('👤 USER INVITE: Processing invitation for:', email)
+    console.log('👤 USER INVITE: Processing invitation for:', email, 'as', role || 'client_user')
 
     // Validate required fields
-    if (!email || !client_id || !agency_id) {
+    if (!email || !agency_id) {
       return NextResponse.json(
-        { success: false, error: 'Email, client_id, and agency_id are required' },
+        { success: false, error: 'Email and agency_id are required' },
+        { status: 400 }
+      )
+    }
+    
+    // Validate based on role
+    if (role === 'client_user' && !client_id) {
+      return NextResponse.json(
+        { success: false, error: 'Client ID required for client users' },
+        { status: 400 }
+      )
+    }
+    
+    if (role === 'employee' && !employee_type) {
+      return NextResponse.json(
+        { success: false, error: 'Employee type required for employees' },
         { status: 400 }
       )
     }
@@ -53,17 +68,28 @@ export async function POST(request: NextRequest) {
 
     console.log('✅ USER INVITE: Auth user created:', authData.user.id)
 
-    // Step 2: Create user profile for client access
+    // Step 2: Create user profile
+    const profileData: any = {
+      id: authData.user.id,
+      role: role || 'client_user',
+      agency_id: agency_id,
+      first_name: first_name || '',
+      last_name: last_name || ''
+    }
+    
+    // Add client_id only for client users
+    if (role === 'client_user' && client_id) {
+      profileData.client_id = client_id
+    }
+    
+    // Add employee_type for employees
+    if (role === 'employee' && employee_type) {
+      profileData.employee_type = employee_type
+    }
+    
     const { data: profile, error: profileError } = await supabaseAdmin
       .from('user_profiles')
-      .insert({
-        id: authData.user.id,
-        role: 'client_user',
-        agency_id: agency_id,
-        client_id: client_id,
-        first_name: first_name || '',
-        last_name: last_name || ''
-      })
+      .insert(profileData)
       .select()
       .single()
 
