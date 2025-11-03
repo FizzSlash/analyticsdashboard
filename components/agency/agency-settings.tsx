@@ -10,7 +10,11 @@ import {
   CheckCircle,
   Palette,
   Image,
-  Settings
+  Settings,
+  Share2,
+  Copy,
+  Eye,
+  EyeOff
 } from 'lucide-react'
 
 interface AgencySettingsProps {
@@ -34,6 +38,8 @@ export function AgencySettings({ agency: initialAgency }: AgencySettingsProps) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+  const [opsShareUrl, setOpsShareUrl] = useState('')
+  const [showOpsShare, setShowOpsShare] = useState(false)
   
   // Using API calls instead of direct supabase calls
 
@@ -48,6 +54,27 @@ export function AgencySettings({ agency: initialAgency }: AgencySettingsProps) {
     background_image_url: agency.background_image_url || '',
     custom_domain: agency.custom_domain || ''
   })
+
+  const generateOpsShareLink = async () => {
+    try {
+      const response = await fetch('/api/ops-share/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ agencyId: agency.id })
+      })
+
+      const result = await response.json()
+      
+      if (result.success) {
+        setOpsShareUrl(result.url)
+        setShowOpsShare(true)
+      } else {
+        setError('Failed to generate Ops share link')
+      }
+    } catch (err) {
+      setError('Error generating share link')
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -418,6 +445,56 @@ export function AgencySettings({ agency: initialAgency }: AgencySettingsProps) {
           </button>
         </div>
       </form>
+
+      {/* Ops Share Link */}
+      <div className="bg-white/10 backdrop-blur-md rounded-lg border border-white/20 p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="text-xl font-semibold text-white flex items-center gap-2">
+              <Share2 className="h-5 w-5" />
+              Ops Share Link
+            </h3>
+            <p className="text-white/60 text-sm mt-1">Share Ops Dashboard with employees/contractors</p>
+          </div>
+          <button
+            onClick={generateOpsShareLink}
+            className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-4 py-2 rounded-lg font-semibold flex items-center gap-2"
+          >
+            <Share2 className="h-4 w-4" />
+            Generate Link
+          </button>
+        </div>
+        
+        {showOpsShare && opsShareUrl && (
+          <div className="bg-white/5 rounded-lg p-4 border border-white/20">
+            <label className="block text-sm font-medium text-white/80 mb-2">
+              Shareable Ops Link (No login required):
+            </label>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={opsShareUrl}
+                readOnly
+                className="flex-1 px-3 py-2 bg-white/10 border border-white/20 text-white rounded-lg text-sm font-mono"
+              />
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(opsShareUrl)
+                  setSuccess('Link copied!')
+                  setTimeout(() => setSuccess(''), 2000)
+                }}
+                className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+              >
+                <Copy className="h-4 w-4" />
+                Copy
+              </button>
+            </div>
+            <p className="text-white/60 text-xs mt-2">
+              Anyone with this link can view and edit campaigns in Ops Dashboard. Revoke access in settings.
+            </p>
+          </div>
+        )}
+      </div>
 
       {/* Agency Info */}
       <div className="bg-white/10 backdrop-blur-md rounded-lg border border-white/20 p-6">
