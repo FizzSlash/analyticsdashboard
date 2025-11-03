@@ -123,48 +123,35 @@ export default function OperationsPage({ params }: PageProps) {
           console.error('OPS: Error loading clients:', clientsError)
           setError('Failed to load clients')
         } else {
-          // Filter to only clients with portal enabled (they need campaign approval workflow)
+          // Filter to only clients with portal enabled
           const portalClients = (clientsData || []).filter((c: any) => c.enable_portal !== false)
           setClients(portalClients)
           
-          // Initialize mock campaigns (will be from database later)
-          if (clientsData && clientsData.length > 0) {
-            const mockCampaigns: Campaign[] = [
-              {
-                id: '1',
-                campaign_name: 'Black Friday Launch',
-                client_id: clientsData[0]?.id || '1',
-                client_name: clientsData[0]?.brand_name || 'Client',
-                client_color: clientsData[0]?.primary_color || '#3B82F6',
-                send_date: new Date(2025, 10, 24, 9, 0),
-                status: 'design',
-                priority: 'urgent',
-                campaign_type: 'email'
-              },
-              {
-                id: '2',
-                campaign_name: 'Welcome Series',
-                client_id: clientsData[1]?.id || clientsData[0]?.id,
-                client_name: clientsData[1]?.brand_name || clientsData[0]?.brand_name,
-                client_color: clientsData[1]?.primary_color || '#10B981',
-                send_date: new Date(2025, 10, 28, 14, 0),
-                status: 'qa',
-                priority: 'normal',
-                campaign_type: 'email'
-              },
-              {
-                id: '3',
-                campaign_name: 'Product Launch',
-                client_id: clientsData[2]?.id || clientsData[0]?.id,
-                client_name: clientsData[2]?.brand_name || clientsData[0]?.brand_name,
-                client_color: clientsData[2]?.primary_color || '#8B5CF6',
-                send_date: new Date(2025, 10, 30, 10, 0),
-                status: 'client_approval',
-                priority: 'high',
-                campaign_type: 'email'
-              }
-            ]
-            setSharedCampaigns(mockCampaigns)
+          // Fetch real campaigns from database
+          try {
+            const campaignsResponse = await fetch(`/api/ops/campaigns?clientId=all`)
+            const campaignsData = await campaignsResponse.json()
+            
+            if (campaignsData.success && campaignsData.campaigns) {
+              const transformedCampaigns = campaignsData.campaigns.map((c: any) => ({
+                ...c,
+                send_date: new Date(c.send_date),
+                client_name: portalClients.find(cl => cl.id === c.client_id)?.brand_name || 'Unknown',
+                client_color: portalClients.find(cl => cl.id === c.client_id)?.primary_color || '#3B82F6'
+              }))
+              setSharedCampaigns(transformedCampaigns)
+              console.log('✅ OPS: Loaded', transformedCampaigns.length, 'campaigns')
+            }
+            
+            const flowsResponse = await fetch(`/api/ops/flows?clientId=all`)
+            const flowsData = await flowsResponse.json()
+            
+            if (flowsData.success && flowsData.flows) {
+              setSharedFlows(flowsData.flows)
+              console.log('✅ OPS: Loaded', flowsData.flows.length, 'flows')
+            }
+          } catch (err) {
+            console.error('❌ Error fetching campaigns/flows:', err)
           }
         }
 
