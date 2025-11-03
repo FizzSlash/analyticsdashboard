@@ -471,7 +471,7 @@ export function CampaignApprovalCalendar({ client, userRole = 'client_user' }: C
                     <button
                       onClick={() => handleApproval(selectedCampaign, true)}
                       disabled={submitting}
-                      className="bg-green-600 hover:bg-green-700 disabled:bg-green-600/40 text-white py-4 px-6 rounded-lg font-bold text-base transition-colors flex items-center justify-center gap-2 shadow-lg"
+                      className="bg-white/20 hover:bg-white/30 disabled:bg-white/10 text-white py-4 px-6 rounded-lg font-bold text-base transition-colors flex items-center justify-center gap-2 border border-white/30"
                     >
                       <CheckCircle className="h-5 w-5" />
                       {submitting ? 'Submitting...' : 'Approve'}
@@ -485,7 +485,7 @@ export function CampaignApprovalCalendar({ client, userRole = 'client_user' }: C
                         handleApproval(selectedCampaign, false)
                       }}
                       disabled={submitting}
-                      className="bg-orange-600 hover:bg-orange-700 disabled:bg-orange-600/40 text-white py-4 px-6 rounded-lg font-bold text-base transition-colors flex items-center justify-center gap-2 shadow-lg"
+                      className="bg-white/20 hover:bg-white/30 disabled:bg-white/10 text-white py-4 px-6 rounded-lg font-bold text-base transition-colors flex items-center justify-center gap-2 border border-white/30"
                     >
                       <Edit className="h-5 w-5" />
                       {submitting ? 'Submitting...' : 'Request Revisions'}
