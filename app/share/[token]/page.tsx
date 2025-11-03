@@ -110,11 +110,14 @@ export default function SharedDashboardPage() {
               <p className="text-white/60 text-sm">Email Marketing Analytics</p>
             </div>
             <div className="flex items-center gap-4">
-              <ViewToggle 
-                currentMode={viewMode}
-                onModeChange={setViewMode}
-              />
-              {viewMode === 'analytics' && (
+              {/* Only show toggle if both analytics and portal are enabled */}
+              {client.enable_analytics !== false && client.enable_portal !== false && (
+                <ViewToggle 
+                  currentMode={viewMode}
+                  onModeChange={setViewMode}
+                />
+              )}
+              {viewMode === 'analytics' && client.enable_analytics !== false && (
                 <TimeframeSelector 
                   selectedTimeframe={selectedTimeframe}
                   onTimeframeChange={setSelectedTimeframe}
@@ -130,7 +133,7 @@ export default function SharedDashboardPage() {
 
       {/* Dashboard */}
       <div className="relative z-10">
-        {viewMode === 'analytics' ? (
+        {viewMode === 'analytics' && client.enable_analytics !== false ? (
           <ModernDashboard 
             client={{ ...client, ...agency }}
             data={dashboardData.data}
@@ -138,13 +141,20 @@ export default function SharedDashboardPage() {
             disablePortalMode={true}
             hideHeader={true}
           />
-        ) : (
+        ) : client.enable_portal !== false ? (
           <div className="max-w-7xl mx-auto px-6 py-8">
             <CleanPortalDashboard 
               user={{ client: client }}
               client={client}
               userRole="client_user"
             />
+          </div>
+        ) : (
+          <div className="max-w-7xl mx-auto px-6 py-8">
+            <div className="bg-white rounded-lg p-12 text-center">
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">Access Not Enabled</h2>
+              <p className="text-gray-600">This client doesn't have analytics or portal access enabled.</p>
+            </div>
           </div>
         )}
       </div>
