@@ -461,6 +461,7 @@ export default function ClientDashboardPage({ params }: PageProps) {
             <div className="max-w-7xl mx-auto px-6 py-8">
               <CleanPortalDashboard 
                 user={{ client: client }}
+                client={client}
                 userRole="client_user"
               />
             </div>

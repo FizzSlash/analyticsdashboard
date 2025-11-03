@@ -70,29 +70,28 @@ export function FlowProgressTracker({ client, userRole, canEdit, canCreate, canA
 
   const loadFlows = async () => {
     try {
-      // Load from Airtable first
-      console.log('📥 Loading flows from Airtable for client:', client.brand_slug)
-      const response = await fetch(`/api/load-from-airtable?client=${encodeURIComponent(client.brand_name)}`)
+      // Load from Supabase (ops_flows table via portal API)
+      console.log('📥 PORTAL FLOWS: Loading flows for client:', client?.id || client?.brand_slug)
+      
+      if (!client?.id) {
+        console.error('❌ PORTAL FLOWS: No client ID provided')
+        setFlows([])
+        return
+      }
+      
+      const response = await fetch(`/api/portal/flows?clientId=${client.id}`)
       const result = await response.json()
       
       if (result.success) {
-        console.log(`📥 Loaded ${result.flows.length} flows from Airtable`)
-        
-        // Debug: Log first flow to see structure
-        if (result.flows.length > 0) {
-          console.log('📥 First flow structure:', result.flows[0])
-        }
-        
+        console.log(`✅ PORTAL FLOWS: Loaded ${result.flows.length} flows from database`)
         setFlows(result.flows)
       } else {
-        console.error('Failed to load flows from Airtable:', result.error)
-        // Fallback to demo data
-        setFlows(generateDemoFlows())
+        console.error('❌ PORTAL FLOWS: Failed to load:', result.error)
+        setFlows([])
       }
     } catch (error) {
-      console.error('Error loading flows:', error)
-      // Fallback to demo data
-      setFlows(generateDemoFlows())
+      console.error('❌ PORTAL FLOWS: Error loading flows:', error)
+      setFlows([])
     }
   }
 

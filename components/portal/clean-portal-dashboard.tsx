@@ -37,11 +37,23 @@ export function CleanPortalDashboard({ user, client, userRole, allClients }: Cle
   const clientInfo = userRole === 'agency_admin' 
     ? selectedClient 
     : { 
-        brand_name: user.client?.brand_name || 'Your Brand',
-        brand_slug: user.client?.brand_slug || 'unknown',
+        id: user.client?.id || client?.id, // CRITICAL: Ensure client.id is always included
+        brand_name: user.client?.brand_name || client?.brand_name || 'Your Brand',
+        brand_slug: user.client?.brand_slug || client?.brand_slug || 'unknown',
         figma_url: user.client?.figma_url || client?.figma_url,
-        ...client
+        ...client,
+        ...user.client // Override with user.client if it exists
       }
+  
+  // Debug logging to verify client ID is passed
+  if (typeof window !== 'undefined') {
+    console.log('🔍 PORTAL DEBUG: clientInfo =', {
+      id: clientInfo.id,
+      brand_name: clientInfo.brand_name,
+      brand_slug: clientInfo.brand_slug,
+      userRole
+    })
+  }
 
   // Agency info for logo display
   const agencyInfo = userRole === 'agency_admin' 

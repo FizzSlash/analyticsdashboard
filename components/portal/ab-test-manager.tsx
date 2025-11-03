@@ -63,19 +63,88 @@ export function ABTestManager({ client }: ABTestManagerProps) {
   const fetchABTests = async () => {
     setLoading(true)
     try {
-      console.log('📥 AB TESTS: Fetching from Supabase for client:', client?.id)
-      const response = await fetch(`/api/ab-tests?clientId=${client?.id}`)
+      console.log('📥 PORTAL A/B TESTS: Fetching for client:', client?.id || client?.brand_slug)
+      
+      if (!client?.id) {
+        console.error('❌ PORTAL A/B TESTS: No client ID provided')
+        setTests([])
+        setLoading(false)
+        return
+      }
+      
+      const response = await fetch(`/api/portal/ab-tests?clientId=${client.id}`)
       const result = await response.json()
       
       if (result.success) {
-        console.log(`✅ AB TESTS: Loaded ${result.tests.length} tests`)
-        setTests(result.tests)
+        console.log(`✅ PORTAL A/B TESTS: Loaded ${result.tests.length} tests`)
+        
+        // Transform database format to component format
+        const transformedTests = result.tests.map((test: any) => ({
+          id: test.id,
+          name: test.test_name,
+          status: test.status,
+          type: test.test_type,
+          startDate: new Date(test.test_date || test.created_at),
+          endDate: test.completed_date ? new Date(test.completed_date) : undefined,
+          variants: [
+            {
+              id: 'variant_a',
+              name: test.variant_a_name || 'Variant A',
+              description: test.variant_a_description || '',
+              metrics: {
+                sent: test.variant_a_sent || 0,
+                opens: test.variant_a_opens || 0,
+                clicks: test.variant_a_clicks || 0,
+                conversions: test.variant_a_conversions || 0,
+                revenue: test.variant_a_revenue || 0,
+                openRate: test.variant_a_sent > 0 ? (test.variant_a_opens / test.variant_a_sent) * 100 : 0,
+                clickRate: test.variant_a_sent > 0 ? (test.variant_a_clicks / test.variant_a_sent) * 100 : 0,
+                conversionRate: test.variant_a_sent > 0 ? (test.variant_a_conversions / test.variant_a_sent) * 100 : 0
+              }
+            },
+            {
+              id: 'variant_b',
+              name: test.variant_b_name || 'Variant B',
+              description: test.variant_b_description || '',
+              metrics: {
+                sent: test.variant_b_sent || 0,
+                opens: test.variant_b_opens || 0,
+                clicks: test.variant_b_clicks || 0,
+                conversions: test.variant_b_conversions || 0,
+                revenue: test.variant_b_revenue || 0,
+                openRate: test.variant_b_sent > 0 ? (test.variant_b_opens / test.variant_b_sent) * 100 : 0,
+                clickRate: test.variant_b_sent > 0 ? (test.variant_b_clicks / test.variant_b_sent) * 100 : 0,
+                conversionRate: test.variant_b_sent > 0 ? (test.variant_b_conversions / test.variant_b_sent) * 100 : 0
+              }
+            },
+            ...(test.variant_c_name ? [{
+              id: 'variant_c',
+              name: test.variant_c_name,
+              description: test.variant_c_description || '',
+              metrics: {
+                sent: test.variant_c_sent || 0,
+                opens: test.variant_c_opens || 0,
+                clicks: test.variant_c_clicks || 0,
+                conversions: test.variant_c_conversions || 0,
+                revenue: test.variant_c_revenue || 0,
+                openRate: test.variant_c_sent > 0 ? (test.variant_c_opens / test.variant_c_sent) * 100 : 0,
+                clickRate: test.variant_c_sent > 0 ? (test.variant_c_clicks / test.variant_c_sent) * 100 : 0,
+                conversionRate: test.variant_c_sent > 0 ? (test.variant_c_conversions / test.variant_c_sent) * 100 : 0
+              }
+            }] : [])
+          ],
+          winner: test.winner_variant,
+          confidence: test.confidence_level || 0,
+          notes: test.notes || ''
+        }))
+        
+        setTests(transformedTests)
       } else {
-        console.error('❌ AB TESTS: Failed to load:', result.error)
+        console.error('❌ PORTAL A/B TESTS: Failed to load:', result.error)
         setTests([])
       }
     } catch (error) {
-      console.error('❌ AB TESTS: Error fetching tests:', error)
+      console.error('❌ PORTAL A/B TESTS: Error fetching tests:', error)
       setTests([])
     } finally {
       setLoading(false)
