@@ -224,12 +224,6 @@ export function ScopeTracker({ clients, selectedClient, campaigns }: ScopeTracke
                       {daysUntilInvoice} days
                     </span>
                   </div>
-                  <div className="flex items-center justify-between text-sm mt-1">
-                    <span className="text-gray-600">Retainer</span>
-                    <span className="font-semibold text-gray-900">
-                      ${config.retainer_amount.toLocaleString()}/mo
-                    </span>
-                  </div>
                 </div>
               </CardContent>
             </Card>
