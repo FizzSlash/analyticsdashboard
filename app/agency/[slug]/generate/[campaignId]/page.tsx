@@ -510,46 +510,80 @@ ${blocks.map(block => {
                         <div onClick={() => setEditingBlock(block.id)} className="cursor-text">
                         {editingBlock === block.id ? (
                           <div className="space-y-2">
-                            <textarea
-                              value={block.content}
-                              onChange={(e) => updateBlock(block.id, { content: e.target.value })}
-                              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                              rows={3}
-                            />
-                            {block.type === 'product' && (
+                            {block.type === 'checkmarks' ? (
+                              <textarea
+                                value={block.items?.join('\n') || ''}
+                                onChange={(e) => updateBlock(block.id, { items: e.target.value.split('\n').filter(s => s.trim()) })}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-mono"
+                                rows={4}
+                                placeholder="Item 1&#10;Item 2&#10;Item 3"
+                              />
+                            ) : (
                               <>
-                                <input
-                                  type="text"
-                                  value={block.description || ''}
-                                  onChange={(e) => updateBlock(block.id, { description: e.target.value })}
-                                  placeholder="Description..."
+                                <textarea
+                                  value={block.content}
+                                  onChange={(e) => updateBlock(block.id, { content: e.target.value })}
                                   className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                                  rows={3}
                                 />
-                                <div className="flex gap-2">
-                                  <input
-                                    type="text"
-                                    value={block.cta || ''}
-                                    onChange={(e) => updateBlock(block.id, { cta: e.target.value })}
-                                    placeholder="CTA text..."
-                                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                                  />
+                                {block.type === 'product' && (
+                                  <>
+                                    <input
+                                      type="text"
+                                      value={block.description || ''}
+                                      onChange={(e) => updateBlock(block.id, { description: e.target.value })}
+                                      placeholder="Description..."
+                                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                                    />
+                                    <div className="flex gap-2">
+                                      <input
+                                        type="text"
+                                        value={block.cta || ''}
+                                        onChange={(e) => updateBlock(block.id, { cta: e.target.value })}
+                                        placeholder="CTA text..."
+                                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                                      />
+                                      <input
+                                        type="text"
+                                        value={block.link || ''}
+                                        onChange={(e) => updateBlock(block.id, { link: e.target.value })}
+                                        placeholder="Link..."
+                                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                                      />
+                                    </div>
+                                  </>
+                                )}
+                                {block.type === 'cta' && (
                                   <input
                                     type="text"
                                     value={block.link || ''}
                                     onChange={(e) => updateBlock(block.id, { link: e.target.value })}
                                     placeholder="Link..."
-                                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
                                   />
-                                </div>
+                                )}
                               </>
                             )}
                           </div>
                         ) : (
                           <div className="text-gray-900">
-                            <p className="font-medium">{block.content}</p>
-                            {block.description && <p className="text-sm text-gray-600 mt-1">{block.description}</p>}
-                            {block.cta && (
-                              <p className="text-sm text-blue-600 mt-1">CTA: {block.cta} → {block.link}</p>
+                            {block.type === 'checkmarks' ? (
+                              <ul className="space-y-1">
+                                {block.items?.map((item, i) => (
+                                  <li key={i} className="flex items-start gap-2">
+                                    <span className="text-green-600">✔️</span>
+                                    <span>{item}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            ) : (
+                              <>
+                                <p className="font-medium">{block.content}</p>
+                                {block.description && <p className="text-sm text-gray-600 mt-1">{block.description}</p>}
+                                {block.cta && (
+                                  <p className="text-sm text-blue-600 mt-1">CTA: {block.cta} → {block.link}</p>
+                                )}
+                              </>
                             )}
                           </div>
                         )}
