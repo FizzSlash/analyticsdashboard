@@ -107,20 +107,10 @@ export async function POST(request: NextRequest) {
       const sendDate = fields['Send Date'] ? new Date(fields['Send Date']) : new Date()
       const previewUrl = fields.File?.[0]?.url || null
       
-      const baseData = {
-        client_id: clientId,
-        assignee: fields.Assignee?.name || null,
-        copy_doc_url: fields['Copy Link'] || null,
-        preview_url: previewUrl,
-        internal_notes: fields.Notes || '',
-        client_revisions: fields['Client Revisions'] || null,
-        status: fields.Stage || 'Content Strategy',
-        airtable_record_id: record.id
-      }
-      
       if (type === 'flows') {
         flows.push({
-          ...baseData,
+          client_id: clientId,
+          agency_id: null, // Will be set by trigger or default
           flow_name: fields.Tasks || 'Untitled Flow',
           flow_type: extractFlowType(fields.Notes || ''),
           trigger_type: extractTriggerCriteria(fields.Notes || '') || 'Custom trigger',
@@ -128,17 +118,40 @@ export async function POST(request: NextRequest) {
           target_audience: extractAudience(fields.Notes || '') || 'All subscribers',
           description: fields.Notes || '',
           notes: fields.Notes || '',
-          go_live_date: sendDate.toISOString()
+          status: fields.Stage || 'Content Strategy',
+          priority: 'normal',
+          assignee: fields.Assignee?.name || null,
+          copy_doc_url: fields['Copy Link'] || null,
+          preview_url: previewUrl,
+          go_live_date: sendDate.toISOString(),
+          client_notes: null,
+          client_revisions: fields['Client Revisions'] || null,
+          flow_approved: null
         })
       } else {
+        // Map to ops_campaigns exact columns
         campaigns.push({
-          ...baseData,
+          client_id: clientId,
+          agency_id: null, // Will be set by trigger or default
           campaign_name: fields.Tasks || 'Untitled Campaign',
           campaign_type: fields['Campaign Type']?.[0] || 'email',
           subject_line: fields.Offer || '',
+          preview_text: null,
           target_audience: extractAudience(fields.Notes || '') || 'All subscribers',
+          status: fields.Stage || 'Content Strategy',
+          priority: 'normal',
           send_date: sendDate.toISOString(),
-          priority: 'normal'
+          copy_doc_url: fields['Copy Link'] || null,
+          design_file_url: null,
+          preview_url: previewUrl,
+          is_ab_test: false,
+          ab_test_variant: null,
+          ab_test_type: null,
+          internal_notes: fields.Notes || '',
+          assignee: fields.Assignee?.name || null,
+          client_notes: null,
+          client_revisions: fields['Client Revisions'] || null,
+          client_approved: null
         })
       }
     }
