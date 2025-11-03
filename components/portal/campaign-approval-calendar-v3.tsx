@@ -415,7 +415,7 @@ export function CampaignApprovalCalendar({ client, userRole = 'client_user' }: C
                 {selectedCampaign.preview_url && (
                   <button
                     onClick={() => setViewingImage(true)}
-                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2"
+                    className="flex-1 bg-white/20 hover:bg-white/30 text-white py-3 px-4 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2 border border-white/30"
                   >
                     <Eye className="h-4 w-4" />
                     Preview Design
@@ -426,7 +426,7 @@ export function CampaignApprovalCalendar({ client, userRole = 'client_user' }: C
                     href={selectedCampaign.copy_doc_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex-1 bg-purple-600 hover:bg-purple-700 text-white py-3 px-4 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2"
+                    className="flex-1 bg-white/20 hover:bg-white/30 text-white py-3 px-4 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2 border border-white/30"
                   >
                     <FileText className="h-4 w-4" />
                     View Copy
@@ -494,38 +494,22 @@ export function CampaignApprovalCalendar({ client, userRole = 'client_user' }: C
                 </div>
               )}
 
-              {/* Already Approved/Rejected */}
-              {selectedCampaign.client_approved !== null && (
-                <div className={`rounded-lg p-4 border ${
-                  selectedCampaign.client_approved 
-                    ? 'bg-green-500/10 border-green-500/30' 
-                    : 'bg-orange-500/10 border-orange-500/30'
-                }`}>
+              {/* Already Approved - Only show if approved */}
+              {selectedCampaign.client_approved === true && (
+                <div className="bg-white/10 rounded-lg p-4 border border-white/20">
                   <div className="flex items-center gap-2 mb-2">
-                    {selectedCampaign.client_approved ? (
-                      <CheckCircle className="h-5 w-5 text-green-400" />
-                    ) : (
-                      <Edit className="h-5 w-5 text-orange-400" />
-                    )}
-                    <h5 className={`font-semibold ${
-                      selectedCampaign.client_approved ? 'text-green-400' : 'text-orange-400'
-                    }`}>
-                      {selectedCampaign.client_approved ? 'You Approved This Campaign' : 'You Requested Revisions'}
+                    <CheckCircle className="h-5 w-5 text-white" />
+                    <h5 className="font-semibold text-white">
+                      You Approved This Campaign
                     </h5>
                   </div>
                   {selectedCampaign.client_notes && (
-                    <p className={`text-sm ${
-                      selectedCampaign.client_approved ? 'text-green-200' : 'text-orange-200'
-                    }`}>
+                    <p className="text-white/80 text-sm">
                       {selectedCampaign.client_notes}
                     </p>
                   )}
-                  <p className="text-xs opacity-60 mt-2">
-                    {selectedCampaign.approval_date 
-                      ? new Date(selectedCampaign.approval_date).toLocaleString()
-                      : selectedCampaign.revision_date 
-                        ? new Date(selectedCampaign.revision_date).toLocaleString()
-                        : ''}
+                  <p className="text-white/60 text-xs mt-2">
+                    {selectedCampaign.approval_date && new Date(selectedCampaign.approval_date).toLocaleString()}
                   </p>
                 </div>
               )}
