@@ -24,7 +24,8 @@ import {
   Phone,
   CheckCircle,
   Circle,
-  Calendar as CalendarIcon
+  Calendar as CalendarIcon,
+  Sparkles
 } from 'lucide-react'
 
 interface BrandLink {
