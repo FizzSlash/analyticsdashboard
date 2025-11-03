@@ -122,7 +122,9 @@ export default function OperationsPage({ params }: PageProps) {
           console.error('OPS: Error loading clients:', clientsError)
           setError('Failed to load clients')
         } else {
-          setClients(clientsData || [])
+          // Filter to only clients with portal enabled (they need campaign approval workflow)
+          const portalClients = (clientsData || []).filter((c: any) => c.enable_portal !== false)
+          setClients(portalClients)
           
           // Initialize mock campaigns (will be from database later)
           if (clientsData && clientsData.length > 0) {

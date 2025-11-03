@@ -298,10 +298,13 @@ export default function ClientDashboardPage({ params }: PageProps) {
             </div>
             
             <div className="flex items-center gap-4">
-              <ViewToggle 
-                currentMode={viewMode}
-                onModeChange={setViewMode}
-              />
+              {/* Only show view toggle if both analytics and portal are enabled */}
+              {client.enable_analytics !== false && client.enable_portal !== false && (
+                <ViewToggle 
+                  currentMode={viewMode}
+                  onModeChange={setViewMode}
+                />
+              )}
               {viewMode === 'analytics' && (
                 <>
                   <TimeframeSelector 
@@ -421,29 +424,47 @@ export default function ClientDashboardPage({ params }: PageProps) {
       {/* Content */}
         <div className="relative z-10">
           {viewMode === 'analytics' ? (
-            <>
-              <ModernDashboard
-              client={{ ...client, ...agency }} // Merge client data with agency branding
-              data={dashboardData.data} 
-              timeframe={selectedTimeframe}
-              disablePortalMode={true} 
-              hideHeader={true} 
-            />
-            
-            {/* AI Assistant - Only shows in Analytics mode */}
-            <AIAssistant 
-              clientId={client.id}
-              clientSlug={params.slug}
-              dashboardData={dashboardData.data}
-            />
-          </>
+            client.enable_analytics === false ? (
+              <div className="max-w-7xl mx-auto px-6 py-8">
+                <div className="bg-white rounded-lg shadow p-12 text-center">
+                  <h2 className="text-2xl font-bold text-gray-900 mb-4">Analytics Not Enabled</h2>
+                  <p className="text-gray-600">Contact your agency to enable analytics access.</p>
+                </div>
+              </div>
+            ) : (
+              <>
+                <ModernDashboard
+                client={{ ...client, ...agency }} // Merge client data with agency branding
+                data={dashboardData.data} 
+                timeframe={selectedTimeframe}
+                disablePortalMode={true} 
+                hideHeader={true} 
+              />
+              
+              {/* AI Assistant - Only shows in Analytics mode */}
+              <AIAssistant 
+                clientId={client.id}
+                clientSlug={params.slug}
+                dashboardData={dashboardData.data}
+              />
+            </>
+            )
         ) : (
-          <div className="max-w-7xl mx-auto px-6 py-8">
-            <CleanPortalDashboard 
-              user={{ client: client }}
-              userRole="client_user"
-            />
-          </div>
+          client.enable_portal === false ? (
+            <div className="max-w-7xl mx-auto px-6 py-8">
+              <div className="bg-white rounded-lg shadow p-12 text-center">
+                <h2 className="text-2xl font-bold text-gray-900 mb-4">Portal Not Enabled</h2>
+                <p className="text-gray-600">Contact your agency to enable portal access.</p>
+              </div>
+            </div>
+          ) : (
+            <div className="max-w-7xl mx-auto px-6 py-8">
+              <CleanPortalDashboard 
+                user={{ client: client }}
+                userRole="client_user"
+              />
+            </div>
+          )
         )}
       </div>
     </div>
