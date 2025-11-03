@@ -98,3 +98,39 @@ export async function GET(request: NextRequest) {
   }
 }
 
+// PATCH - Update A/B test (for declaring winners or updating results)
+export async function PATCH(request: NextRequest) {
+  try {
+    const body = await request.json()
+    const { testId, ...updates } = body
+
+    console.log('📝 PORTAL A/B TESTS API: Updating test:', testId)
+
+    const { data: test, error } = await supabase
+      .from('ops_ab_tests')
+      .update({
+        ...updates,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', testId)
+      .select()
+      .single()
+
+    if (error) {
+      console.error('❌ PORTAL A/B TESTS API: Update error:', error)
+      throw error
+    }
+
+    console.log('✅ PORTAL A/B TESTS API: Test updated successfully')
+
+    return NextResponse.json({ success: true, test })
+  } catch (error: any) {
+    console.error('❌ PORTAL A/B TESTS API: Error:', error)
+    return NextResponse.json({ 
+      success: false, 
+      error: error.message 
+    }, { status: 500 })
+  }
+}
+
+

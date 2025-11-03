@@ -79,3 +79,45 @@ export async function GET(request: NextRequest) {
   }
 }
 
+// PATCH - Update flow approval (client approves/rejects)
+export async function PATCH(request: NextRequest) {
+  try {
+    const body = await request.json()
+    const { flowId, flowApproved, clientNotes, approvalDate } = body
+
+    console.log('📝 PORTAL FLOWS API: Updating approval for flow:', flowId)
+
+    // Determine new status based on approval
+    const newStatus = flowApproved ? 'Approved' : 'Client Revisions'
+
+    const { data: flow, error } = await supabase
+      .from('ops_flows')
+      .update({
+        flow_approved: flowApproved,
+        client_notes: clientNotes,
+        approval_date: approvalDate,
+        status: newStatus,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', flowId)
+      .select()
+      .single()
+
+    if (error) {
+      console.error('❌ PORTAL FLOWS API: Update error:', error)
+      throw error
+    }
+
+    console.log('✅ PORTAL FLOWS API: Flow approval updated successfully')
+
+    return NextResponse.json({ success: true, flow })
+  } catch (error: any) {
+    console.error('❌ PORTAL FLOWS API: Error:', error)
+    return NextResponse.json({ 
+      success: false, 
+      error: error.message 
+    }, { status: 500 })
+  }
+}
+
+
