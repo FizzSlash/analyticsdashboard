@@ -124,6 +124,52 @@ export default function CopyGenerationPage({ params }: PageProps) {
   const handleSave = async () => {
     setSaving(true)
     try {
+      // Create a Google Docs-style text export
+      const copyText = `SUBJECT LINE
+${subjectLines[selectedSubject]}
+
+PREVIEW
+${previewText}
+
+________________
+
+${blocks.map(block => {
+  let blockText = ''
+  
+  switch (block.type) {
+    case 'header':
+      blockText = `HEADER\n${block.content}`
+      break
+    case 'subheader':
+      blockText = `SUBHEADER\n${block.content}`
+      break
+    case 'body':
+      blockText = `BODY\n${block.content}`
+      break
+    case 'pic':
+      blockText = `PIC / IMAGE\n${block.content}`
+      break
+    case 'cta':
+      blockText = `CTA\n${block.content}${block.link ? ` → ${block.link}` : ''}`
+      break
+    case 'product':
+      blockText = `PRODUCT BLOCK\n${block.content}\n${block.description || ''}\nCTA: ${block.cta || 'Shop'} → ${block.link || '{INSERT LINK}'}`
+      break
+    case 'checkmarks':
+      blockText = `CHECKMARKS\n${block.items?.map(item => `✔️ ${item}`).join('\n') || ''}`
+      break
+    case 'divider':
+      blockText = '________________'
+      break
+    case 'footer':
+      blockText = `FOOTER\n${block.content}`
+      break
+  }
+  
+  return blockText
+}).join('\n\n________________\n\n')}`
+
+      // Save to campaign with copy_doc_url pointing to this generated copy
       const response = await fetch('/api/ops/campaigns', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -132,15 +178,16 @@ export default function CopyGenerationPage({ params }: PageProps) {
           generated_copy: {
             subject_lines: subjectLines,
             preview_text: previewText,
-            email_blocks: blocks
+            email_blocks: blocks,
+            formatted_copy: copyText
           },
-          copy_blocks: blocks
+          copy_blocks: blocks,
+          copy_doc_url: `Generated AI Copy - ${new Date().toLocaleString()}`
         })
       })
 
       if (response.ok) {
-        alert('✅ Copy saved to campaign!')
-        // Close window and return to Ops
+        alert('✅ Copy saved to campaign!\n\nCopy has been saved. You can export to Google Docs or view in the campaign modal.')
         window.close()
       }
     } catch (error) {

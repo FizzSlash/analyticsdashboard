@@ -546,22 +546,15 @@ Examples:
                 <p className="text-sm text-gray-600 mb-4">
                   Generate email copy using Claude AI based on your brand guidelines and campaign brief.
                 </p>
-                <button
-                  onClick={() => {
-                    // Open copy generation in new tab
-                    // Use slug from URL since campaign doesn't have agency_id in interface
-                    const currentPath = window.location.pathname
-                    const agencySlug = currentPath.split('/')[2] || 'retention-harbor'
-                    window.open(
-                      `/agency/${agencySlug}/generate/${campaign.id}`,
-                      '_blank'
-                    )
-                  }}
+                <a
+                  href={`${window.location.origin}/agency/${window.location.pathname.split('/')[2] || 'retention-harbor'}/generate/${campaign.id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white py-3 px-6 rounded-lg font-semibold transition-all flex items-center justify-center gap-2 shadow-lg"
                 >
                   <Sparkles className="h-5 w-5" />
                   Generate Email Copy with AI
-                </button>
+                </a>
               </div>
             )}
 
