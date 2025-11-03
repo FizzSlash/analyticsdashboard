@@ -73,86 +73,69 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     
     console.log('🗑️ DELETE CLIENT: Starting cascade deletion for client:', clientId)
 
-    // Delete all related data in order (child tables first to avoid FK constraints)
+    // Helper function to safely delete from a table
+    const safeDelete = async (tableName: string) => {
+      try {
+        console.log(`🗑️ Deleting from ${tableName}...`)
+        const { error, count } = await supabaseAdmin
+          .from(tableName)
+          .delete()
+          .eq('client_id', clientId)
+        
+        if (error) {
+          // Log error but continue - table might not exist or have no data
+          console.log(`⚠️ ${tableName}: ${error.message} (continuing...)`)
+        } else {
+          console.log(`✅ ${tableName}: Deleted ${count || 0} records`)
+        }
+      } catch (err) {
+        console.log(`⚠️ ${tableName}: ${err instanceof Error ? err.message : 'Error'} (continuing...)`)
+      }
+    }
+
+    // Delete all related data - non-blocking, continues even if table doesn't exist
     
-    // 1. Delete ops tables data
-    console.log('🗑️ Deleting ops_campaigns...')
-    await supabaseAdmin.from('ops_campaigns').delete().eq('client_id', clientId)
+    // 1. Ops tables
+    await safeDelete('ops_campaigns')
+    await safeDelete('ops_flows')
+    await safeDelete('ops_ab_tests')
+    await safeDelete('ops_forms')
+    await safeDelete('ops_form_responses')
     
-    console.log('🗑️ Deleting ops_flows...')
-    await supabaseAdmin.from('ops_flows').delete().eq('client_id', clientId)
+    // 2. Content Hub
+    await safeDelete('ops_brand_links')
+    await safeDelete('ops_brand_files')
+    await safeDelete('ops_brand_guidelines')
+    await safeDelete('ops_copy_notes')
+    await safeDelete('ops_design_notes')
+    await safeDelete('ops_call_notes')
     
-    console.log('🗑️ Deleting ops_ab_tests...')
-    await supabaseAdmin.from('ops_ab_tests').delete().eq('client_id', clientId)
+    // 3. Scope
+    await safeDelete('ops_scope_config')
+    await safeDelete('ops_scope_usage')
     
-    console.log('🗑️ Deleting ops_forms...')
-    await supabaseAdmin.from('ops_forms').delete().eq('client_id', clientId)
+    // 4. Portal
+    await safeDelete('portal_requests')
+    await safeDelete('campaign_approvals')
+    await safeDelete('flow_approvals')
+    await safeDelete('flow_email_approvals')
     
-    console.log('🗑️ Deleting ops_form_responses...')
-    await supabaseAdmin.from('ops_form_responses').delete().eq('client_id', clientId)
+    // 5. Analytics
+    await safeDelete('campaign_metrics')
+    await safeDelete('flow_metrics')
+    await safeDelete('flow_message_metrics')
+    await safeDelete('flow_actions')
+    await safeDelete('audience_metrics')
+    await safeDelete('revenue_attribution')
+    await safeDelete('revenue_attribution_metrics')
+    await safeDelete('list_growth_metrics')
+    await safeDelete('segment_metrics')
+    await safeDelete('deliverability_metrics')
     
-    // 2. Delete content hub data
-    console.log('🗑️ Deleting ops_brand_links...')
-    await supabaseAdmin.from('ops_brand_links').delete().eq('client_id', clientId)
+    // 6. Users
+    await safeDelete('user_profiles')
     
-    console.log('🗑️ Deleting ops_brand_files...')
-    await supabaseAdmin.from('ops_brand_files').delete().eq('client_id', clientId)
-    
-    console.log('🗑️ Deleting ops_brand_guidelines...')
-    await supabaseAdmin.from('ops_brand_guidelines').delete().eq('client_id', clientId)
-    
-    console.log('🗑️ Deleting ops_copy_notes...')
-    await supabaseAdmin.from('ops_copy_notes').delete().eq('client_id', clientId)
-    
-    console.log('🗑️ Deleting ops_design_notes...')
-    await supabaseAdmin.from('ops_design_notes').delete().eq('client_id', clientId)
-    
-    console.log('🗑️ Deleting ops_call_notes...')
-    await supabaseAdmin.from('ops_call_notes').delete().eq('client_id', clientId)
-    
-    console.log('🗑️ Deleting ops_scope_config...')
-    await supabaseAdmin.from('ops_scope_config').delete().eq('client_id', clientId)
-    
-    console.log('🗑️ Deleting ops_scope_usage...')
-    await supabaseAdmin.from('ops_scope_usage').delete().eq('client_id', clientId)
-    
-    // 3. Delete portal tables data
-    console.log('🗑️ Deleting portal_requests...')
-    await supabaseAdmin.from('portal_requests').delete().eq('client_id', clientId)
-    
-    // 4. Delete analytics tables data
-    console.log('🗑️ Deleting campaign_metrics...')
-    await supabaseAdmin.from('campaign_metrics').delete().eq('client_id', clientId)
-    
-    console.log('🗑️ Deleting flow_metrics...')
-    await supabaseAdmin.from('flow_metrics').delete().eq('client_id', clientId)
-    
-    console.log('🗑️ Deleting flow_message_metrics...')
-    await supabaseAdmin.from('flow_message_metrics').delete().eq('client_id', clientId)
-    
-    console.log('🗑️ Deleting audience_metrics...')
-    await supabaseAdmin.from('audience_metrics').delete().eq('client_id', clientId)
-    
-    console.log('🗑️ Deleting revenue_attribution...')
-    await supabaseAdmin.from('revenue_attribution').delete().eq('client_id', clientId)
-    
-    console.log('🗑️ Deleting revenue_attribution_metrics...')
-    await supabaseAdmin.from('revenue_attribution_metrics').delete().eq('client_id', clientId)
-    
-    console.log('🗑️ Deleting list_growth_metrics...')
-    await supabaseAdmin.from('list_growth_metrics').delete().eq('client_id', clientId)
-    
-    console.log('🗑️ Deleting segment_metrics...')
-    await supabaseAdmin.from('segment_metrics').delete().eq('client_id', clientId)
-    
-    console.log('🗑️ Deleting deliverability_metrics...')
-    await supabaseAdmin.from('deliverability_metrics').delete().eq('client_id', clientId)
-    
-    // 5. Delete user profiles associated with this client
-    console.log('🗑️ Deleting user_profiles...')
-    await supabaseAdmin.from('user_profiles').delete().eq('client_id', clientId)
-    
-    // 6. Finally, delete the client record
+    // 7. Finally, delete the client record
     console.log('🗑️ Deleting client record...')
     const { error } = await supabaseAdmin
       .from('clients')
@@ -160,7 +143,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       .eq('id', clientId)
 
     if (error) {
-      console.error('❌ DELETE CLIENT: Database error:', error)
+      console.error('❌ DELETE CLIENT: Failed to delete client record:', error)
       return NextResponse.json({ 
         error: 'Failed to delete client', 
         details: error.message 
