@@ -106,9 +106,20 @@ export async function POST(request: NextRequest) {
 
     // Step 3: Generate password recovery link (doesn't expire, lets them set password)
     // Different redirect based on role
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://analytics.retentionharbor.com'
+    // Use production URL directly (ignore env var if it's wrong)
+    const baseUrl = 'https://analytics.retentionharbor.com'
+    
+    // Get agency slug - need to fetch it since we only have agency_id
+    const { data: agencyData } = await supabaseAdmin
+      .from('agencies')
+      .select('agency_slug')
+      .eq('id', agency_id)
+      .single()
+    
+    const agencySlug = agencyData?.agency_slug || 'retention-harbor'
+    
     const redirectUrl = role === 'employee' 
-      ? `${baseUrl}/agency/${agency_id}/ops` // Employees go straight to Ops
+      ? `${baseUrl}/agency/${agencySlug}/ops` // Employees go straight to Ops
       : `${baseUrl}/login` // Clients go to login (then redirected to their client page)
     
     const { data: linkData, error: resetError } = await supabaseAdmin.auth.admin.generateLink({
