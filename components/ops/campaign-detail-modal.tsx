@@ -37,6 +37,7 @@ interface Campaign {
   design_file_url?: string
   preview_url?: string
   internal_notes?: string
+  client_feedback?: string
   is_ab_test?: boolean
   ab_test_variant?: string
   ab_test_type?: string
@@ -504,7 +505,7 @@ export function CampaignDetailModal({
             <div>
               <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
                 <MessageSquare className="h-4 w-4" />
-                Internal Notes
+                Internal Notes (Team Only)
               </h3>
               <textarea
                 value={campaign.internal_notes || ''}
@@ -520,6 +521,19 @@ Examples:
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 resize-none font-mono text-sm"
               />
             </div>
+
+            {/* Client Feedback - Read Only */}
+            {campaign.client_feedback && (
+              <div>
+                <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                  <MessageSquare className="h-4 w-4 text-orange-600" />
+                  Client Feedback
+                </h3>
+                <div className="w-full px-4 py-3 bg-orange-50 border border-orange-200 rounded-lg">
+                  <p className="text-gray-800 whitespace-pre-wrap text-sm">{campaign.client_feedback}</p>
+                </div>
+              </div>
+            )}
 
             {/* Activity Log */}
             <div>
