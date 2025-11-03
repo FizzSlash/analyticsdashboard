@@ -42,6 +42,8 @@ export default function CopyGenerationPage({ params }: PageProps) {
   const [generating, setGenerating] = useState(false)
   const [saving, setSaving] = useState(false)
   const [editingBlock, setEditingBlock] = useState<string | null>(null)
+  const [productUrls, setProductUrls] = useState<string[]>([''])
+  const [showProductInput, setShowProductInput] = useState(false)
   const router = useRouter()
 
   useEffect(() => {
@@ -73,18 +75,24 @@ export default function CopyGenerationPage({ params }: PageProps) {
     }
   }
 
+  const handleGenerateClick = () => {
+    setShowProductInput(true)
+  }
+
   const handleGenerate = async () => {
     setGenerating(true)
+    setShowProductInput(false)
+    
     try {
-      // TODO: Show modal to input product URLs
-      const productUrls: string[] = [] // Will add UI for this
+      // Filter out empty URLs
+      const validUrls = productUrls.filter(url => url.trim().length > 0)
 
       const response = await fetch('/api/ai/generate-copy', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           campaignId: params.campaignId,
-          productUrls
+          productUrls: validUrls
         })
       })
 
@@ -190,18 +198,36 @@ export default function CopyGenerationPage({ params }: PageProps) {
               </div>
             </div>
             <div className="flex items-center gap-3">
-              {blocks.length === 0 && (
+              {blocks.length === 0 && !showProductInput && (
                 <button
-                  onClick={handleGenerate}
+                  onClick={handleGenerateClick}
                   disabled={generating}
                   className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 disabled:opacity-50 text-white px-6 py-2 rounded-lg font-semibold flex items-center gap-2"
                 >
-                  {generating ? (
-                    <><Loader2 className="h-4 w-4 animate-spin" /> Generating...</>
-                  ) : (
-                    <><Sparkles className="h-4 w-4" /> Generate Copy</>
-                  )}
+                  <Sparkles className="h-4 w-4" /> Generate Copy
                 </button>
+              )}
+              
+              {showProductInput && (
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleGenerate}
+                    disabled={generating}
+                    className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 disabled:opacity-50 text-white px-6 py-2 rounded-lg font-semibold flex items-center gap-2"
+                  >
+                    {generating ? (
+                      <><Loader2 className="h-4 w-4 animate-spin" /> Generating...</>
+                    ) : (
+                      <><Sparkles className="h-4 w-4" /> Generate Now</>
+                    )}
+                  </button>
+                  <button
+                    onClick={() => setShowProductInput(false)}
+                    className="text-gray-600 hover:text-gray-900"
+                  >
+                    Cancel
+                  </button>
+                </div>
               )}
               {blocks.length > 0 && (
                 <button
@@ -223,7 +249,7 @@ export default function CopyGenerationPage({ params }: PageProps) {
 
       {/* Content */}
       <div className="max-w-6xl mx-auto px-6 py-8">
-        {blocks.length === 0 ? (
+        {blocks.length === 0 && !showProductInput ? (
           <Card>
             <CardContent className="p-12 text-center">
               <Sparkles className="h-16 w-16 mx-auto mb-4 text-purple-600" />
@@ -232,16 +258,72 @@ export default function CopyGenerationPage({ params }: PageProps) {
                 Click "Generate Copy" to create email copy using Claude AI
               </p>
               <button
-                onClick={handleGenerate}
+                onClick={handleGenerateClick}
                 disabled={generating}
                 className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 disabled:opacity-50 text-white px-8 py-3 rounded-lg font-bold text-lg flex items-center gap-2 mx-auto"
               >
-                {generating ? (
-                  <><Loader2 className="h-5 w-5 animate-spin" /> Generating...</>
-                ) : (
-                  <><Sparkles className="h-5 w-5" /> Generate Email Copy</>
-                )}
+                <Sparkles className="h-5 w-5" /> Generate Email Copy
               </button>
+            </CardContent>
+          </Card>
+        ) : showProductInput ? (
+          <Card>
+            <CardHeader>
+              <CardTitle>Product URLs (Optional)</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-sm text-gray-600">
+                Add product URLs to scrape accurate product information. AI will use exact names, descriptions, and details from these pages.
+              </p>
+              {productUrls.map((url, idx) => (
+                <div key={idx} className="flex gap-2">
+                  <input
+                    type="url"
+                    value={url}
+                    onChange={(e) => {
+                      const newUrls = [...productUrls]
+                      newUrls[idx] = e.target.value
+                      setProductUrls(newUrls)
+                    }}
+                    placeholder="https://example.com/product-page"
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg"
+                  />
+                  {productUrls.length > 1 && (
+                    <button
+                      onClick={() => setProductUrls(productUrls.filter((_, i) => i !== idx))}
+                      className="text-red-600 hover:text-red-700"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
+              ))}
+              <button
+                onClick={() => setProductUrls([...productUrls, ''])}
+                className="text-blue-600 hover:text-blue-700 text-sm flex items-center gap-1"
+              >
+                <Plus className="h-4 w-4" />
+                Add Another URL
+              </button>
+              <div className="flex gap-3 pt-4">
+                <button
+                  onClick={handleGenerate}
+                  disabled={generating}
+                  className="flex-1 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 disabled:opacity-50 text-white px-6 py-3 rounded-lg font-bold flex items-center justify-center gap-2"
+                >
+                  {generating ? (
+                    <><Loader2 className="h-5 w-5 animate-spin" /> Generating...</>
+                  ) : (
+                    <><Sparkles className="h-5 w-5" /> Generate Copy</>
+                  )}
+                </button>
+                <button
+                  onClick={() => setShowProductInput(false)}
+                  className="px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg font-semibold"
+                >
+                  Cancel
+                </button>
+              </div>
             </CardContent>
           </Card>
         ) : (
