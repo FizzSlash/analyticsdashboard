@@ -225,13 +225,13 @@ export function PortalManagement({ agency, clients }: PortalManagementProps) {
           </CardHeader>
           <CardContent>
             <p className="text-gray-700 mb-4">
-              <strong>Add, Edit, Delete campaigns</strong> live during client calls. No external dependencies - fully self-contained. Sync to Airtable after the call.
+              <strong>Add, Edit, Delete campaigns</strong> live during client calls. Fully self-contained in your Ops Dashboard.
             </p>
             <div className="text-sm text-gray-600 mb-4">
               ✅ Real-time campaign creation<br/>
               ✅ Instant editing and deletion<br/>
               ✅ Status management<br/>
-              ✅ Sync to Airtable when ready
+              ✅ Instant sync to Portal for client approvals
             </div>
             <button 
               onClick={() => setActiveTab('livecalendar')}

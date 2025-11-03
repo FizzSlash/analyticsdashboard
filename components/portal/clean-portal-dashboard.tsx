@@ -112,7 +112,7 @@ export function CleanPortalDashboard({ user, client, userRole, allClients }: Cle
                 </CardTitle>
                 <p className="text-white/80 text-sm mt-1 font-medium">
                   {userRole === 'agency_admin' 
-                    ? `Management Dashboard • Auto-sync to Airtable` 
+                    ? `Management Dashboard • Fully Integrated` 
                     : `Campaign approvals and project management`
                   }
                 </p>
@@ -268,7 +268,7 @@ export function CleanPortalDashboard({ user, client, userRole, allClients }: Cle
                   • Create and manage campaigns/flows for all clients<br/>
                   • Manage client Figma access and design files<br/>
                   • Create dynamic forms and track responses<br/>
-                  • All changes auto-sync to Airtable instantly
+                  • All changes sync instantly across Ops and Portal dashboards
                 </p>
               </div>
             </div>
