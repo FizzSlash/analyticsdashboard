@@ -28,7 +28,7 @@ interface CleanPortalDashboardProps {
   allClients?: any[] // For agency admins to see all clients
 }
 
-type PortalTab = 'overview' | 'approvals' | 'campaigns' | 'flows' | 'abtests' | 'requests' | 'forms'
+type PortalTab = 'overview' | 'campaigns' | 'flows' | 'abtests' | 'requests' | 'forms'
 
 export function CleanPortalDashboard({ user, client, userRole, allClients }: CleanPortalDashboardProps) {
   const [activeTab, setActiveTab] = useState<PortalTab>('overview')
@@ -66,11 +66,6 @@ export function CleanPortalDashboard({ user, client, userRole, allClients }: Cle
       id: 'overview', 
       label: userRole === 'agency_admin' ? 'Dashboard' : 'Overview', 
       icon: BarChart3 
-    },
-    { 
-      id: 'approvals', 
-      label: 'Approvals', 
-      icon: CheckCircle 
     },
     { 
       id: 'campaigns', 
@@ -221,25 +216,6 @@ export function CleanPortalDashboard({ user, client, userRole, allClients }: Cle
             userRole={userRole}
             onNavigate={(tab, itemId) => setActiveTab(tab as PortalTab)}
           />
-        )}
-
-        {activeTab === 'approvals' && (
-          <div className="space-y-6">
-            {/* Campaigns Awaiting Approval */}
-            <CampaignApprovalCalendar 
-              client={clientInfo}
-              userRole={userRole}
-            />
-            
-            {/* Flows Awaiting Approval */}
-            <FlowProgressTracker 
-              client={clientInfo}
-              userRole={userRole}
-              canEdit={userRole === 'agency_admin'}
-              canCreate={userRole === 'agency_admin'}
-              canApprove={userRole === 'client_user'}
-            />
-          </div>
         )}
 
         {activeTab === 'campaigns' && (

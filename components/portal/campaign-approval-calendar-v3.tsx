@@ -53,6 +53,7 @@ export function CampaignApprovalCalendar({ client, userRole = 'client_user' }: C
   const [submitting, setSubmitting] = useState(false)
   const [currentMonth, setCurrentMonth] = useState(new Date())
   const [viewingImage, setViewingImage] = useState(false)
+  const [showOnlyApprovals, setShowOnlyApprovals] = useState(false)
 
   useEffect(() => {
     fetchCampaigns()
@@ -190,15 +191,47 @@ export function CampaignApprovalCalendar({ client, userRole = 'client_user' }: C
     )
   }
 
+  // Filter campaigns based on toggle
+  const displayedCampaigns = showOnlyApprovals ? pendingApprovals : campaigns
+
   return (
     <div className="space-y-6">
+      {/* Filter Toggle */}
+      <div className="flex items-center gap-3">
+        <button
+          onClick={() => setShowOnlyApprovals(false)}
+          className={`px-4 py-2 rounded-lg font-medium transition-all ${
+            !showOnlyApprovals 
+              ? 'bg-white/20 text-white border-2 border-white/40' 
+              : 'bg-white/5 text-white/70 border border-white/20 hover:bg-white/10'
+          }`}
+        >
+          All Campaigns ({campaigns.length})
+        </button>
+        <button
+          onClick={() => setShowOnlyApprovals(true)}
+          className={`px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 ${
+            showOnlyApprovals 
+              ? 'bg-white/20 text-white border-2 border-white/40' 
+              : 'bg-white/5 text-white/70 border border-white/20 hover:bg-white/10'
+          }`}
+        >
+          Pending Approval
+          {pendingApprovals.length > 0 && (
+            <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+              {pendingApprovals.length}
+            </span>
+          )}
+        </button>
+      </div>
+
       {/* Calendar View */}
       <Card className="bg-white/5 border-white/10">
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="text-white flex items-center gap-2">
               <Calendar className="h-5 w-5" />
-              Campaign Calendar
+              {showOnlyApprovals ? 'Pending Approvals' : 'Campaign Calendar'}
             </CardTitle>
             <div className="flex items-center gap-2">
               <button
@@ -327,10 +360,6 @@ export function CampaignApprovalCalendar({ client, userRole = 'client_user' }: C
                   <p className="text-white/60 text-xs mb-1 uppercase tracking-wide">Target Audience</p>
                   <p className="text-white font-medium">{selectedCampaign.target_audience || 'All subscribers'}</p>
                 </div>
-                <div className="bg-white/10 rounded-lg p-4 border border-white/20">
-                  <p className="text-white/60 text-xs mb-1 uppercase tracking-wide">Assigned To</p>
-                  <p className="text-white font-medium">{selectedCampaign.assignee || 'Not assigned'}</p>
-                </div>
               </div>
 
               {/* Action Buttons Row */}
@@ -368,8 +397,8 @@ export function CampaignApprovalCalendar({ client, userRole = 'client_user' }: C
                 </div>
               )}
 
-              {/* Previous Revisions */}
-              {selectedCampaign.client_revisions && (
+              {/* Previous Revisions - Only show if client actually requested them */}
+              {selectedCampaign.client_revisions && selectedCampaign.client_approved === false && (
                 <div className="bg-orange-500/20 rounded-lg p-4 border border-orange-400/30">
                   <h5 className="text-orange-300 font-semibold mb-2 flex items-center gap-2">
                     <Edit className="h-4 w-4" />
