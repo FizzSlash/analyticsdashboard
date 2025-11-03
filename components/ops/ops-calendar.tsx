@@ -109,7 +109,7 @@ function DraggableCampaignCard({
       {...attributes}
       className={`p-2 text-xs rounded border hover:shadow-md transition-all ${getStatusColor(campaign.status)}`}
     >
-      <div className="flex items-start justify-between gap-1">
+      <div className="flex items-start justify-between gap-1 mb-1">
         <div 
           className="flex-1 min-w-0 cursor-pointer"
           onClick={onClick}
@@ -121,15 +121,20 @@ function DraggableCampaignCard({
           <div className="text-xs mt-0.5 opacity-80">
             {campaign.client_name}
           </div>
-          {campaign.is_ab_test && (
-            <div className="inline-block px-2 py-0.5 rounded-full text-xs bg-purple-200 text-purple-900 border border-purple-400 mt-1" title={`A/B Test: ${campaign.ab_test_type}`}>
-              🧪 {campaign.ab_test_variant}
-            </div>
-          )}
         </div>
         <div {...listeners} className="cursor-grab active:cursor-grabbing">
           <GripVertical className="h-3 w-3 flex-shrink-0 mt-0.5 opacity-60" />
         </div>
+      </div>
+      <div className="flex items-center justify-between gap-1">
+        <div className="text-[10px] uppercase font-semibold tracking-wide opacity-75">
+          {campaign.status.replace('_', ' ')}
+        </div>
+        {campaign.is_ab_test && (
+          <div className="inline-block px-1.5 py-0.5 rounded text-[10px] bg-purple-200 text-purple-900 border border-purple-400" title={`A/B Test: ${campaign.ab_test_type}`}>
+            🧪
+          </div>
+        )}
       </div>
     </div>
   )
