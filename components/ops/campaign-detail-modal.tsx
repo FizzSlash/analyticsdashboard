@@ -99,10 +99,11 @@ export function CampaignDetailModal({
   ]
 
   const handleSave = () => {
-    // Validate: Image required when moving from Design to QA
-    const movingToQA = campaign.status === 'qa' && initialCampaign.status === 'design'
-    if (movingToQA && !uploadedImage) {
-      alert('⚠️ Please upload a campaign preview image before moving to QA.\n\nThe QA team needs to see the design.')
+    // Validate: Image required for QA, Client Approval, and beyond
+    const requiresImage = ['qa', 'client_approval', 'approved', 'scheduled', 'sent'].includes(campaign.status)
+    
+    if (requiresImage && !uploadedImage) {
+      alert('⚠️ CAMPAIGN PREVIEW IMAGE REQUIRED\n\nYou cannot move to "' + campaign.status.toUpperCase().replace('_', ' ') + '" without uploading an image.\n\nThe QA team and clients need to see the design before approval.\n\nPlease upload an image below, then try again.')
       return
     }
 

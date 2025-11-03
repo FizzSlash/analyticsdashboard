@@ -83,10 +83,11 @@ export function FlowDetailModal({ flow, clients, onSave, onDelete, onClose }: Fl
       return
     }
 
-    // Validate image for Design → QA (same as campaigns)
-    const movingToQA = formData.status === 'qa' && flow?.status === 'design'
-    if (movingToQA && !uploadedImage) {
-      alert('⚠️ Please upload a flow preview image before moving to QA.\n\nThe QA team needs to see the design.')
+    // Validate: Image required for QA, Client Approval, and beyond
+    const requiresImage = ['qa', 'client_approval', 'approved', 'live'].includes(formData.status)
+    
+    if (requiresImage && !uploadedImage) {
+      alert('⚠️ FLOW PREVIEW IMAGE REQUIRED\n\nYou cannot move to "' + formData.status.toUpperCase().replace('_', ' ') + '" without uploading an image.\n\nThe QA team and clients need to see the design before approval.\n\nPlease upload an image below, then try again.')
       return
     }
     
