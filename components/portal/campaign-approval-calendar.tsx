@@ -102,16 +102,8 @@ export function CampaignApprovalCalendar({ client, userRole = 'client_user' }: C
       setLoading(true)
       setError(null)
       
-      // NEW: Fetch from Supabase campaign_approvals table (NOT Airtable!)
-      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-      const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-      
-      const response = await fetch(`${supabaseUrl}/rest/v1/campaign_approvals?client_id=eq.${client.id}&select=*`, {
-        headers: {
-          'apikey': supabaseKey!,
-          'Authorization': `Bearer ${supabaseKey}`
-        }
-      })
+      // Fetch from Supabase via API endpoint
+      const response = await fetch(`/api/portal/campaigns?clientId=${client.id}`)
       
       if (!response.ok) {
         throw new Error(`Failed to fetch campaigns: ${response.status}`)
@@ -119,11 +111,15 @@ export function CampaignApprovalCalendar({ client, userRole = 'client_user' }: C
       
       const data = await response.json()
       
-      // Format Supabase data to portal format
-      const formattedCampaigns = data.map((c: any) => formatCampaign(c))
-      
-      setCampaigns(formattedCampaigns)
-      console.log('✅ Loaded', formattedCampaigns.length, 'campaigns from database')
+      if (data.success) {
+        // Format Supabase data to portal format
+        const formattedCampaigns = (data.campaigns || []).map((c: any) => formatCampaign(c))
+        
+        setCampaigns(formattedCampaigns)
+        console.log('✅ Portal loaded', formattedCampaigns.length, 'campaigns from database')
+      } else {
+        throw new Error(data.error || 'Failed to load campaigns')
+      }
     } catch (error) {
       console.error('Error fetching campaigns:', error)
       setError(error instanceof Error ? error.message : 'Unknown error')
