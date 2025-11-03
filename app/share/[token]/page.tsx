@@ -3,7 +3,9 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { ModernDashboard } from '@/components/dashboard/modern-dashboard'
+import { CleanPortalDashboard } from '@/components/portal/clean-portal-dashboard'
 import { TimeframeSelector } from '@/components/ui/timeframe-selector'
+import { ViewToggle, type ViewMode } from '@/components/ui/view-toggle'
 import { Loader2, Lock } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 
@@ -15,6 +17,7 @@ export default function SharedDashboardPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [selectedTimeframe, setSelectedTimeframe] = useState<number>(30) // Default to 30 days
+  const [viewMode, setViewMode] = useState<ViewMode>('analytics')
 
   useEffect(() => {
     const fetchSharedDashboard = async () => {
@@ -107,10 +110,16 @@ export default function SharedDashboardPage() {
               <p className="text-white/60 text-sm">Email Marketing Analytics</p>
             </div>
             <div className="flex items-center gap-4">
-              <TimeframeSelector 
-                selectedTimeframe={selectedTimeframe}
-                onTimeframeChange={setSelectedTimeframe}
+              <ViewToggle 
+                currentMode={viewMode}
+                onModeChange={setViewMode}
               />
+              {viewMode === 'analytics' && (
+                <TimeframeSelector 
+                  selectedTimeframe={selectedTimeframe}
+                  onTimeframeChange={setSelectedTimeframe}
+                />
+              )}
               <div className="bg-white/10 px-4 py-2 rounded-lg border border-white/20">
                 <p className="text-white/80 text-sm font-medium">📊 Shared (Read-Only)</p>
               </div>
@@ -120,13 +129,25 @@ export default function SharedDashboardPage() {
       </div>
 
       {/* Dashboard */}
-      <ModernDashboard 
-        client={{ ...client, ...agency }}
-        data={dashboardData.data}
-        timeframe={selectedTimeframe}
-        disablePortalMode={true}
-        hideHeader={true}
-      />
+      <div className="relative z-10">
+        {viewMode === 'analytics' ? (
+          <ModernDashboard 
+            client={{ ...client, ...agency }}
+            data={dashboardData.data}
+            timeframe={selectedTimeframe}
+            disablePortalMode={true}
+            hideHeader={true}
+          />
+        ) : (
+          <div className="max-w-7xl mx-auto px-6 py-8">
+            <CleanPortalDashboard 
+              user={{ client: client }}
+              client={client}
+              userRole="client_user"
+            />
+          </div>
+        )}
+      </div>
     </div>
   )
 }
