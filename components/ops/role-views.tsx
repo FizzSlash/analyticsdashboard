@@ -22,9 +22,11 @@ interface RoleViewsProps {
   clients: any[]
   campaigns: any[]
   flows: any[]
+  onCampaignClick?: (campaign: any) => void
+  onFlowClick?: (flow: any) => void
 }
 
-export function RoleViews({ clients, campaigns, flows }: RoleViewsProps) {
+export function RoleViews({ clients, campaigns, flows, onCampaignClick, onFlowClick }: RoleViewsProps) {
   const [activeView, setActiveView] = useState<RoleView>('overview')
 
   const roleViews = [
@@ -186,11 +188,21 @@ export function RoleViews({ clients, campaigns, flows }: RoleViewsProps) {
                 ) : (
                   <>
                     {campaigns.filter(c => c.status === 'copy').map(campaign => (
-                      <div key={campaign.id} className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                      <div 
+                        key={campaign.id} 
+                        className="p-3 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors cursor-pointer"
+                        onClick={() => onCampaignClick?.(campaign)}
+                      >
                         <div className="font-semibold text-gray-900">{campaign.campaign_name}</div>
                         <div className="text-sm text-gray-600">{campaign.client_name} • {new Date(campaign.send_date).toLocaleDateString()}</div>
                         {campaign.copy_doc_url && (
-                          <a href={campaign.copy_doc_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 text-sm flex items-center gap-1 mt-1">
+                          <a 
+                            href={campaign.copy_doc_url} 
+                            target="_blank" 
+                            rel="noopener noreferrer" 
+                            className="text-blue-600 text-sm flex items-center gap-1 mt-1 hover:underline"
+                            onClick={(e) => e.stopPropagation()}
+                          >
                             <ExternalLink className="h-3 w-3" />
                             Open Copy Doc
                           </a>
@@ -237,11 +249,21 @@ export function RoleViews({ clients, campaigns, flows }: RoleViewsProps) {
                 ) : (
                   <>
                     {campaigns.filter(c => c.status === 'design').map(campaign => (
-                      <div key={campaign.id} className="p-3 bg-purple-50 border border-purple-200 rounded-lg">
+                      <div 
+                        key={campaign.id} 
+                        className="p-3 bg-purple-50 border border-purple-200 rounded-lg hover:bg-purple-100 transition-colors cursor-pointer"
+                        onClick={() => onCampaignClick?.(campaign)}
+                      >
                         <div className="font-semibold text-gray-900">{campaign.campaign_name}</div>
                         <div className="text-sm text-gray-600">{campaign.client_name} • {new Date(campaign.send_date).toLocaleDateString()}</div>
                         {campaign.copy_doc_url && (
-                          <a href={campaign.copy_doc_url} target="_blank" rel="noopener noreferrer" className="text-purple-600 text-sm flex items-center gap-1 mt-1">
+                          <a 
+                            href={campaign.copy_doc_url} 
+                            target="_blank" 
+                            rel="noopener noreferrer" 
+                            className="text-purple-600 text-sm flex items-center gap-1 mt-1 hover:underline"
+                            onClick={(e) => e.stopPropagation()}
+                          >
                             <ExternalLink className="h-3 w-3" />
                             View Copy
                           </a>
@@ -287,11 +309,21 @@ export function RoleViews({ clients, campaigns, flows }: RoleViewsProps) {
                   </div>
                 ) : (
                   campaigns.filter(c => c.status === 'approved').map(campaign => (
-                    <div key={campaign.id} className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                    <div 
+                      key={campaign.id} 
+                      className="p-3 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 transition-colors cursor-pointer"
+                      onClick={() => onCampaignClick?.(campaign)}
+                    >
                       <div className="font-semibold text-gray-900">{campaign.campaign_name}</div>
                       <div className="text-sm text-gray-600">{campaign.client_name} • Send: {new Date(campaign.send_date).toLocaleDateString()}</div>
                       {campaign.preview_url && (
-                        <a href={campaign.preview_url} target="_blank" rel="noopener noreferrer" className="text-green-600 text-sm flex items-center gap-1 mt-1">
+                        <a 
+                          href={campaign.preview_url} 
+                          target="_blank" 
+                          rel="noopener noreferrer" 
+                          className="text-green-600 text-sm flex items-center gap-1 mt-1 hover:underline"
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           <ExternalLink className="h-3 w-3" />
                           View Design
                         </a>
