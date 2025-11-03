@@ -198,7 +198,11 @@ ${blocks.map(block => {
     }
   }
 
-  const addBlock = (afterIndex: number, type: CopyBlock['type'] = 'body') => {
+  const [addingBlockAfter, setAddingBlockAfter] = useState<number | null>(null)
+  const [revisionPrompt, setRevisionPrompt] = useState('')
+  const [regenerating, setRegenerating] = useState(false)
+
+  const addBlock = (afterIndex: number, type: CopyBlock['type']) => {
     const newBlock: CopyBlock = {
       id: `block-${Date.now()}`,
       type,
@@ -208,6 +212,31 @@ ${blocks.map(block => {
     newBlocks.splice(afterIndex + 1, 0, newBlock)
     setBlocks(newBlocks)
     setEditingBlock(newBlock.id)
+    setAddingBlockAfter(null)
+  }
+
+  const moveBlock = (fromIndex: number, toIndex: number) => {
+    const newBlocks = [...blocks]
+    const [movedBlock] = newBlocks.splice(fromIndex, 1)
+    newBlocks.splice(toIndex, 0, movedBlock)
+    setBlocks(newBlocks)
+  }
+
+  const handleRegenerate = async () => {
+    if (!revisionPrompt.trim()) {
+      alert('Please enter revision notes')
+      return
+    }
+
+    setRegenerating(true)
+    try {
+      // TODO: Add AI revision endpoint
+      alert('Revision feature coming soon!')
+    } catch (error) {
+      console.error('Regeneration error:', error)
+    } finally {
+      setRegenerating(false)
+    }
   }
 
   const deleteBlock = (blockId: string) => {
@@ -411,35 +440,74 @@ ${blocks.map(block => {
               </CardContent>
             </Card>
 
+            {/* Revision Section */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Revise Copy</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <textarea
+                  value={revisionPrompt}
+                  onChange={(e) => setRevisionPrompt(e.target.value)}
+                  placeholder="Enter revision notes (e.g., 'Make it more urgent', 'Add social proof', 'Focus on benefits over features')..."
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg resize-none"
+                />
+                <button
+                  onClick={handleRegenerate}
+                  disabled={regenerating || !revisionPrompt.trim()}
+                  className="bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+                >
+                  {regenerating ? (
+                    <><Loader2 className="h-4 w-4 animate-spin" /> Regenerating...</>
+                  ) : (
+                    <><Sparkles className="h-4 w-4" /> Regenerate with Revisions</>
+                  )}
+                </button>
+              </CardContent>
+            </Card>
+
             {/* Email Blocks */}
             <Card>
               <CardHeader>
-                <CardTitle>Email Blocks</CardTitle>
+                <CardTitle>Email Blocks (Click to Edit)</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 {blocks.map((block, idx) => (
-                  <div key={block.id} className="border border-gray-200 rounded-lg p-4 bg-white">
+                  <div key={block.id} className="border border-gray-200 rounded-lg p-4 bg-white hover:border-blue-300 transition-colors">
                     <div className="flex items-start gap-3">
-                      <GripVertical className="h-5 w-5 text-gray-400 mt-1 cursor-grab" />
+                      <div className="flex flex-col gap-1">
+                        <button
+                          onClick={() => idx > 0 && moveBlock(idx, idx - 1)}
+                          disabled={idx === 0}
+                          className="text-gray-400 hover:text-gray-600 disabled:opacity-30"
+                          title="Move up"
+                        >
+                          ▲
+                        </button>
+                        <GripVertical className="h-4 w-4 text-gray-400" />
+                        <button
+                          onClick={() => idx < blocks.length - 1 && moveBlock(idx, idx + 1)}
+                          disabled={idx === blocks.length - 1}
+                          className="text-gray-400 hover:text-gray-600 disabled:opacity-30"
+                          title="Move down"
+                        >
+                          ▼
+                        </button>
+                      </div>
                       <div className="flex-1">
                         <div className="flex items-center justify-between mb-2">
                           <span className="text-xs font-semibold text-gray-600 uppercase">{block.type}</span>
-                          <div className="flex items-center gap-2">
-                            <button
-                              onClick={() => setEditingBlock(editingBlock === block.id ? null : block.id)}
-                              className="text-blue-600 hover:text-blue-700 text-sm"
-                            >
-                              {editingBlock === block.id ? 'Done' : 'Edit'}
-                            </button>
-                            <button
-                              onClick={() => deleteBlock(block.id)}
-                              className="text-red-600 hover:text-red-700"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </button>
-                          </div>
+                          <button
+                            onClick={() => deleteBlock(block.id)}
+                            className="text-red-600 hover:text-red-700"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
                         </div>
                         
+                        {/* Click anywhere to edit */}
+                        <div onClick={() => setEditingBlock(block.id)} className="cursor-text">
                         {editingBlock === block.id ? (
                           <div className="space-y-2">
                             <textarea
@@ -485,14 +553,37 @@ ${blocks.map(block => {
                             )}
                           </div>
                         )}
+                        </div>
                       </div>
                     </div>
-                    <button
-                      onClick={() => addBlock(idx, 'body')}
-                      className="w-full mt-2 py-1 text-xs text-gray-500 hover:text-gray-700 hover:bg-gray-50 rounded"
-                    >
-                      + Add Block Below
-                    </button>
+                    
+                    {/* Add Block Below with Type Selector */}
+                    {addingBlockAfter === idx ? (
+                      <div className="mt-2 p-2 bg-gray-50 rounded flex flex-wrap gap-2">
+                        {(['header', 'subheader', 'body', 'pic', 'cta', 'product', 'checkmarks', 'divider', 'footer'] as const).map(type => (
+                          <button
+                            key={type}
+                            onClick={() => addBlock(idx, type)}
+                            className="px-3 py-1 text-xs bg-white border border-gray-300 hover:border-blue-500 hover:text-blue-600 rounded"
+                          >
+                            {type}
+                          </button>
+                        ))}
+                        <button
+                          onClick={() => setAddingBlockAfter(null)}
+                          className="px-3 py-1 text-xs text-gray-500 hover:text-gray-700"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => setAddingBlockAfter(idx)}
+                        className="w-full mt-2 py-1 text-xs text-gray-500 hover:text-gray-700 hover:bg-gray-50 rounded"
+                      >
+                        + Add Block Below
+                      </button>
+                    )}
                   </div>
                 ))}
               </CardContent>
