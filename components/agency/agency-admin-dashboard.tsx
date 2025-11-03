@@ -82,26 +82,81 @@ export function AgencyAdminDashboard({ agency, clients, clientUsers }: AgencyAdm
 
   return (
     <div className="space-y-6">
-      {/* Sync All Button */}
-      <div className="flex justify-end">
-              <button
-                onClick={handleSyncAllClients}
-                disabled={syncingAll || activeClients.length === 0}
+      {/* Action Buttons */}
+      <div className="flex justify-end gap-3">
+        {/* Airtable Migration Button */}
+        <button
+          onClick={async () => {
+            if (!confirm('Import November 2024 campaigns from Airtable?\n\nThis will:\n- Fetch campaigns with November send dates\n- Import to Ops Dashboard\n- Map to existing clients only\n\nContinue?')) {
+              return
+            }
+            
+            try {
+              // Preview first
+              const previewResponse = await fetch('/api/migrate-november', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ preview: true })
+              })
+              
+              const previewData = await previewResponse.json()
+              
+              if (!previewData.success) {
+                alert('Preview failed: ' + previewData.error)
+                return
+              }
+              
+              // Show preview
+              const message = `Preview:\n\nCampaigns: ${previewData.summary.campaigns_count}\nFlows: ${previewData.summary.flows_count}\nSkipped: ${previewData.summary.skipped}\n\nProceed with import?`
+              
+              if (!confirm(message)) {
+                return
+              }
+              
+              // Execute import
+              const importResponse = await fetch('/api/migrate-november', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ preview: false })
+              })
+              
+              const importData = await importResponse.json()
+              
+              if (importData.success) {
+                alert(`✅ Migration complete!\n\nImported:\n- ${importData.summary.campaigns_count} campaigns\n- ${importData.summary.flows_count} flows\n\nCheck your Ops Dashboard!`)
+                window.location.reload()
+              } else {
+                alert('Import failed: ' + importData.error)
+              }
+            } catch (error) {
+              alert('Migration error: ' + error)
+            }
+          }}
+          className="bg-purple-600/80 backdrop-blur-md hover:bg-purple-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 font-medium transition-colors border border-purple-500/20"
+        >
+          <RefreshCw className="h-4 w-4" />
+          Import from Airtable
+        </button>
+
+        {/* Sync All Clients Button */}
+        <button
+          onClick={handleSyncAllClients}
+          disabled={syncingAll || activeClients.length === 0}
           className="bg-white/10 backdrop-blur-md hover:bg-white/20 text-white px-4 py-2 rounded-lg flex items-center gap-2 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed border border-white/20"
-              >
-                {syncingAll ? (
-                  <>
-                    <RotateCw className="h-4 w-4 animate-spin" />
-                    Syncing {syncProgress.current}/{syncProgress.total}
-                  </>
-                ) : (
-                  <>
-                    <RefreshCw className="h-4 w-4" />
-                    Sync All Clients ({activeClients.length})
-                  </>
-                )}
-              </button>
-          </div>
+        >
+          {syncingAll ? (
+            <>
+              <RotateCw className="h-4 w-4 animate-spin" />
+              Syncing {syncProgress.current}/{syncProgress.total}
+            </>
+          ) : (
+            <>
+              <RefreshCw className="h-4 w-4" />
+              Sync All Clients ({activeClients.length})
+            </>
+          )}
+        </button>
+      </div>
           
           {/* Sync Progress Bar */}
           {syncingAll && (
