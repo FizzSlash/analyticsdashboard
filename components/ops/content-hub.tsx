@@ -61,9 +61,16 @@ interface BrandGuidelines {
 interface CopyNotes {
   client_id: string
   voice_tone: string
-  key_phrases: string
-  avoid_phrases: string
-  legal_notes: string
+  brand_personality: string[]
+  writing_style: string
+  key_phrases: string[]
+  words_to_avoid: string[]
+  copy_guidelines: string
+  legal_compliance: string
+  proven_subject_lines: string[]
+  target_audience: string
+  pain_points: string[]
+  desires_goals: string[]
 }
 
 interface DesignNotes {
@@ -846,16 +853,52 @@ export function ContentHub({ clients, selectedClient }: ContentHubProps) {
               </label>
               <textarea
                 value={copyNotes?.voice_tone || ''}
-                onChange={(e) => setCopyNotes({
-                  client_id: copyNotes?.client_id || selectedClient,
-                  voice_tone: e.target.value,
-                  key_phrases: copyNotes?.key_phrases || '',
-                  avoid_phrases: copyNotes?.avoid_phrases || '',
-                  legal_notes: copyNotes?.legal_notes || ''
-                })}
+                onChange={(e) => setCopyNotes({ ...copyNotes, client_id: selectedClient, voice_tone: e.target.value } as CopyNotes)}
                 rows={3}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg resize-none"
-                placeholder="Describe the brand voice: energetic, professional, friendly, etc."
+                placeholder="Energetic, professional, friendly, bold, technical, etc."
+              />
+            </div>
+
+            {/* Brand Personality */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Brand Personality (comma-separated)
+              </label>
+              <input
+                type="text"
+                value={copyNotes?.brand_personality?.join(', ') || ''}
+                onChange={(e) => setCopyNotes({ ...copyNotes, client_id: selectedClient, brand_personality: e.target.value.split(',').map(s => s.trim()) } as CopyNotes)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                placeholder="Innovative, Premium, Bold, Authentic"
+              />
+            </div>
+
+            {/* Writing Style */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Writing Style
+              </label>
+              <textarea
+                value={copyNotes?.writing_style || ''}
+                onChange={(e) => setCopyNotes({ ...copyNotes, client_id: selectedClient, writing_style: e.target.value } as CopyNotes)}
+                rows={2}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg resize-none"
+                placeholder="Short sentences, benefit-focused, storytelling, data-driven, etc."
+              />
+            </div>
+
+            {/* Target Audience */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Target Audience
+              </label>
+              <textarea
+                value={copyNotes?.target_audience || ''}
+                onChange={(e) => setCopyNotes({ ...copyNotes, client_id: selectedClient, target_audience: e.target.value } as CopyNotes)}
+                rows={2}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg resize-none"
+                placeholder="Triathletes, competitive cyclists, performance-focused athletes, etc."
               />
             </div>
 
@@ -865,57 +908,67 @@ export function ContentHub({ clients, selectedClient }: ContentHubProps) {
                 Key Phrases to Use
               </label>
               <textarea
-                value={copyNotes?.key_phrases || ''}
-                onChange={(e) => setCopyNotes({
-                  client_id: copyNotes?.client_id || selectedClient,
-                  voice_tone: copyNotes?.voice_tone || '',
-                  key_phrases: e.target.value,
-                  avoid_phrases: copyNotes?.avoid_phrases || '',
-                  legal_notes: copyNotes?.legal_notes || ''
-                })}
+                value={copyNotes?.key_phrases?.join('\n') || ''}
+                onChange={(e) => setCopyNotes({ ...copyNotes, client_id: selectedClient, key_phrases: e.target.value.split('\n').filter(s => s.trim()) } as CopyNotes)}
                 rows={5}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg resize-none font-mono text-sm"
-                placeholder="• Phrase 1&#10;• Phrase 2&#10;• Phrase 3"
+                placeholder="Aerodynamics = Speed&#10;Every watt counts&#10;Wind tunnel tested&#10;Pro athlete approved"
               />
             </div>
 
-            {/* Avoid Phrases */}
+            {/* Words to Avoid */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Words/Phrases to Avoid
               </label>
               <textarea
-                value={copyNotes?.avoid_phrases || ''}
-                onChange={(e) => setCopyNotes({
-                  client_id: copyNotes?.client_id || selectedClient,
-                  voice_tone: copyNotes?.voice_tone || '',
-                  key_phrases: copyNotes?.key_phrases || '',
-                  avoid_phrases: e.target.value,
-                  legal_notes: copyNotes?.legal_notes || ''
-                })}
+                value={copyNotes?.words_to_avoid?.join('\n') || ''}
+                onChange={(e) => setCopyNotes({ ...copyNotes, client_id: selectedClient, words_to_avoid: e.target.value.split('\n').filter(s => s.trim()) } as CopyNotes)}
                 rows={4}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg resize-none font-mono text-sm"
-                placeholder="• Word/phrase 1&#10;• Word/phrase 2"
+                placeholder="Competitor names&#10;Overused terms&#10;Generic claims"
               />
             </div>
 
-            {/* Legal Notes */}
+            {/* Pain Points */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Customer Pain Points
+              </label>
+              <textarea
+                value={copyNotes?.pain_points?.join('\n') || ''}
+                onChange={(e) => setCopyNotes({ ...copyNotes, client_id: selectedClient, pain_points: e.target.value.split('\n').filter(s => s.trim()) } as CopyNotes)}
+                rows={4}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg resize-none font-mono text-sm"
+                placeholder="Slow bike times&#10;Equipment limitations&#10;Aero optimization challenges"
+              />
+            </div>
+
+            {/* Proven Subject Lines */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Proven Subject Lines (Best Performers)
+              </label>
+              <textarea
+                value={copyNotes?.proven_subject_lines?.join('\n') || ''}
+                onChange={(e) => setCopyNotes({ ...copyNotes, client_id: selectedClient, proven_subject_lines: e.target.value.split('\n').filter(s => s.trim()) } as CopyNotes)}
+                rows={5}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg resize-none font-mono text-sm"
+                placeholder="Your Off-Season Upgrade Starts Here&#10;Make This Off-Season Count&#10;Race Faster for Less"
+              />
+            </div>
+
+            {/* Legal/Compliance */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Legal/Compliance Notes
               </label>
               <textarea
-                value={copyNotes?.legal_notes || ''}
-                onChange={(e) => setCopyNotes({
-                  client_id: copyNotes?.client_id || selectedClient,
-                  voice_tone: copyNotes?.voice_tone || '',
-                  key_phrases: copyNotes?.key_phrases || '',
-                  avoid_phrases: copyNotes?.avoid_phrases || '',
-                  legal_notes: e.target.value
-                })}
+                value={copyNotes?.legal_compliance || ''}
+                onChange={(e) => setCopyNotes({ ...copyNotes, client_id: selectedClient, legal_compliance: e.target.value } as CopyNotes)}
                 rows={3}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg resize-none"
-                placeholder="Required disclaimers, compliance requirements, etc."
+                placeholder="Required disclaimers, CAN-SPAM compliance, industry regulations, etc."
               />
             </div>
 
