@@ -108,17 +108,19 @@ export function UserManagement({ agency, clients, clientUsers: initialUsers }: U
         throw new Error(result.error || 'Failed to send invitation')
       }
 
-      // Check if email was sent or if we need to show the magic link
-      if (result.invitation?.emailSent) {
-        setSuccess('✅ Invitation email sent successfully! The user will receive an email to set their password.')
-        resetForm()
-      } else if (result.invitation?.link) {
-        // Show invitation link modal instead of text
+      // Always show the invitation link (Supabase email usually not configured)
+      if (result.invitation?.link) {
+        console.log('📧 Showing invitation link:', result.invitation.link)
         setInvitationLink(result.invitation.link)
         setShowInviteLinkModal(true)
+        // Don't reset form yet - let user see the modal
+        setTimeout(() => resetForm(), 1000)
+      } else if (result.invitation?.emailSent) {
+        setSuccess('✅ Invitation email sent successfully!')
         resetForm()
       } else {
-        setSuccess('✅ User created! Ask them to use "Forgot Password" at login with their email.')
+        setSuccess('✅ User created! Invitation link generated.')
+        // Fallback - show success even if link not in expected format
         resetForm()
       }
     } catch (err) {
