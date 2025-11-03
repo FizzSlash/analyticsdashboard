@@ -5,6 +5,18 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
 const supabase = createClient(supabaseUrl, supabaseKey)
 
+// Configure route to accept larger payloads (for image URLs in campaign data)
+export const config = {
+  api: {
+    bodyParser: {
+      sizeLimit: '20mb',
+    },
+  },
+}
+
+export const runtime = 'nodejs'
+export const maxDuration = 60
+
 // GET - Fetch campaigns
 export async function GET(request: NextRequest) {
   try {
