@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { CampaignWorkViewModal } from './campaign-work-view-modal'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { 
   Eye,
@@ -28,6 +29,7 @@ interface RoleViewsProps {
 
 export function RoleViews({ clients, campaigns, flows, onCampaignClick, onFlowClick }: RoleViewsProps) {
   const [activeView, setActiveView] = useState<RoleView>('overview')
+  const [selectedCampaign, setSelectedCampaign] = useState<any>(null)
 
   const roleViews = [
     { id: 'overview', label: 'Production Overview', icon: TrendingUp },
@@ -191,7 +193,7 @@ export function RoleViews({ clients, campaigns, flows, onCampaignClick, onFlowCl
                       <div 
                         key={campaign.id} 
                         className="p-3 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors cursor-pointer"
-                        onClick={() => onCampaignClick?.(campaign)}
+                        onClick={() => setSelectedCampaign(campaign)}
                       >
                         <div className="font-semibold text-gray-900">{campaign.campaign_name}</div>
                         <div className="text-sm text-gray-600">{campaign.client_name} • {new Date(campaign.send_date).toLocaleDateString()}</div>
@@ -252,7 +254,7 @@ export function RoleViews({ clients, campaigns, flows, onCampaignClick, onFlowCl
                       <div 
                         key={campaign.id} 
                         className="p-3 bg-purple-50 border border-purple-200 rounded-lg hover:bg-purple-100 transition-colors cursor-pointer"
-                        onClick={() => onCampaignClick?.(campaign)}
+                        onClick={() => setSelectedCampaign(campaign)}
                       >
                         <div className="font-semibold text-gray-900">{campaign.campaign_name}</div>
                         <div className="text-sm text-gray-600">{campaign.client_name} • {new Date(campaign.send_date).toLocaleDateString()}</div>
@@ -312,7 +314,7 @@ export function RoleViews({ clients, campaigns, flows, onCampaignClick, onFlowCl
                     <div 
                       key={campaign.id} 
                       className="p-3 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 transition-colors cursor-pointer"
-                      onClick={() => onCampaignClick?.(campaign)}
+                      onClick={() => setSelectedCampaign(campaign)}
                     >
                       <div className="font-semibold text-gray-900">{campaign.campaign_name}</div>
                       <div className="text-sm text-gray-600">{campaign.client_name} • Send: {new Date(campaign.send_date).toLocaleDateString()}</div>
@@ -403,6 +405,14 @@ export function RoleViews({ clients, campaigns, flows, onCampaignClick, onFlowCl
             </CardContent>
           </Card>
         </div>
+      )}
+
+      {/* Split-View Modal */}
+      {selectedCampaign && (
+        <CampaignWorkViewModal
+          campaign={selectedCampaign}
+          onClose={() => setSelectedCampaign(null)}
+        />
       )}
     </div>
   )
