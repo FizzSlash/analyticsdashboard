@@ -63,7 +63,7 @@ export default function OperationsPage({ params }: PageProps) {
   const [sharedFlows, setSharedFlows] = useState<any[]>([]) // Shared flows data
   const [selectedCampaignForModal, setSelectedCampaignForModal] = useState<Campaign | null>(null)
   const router = useRouter()
-  const { supabase, loading: authLoading } = useAuth()
+  const { user, supabase, loading: authLoading } = useAuth()
 
   // Main tabs - core workflow
   const mainTabs = [
@@ -89,6 +89,13 @@ export default function OperationsPage({ params }: PageProps) {
 
         // Wait for auth to finish loading
         if (authLoading) {
+          return
+        }
+
+        // Require authentication for Ops page
+        if (!user) {
+          console.log('OPS: No user, redirecting to login')
+          router.push(`/login?redirectTo=/agency/${params.slug}/ops`)
           return
         }
 
