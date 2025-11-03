@@ -21,8 +21,8 @@ interface Popup {
   trigger_type: string
   offer: string
   launch_date: Date
-  status: string
-  priority: string
+  status: 'strategy' | 'copy' | 'design' | 'qa' | 'client_approval' | 'approved' | 'live' | 'revisions'
+  priority: 'low' | 'normal' | 'high' | 'urgent'
   target_audience?: string
   copy_doc_url?: string
   design_file_url?: string
