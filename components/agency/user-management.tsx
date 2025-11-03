@@ -71,13 +71,21 @@ export function UserManagement({ agency, clients, clientUsers: initialUsers }: U
 
     try {
       // Validate required fields
-      if (!formData.email || !formData.client_id) {
-        throw new Error('Email and client selection are required')
+      if (!formData.email) {
+        throw new Error('Email is required')
+      }
+      
+      if (formData.role === 'client_user' && !formData.client_id) {
+        throw new Error('Client selection is required for client users')
+      }
+      
+      if (formData.role === 'employee' && !formData.employee_type) {
+        throw new Error('Employee role is required')
       }
 
-      console.log('Creating user invitation for:', formData.email)
+      console.log('Creating user invitation for:', formData.email, 'as', formData.role)
       
-      // Create user invitation via API (to be implemented)
+      // Create user invitation via API
       const response = await fetch('/api/users/invite', {
         method: 'POST',
         headers: {
@@ -85,10 +93,12 @@ export function UserManagement({ agency, clients, clientUsers: initialUsers }: U
         },
         body: JSON.stringify({
           email: formData.email,
-          client_id: formData.client_id,
+          client_id: formData.role === 'client_user' ? formData.client_id : null,
           agency_id: agency.id,
           first_name: formData.first_name,
-          last_name: formData.last_name
+          last_name: formData.last_name,
+          role: formData.role,
+          employee_type: formData.role === 'employee' ? formData.employee_type : null
         })
       })
 
