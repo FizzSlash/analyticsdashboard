@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { DashboardOverview } from './dashboard-overview'
 import { CampaignApprovalCalendar } from './campaign-approval-calendar-v3'
 import { FlowProgressTracker } from './flow-progress-tracker-v2'
+import { PopupApproval } from './popup-approval'
 import { ABTestManager } from './ab-test-manager-v2'
 import { EnhancedRequests } from './enhanced-requests'
 import { DynamicForms } from './dynamic-forms'
@@ -18,7 +19,8 @@ import {
   ClipboardList,
   Figma,
   ExternalLink,
-  CheckCircle
+  CheckCircle,
+  MousePointer
 } from 'lucide-react'
 
 interface CleanPortalDashboardProps {
@@ -28,7 +30,7 @@ interface CleanPortalDashboardProps {
   allClients?: any[] // For agency admins to see all clients
 }
 
-type PortalTab = 'overview' | 'campaigns' | 'flows' | 'abtests' | 'requests' | 'forms'
+type PortalTab = 'overview' | 'campaigns' | 'flows' | 'popups' | 'abtests' | 'requests' | 'forms'
 
 export function CleanPortalDashboard({ user, client, userRole, allClients }: CleanPortalDashboardProps) {
   const [activeTab, setActiveTab] = useState<PortalTab>('overview')
@@ -76,6 +78,11 @@ export function CleanPortalDashboard({ user, client, userRole, allClients }: Cle
       id: 'flows', 
       label: userRole === 'agency_admin' ? 'Flow Progress' : 'Flows', 
       icon: Zap 
+    },
+    { 
+      id: 'popups', 
+      label: 'Popups', 
+      icon: MousePointer 
     },
     { 
       id: 'abtests', 
@@ -232,6 +239,13 @@ export function CleanPortalDashboard({ user, client, userRole, allClients }: Cle
             canEdit={userRole === 'agency_admin'}
             canCreate={userRole === 'agency_admin'}
             canApprove={userRole === 'client_user'}
+          />
+        )}
+        
+        {activeTab === 'popups' && (
+          <PopupApproval 
+            client={clientInfo}
+            userRole={userRole}
           />
         )}
         
