@@ -55,11 +55,26 @@ export async function PATCH(request: NextRequest) {
     // Valid statuses: strategy, copy, design, qa, client_approval, approved, scheduled, sent, revisions
     const newStatus = clientApproved ? 'approved' : 'revisions'
 
-    // ops_campaigns only has: status, internal_notes
-    // We'll use internal_notes to store client feedback
+    // First, get the existing campaign to preserve internal_notes
+    const { data: existingCampaign } = await supabase
+      .from('ops_campaigns')
+      .select('internal_notes')
+      .eq('id', campaignId)
+      .single()
+
+    // Append client feedback to existing notes (don't overwrite)
+    let updatedNotes = existingCampaign?.internal_notes || ''
+    const clientFeedback = clientNotes || clientRevisions || ''
+    
+    if (clientFeedback) {
+      const timestamp = new Date().toLocaleString()
+      const feedbackSection = `\n\n--- CLIENT FEEDBACK (${timestamp}) ---\n${clientFeedback}`
+      updatedNotes = updatedNotes + feedbackSection
+    }
+
     const updateData: any = {
       status: newStatus,
-      internal_notes: clientNotes || clientRevisions || '',
+      internal_notes: updatedNotes,
       updated_at: new Date().toISOString()
     }
 
