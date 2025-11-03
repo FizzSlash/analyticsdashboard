@@ -65,15 +65,19 @@ export default function OperationsPage({ params }: PageProps) {
   const router = useRouter()
   const { supabase, loading: authLoading } = useAuth()
 
-  // Define tabs (matching portal style)
-  const opsTabs = [
+  // Main tabs - core workflow
+  const mainTabs = [
     { id: 'overview', label: 'Overview', icon: BarChart3 },
     { id: 'campaigns', label: 'Campaigns', icon: Calendar },
     { id: 'flows', label: 'Flows', icon: Zap },
     { id: 'popups', label: 'Popups', icon: MousePointer },
+    { id: 'abtests', label: 'A/B Tests', icon: TestTube }
+  ]
+
+  // Secondary tabs - admin/resources
+  const secondaryTabs = [
     { id: 'content', label: 'Content Hub', icon: FolderOpen },
     { id: 'forms', label: 'Forms', icon: FileText },
-    { id: 'abtests', label: 'A/B Tests', icon: TestTube },
     { id: 'view', label: 'View', icon: Eye },
     { id: 'scope', label: 'Scope', icon: Target }
   ]
@@ -259,23 +263,47 @@ export default function OperationsPage({ params }: PageProps) {
           
           {/* Navigation Tabs & Client Selector */}
           <div className="flex items-center justify-between gap-4 mb-6">
-            {/* Tabs */}
-            <div className="flex gap-3 p-2 bg-white/5 backdrop-blur-sm rounded-2xl border border-white/20 shadow-lg flex-1">
-              {opsTabs.map(tab => {
+            {/* Main Tabs */}
+            <div className="flex gap-2 p-2 bg-white/5 backdrop-blur-sm rounded-2xl border border-white/20 shadow-lg">
+              {mainTabs.map(tab => {
                 const Icon = tab.icon
                 return (
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id as OpsTab)}
                     className={`
-                      flex items-center gap-3 px-6 py-4 rounded-xl text-sm font-semibold transition-all duration-300 backdrop-blur-sm
+                      flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-300
                       ${activeTab === tab.id 
-                        ? 'bg-white/30 text-white shadow-lg border border-white/40 transform scale-105' 
-                        : 'text-white/80 hover:text-white hover:bg-white/15 hover:scale-102 hover:shadow-md'
+                        ? 'bg-white/30 text-white shadow-lg border border-white/40' 
+                        : 'text-white/80 hover:text-white hover:bg-white/15'
                       }
                     `}
                   >
-                    <Icon className="h-5 w-5" />
+                    <Icon className="h-4 w-4" />
+                    {tab.label}
+                  </button>
+                )
+              })}
+            </div>
+
+            {/* Secondary Tabs (Smaller) */}
+            <div className="flex gap-2 p-1.5 bg-white/5 backdrop-blur-sm rounded-xl border border-white/20">
+              {secondaryTabs.map(tab => {
+                const Icon = tab.icon
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id as OpsTab)}
+                    className={`
+                      flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-all
+                      ${activeTab === tab.id 
+                        ? 'bg-white/20 text-white border border-white/30' 
+                        : 'text-white/70 hover:text-white hover:bg-white/10'
+                      }
+                    `}
+                    title={tab.label}
+                  >
+                    <Icon className="h-3.5 w-3.5" />
                     {tab.label}
                   </button>
                 )
