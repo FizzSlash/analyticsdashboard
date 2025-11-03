@@ -108,11 +108,16 @@ export function UserManagement({ agency, clients, clientUsers: initialUsers }: U
         throw new Error(result.error || 'Failed to send invitation')
       }
 
-      // Show success with login credentials
-      const credentials = `Email: ${formData.email}\nPassword: ${result.invitation?.temp_password || 'See console'}\nLogin: https://analytics.retentionharbor.com/login`
-      
-      setSuccess(`✅ ${formData.role === 'employee' ? 'Employee' : 'User'} created successfully!\n\nShare these login credentials:\n\n${credentials}\n\nThey can login immediately and change their password in settings.`)
-      resetForm()
+      // Show credentials in a modal
+      if (result.invitation?.temp_password) {
+        const credentials = `Email: ${formData.email}\nTemp Password: ${result.invitation.temp_password}\nLogin URL: https://analytics.retentionharbor.com/login`
+        setInvitationLink(credentials) // Reuse the link modal to show credentials
+        setShowInviteLinkModal(true)
+        setTimeout(() => resetForm(), 1000)
+      } else {
+        setSuccess(`✅ ${formData.role === 'employee' ? 'Employee' : 'User'} created successfully!`)
+        resetForm()
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred')
     } finally {
