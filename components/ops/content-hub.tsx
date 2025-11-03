@@ -1286,7 +1286,13 @@ function LinkEditorModal({
             <CardTitle className="text-gray-900">
               {link ? 'Edit Link' : 'Add New Link'}
             </CardTitle>
-            <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+            <button 
+              onClick={(e) => {
+                e.stopPropagation()
+                onClose()
+              }} 
+              className="text-gray-400 hover:text-gray-600 p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            >
               <X className="h-5 w-5" />
             </button>
           </div>
@@ -1449,7 +1455,13 @@ function CallEditorModal({
             <CardTitle className="text-gray-900">
               {call ? 'Edit Call Notes' : 'Add Call Notes'}
             </CardTitle>
-            <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+            <button 
+              onClick={(e) => {
+                e.stopPropagation()
+                onClose()
+              }} 
+              className="text-gray-400 hover:text-gray-600 p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            >
               <X className="h-5 w-5" />
             </button>
           </div>

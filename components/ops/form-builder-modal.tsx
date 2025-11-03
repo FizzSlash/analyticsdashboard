@@ -150,7 +150,13 @@ export function FormBuilderModal({ form, clients, templates, onSave, onClose }: 
           <CardHeader className="border-b border-gray-200">
             <div className="flex items-center justify-between">
               <CardTitle className="text-gray-900">Choose a Template</CardTitle>
-              <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onClose()
+                }} 
+                className="text-gray-400 hover:text-gray-600 p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
                 <X className="h-5 w-5" />
               </button>
             </div>

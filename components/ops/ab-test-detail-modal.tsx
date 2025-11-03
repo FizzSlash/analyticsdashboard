@@ -74,7 +74,13 @@ export function ABTestDetailModal({ test, clients, onSave, onClose }: ABTestDeta
             <CardTitle className="text-gray-900">
               {isNewTest ? 'Create New A/B Test' : 'Edit A/B Test'}
             </CardTitle>
-            <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+            <button 
+              onClick={(e) => {
+                e.stopPropagation()
+                onClose()
+              }} 
+              className="text-gray-400 hover:text-gray-600 p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            >
               <X className="h-5 w-5" />
             </button>
           </div>

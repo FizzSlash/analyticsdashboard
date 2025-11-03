@@ -206,7 +206,10 @@ export function CampaignDetailModal({
               </CardTitle>
             </div>
             <button
-              onClick={onClose}
+              onClick={(e) => {
+                e.stopPropagation()
+                onClose()
+              }}
               className="text-gray-400 hover:text-gray-600 transition-colors p-2 hover:bg-gray-100 rounded-lg"
             >
               <X className="h-5 w-5" />
