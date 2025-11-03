@@ -2,9 +2,12 @@
 -- Employees get Ops Dashboard access ONLY (no admin, no analytics)
 -- Run this in Supabase SQL Editor
 
--- 1. Expand user_profiles role to include employee
+-- 1. Drop old constraints that might block employee creation
 ALTER TABLE user_profiles DROP CONSTRAINT IF EXISTS user_profiles_role_check;
+ALTER TABLE user_profiles DROP CONSTRAINT IF EXISTS valid_agency_admin;
+ALTER TABLE user_profiles DROP CONSTRAINT IF EXISTS valid_client_user;
 
+-- 2. Add new role constraint with employee
 ALTER TABLE user_profiles ADD CONSTRAINT user_profiles_role_check 
   CHECK (role IN ('agency_admin', 'client_user', 'employee'));
 
