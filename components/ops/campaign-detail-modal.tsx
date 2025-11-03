@@ -17,7 +17,8 @@ import {
   MessageSquare,
   Plus,
   Upload,
-  TestTube
+  TestTube,
+  Sparkles
 } from 'lucide-react'
 
 interface Campaign {
@@ -532,6 +533,32 @@ Examples:
                 <div className="w-full px-4 py-3 bg-orange-50 border border-orange-200 rounded-lg">
                   <p className="text-gray-800 whitespace-pre-wrap text-sm">{campaign.client_feedback}</p>
                 </div>
+              </div>
+            )}
+
+            {/* AI Copy Generation - Only show when status is 'copy' */}
+            {campaign.status === 'copy' && !isNewCampaign && (
+              <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg p-6 border-2 border-purple-200">
+                <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                  <Sparkles className="h-5 w-5 text-purple-600" />
+                  AI Copy Generation
+                </h3>
+                <p className="text-sm text-gray-600 mb-4">
+                  Generate email copy using Claude AI based on your brand guidelines and campaign brief.
+                </p>
+                <button
+                  onClick={() => {
+                    // Open copy generation in new tab
+                    window.open(
+                      `/agency/${campaign.agency_id || 'retention-harbor'}/generate/${campaign.id}`,
+                      '_blank'
+                    )
+                  }}
+                  className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white py-3 px-6 rounded-lg font-semibold transition-all flex items-center justify-center gap-2 shadow-lg"
+                >
+                  <Sparkles className="h-5 w-5" />
+                  Generate Email Copy with AI
+                </button>
               </div>
             )}
 
