@@ -27,6 +27,8 @@ interface InviteFormData {
   client_id: string
   first_name: string
   last_name: string
+  role: 'client_user' | 'employee'
+  employee_type?: 'copywriter' | 'designer' | 'implementor' | 'project_manager' | 'qa'
 }
 
 export function UserManagement({ agency, clients, clientUsers: initialUsers }: UserManagementProps) {
@@ -44,7 +46,8 @@ export function UserManagement({ agency, clients, clientUsers: initialUsers }: U
     email: '',
     client_id: '',
     first_name: '',
-    last_name: ''
+    last_name: '',
+    role: 'client_user'
   })
 
   const resetForm = () => {
@@ -52,7 +55,8 @@ export function UserManagement({ agency, clients, clientUsers: initialUsers }: U
       email: '',
       client_id: '',
       first_name: '',
-      last_name: ''
+      last_name: '',
+      role: 'client_user'
     })
     setShowInviteForm(false)
     setError('')
@@ -273,22 +277,60 @@ export function UserManagement({ agency, clients, clientUsers: initialUsers }: U
 
               <div>
                 <label className="block text-sm font-medium text-white/80 mb-1">
-                  Client *
+                  User Type *
                 </label>
                 <select
-                  value={formData.client_id}
-                  onChange={(e) => setFormData({ ...formData, client_id: e.target.value })}
+                  value={formData.role}
+                  onChange={(e) => setFormData({ ...formData, role: e.target.value as 'client_user' | 'employee', client_id: e.target.value === 'employee' ? '' : formData.client_id })}
                   className="w-full px-3 py-2 border border-white/20 bg-white/10 text-white rounded-md focus:ring-2 focus:ring-white/30 focus:border-white/40"
                   required
                 >
-                  <option value="">Select a client</option>
-                  {clients.filter(c => c.is_active).map(client => (
-                    <option key={client.id} value={client.id}>
-                      {client.brand_name}
-                    </option>
-                  ))}
+                  <option value="client_user">Client User (Portal Access)</option>
+                  <option value="employee">Employee (Ops Dashboard Access)</option>
                 </select>
               </div>
+
+              {formData.role === 'client_user' && (
+                <div>
+                  <label className="block text-sm font-medium text-white/80 mb-1">
+                    Client *
+                  </label>
+                  <select
+                    value={formData.client_id}
+                    onChange={(e) => setFormData({ ...formData, client_id: e.target.value })}
+                    className="w-full px-3 py-2 border border-white/20 bg-white/10 text-white rounded-md focus:ring-2 focus:ring-white/30 focus:border-white/40"
+                    required
+                  >
+                    <option value="">Select a client</option>
+                    {clients.filter(c => c.is_active).map(client => (
+                      <option key={client.id} value={client.id}>
+                        {client.brand_name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {formData.role === 'employee' && (
+                <div>
+                  <label className="block text-sm font-medium text-white/80 mb-1">
+                    Employee Role *
+                  </label>
+                  <select
+                    value={formData.employee_type || ''}
+                    onChange={(e) => setFormData({ ...formData, employee_type: e.target.value as any })}
+                    className="w-full px-3 py-2 border border-white/20 bg-white/10 text-white rounded-md focus:ring-2 focus:ring-white/30 focus:border-white/40"
+                    required
+                  >
+                    <option value="">Select role...</option>
+                    <option value="copywriter">Copywriter</option>
+                    <option value="designer">Designer</option>
+                    <option value="implementor">Implementor</option>
+                    <option value="project_manager">Project Manager</option>
+                    <option value="qa">QA</option>
+                  </select>
+                </div>
+              )}
 
               <div>
                 <label className="block text-sm font-medium text-white/80 mb-1">
