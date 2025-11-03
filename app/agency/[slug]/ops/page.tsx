@@ -58,6 +58,7 @@ export default function OperationsPage({ params }: PageProps) {
   const [campaignView, setCampaignView] = useState<CampaignView>('calendar')
   const [selectedClient, setSelectedClient] = useState<string>('all') // 'all' or client ID
   const [sharedCampaigns, setSharedCampaigns] = useState<Campaign[]>([]) // Shared across calendar/pipeline/overview
+  const [sharedFlows, setSharedFlows] = useState<any[]>([]) // Shared flows data
   const [selectedCampaignForModal, setSelectedCampaignForModal] = useState<Campaign | null>(null)
   const router = useRouter()
   const { supabase, loading: authLoading } = useAuth()
@@ -409,7 +410,7 @@ export default function OperationsPage({ params }: PageProps) {
             <RoleViews
               clients={clients}
               campaigns={sharedCampaigns}
-              flows={[]} // Will populate from database later
+              flows={sharedFlows}
             />
           )}
 
