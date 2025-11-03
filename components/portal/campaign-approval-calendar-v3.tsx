@@ -332,8 +332,8 @@ export function CampaignApprovalCalendar({ client, userRole = 'client_user' }: C
                             onClick={() => setSelectedCampaign(campaign)}
                           >
                             <div className="font-medium truncate">{campaign.campaign_name}</div>
-                            <div className="text-[10px] opacity-90 truncate mt-0.5">
-                              {campaign.assignee || 'Unassigned'}
+                            <div className="text-[10px] opacity-90 uppercase tracking-wide truncate mt-0.5">
+                              {campaign.status}
                             </div>
                             <div className="text-[10px] opacity-75 mt-0.5">
                               {new Date(campaign.send_date).toLocaleTimeString('en-US', { 
