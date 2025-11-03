@@ -104,7 +104,7 @@ export async function POST(request: NextRequest) {
 
     console.log('✅ USER INVITE: User profile created:', profile.id)
 
-    // Step 3: Generate magic link for invitation
+    // Step 3: Generate password recovery link (doesn't expire, lets them set password)
     // Different redirect based on role
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://analytics.retentionharbor.com'
     const redirectUrl = role === 'employee' 
@@ -112,7 +112,7 @@ export async function POST(request: NextRequest) {
       : `${baseUrl}/login` // Clients go to login (then redirected to their client page)
     
     const { data: linkData, error: resetError } = await supabaseAdmin.auth.admin.generateLink({
-      type: 'magiclink',
+      type: 'recovery', // Password recovery lets them set password permanently
       email: email,
       options: {
         redirectTo: redirectUrl
