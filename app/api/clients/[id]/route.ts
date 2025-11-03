@@ -71,89 +71,41 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
     const clientId = params.id
     
-    console.log('🗑️ DELETE CLIENT: Starting cascade deletion for client:', clientId)
+    console.log('🗑️ DELETE CLIENT: Soft deleting client (set is_active=false):', clientId)
 
-    // Helper function to safely delete from a table
-    const safeDelete = async (tableName: string) => {
-      try {
-        console.log(`🗑️ Deleting from ${tableName}...`)
-        const { error, count } = await supabaseAdmin
-          .from(tableName)
-          .delete()
-          .eq('client_id', clientId)
-        
-        if (error) {
-          // Log error but continue - table might not exist or have no data
-          console.log(`⚠️ ${tableName}: ${error.message} (continuing...)`)
-        } else {
-          console.log(`✅ ${tableName}: Deleted ${count || 0} records`)
-        }
-      } catch (err) {
-        console.log(`⚠️ ${tableName}: ${err instanceof Error ? err.message : 'Error'} (continuing...)`)
-      }
-    }
-
-    // Delete all related data - non-blocking, continues even if table doesn't exist
-    
-    // 1. Ops tables
-    await safeDelete('ops_campaigns')
-    await safeDelete('ops_flows')
-    await safeDelete('ops_ab_tests')
-    await safeDelete('ops_forms')
-    await safeDelete('ops_form_responses')
-    
-    // 2. Content Hub
-    await safeDelete('ops_brand_links')
-    await safeDelete('ops_brand_files')
-    await safeDelete('ops_brand_guidelines')
-    await safeDelete('ops_copy_notes')
-    await safeDelete('ops_design_notes')
-    await safeDelete('ops_call_notes')
-    
-    // 3. Scope
-    await safeDelete('ops_scope_config')
-    await safeDelete('ops_scope_usage')
-    
-    // 4. Portal
-    await safeDelete('portal_requests')
-    await safeDelete('campaign_approvals')
-    await safeDelete('flow_approvals')
-    await safeDelete('flow_email_approvals')
-    
-    // 5. Analytics
-    await safeDelete('campaign_metrics')
-    await safeDelete('flow_metrics')
-    await safeDelete('flow_message_metrics')
-    await safeDelete('flow_actions')
-    await safeDelete('audience_metrics')
-    await safeDelete('revenue_attribution')
-    await safeDelete('revenue_attribution_metrics')
-    await safeDelete('list_growth_metrics')
-    await safeDelete('segment_metrics')
-    await safeDelete('deliverability_metrics')
-    
-    // 6. Users
-    await safeDelete('user_profiles')
-    
-    // 7. Finally, delete the client record
-    console.log('🗑️ Deleting client record...')
-    const { error } = await supabaseAdmin
+    // Use SOFT DELETE instead of hard delete to avoid FK constraint issues
+    // This marks the client as inactive without removing data
+    const { error, data } = await supabaseAdmin
       .from('clients')
-      .delete()
+      .update({ 
+        is_active: false,
+        updated_at: new Date().toISOString()
+      })
       .eq('id', clientId)
+      .select()
 
     if (error) {
-      console.error('❌ DELETE CLIENT: Failed to delete client record:', error)
+      console.error('❌ DELETE CLIENT: Soft delete error:', error)
       return NextResponse.json({ 
         error: 'Failed to delete client', 
         details: error.message 
       }, { status: 500 })
     }
 
-    console.log('✅ DELETE CLIENT: Client and all related data deleted successfully')
+    console.log('✅ DELETE CLIENT: Client soft deleted (marked inactive)')
+    
+    // Also mark all related ops data as inactive/archived
+    try {
+      await supabaseAdmin.from('ops_campaigns').update({ status: 'Archived' }).eq('client_id', clientId)
+      await supabaseAdmin.from('ops_flows').update({ status: 'Archived' }).eq('client_id', clientId)
+      console.log('✅ DELETE CLIENT: Related campaigns and flows archived')
+    } catch (err) {
+      console.log('⚠️ DELETE CLIENT: Could not archive related data (continuing...)')
+    }
+
     return NextResponse.json({ 
       success: true, 
-      message: 'Client and all related data deleted successfully'
+      message: 'Client deleted successfully (marked as inactive)'
     })
   } catch (error) {
     console.error('❌ DELETE CLIENT: API error:', error)
