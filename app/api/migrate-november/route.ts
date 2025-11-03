@@ -87,6 +87,17 @@ export async function POST(request: NextRequest) {
     
     console.log(`✅ Found ${records.length} November records`)
     
+    // First, fetch all clients to get their agency_ids
+    const { data: clientsData } = await supabase
+      .from('clients')
+      .select('id, agency_id')
+      .in('id', Object.values(CLIENT_MAPPING))
+    
+    const clientAgencyMap: Record<string, string> = {}
+    clientsData?.forEach(c => {
+      clientAgencyMap[c.id] = c.agency_id
+    })
+    
     // Map records to campaigns and flows
     const campaigns: any[] = []
     const flows: any[] = []
@@ -104,6 +115,13 @@ export async function POST(request: NextRequest) {
         continue
       }
       
+      const agencyId = clientAgencyMap[clientId]
+      if (!agencyId) {
+        console.log(`⚠️  Skipping ${fields.Tasks} - No agency_id found for client`)
+        skipped++
+        continue
+      }
+      
       const sendDate = fields['Send Date'] ? new Date(fields['Send Date']) : new Date()
       const previewUrl = fields.File?.[0]?.url || null
       
@@ -111,6 +129,7 @@ export async function POST(request: NextRequest) {
         // Map ONLY to columns that exist in ops_flows
         flows.push({
           client_id: clientId,
+          agency_id: agencyId,
           flow_name: fields.Tasks || 'Untitled Flow',
           trigger_type: extractTriggerCriteria(fields.Notes || '') || 'Custom trigger',
           num_emails: extractNumEmails(fields.Notes || ''),
@@ -122,6 +141,7 @@ export async function POST(request: NextRequest) {
         // Map ONLY to columns that exist in ops_campaigns (from POST route above)
         campaigns.push({
           client_id: clientId,
+          agency_id: agencyId,
           campaign_name: fields.Tasks || 'Untitled Campaign',
           campaign_type: fields['Campaign Type']?.[0] || 'email',
           subject_line: fields.Offer || '',
