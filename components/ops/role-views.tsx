@@ -35,12 +35,26 @@ export function RoleViews({ clients, campaigns, flows }: RoleViewsProps) {
     { id: 'pm', label: 'Project Manager', icon: Briefcase }
   ]
 
-  // Mock metrics (will calculate from real data later)
+  // Calculate real metrics from actual data
+  const oneWeekAgo = new Date()
+  oneWeekAgo.setDate(oneWeekAgo.getDate() - 7)
+  
   const metrics = {
-    campaigns_written: 12,
-    campaigns_designed: 10,
-    flows_written: 2,
-    flows_designed: 1
+    campaigns_written: campaigns.filter(c => 
+      new Date(c.created_at || c.send_date) >= oneWeekAgo && 
+      ['copy', 'design', 'qa', 'client_approval', 'approved', 'scheduled', 'sent'].includes(c.status)
+    ).length,
+    campaigns_designed: campaigns.filter(c => 
+      new Date(c.created_at || c.send_date) >= oneWeekAgo && 
+      ['design', 'qa', 'client_approval', 'approved', 'scheduled', 'sent'].includes(c.status)
+    ).length,
+    flows_written: flows.filter(f => 
+      new Date(f.created_at || Date.now()) >= oneWeekAgo
+    ).length,
+    flows_designed: flows.filter(f => 
+      new Date(f.created_at || Date.now()) >= oneWeekAgo && 
+      ['design', 'qa', 'client_approval', 'approved'].includes(f.status)
+    ).length
   }
 
   return (
@@ -114,23 +128,38 @@ export function RoleViews({ clients, campaigns, flows }: RoleViewsProps) {
           {/* By Client Breakdown */}
           <Card className="bg-white border border-gray-200 shadow-sm">
             <CardHeader>
-              <CardTitle className="text-gray-900">Production by Client</CardTitle>
+              <CardTitle className="text-gray-900">Production by Client (This Week)</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {clients.slice(0, 3).map((client, index) => (
-                  <div key={client.id}>
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="font-semibold text-gray-900">{client.brand_name}</span>
-                      <div className="text-sm text-gray-600">
-                        {[5, 4, 3][index]} campaigns • {[1, 1, 0][index]} flows
+                {clients.map((client) => {
+                  const clientCampaigns = campaigns.filter(c => 
+                    c.client_id === client.id && 
+                    new Date(c.created_at || c.send_date) >= oneWeekAgo
+                  ).length
+                  const clientFlows = flows.filter(f => 
+                    f.client_id === client.id && 
+                    new Date(f.created_at || Date.now()) >= oneWeekAgo
+                  ).length
+                  
+                  if (clientCampaigns === 0 && clientFlows === 0) return null
+                  
+                  return (
+                    <div key={client.id}>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="font-semibold text-gray-900">{client.brand_name}</span>
+                        <div className="text-sm text-gray-600">
+                          {clientCampaigns} campaigns • {clientFlows} flows
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <div className="bg-blue-200 rounded-full h-2" style={{ 
+                          width: clientCampaigns > 0 ? `${Math.min((clientCampaigns / 12) * 100, 100)}%` : '0%' 
+                        }} />
                       </div>
                     </div>
-                    <div className="flex gap-2">
-                      <div className="flex-1 bg-blue-200 rounded-full h-2" style={{ width: `${[60, 50, 40][index]}%` }} />
-                    </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             </CardContent>
           </Card>
