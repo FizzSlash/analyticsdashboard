@@ -15,19 +15,22 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     
     console.log('PATCH CLIENT: Updating client:', clientId, body)
 
-    // Prepare update data (colors now inherited from agency)
-    const updateData: any = {
-      brand_name: body.brand_name,
-      brand_slug: body.brand_slug,
-      logo_url: body.logo_url || undefined,
-      audit_enabled: body.audit_enabled !== undefined ? body.audit_enabled : undefined,
-      share_enabled: body.share_enabled !== undefined ? body.share_enabled : undefined,
-      conversion_metric_id: body.conversion_metric_id !== undefined ? body.conversion_metric_id : undefined,
-      conversion_metric_name: body.conversion_metric_name !== undefined ? body.conversion_metric_name : undefined,
-      conversion_metric_integration: body.conversion_metric_integration !== undefined ? body.conversion_metric_integration : undefined,
-      preferred_currency: body.preferred_currency !== undefined ? body.preferred_currency : undefined,
-      timezone: body.timezone !== undefined ? body.timezone : undefined
-    }
+    // Prepare update data - only include defined fields
+    const updateData: any = {}
+    
+    if (body.brand_name !== undefined) updateData.brand_name = body.brand_name
+    if (body.brand_slug !== undefined) updateData.brand_slug = body.brand_slug
+    if (body.logo_url !== undefined) updateData.logo_url = body.logo_url
+    if (body.portal_title !== undefined) updateData.portal_title = body.portal_title
+    if (body.enable_analytics !== undefined) updateData.enable_analytics = body.enable_analytics
+    if (body.enable_portal !== undefined) updateData.enable_portal = body.enable_portal
+    if (body.audit_enabled !== undefined) updateData.audit_enabled = body.audit_enabled
+    if (body.share_enabled !== undefined) updateData.share_enabled = body.share_enabled
+    if (body.conversion_metric_id !== undefined) updateData.conversion_metric_id = body.conversion_metric_id
+    if (body.conversion_metric_name !== undefined) updateData.conversion_metric_name = body.conversion_metric_name
+    if (body.conversion_metric_integration !== undefined) updateData.conversion_metric_integration = body.conversion_metric_integration
+    if (body.preferred_currency !== undefined) updateData.preferred_currency = body.preferred_currency
+    if (body.timezone !== undefined) updateData.timezone = body.timezone
 
     // Only update API key if provided
     if (body.klaviyo_api_key) {
