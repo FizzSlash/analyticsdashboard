@@ -124,6 +124,16 @@ export default function LoginPage() {
           console.log('LOGIN: Using fallback - redirecting to retention-harbor since we know you own it')
           router.push('/agency/retention-harbor/admin')
         }
+      } else if (profile.role === 'employee') {
+        // Employees go to Ops Dashboard
+        const agencySlug = profile.agencies?.agency_slug
+        if (agencySlug) {
+          console.log(`LOGIN: Redirecting employee to: /agency/${agencySlug}/ops`)
+          router.push(`/agency/${agencySlug}/ops`)
+        } else {
+          console.error('LOGIN: Employee has no agency slug')
+          router.push('/agency/retention-harbor/ops') // Fallback
+        }
       } else if (profile.role === 'client_user') {
         const clientSlug = profile.clients?.brand_slug
         if (clientSlug) {
