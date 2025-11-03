@@ -42,13 +42,18 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Step 1: Create auth user with Supabase Auth
+    // Step 1: Generate a temporary password (user will set their own on first login)
+    const tempPassword = `Temp${Math.random().toString(36).slice(2)}!`
+    
+    // Create auth user with temp password
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email: email,
+      password: tempPassword,
       email_confirm: true, // Auto-confirm email
       user_metadata: {
         first_name: first_name || '',
-        last_name: last_name || ''
+        last_name: last_name || '',
+        needs_password_change: true
       }
     })
 
@@ -67,6 +72,7 @@ export async function POST(request: NextRequest) {
     }
 
     console.log('✅ USER INVITE: Auth user created:', authData.user.id)
+    console.log('📧 USER INVITE: Temp password:', tempPassword)
 
     // Step 2: Create user profile
     const profileData: any = {
@@ -151,15 +157,16 @@ export async function POST(request: NextRequest) {
         email: email,
         first_name: first_name,
         last_name: last_name,
-        role: 'client_user',
+        role: role || 'client_user',
         client_id: client_id
       },
       invitation: {
         link: invitationLink,
+        temp_password: tempPassword, // Include temp password for manual sharing
         emailSent: emailSent,
         message: emailSent 
           ? 'Invitation email sent successfully'
-          : 'Email not configured. Copy the invitation link below and send to user manually.'
+          : 'Email not configured. Share login credentials with user manually.'
       }
     })
 

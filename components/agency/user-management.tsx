@@ -108,21 +108,11 @@ export function UserManagement({ agency, clients, clientUsers: initialUsers }: U
         throw new Error(result.error || 'Failed to send invitation')
       }
 
-      // Always show the invitation link (Supabase email usually not configured)
-      if (result.invitation?.link) {
-        console.log('📧 Showing invitation link:', result.invitation.link)
-        setInvitationLink(result.invitation.link)
-        setShowInviteLinkModal(true)
-        // Don't reset form yet - let user see the modal
-        setTimeout(() => resetForm(), 1000)
-      } else if (result.invitation?.emailSent) {
-        setSuccess('✅ Invitation email sent successfully!')
-        resetForm()
-      } else {
-        setSuccess('✅ User created! Invitation link generated.')
-        // Fallback - show success even if link not in expected format
-        resetForm()
-      }
+      // Show success with login credentials
+      const credentials = `Email: ${formData.email}\nPassword: ${result.invitation?.temp_password || 'See console'}\nLogin: https://analytics.retentionharbor.com/login`
+      
+      setSuccess(`✅ ${formData.role === 'employee' ? 'Employee' : 'User'} created successfully!\n\nShare these login credentials:\n\n${credentials}\n\nThey can login immediately and change their password in settings.`)
+      resetForm()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred')
     } finally {
