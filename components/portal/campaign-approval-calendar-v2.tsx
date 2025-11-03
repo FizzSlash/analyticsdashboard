@@ -23,12 +23,12 @@ interface Campaign {
   campaign_name: string
   campaign_type: string
   status: string
-  scheduled_date: string
+  send_date: string  // ops_campaigns uses send_date not scheduled_date
   subject_line: string
-  preview_image_url: string | null
-  copy_link: string | null
+  preview_url: string | null  // ops_campaigns uses preview_url not preview_image_url
+  copy_doc_url: string | null  // ops_campaigns uses copy_doc_url not copy_link
   target_audience: string
-  notes: string
+  internal_notes: string  // ops_campaigns uses internal_notes not notes
   client_notes: string | null
   client_approved: boolean | null
   approval_date: string | null
@@ -143,7 +143,7 @@ export function CampaignApprovalCalendar({ client, userRole = 'client_user' }: C
     if (!date) return []
     
     return campaigns.filter(campaign => {
-      const campDate = new Date(campaign.scheduled_date)
+      const campDate = new Date(campaign.send_date)
       return campDate.getDate() === date.getDate() &&
              campDate.getMonth() === date.getMonth() &&
              campDate.getFullYear() === date.getFullYear()
@@ -260,7 +260,7 @@ export function CampaignApprovalCalendar({ client, userRole = 'client_user' }: C
                       <div className="flex items-center gap-4 text-xs text-white/60">
                         <span className="flex items-center gap-1">
                           <Clock className="h-3 w-3" />
-                          {new Date(campaign.scheduled_date).toLocaleDateString()}
+                          {new Date(campaign.send_date).toLocaleDateString()}
                         </span>
                         <span className="flex items-center gap-1">
                           <User className="h-3 w-3" />
@@ -396,7 +396,7 @@ export function CampaignApprovalCalendar({ client, userRole = 'client_user' }: C
                 <div className="bg-white/10 rounded-lg p-4 border border-white/20">
                   <p className="text-white/60 text-sm mb-1">Send Date</p>
                   <p className="text-white font-medium">
-                    {new Date(selectedCampaign.scheduled_date).toLocaleString()}
+                    {new Date(selectedCampaign.send_date).toLocaleString()}
                   </p>
                 </div>
                 <div className="bg-white/10 rounded-lg p-4 border border-white/20">
@@ -410,12 +410,12 @@ export function CampaignApprovalCalendar({ client, userRole = 'client_user' }: C
               </div>
 
               {/* Preview Image */}
-              {selectedCampaign.preview_image_url && (
+              {selectedCampaign.preview_url && (
                 <div>
                   <h5 className="text-white font-medium mb-2">Campaign Preview</h5>
                   <div className="bg-white/10 rounded-lg p-4 border border-white/20">
                     <img
-                      src={selectedCampaign.preview_image_url}
+                      src={selectedCampaign.preview_url}
                       alt="Campaign preview"
                       className="w-full rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
                       onClick={() => setViewingImage(true)}
@@ -432,11 +432,11 @@ export function CampaignApprovalCalendar({ client, userRole = 'client_user' }: C
               )}
 
               {/* Copy Link */}
-              {selectedCampaign.copy_link && (
+              {selectedCampaign.copy_doc_url && (
                 <div>
                   <h5 className="text-white font-medium mb-2">Campaign Copy</h5>
                   <a
-                    href={selectedCampaign.copy_link}
+                    href={selectedCampaign.copy_doc_url}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="bg-blue-600/80 hover:bg-blue-600 text-white px-4 py-2 rounded-lg inline-flex items-center gap-2 transition-colors"
@@ -448,11 +448,11 @@ export function CampaignApprovalCalendar({ client, userRole = 'client_user' }: C
               )}
 
               {/* Notes */}
-              {selectedCampaign.notes && (
+              {selectedCampaign.internal_notes && (
                 <div>
                   <h5 className="text-white font-medium mb-2">Agency Notes</h5>
                   <div className="bg-white/10 rounded-lg p-4 border border-white/20">
-                    <p className="text-white/80 whitespace-pre-wrap">{selectedCampaign.notes}</p>
+                    <p className="text-white/80 whitespace-pre-wrap">{selectedCampaign.internal_notes}</p>
                   </div>
                 </div>
               )}
@@ -506,7 +506,7 @@ export function CampaignApprovalCalendar({ client, userRole = 'client_user' }: C
       )}
 
       {/* Full Size Image Viewer */}
-      {viewingImage && selectedCampaign?.preview_image_url && (
+      {viewingImage && selectedCampaign?.preview_url && (
         <div 
           className="fixed inset-0 bg-black/95 flex items-center justify-center z-50 p-4"
           onClick={() => setViewingImage(false)}
@@ -518,7 +518,7 @@ export function CampaignApprovalCalendar({ client, userRole = 'client_user' }: C
             <X className="h-8 w-8" />
           </button>
           <img
-            src={selectedCampaign.preview_image_url}
+            src={selectedCampaign.preview_url}
             alt="Campaign preview full size"
             className="max-w-full max-h-full object-contain"
           />

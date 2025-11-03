@@ -24,12 +24,12 @@ interface Flow {
   num_emails: number
   target_audience: string
   description: string
-  notes: string
+  notes: string  // ops_flows uses 'notes' not 'internal_notes'
   client_notes: string | null
   flow_approved: boolean | null
   approval_date: string | null
   assignee: string | null
-  copy_link: string | null
+  copy_doc_url: string | null  // ops_flows uses copy_doc_url
   go_live_date: string | null
   created_at: string
 }
@@ -365,11 +365,11 @@ export function FlowProgressTracker({ client, userRole, canEdit, canCreate, canA
               )}
 
               {/* Copy Link */}
-              {selectedFlow.copy_link && (
+              {selectedFlow.copy_doc_url && (
                 <div>
                   <h5 className="text-white font-medium mb-2">Flow Copy</h5>
                   <a
-                    href={selectedFlow.copy_link}
+                    href={selectedFlow.copy_doc_url}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="bg-blue-600/80 hover:bg-blue-600 text-white px-4 py-2 rounded-lg inline-flex items-center gap-2 transition-colors"

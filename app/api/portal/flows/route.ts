@@ -42,28 +42,8 @@ export async function GET(request: NextRequest) {
 
     console.log(`✅ PORTAL FLOWS: Found ${flows?.length || 0} flows`)
 
-    // Transform database rows to match component interface
-    const transformedFlows = flows?.map(flow => ({
-      id: flow.id,
-      title: flow.flow_name,
-      flow_type: flow.flow_type || 'custom',
-      status: flow.status,
-      client: flow.client_name || '',
-      description: flow.description || '',
-      trigger_criteria: flow.trigger_type || '',
-      num_emails: flow.num_emails || 3,
-      audience: flow.target_audience || '',
-      notes: flow.notes || '',
-      client_notes: flow.client_notes || '',
-      assignee: flow.assignee || '',
-      copy_due_date: flow.copy_due_date ? new Date(flow.copy_due_date) : undefined,
-      design_due_date: flow.design_due_date ? new Date(flow.design_due_date) : undefined,
-      live_date: flow.go_live_date ? new Date(flow.go_live_date) : undefined,
-      copy_link: flow.copy_link || '',
-      external_id: flow.airtable_record_id || '',
-      synced_to_external: !!flow.airtable_record_id,
-      last_sync: flow.last_airtable_sync ? new Date(flow.last_airtable_sync) : undefined
-    })) || []
+    // Return flows directly - already in correct format from database
+    const transformedFlows = flows || []
 
     return NextResponse.json({
       success: true,

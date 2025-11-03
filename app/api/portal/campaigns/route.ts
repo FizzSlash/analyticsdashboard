@@ -22,20 +22,21 @@ export async function GET(request: NextRequest) {
       .from('ops_campaigns')
       .select('*')
       .eq('client_id', clientId)
-      .order('scheduled_date', { ascending: true })
+      .order('send_date', { ascending: true })
 
     if (error) {
       console.error('❌ PORTAL CAMPAIGNS API: Database error:', error)
-      throw error
+      console.error('❌ PORTAL CAMPAIGNS API: Error details:', JSON.stringify(error, null, 2))
+      throw new Error(error.message || 'Database query failed')
     }
 
     console.log(`✅ PORTAL CAMPAIGNS API: Found ${campaigns?.length || 0} campaigns`)
 
     return NextResponse.json({ success: true, campaigns: campaigns || [] })
-  } catch (error) {
+  } catch (error: any) {
     console.error('❌ PORTAL CAMPAIGNS API: Error:', error)
     return NextResponse.json(
-      { success: false, error: 'Failed to fetch campaigns' },
+      { success: false, error: error.message || 'Failed to fetch campaigns' },
       { status: 500 }
     )
   }

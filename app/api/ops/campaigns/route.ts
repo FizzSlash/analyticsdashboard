@@ -121,18 +121,24 @@ export async function DELETE(request: NextRequest) {
       )
     }
 
+    console.log('🗑️ OPS CAMPAIGNS: Attempting to delete campaign:', id)
+
     const { error } = await supabase
       .from('ops_campaigns')
       .delete()
       .eq('id', id)
 
-    if (error) throw error
+    if (error) {
+      console.error('❌ OPS CAMPAIGNS: Delete error details:', error)
+      throw new Error(error.message || 'Database delete failed')
+    }
 
+    console.log('✅ OPS CAMPAIGNS: Campaign deleted successfully')
     return NextResponse.json({ success: true })
-  } catch (error) {
-    console.error('Error deleting campaign:', error)
+  } catch (error: any) {
+    console.error('❌ OPS CAMPAIGNS: Error deleting campaign:', error)
     return NextResponse.json(
-      { success: false, error: 'Failed to delete campaign' },
+      { success: false, error: error.message || 'Failed to delete campaign' },
       { status: 500 }
     )
   }
