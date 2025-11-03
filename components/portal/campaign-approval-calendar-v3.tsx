@@ -413,13 +413,15 @@ export function CampaignApprovalCalendar({ client, userRole = 'client_user' }: C
               {/* Action Buttons Row */}
               <div className="flex gap-3">
                 {selectedCampaign.preview_url && (
-                  <button
-                    onClick={() => setViewingImage(true)}
+                  <a
+                    href={selectedCampaign.preview_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="flex-1 bg-white/20 hover:bg-white/30 text-white py-3 px-4 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2 border border-white/30"
                   >
                     <Eye className="h-4 w-4" />
                     Preview Design
-                  </button>
+                  </a>
                 )}
                 {selectedCampaign.copy_doc_url && (
                   <a

@@ -54,22 +54,12 @@ export async function PATCH(request: NextRequest) {
     // Determine new status based on approval
     const newStatus = clientApproved ? 'Approved' : 'Client Revisions'
 
+    // ops_campaigns only has: status, internal_notes
+    // We'll use internal_notes to store client feedback
     const updateData: any = {
-      client_approved: clientApproved,
-      client_notes: clientNotes,
       status: newStatus,
+      internal_notes: clientNotes || clientRevisions || '',
       updated_at: new Date().toISOString()
-    }
-
-    // Add approval date if approved
-    if (clientApproved && approvalDate) {
-      updateData.approval_date = approvalDate
-    }
-
-    // Add revisions if rejected
-    if (!clientApproved && clientRevisions) {
-      updateData.client_revisions = clientRevisions
-      updateData.revision_date = revisionDate || new Date().toISOString()
     }
 
     const { data: campaign, error } = await supabase
