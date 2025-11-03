@@ -102,9 +102,16 @@ export function CampaignApprovalCalendar({ client, userRole = 'client_user' }: C
       setLoading(true)
       setError(null)
       
-      // Add client name as query parameter
-      const url = `${fetchCampaignsUrl}?client=${encodeURIComponent(client.brand_slug)}`
-      const response = await fetch(url)
+      // NEW: Fetch from Supabase campaign_approvals table (NOT Airtable!)
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+      const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+      
+      const response = await fetch(`${supabaseUrl}/rest/v1/campaign_approvals?client_id=eq.${client.id}&select=*`, {
+        headers: {
+          'apikey': supabaseKey!,
+          'Authorization': `Bearer ${supabaseKey}`
+        }
+      })
       
       if (!response.ok) {
         throw new Error(`Failed to fetch campaigns: ${response.status}`)
@@ -112,17 +119,16 @@ export function CampaignApprovalCalendar({ client, userRole = 'client_user' }: C
       
       const data = await response.json()
       
-      // Process campaigns data (adapt based on your webhook response format)
-      const formattedCampaigns = Array.isArray(data) 
-        ? data.map(formatCampaign)
-        : [data].map(formatCampaign)
+      // Format Supabase data to portal format
+      const formattedCampaigns = data.map((c: any) => formatCampaign(c))
       
       setCampaigns(formattedCampaigns)
+      console.log('✅ Loaded', formattedCampaigns.length, 'campaigns from database')
     } catch (error) {
       console.error('Error fetching campaigns:', error)
       setError(error instanceof Error ? error.message : 'Unknown error')
-      // For demo purposes, show mock data
-      setCampaigns(generateMockCampaigns())
+      // Show empty if error
+      setCampaigns([])
     } finally {
       setLoading(false)
     }
@@ -135,18 +141,19 @@ export function CampaignApprovalCalendar({ client, userRole = 'client_user' }: C
       return new Date(date.getFullYear(), date.getMonth(), date.getDate(), 12, 0, 0)
     }
 
+    // Handle both Supabase and Airtable formats
     return {
       id: data.id || `campaign-${Math.random().toString(36).substr(2, 9)}`,
-      recordId: data.recordId || data.id || '',
-      title: data.Tasks || data.title || 'Untitled Campaign',
-      type: data['Campaign Type']?.includes('sms') ? 'sms' : 'email',
-      start: fixDate(data['Send Date'] || data.sendDate),
-      end: fixDate(data['Send Date'] || data.sendDate),
-      description: data.Notes || data.description || '',
-      status: data.Stage || data.status || 'Pending',
-      clientId: data.Client || client.brand_slug,
-      clientRevisions: data.ClientRevisions || '',
-      previewUrl: data.previewUrl || data.File?.[0]?.url,
+      recordId: data.id || '',
+      title: data.campaign_name || data.Tasks || 'Untitled Campaign',
+      type: data.campaign_type || (data['Campaign Type']?.includes('sms') ? 'sms' : 'email'),
+      start: fixDate(data.scheduled_date || data['Send Date']),
+      end: fixDate(data.scheduled_date || data['Send Date']),
+      description: data.subject_line || data.Notes || '',
+      status: data.status || 'Pending',
+      clientId: client.brand_slug,
+      clientRevisions: data.client_revisions || '',
+      previewUrl: data.preview_url || data.File?.[0]?.url,
       rawData: data
     }
   }
