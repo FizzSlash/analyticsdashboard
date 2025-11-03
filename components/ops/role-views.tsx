@@ -173,27 +173,44 @@ export function RoleViews({ clients, campaigns, flows }: RoleViewsProps) {
             <CardHeader>
               <CardTitle className="text-gray-900 flex items-center gap-2">
                 <FileText className="h-5 w-5 text-blue-600" />
-                My Writing Queue
+                Copy Queue ({campaigns.filter(c => c.status === 'copy').length + flows.filter(f => f.status === 'copy').length})
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-center py-12 text-gray-600">
-                <FileText className="h-16 w-16 mx-auto mb-4 text-gray-400" />
-                <div className="text-lg mb-2">Writing queue will show here</div>
-                <div className="text-sm">
-                  Will display: Campaigns in "Copy" status + Flows in "Copy" status
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-white border border-gray-200 shadow-sm">
-            <CardHeader>
-              <CardTitle className="text-gray-900">Quick Access</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-sm text-gray-600">
-                Quick links to: Copy Notes, Brand Guidelines, Forms Responses
+              <div className="space-y-3">
+                {campaigns.filter(c => c.status === 'copy').length === 0 && flows.filter(f => f.status === 'copy').length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    <FileText className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                    <p>No items in copy queue</p>
+                  </div>
+                ) : (
+                  <>
+                    {campaigns.filter(c => c.status === 'copy').map(campaign => (
+                      <div key={campaign.id} className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                        <div className="font-semibold text-gray-900">{campaign.campaign_name}</div>
+                        <div className="text-sm text-gray-600">{campaign.client_name} • {new Date(campaign.send_date).toLocaleDateString()}</div>
+                        {campaign.copy_doc_url && (
+                          <a href={campaign.copy_doc_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 text-sm flex items-center gap-1 mt-1">
+                            <ExternalLink className="h-3 w-3" />
+                            Open Copy Doc
+                          </a>
+                        )}
+                      </div>
+                    ))}
+                    {flows.filter(f => f.status === 'copy').map(flow => (
+                      <div key={flow.id} className="p-3 bg-purple-50 border border-purple-200 rounded-lg">
+                        <div className="font-semibold text-gray-900">{flow.flow_name} (Flow)</div>
+                        <div className="text-sm text-gray-600">{flow.num_emails} emails</div>
+                        {flow.copy_doc_url && (
+                          <a href={flow.copy_doc_url} target="_blank" rel="noopener noreferrer" className="text-purple-600 text-sm flex items-center gap-1 mt-1">
+                            <ExternalLink className="h-3 w-3" />
+                            Open Copy Doc
+                          </a>
+                        )}
+                      </div>
+                    ))}
+                  </>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -207,27 +224,44 @@ export function RoleViews({ clients, campaigns, flows }: RoleViewsProps) {
             <CardHeader>
               <CardTitle className="text-gray-900 flex items-center gap-2">
                 <Palette className="h-5 w-5 text-purple-600" />
-                My Design Queue
+                Design Queue ({campaigns.filter(c => c.status === 'design').length + flows.filter(f => f.status === 'design').length})
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-center py-12 text-gray-600">
-                <Palette className="h-16 w-16 mx-auto mb-4 text-gray-400" />
-                <div className="text-lg mb-2">Design queue will show here</div>
-                <div className="text-sm">
-                  Will display: Campaigns in "Design" status + Flows in "Design" status
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-white border border-gray-200 shadow-sm">
-            <CardHeader>
-              <CardTitle className="text-gray-900">Quick Access</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-sm text-gray-600">
-                Quick links to: Design Notes, Brand Assets, Figma Boards, Color Palettes
+              <div className="space-y-3">
+                {campaigns.filter(c => c.status === 'design').length === 0 && flows.filter(f => f.status === 'design').length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    <Palette className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                    <p>No items in design queue</p>
+                  </div>
+                ) : (
+                  <>
+                    {campaigns.filter(c => c.status === 'design').map(campaign => (
+                      <div key={campaign.id} className="p-3 bg-purple-50 border border-purple-200 rounded-lg">
+                        <div className="font-semibold text-gray-900">{campaign.campaign_name}</div>
+                        <div className="text-sm text-gray-600">{campaign.client_name} • {new Date(campaign.send_date).toLocaleDateString()}</div>
+                        {campaign.copy_doc_url && (
+                          <a href={campaign.copy_doc_url} target="_blank" rel="noopener noreferrer" className="text-purple-600 text-sm flex items-center gap-1 mt-1">
+                            <ExternalLink className="h-3 w-3" />
+                            View Copy
+                          </a>
+                        )}
+                      </div>
+                    ))}
+                    {flows.filter(f => f.status === 'design').map(flow => (
+                      <div key={flow.id} className="p-3 bg-purple-50 border border-purple-200 rounded-lg">
+                        <div className="font-semibold text-gray-900">{flow.flow_name} (Flow)</div>
+                        <div className="text-sm text-gray-600">{flow.num_emails} emails</div>
+                        {flow.copy_doc_url && (
+                          <a href={flow.copy_doc_url} target="_blank" rel="noopener noreferrer" className="text-purple-600 text-sm flex items-center gap-1 mt-1">
+                            <ExternalLink className="h-3 w-3" />
+                            View Copy
+                          </a>
+                        )}
+                      </div>
+                    ))}
+                  </>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -245,9 +279,26 @@ export function RoleViews({ clients, campaigns, flows }: RoleViewsProps) {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-center py-12 text-gray-600">
-                <Rocket className="h-16 w-16 mx-auto mb-4 text-gray-400" />
-                <div className="text-lg mb-2">Scheduling queue will show here</div>
+              <div className="space-y-3">
+                {campaigns.filter(c => c.status === 'approved').length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    <Rocket className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                    <p>No campaigns ready to schedule</p>
+                  </div>
+                ) : (
+                  campaigns.filter(c => c.status === 'approved').map(campaign => (
+                    <div key={campaign.id} className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                      <div className="font-semibold text-gray-900">{campaign.campaign_name}</div>
+                      <div className="text-sm text-gray-600">{campaign.client_name} • Send: {new Date(campaign.send_date).toLocaleDateString()}</div>
+                      {campaign.preview_url && (
+                        <a href={campaign.preview_url} target="_blank" rel="noopener noreferrer" className="text-green-600 text-sm flex items-center gap-1 mt-1">
+                          <ExternalLink className="h-3 w-3" />
+                          View Design
+                        </a>
+                      )}
+                    </div>
+                  ))
+                )}
                 <div className="text-sm">
                   Will display: Campaigns in "Approved" status + Flows in "Approved" status
                 </div>
