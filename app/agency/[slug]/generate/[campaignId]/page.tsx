@@ -187,7 +187,11 @@ ${blocks.map(block => {
       })
 
       if (response.ok) {
-        alert('✅ Copy saved to campaign!\n\nClick the Copy Doc URL in the campaign modal to view your generated copy.')
+        alert('✅ Copy saved to campaign!\n\nClosing this tab. Refresh your Ops page to see the Copy Doc URL.')
+        // Signal parent window to refresh if possible
+        if (window.opener && !window.opener.closed) {
+          window.opener.postMessage({ type: 'COPY_SAVED', campaignId: params.campaignId }, '*')
+        }
         window.close()
       }
     } catch (error) {

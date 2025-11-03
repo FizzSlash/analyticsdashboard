@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { 
   X, 
@@ -72,6 +72,29 @@ export function CampaignDetailModal({
   const [uploadedImage, setUploadedImage] = useState<string | null>(campaign.preview_url || null)
   const [isDragging, setIsDragging] = useState(false)
   const isNewCampaign = campaign.id.startsWith('new-')
+
+  // Listen for copy saved message from child window
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data.type === 'COPY_SAVED' && event.data.campaignId === campaign.id) {
+        // Refetch campaign data to get updated copy_doc_url
+        fetch(`/api/ops/campaigns?clientId=all`)
+          .then(res => res.json())
+          .then(data => {
+            if (data.success) {
+              const updatedCampaign = data.campaigns.find((c: any) => c.id === campaign.id)
+              if (updatedCampaign) {
+                setCampaign({ ...campaign, copy_doc_url: updatedCampaign.copy_doc_url })
+                alert('✅ Copy Doc URL updated! You can now click the link to view your copy.')
+              }
+            }
+          })
+      }
+    }
+
+    window.addEventListener('message', handleMessage)
+    return () => window.removeEventListener('message', handleMessage)
+  }, [campaign.id])
 
   // Activity log - will be implemented with real data from database
   const activityLog: ActivityLog[] = []
