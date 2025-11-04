@@ -37,7 +37,7 @@ interface Campaign {
   client_name: string
   client_color: string
   send_date: Date
-  status: 'strategy' | 'copy' | 'design' | 'ready_for_imp_qa' | 'qa' | 'client_approval' | 'approved' | 'scheduled' | 'sent' | 'revisions'
+  status: 'strategy' | 'copy' | 'design' | 'ready_for_imp_qa' | 'qa' | 'ready_for_client_approval' | 'client_approval' | 'approved' | 'scheduled' | 'sent' | 'revisions'
   priority: 'low' | 'normal' | 'high' | 'urgent'
   campaign_type: 'email' | 'plaintext' | 'sms'
   subject_line?: string
@@ -590,6 +590,7 @@ export function OpsCalendar({ clients, selectedClient }: OpsCalendarProps) {
                 <option value="copy" className="bg-gray-800">Copy</option>
                 <option value="design" className="bg-gray-800">Design</option>
                 <option value="qa" className="bg-gray-800">QA</option>
+                <option value="ready_for_client_approval" className="bg-gray-800">Ready for Client Approval</option>
                 <option value="client_approval" className="bg-gray-800">Client Approval</option>
                 <option value="revisions" className="bg-gray-800">Revisions</option>
                 <option value="approved" className="bg-gray-800">Approved</option>

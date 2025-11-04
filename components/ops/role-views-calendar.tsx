@@ -37,7 +37,7 @@ export function RoleViewsCalendar({ clients, campaigns, flows, selectedClient = 
     { id: 'copywriter', label: 'Copywriter', icon: FileText, statuses: ['strategy', 'copy'], color: 'blue' },
     { id: 'designer', label: 'Designer', icon: Palette, statuses: ['design'], color: 'purple' },
     { id: 'implementor', label: 'Implementor', icon: Rocket, statuses: ['approved'], color: 'green' },
-    { id: 'pm', label: 'Project Manager', icon: Briefcase, statuses: ['qa', 'client_approval', 'revisions', 'ready_for_imp_qa', 'scheduled', 'sent'], color: 'orange' }
+    { id: 'pm', label: 'Project Manager', icon: Briefcase, statuses: ['qa', 'ready_for_client_approval', 'client_approval', 'revisions', 'ready_for_imp_qa', 'scheduled', 'sent'], color: 'orange' }
   ]
 
   const activeRoleConfig = roleViews.find(v => v.id === activeView)!
@@ -367,6 +367,7 @@ function getStatusBadgeColor(status: string) {
     case 'design': return 'bg-purple-500'
     case 'ready_for_imp_qa': return 'bg-cyan-500'
     case 'qa': return 'bg-yellow-500'
+    case 'ready_for_client_approval': return 'bg-pink-500'
     case 'client_approval': return 'bg-orange-500'
     case 'approved': return 'bg-green-500'
     case 'scheduled': return 'bg-teal-500'

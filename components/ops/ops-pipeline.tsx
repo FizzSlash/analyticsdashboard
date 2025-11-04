@@ -32,7 +32,7 @@ interface Campaign {
   client_name: string
   client_color: string
   send_date: Date
-  status: 'strategy' | 'copy' | 'design' | 'ready_for_imp_qa' | 'qa' | 'client_approval' | 'approved' | 'scheduled' | 'sent' | 'revisions'
+  status: 'strategy' | 'copy' | 'design' | 'ready_for_imp_qa' | 'qa' | 'ready_for_client_approval' | 'client_approval' | 'approved' | 'scheduled' | 'sent' | 'revisions'
   priority: 'low' | 'normal' | 'high' | 'urgent'
   campaign_type: 'email' | 'plaintext' | 'sms'
   subject_line?: string
@@ -216,6 +216,7 @@ export function OpsPipeline({ clients, selectedClient }: OpsPipelineProps) {
     { id: 'copy', label: 'Copy', color: 'bg-blue-500/20 border-blue-400/30' },
     { id: 'design', label: 'Design', color: 'bg-purple-500/20 border-purple-400/30' },
     { id: 'qa', label: 'QA', color: 'bg-yellow-500/20 border-yellow-400/30' },
+    { id: 'ready_for_client_approval', label: 'Ready for Client', color: 'bg-pink-500/20 border-pink-400/30' },
     { id: 'client_approval', label: 'Client Approval', color: 'bg-orange-500/20 border-orange-400/30' },
     { id: 'revisions', label: 'Revisions', color: 'bg-red-500/20 border-red-400/30' },
     { id: 'approved', label: 'Approved', color: 'bg-green-500/20 border-green-400/30' },
