@@ -417,11 +417,11 @@ export function CampaignDetailModal({
                     <option value="strategy">Strategy</option>
                     <option value="copy">Copy</option>
                     <option value="design">Design</option>
-                    <option value="ready_for_imp_qa">Ready for Imp QA</option>
                     <option value="qa">QA</option>
                     <option value="client_approval">Client Approval</option>
                     <option value="revisions">Revisions</option>
                     <option value="approved">Approved</option>
+                    <option value="ready_for_imp_qa">Ready for Imp QA</option>
                     <option value="scheduled">Scheduled</option>
                     <option value="sent">Sent</option>
                   </select>
