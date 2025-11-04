@@ -36,8 +36,8 @@ export function RoleViewsCalendar({ clients, campaigns, flows, selectedClient = 
   const roleViews = [
     { id: 'copywriter', label: 'Copywriter', icon: FileText, statuses: ['strategy', 'copy'], color: 'blue' },
     { id: 'designer', label: 'Designer', icon: Palette, statuses: ['design'], color: 'purple' },
-    { id: 'implementor', label: 'Implementor', icon: Rocket, statuses: ['qa', 'approved', 'scheduled'], color: 'green' },
-    { id: 'pm', label: 'Project Manager', icon: Briefcase, statuses: ['client_approval', 'revisions'], color: 'orange' }
+    { id: 'implementor', label: 'Implementor', icon: Rocket, statuses: ['ready_for_imp_qa', 'approved', 'scheduled'], color: 'green' },
+    { id: 'pm', label: 'Project Manager', icon: Briefcase, statuses: ['qa', 'client_approval', 'revisions'], color: 'orange' }
   ]
 
   const activeRoleConfig = roleViews.find(v => v.id === activeView)!
@@ -365,11 +365,13 @@ function getStatusBadgeColor(status: string) {
     case 'strategy': return 'bg-gray-500'
     case 'copy': return 'bg-blue-500'
     case 'design': return 'bg-purple-500'
+    case 'ready_for_imp_qa': return 'bg-cyan-500'
     case 'qa': return 'bg-yellow-500'
     case 'client_approval': return 'bg-orange-500'
     case 'approved': return 'bg-green-500'
     case 'scheduled': return 'bg-teal-500'
     case 'revisions': return 'bg-red-500'
+    case 'sent': return 'bg-gray-600'
     default: return 'bg-gray-500'
   }
 }

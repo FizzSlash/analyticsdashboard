@@ -42,7 +42,7 @@ interface Campaign {
   client_name: string
   client_color: string
   send_date: Date
-  status: 'strategy' | 'copy' | 'design' | 'qa' | 'client_approval' | 'approved' | 'scheduled' | 'sent'
+  status: 'strategy' | 'copy' | 'design' | 'ready_for_imp_qa' | 'qa' | 'client_approval' | 'approved' | 'scheduled' | 'sent' | 'revisions'
   priority: 'low' | 'normal' | 'high' | 'urgent'
   campaign_type: 'email' | 'sms'
 }
