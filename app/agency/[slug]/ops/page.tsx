@@ -445,6 +445,7 @@ export default function OperationsPage({ params }: PageProps) {
               campaigns={sharedCampaigns}
               flows={sharedFlows}
               selectedClient={selectedClient}
+              onCampaignClick={(campaign) => setSelectedCampaignForModal(campaign)}
             />
           )}
 

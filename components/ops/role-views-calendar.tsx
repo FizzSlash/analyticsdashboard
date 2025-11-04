@@ -20,9 +20,11 @@ interface RoleViewsCalendarProps {
   campaigns: any[]
   flows: any[]
   selectedClient?: string
+  onCampaignClick?: (campaign: any) => void
+  onFlowClick?: (flow: any) => void
 }
 
-export function RoleViewsCalendar({ clients, campaigns, flows, selectedClient = 'all' }: RoleViewsCalendarProps) {
+export function RoleViewsCalendar({ clients, campaigns, flows, selectedClient = 'all', onCampaignClick, onFlowClick }: RoleViewsCalendarProps) {
   const [activeView, setActiveView] = useState<RoleView>('copywriter')
   const [currentMonth, setCurrentMonth] = useState(new Date())
   const [clientFilter, setClientFilter] = useState<string>(selectedClient)
