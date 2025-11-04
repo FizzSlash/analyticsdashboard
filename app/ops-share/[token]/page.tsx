@@ -73,7 +73,14 @@ export default function OpsSharePage() {
       const campaignsRes = await fetch(`/api/ops/campaigns?clientId=${selectedClient}`)
       const campaignsData = await campaignsRes.json()
       if (campaignsData.success) {
-        setCampaigns(campaignsData.campaigns || [])
+        // Transform campaigns to match expected format (same as main ops page)
+        const transformedCampaigns = campaignsData.campaigns.map((c: any) => ({
+          ...c,
+          send_date: new Date(c.send_date), // Convert string to Date object
+          client_name: clients.find(cl => cl.id === c.client_id)?.brand_name || 'Unknown',
+          client_color: clients.find(cl => cl.id === c.client_id)?.primary_color || '#3B82F6'
+        }))
+        setCampaigns(transformedCampaigns)
       }
       
       // Fetch flows
