@@ -217,6 +217,7 @@ function DroppableDay({
 export function OpsCalendar({ clients, selectedClient }: OpsCalendarProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date())
   const [statusFilter, setStatusFilter] = useState<string>('all')
+  const [showSent, setShowSent] = useState(false) // Toggle for sent campaigns
   const [activeId, setActiveId] = useState<string | null>(null)
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null)
   const [campaigns, setCampaigns] = useState<Campaign[]>([])
@@ -525,6 +526,11 @@ export function OpsCalendar({ clients, selectedClient }: OpsCalendarProps) {
       return false
     }
     
+    // Filter out sent campaigns unless toggle is on
+    if (!showSent && campaign.status === 'sent') {
+      return false
+    }
+    
     // Filter by status
     if (statusFilter !== 'all' && campaign.status !== statusFilter) {
       return false
@@ -588,6 +594,20 @@ export function OpsCalendar({ clients, selectedClient }: OpsCalendarProps) {
                 <option value="scheduled" className="bg-gray-800">Scheduled</option>
                 <option value="sent" className="bg-gray-800">Sent</option>
               </select>
+
+              {/* Show Sent Toggle */}
+              <button
+                onClick={() => setShowSent(!showSent)}
+                className={`px-4 py-2 rounded-lg transition-colors border flex items-center gap-2 ${
+                  showSent 
+                    ? 'bg-white/20 border-white/40 text-white' 
+                    : 'bg-white/10 border-white/20 text-white/70 hover:bg-white/15'
+                }`}
+                title={showSent ? 'Hide sent campaigns' : 'Show sent campaigns'}
+              >
+                <Eye className="h-4 w-4" />
+                <span className="text-sm">{showSent ? 'Hide Sent' : 'Show Sent'}</span>
+              </button>
 
               {/* Clear Filter */}
               {statusFilter !== 'all' && (

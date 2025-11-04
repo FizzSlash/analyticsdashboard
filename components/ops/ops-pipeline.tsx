@@ -169,6 +169,7 @@ export function OpsPipeline({ clients, selectedClient }: OpsPipelineProps) {
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null)
   const [campaigns, setCampaigns] = useState<Campaign[]>([])
   const [loading, setLoading] = useState(true)
+  const [showSent, setShowSent] = useState(false)
 
   // Fetch campaigns from API
   useEffect(() => {
@@ -223,9 +224,19 @@ export function OpsPipeline({ clients, selectedClient }: OpsPipelineProps) {
   ]
 
   // Filter campaigns by selected client
-  const filteredCampaigns = campaigns.filter(campaign => 
-    selectedClient === 'all' || campaign.client_id === selectedClient
-  )
+  const filteredCampaigns = campaigns.filter(campaign => {
+    // Filter by client
+    if (selectedClient !== 'all' && campaign.client_id !== selectedClient) {
+      return false
+    }
+    
+    // Filter out sent campaigns unless toggle is on
+    if (!showSent && campaign.status === 'sent') {
+      return false
+    }
+    
+    return true
+  })
 
   // Group campaigns by status
   const campaignsByStatus = statusColumns.reduce((acc, column) => {
@@ -343,8 +354,24 @@ export function OpsPipeline({ clients, selectedClient }: OpsPipelineProps) {
             <div className="text-white/70 text-sm">
               💡 Drag campaigns between columns to change status
             </div>
-            <div className="px-4 py-2 bg-white/10 border border-white/20 rounded-lg">
-              <span className="text-white/70 text-sm">{filteredCampaigns.length} campaigns</span>
+            <div className="flex items-center gap-3">
+              {/* Show Sent Toggle */}
+              <button
+                onClick={() => setShowSent(!showSent)}
+                className={`px-4 py-2 rounded-lg transition-colors border flex items-center gap-2 ${
+                  showSent 
+                    ? 'bg-white/20 border-white/40 text-white' 
+                    : 'bg-white/10 border-white/20 text-white/70 hover:bg-white/15'
+                }`}
+                title={showSent ? 'Hide sent campaigns' : 'Show sent campaigns'}
+              >
+                <Eye className="h-4 w-4" />
+                <span className="text-sm">{showSent ? 'Hide Sent' : 'Show Sent'}</span>
+              </button>
+              
+              <div className="px-4 py-2 bg-white/10 border border-white/20 rounded-lg">
+                <span className="text-white/70 text-sm">{filteredCampaigns.length} campaigns</span>
+              </div>
             </div>
           </div>
         </CardContent>
