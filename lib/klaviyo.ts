@@ -1239,7 +1239,17 @@ export function transformFlowData(klaviyoFlow: any) {
 import { createCipheriv, createDecipheriv, randomBytes } from 'crypto'
 
 const ALGORITHM = 'aes-256-gcm'
-const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || process.env.ENCRYPTION_SECRET || 'abcdefghijklmnopqrstuvwxyz123456'
+
+// CRITICAL: Encryption key must be set via environment variable
+const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || process.env.ENCRYPTION_SECRET
+
+if (!ENCRYPTION_KEY) {
+  throw new Error('FATAL: ENCRYPTION_KEY environment variable must be set. API keys cannot be encrypted/decrypted without it.')
+}
+
+if (ENCRYPTION_KEY.length !== 32) {
+  throw new Error('FATAL: ENCRYPTION_KEY must be exactly 32 characters long for AES-256 encryption.')
+}
 
 export function encryptApiKey(apiKey: string): string {
   const iv = randomBytes(16)

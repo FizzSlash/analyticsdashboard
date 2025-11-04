@@ -57,8 +57,9 @@ export const getSupabaseAdmin = () => {
 }
 
 // Export lazy clients (no immediate creation)
-// Avoid creating clients at module load; only expose helpers.
-export const supabase = null
+// Note: Use getSupabaseClient() or getSupabaseAdmin() instead of these direct exports
+// These are kept for backward compatibility but may be null
+export const supabase = typeof window !== 'undefined' ? getSupabaseClient() : null
 export const supabaseAdmin = typeof window === 'undefined' ? getSupabaseAdmin() : null
 
 // Client-side supabase client function
