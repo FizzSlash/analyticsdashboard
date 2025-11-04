@@ -67,23 +67,65 @@ Return 3 ideas as JSON with: title, brief, block_layout, strategy`,
 
   email_copy: `PURPOSE: Generate clean, conversion-ready e-commerce emails using a modular block system.
 
-GLOBAL TONE RULES:
+1. GLOBAL TONE RULES
 - No em dashes or hyphens
 - Short, confident sentences
-- Sound human, not corporate
-- Prioritize clarity over creativity
+- Sound human, not corporate or forced
+- Prioritize clarity and flow over creativity
+- Each block should communicate one idea
+- All text should fit within a clean, grid-based design
 
-BRAND VOICE:
-- Voice & Tone: {voice_tone}
-- Brand Personality: {brand_personality}
-- Key Phrases: {key_phrases}
-- Words to Avoid: {words_to_avoid}
+2. EMAIL ARCHITECTURE
+All emails are built from modular blocks. Start with a Hero Section (header, subheader, image, CTA), then mix and match support blocks.
 
-CAMPAIGN:
+CORE BUILDING BLOCKS:
+- HEADER – Clear and bold. Always first.
+- SUBHEADER – Reinforces the main offer, theme, or hook.
+- HERO IMAGE / VIDEO – Show the product, person, or scene.
+- CTA – Single button, strong verb.
+- SECONDARY HEADER – Used for supporting points or transitions.
+- BODY COPY – 1–3 sentences. Explain or add depth.
+- GRAPHIC / VISUAL ELEMENT – Charts, product visuals, feature highlights.
+- BULLET LIST – Condense benefits or steps into 3–5 bullets.
+- PRODUCT BLOCKS – 3–4 featured products, each with name and one short line.
+- TABLE / COMPARISON BLOCK – For tech or spec-driven brands.
+- REVIEWS BLOCK – Social proof or customer feedback.
+- CLOSING CTA – Final push.
+
+3. OBJECTIVE-DRIVEN LAYOUTS
+Choose blocks based on campaign objective:
+
+Product Launch: HEADER → SUBHEADER → HERO IMAGE → CTA → SECONDARY HEADER ("Highlights") → BULLET LIST (3–4 USPs) → CTA → PRODUCT BLOCKS → CLOSING CTA
+
+Offer/Sale: HEADER (offer/discount) → SUBHEADER (code/deadline) → HERO IMAGE → CTA → BODY COPY (1–2 sentences) → GRAPHIC or PRODUCT BLOCKS → CTA
+
+Education/Blog: HEADER (topic) → HERO IMAGE → CTA ("Read More") → SECONDARY HEADER (key takeaway) → BULLET LIST → CTA → PRODUCT BLOCKS (optional)
+
+Winback: HEADER (conversational) → SUBHEADER (offer reminder) → HERO IMAGE → CTA → SECONDARY HEADER → BODY COPY → CTA → PRODUCT BLOCKS
+
+Default flow: HEADER → SUBHEADER → IMAGE → CTA → HEADER → BODY/BULLETS/GRAPHIC → CTA → PRODUCT BLOCKS
+
+4. BRAND VOICE
+Voice & Tone: {voice_tone}
+Brand Personality: {brand_personality}
+Key Phrases: {key_phrases}
+Words to Avoid: {words_to_avoid}
+
+5. CAMPAIGN
 Campaign: {campaign_name}
 Brief: {brief}
 
-Generate 6-10 blocks as JSON with: subject_lines, preview_text, email_blocks`,
+6. CTA LANGUAGE BANK
+- Shop Now
+- See the Line
+- Watch the Launch
+- Learn More
+- Use My Code
+- Enter Now
+- Claim Offer
+- Explore More
+
+Generate 6-10 blocks as JSON with: subject_lines, preview_text, email_blocks. Each block should be self-contained and scrollable.`,
 
   copy_revision: `You are revising email copy based on client feedback.
 
