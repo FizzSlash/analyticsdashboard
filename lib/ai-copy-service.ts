@@ -264,6 +264,94 @@ Generate 6-10 blocks based on the campaign objective. Make each block self-conta
   }
 
   /**
+   * Generate 3 strategic brief ideas before creating copy
+   */
+  async generateBriefIdeas(params: {
+    campaign_name: string
+    initial_idea: string
+    copy_notes: any
+    product_urls?: string[]
+  }): Promise<{
+    idea1: { title: string; brief: string; block_layout: string; strategy: string }
+    idea2: { title: string; brief: string; block_layout: string; strategy: string }
+    idea3: { title: string; brief: string; block_layout: string; strategy: string }
+  }> {
+    try {
+      const { campaign_name, initial_idea, copy_notes, product_urls } = params
+
+      const prompt = `You are a strategic email campaign planner. Generate 3 DISTINCT strategic approaches for this email campaign.
+
+CAMPAIGN: ${campaign_name}
+INITIAL IDEA: ${initial_idea}
+
+BRAND CONTEXT:
+- Voice & Tone: ${copy_notes.voice_tone || 'Professional'}
+- Target Audience: ${copy_notes.target_audience || 'General'}
+- Pain Points: ${copy_notes.pain_points?.join(', ') || 'N/A'}
+${product_urls && product_urls.length > 0 ? `\nPRODUCT URLs PROVIDED: ${product_urls.length} products` : ''}
+
+Generate 3 DIFFERENT strategic approaches:
+1. One DIRECT approach (straightforward product focus)
+2. One STORY-DRIVEN approach (narrative/emotional)
+3. One VALUE/BENEFIT approach (problem-solving)
+
+For EACH idea, provide:
+- Title: A catchy name for this approach (5-8 words)
+- Brief: Detailed campaign strategy (150-200 words)
+- Block Layout: Exact sequence of blocks (e.g., "HEADER → SUBHEADER → HERO IMAGE → CTA → BULLET LIST → PRODUCT BLOCKS → CTA")
+- Strategy: Why this approach will work (2-3 sentences)
+
+Return as JSON:
+{
+  "idea1": {
+    "title": "Direct Product Showcase",
+    "brief": "...",
+    "block_layout": "HEADER → SUBHEADER → ...",
+    "strategy": "..."
+  },
+  "idea2": {
+    "title": "Story-Driven Journey",
+    "brief": "...",
+    "block_layout": "HEADER → BODY → ...",
+    "strategy": "..."
+  },
+  "idea3": {
+    "title": "Problem-Solution Focus",
+    "brief": "...",
+    "block_layout": "HEADER → CHECKMARKS → ...",
+    "strategy": "..."
+  }
+}
+
+Make each approach DISTINCTLY different in tone and structure.`
+
+      const message = await anthropic.messages.create({
+        model: 'claude-sonnet-4-0',
+        max_tokens: 3000,
+        temperature: 0.7, // Higher for creative variety
+        messages: [{
+          role: 'user',
+          content: prompt
+        }]
+      })
+
+      const responseText = message.content[0].type === 'text' ? message.content[0].text : ''
+      
+      // Parse JSON response
+      const jsonMatch = responseText.match(/\{[\s\S]*\}/)
+      if (jsonMatch) {
+        return JSON.parse(jsonMatch[0])
+      }
+      
+      throw new Error('Failed to parse AI response')
+      
+    } catch (error) {
+      console.error('Brief ideas generation error:', error)
+      throw new Error('Failed to generate brief ideas')
+    }
+  }
+
+  /**
    * Enhance a brief using AI
    */
   async enhanceBrief(params: {
