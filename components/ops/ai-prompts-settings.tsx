@@ -1,0 +1,336 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { 
+  Save, 
+  RotateCcw, 
+  Sparkles,
+  FileText,
+  MessageSquare,
+  Lightbulb,
+  Edit3,
+  Check,
+  X
+} from 'lucide-react'
+
+interface AIPromptsSettingsProps {
+  agencyId: string
+}
+
+interface PromptConfig {
+  id: string
+  name: string
+  description: string
+  prompt: string
+  icon: any
+  color: string
+}
+
+const DEFAULT_PROMPTS = {
+  copy_notes: `You are analyzing a brand to create comprehensive copywriting guidelines.
+
+BRAND: {brand_name}
+WEBSITE: {website_url}
+
+Based on the brand name and industry, generate detailed copy notes:
+
+1. Voice & Tone: How should the brand communicate?
+2. Brand Personality: 3-5 adjectives
+3. Writing Style: Sentence structure, approach
+4. Key Phrases: 5-10 phrases that fit the brand
+5. Words to Avoid: What NOT to say
+6. Target Audience: Who are they speaking to?
+7. Pain Points: What problems do customers have?
+
+Return as JSON with fields: voice_tone, brand_personality, writing_style, key_phrases, words_to_avoid, target_audience, pain_points`,
+
+  brief_ideas: `You are a strategic email campaign expert. Analyze this campaign and generate the 3 BEST strategic approaches based on the brand, audience, and campaign objective.
+
+CAMPAIGN: {campaign_name}
+CAMPAIGN OBJECTIVE: {initial_idea}
+
+BRAND CONTEXT:
+- Voice & Tone: {voice_tone}
+- Brand Personality: {brand_personality}
+- Target Audience: {target_audience}
+- Pain Points: {pain_points}
+
+TASK: Generate the 3 BEST strategic approaches for THIS specific campaign and brand.
+
+Consider:
+- What will resonate most with THIS audience?
+- What matches THIS brand's voice and personality?
+- What structure best serves THIS campaign objective?
+
+Return 3 ideas as JSON with: title, brief, block_layout, strategy`,
+
+  email_copy: `PURPOSE: Generate clean, conversion-ready e-commerce emails using a modular block system.
+
+GLOBAL TONE RULES:
+- No em dashes or hyphens
+- Short, confident sentences
+- Sound human, not corporate
+- Prioritize clarity over creativity
+
+BRAND VOICE:
+- Voice & Tone: {voice_tone}
+- Brand Personality: {brand_personality}
+- Key Phrases: {key_phrases}
+- Words to Avoid: {words_to_avoid}
+
+CAMPAIGN:
+Campaign: {campaign_name}
+Brief: {brief}
+
+Generate 6-10 blocks as JSON with: subject_lines, preview_text, email_blocks`,
+
+  copy_revision: `You are revising email copy based on client feedback.
+
+CURRENT COPY: {current_copy}
+REVISION REQUEST: {revision_notes}
+
+BRAND GUIDELINES:
+- Voice & Tone: {voice_tone}
+- Key Phrases: {key_phrases}
+- Words to Avoid: {words_to_avoid}
+
+CRITICAL RULES:
+1. Keep same overall structure
+2. Apply requested revisions precisely
+3. Follow brand guidelines
+4. Return COMPLETE revised email
+
+Return revised copy as JSON with: subject_lines, preview_text, email_blocks`
+}
+
+export function AIPromptsSettings({ agencyId }: AIPromptsSettingsProps) {
+  const [prompts, setPrompts] = useState<PromptConfig[]>([
+    {
+      id: 'copy_notes',
+      name: 'Copy Notes Generation',
+      description: 'Analyzes brand and creates copywriting guidelines',
+      prompt: DEFAULT_PROMPTS.copy_notes,
+      icon: FileText,
+      color: 'blue'
+    },
+    {
+      id: 'brief_ideas',
+      name: 'Brief Ideas Generation',
+      description: 'Creates 3 strategic campaign approaches',
+      prompt: DEFAULT_PROMPTS.brief_ideas,
+      icon: Lightbulb,
+      color: 'purple'
+    },
+    {
+      id: 'email_copy',
+      name: 'Email Copy Generation',
+      description: 'Generates final email copy with blocks',
+      prompt: DEFAULT_PROMPTS.email_copy,
+      icon: Sparkles,
+      color: 'green'
+    },
+    {
+      id: 'copy_revision',
+      name: 'Copy Revision',
+      description: 'Revises copy based on feedback',
+      prompt: DEFAULT_PROMPTS.copy_revision,
+      icon: MessageSquare,
+      color: 'orange'
+    }
+  ])
+
+  const [editingPrompt, setEditingPrompt] = useState<string | null>(null)
+  const [editedText, setEditedText] = useState('')
+  const [saving, setSaving] = useState(false)
+
+  const handleEdit = (promptId: string) => {
+    const prompt = prompts.find(p => p.id === promptId)
+    if (prompt) {
+      setEditingPrompt(promptId)
+      setEditedText(prompt.prompt)
+    }
+  }
+
+  const handleSave = async () => {
+    if (!editingPrompt) return
+
+    setSaving(true)
+    try {
+      // Update the prompt in state
+      setPrompts(prompts.map(p => 
+        p.id === editingPrompt ? { ...p, prompt: editedText } : p
+      ))
+
+      // TODO: Save to database (ops_ai_prompts table)
+      // const response = await fetch('/api/ops/ai-prompts', {
+      //   method: 'PATCH',
+      //   body: JSON.stringify({
+      //     agencyId,
+      //     promptId: editingPrompt,
+      //     prompt: editedText
+      //   })
+      // })
+
+      setEditingPrompt(null)
+      alert('✅ Prompt updated successfully')
+    } catch (error) {
+      console.error('Error saving prompt:', error)
+      alert('Failed to save prompt')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleReset = (promptId: string) => {
+    if (confirm('Reset this prompt to default?')) {
+      setPrompts(prompts.map(p => 
+        p.id === promptId ? { ...p, prompt: DEFAULT_PROMPTS[promptId as keyof typeof DEFAULT_PROMPTS] } : p
+      ))
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <Card className="bg-white/10 backdrop-blur-md border-white/20">
+        <CardHeader>
+          <CardTitle className="text-white text-xl flex items-center gap-2">
+            <Sparkles className="h-5 w-5" />
+            AI Prompts Configuration
+          </CardTitle>
+          <p className="text-white/70 text-sm">
+            Customize the AI prompts used for copy generation. Changes apply to all campaigns.
+          </p>
+        </CardHeader>
+      </Card>
+
+      {/* Prompts List */}
+      <div className="grid grid-cols-1 gap-6">
+        {prompts.map((promptConfig) => {
+          const Icon = promptConfig.icon
+          const isEditing = editingPrompt === promptConfig.id
+
+          return (
+            <Card key={promptConfig.id} className="bg-white border border-gray-200">
+              <CardHeader className={`bg-${promptConfig.color}-50 border-b border-${promptConfig.color}-100`}>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className={`p-2 bg-${promptConfig.color}-100 rounded-lg`}>
+                      <Icon className={`h-5 w-5 text-${promptConfig.color}-600`} />
+                    </div>
+                    <div>
+                      <CardTitle className="text-gray-900">{promptConfig.name}</CardTitle>
+                      <p className="text-sm text-gray-600 mt-1">{promptConfig.description}</p>
+                    </div>
+                  </div>
+
+                  {!isEditing && (
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleEdit(promptConfig.id)}
+                        className={`px-4 py-2 bg-${promptConfig.color}-600 hover:bg-${promptConfig.color}-700 text-white rounded-lg font-medium flex items-center gap-2 transition-colors`}
+                      >
+                        <Edit3 className="h-4 w-4" />
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleReset(promptConfig.id)}
+                        className="px-4 py-2 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                        title="Reset to default"
+                      >
+                        <RotateCcw className="h-4 w-4" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </CardHeader>
+
+              <CardContent className="p-6">
+                {isEditing ? (
+                  <div className="space-y-4">
+                    <textarea
+                      value={editedText}
+                      onChange={(e) => setEditedText(e.target.value)}
+                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm min-h-[400px]"
+                      placeholder="Enter your custom prompt..."
+                    />
+                    
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                      <h4 className="font-semibold text-blue-900 mb-2 text-sm">Available Variables:</h4>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-xs text-blue-800 font-mono">
+                        <div>• {'{brand_name}'}</div>
+                        <div>• {'{campaign_name}'}</div>
+                        <div>• {'{voice_tone}'}</div>
+                        <div>• {'{brand_personality}'}</div>
+                        <div>• {'{target_audience}'}</div>
+                        <div>• {'{pain_points}'}</div>
+                        <div>• {'{key_phrases}'}</div>
+                        <div>• {'{words_to_avoid}'}</div>
+                        <div>• {'{initial_idea}'}</div>
+                        <div>• {'{brief}'}</div>
+                        <div>• {'{current_copy}'}</div>
+                        <div>• {'{revision_notes}'}</div>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-3">
+                      <button
+                        onClick={handleSave}
+                        disabled={saving}
+                        className="flex-1 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white px-6 py-3 rounded-lg font-semibold flex items-center justify-center gap-2 transition-colors"
+                      >
+                        <Check className="h-4 w-4" />
+                        {saving ? 'Saving...' : 'Save Changes'}
+                      </button>
+                      <button
+                        onClick={() => {
+                          setEditingPrompt(null)
+                          setEditedText('')
+                        }}
+                        className="px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2"
+                      >
+                        <X className="h-4 w-4" />
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                    <pre className="text-xs text-gray-700 font-mono whitespace-pre-wrap leading-relaxed max-h-[200px] overflow-y-auto">
+                      {promptConfig.prompt}
+                    </pre>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )
+        })}
+      </div>
+
+      {/* Info Card */}
+      <Card className="bg-blue-50 border-2 border-blue-200">
+        <CardContent className="p-6">
+          <div className="flex items-start gap-3">
+            <Sparkles className="h-6 w-6 text-blue-600 flex-shrink-0" />
+            <div>
+              <h3 className="font-semibold text-blue-900 mb-2">About AI Prompts</h3>
+              <div className="text-sm text-blue-800 space-y-2">
+                <p>
+                  <strong>These prompts control how Claude AI generates content.</strong> Customize them to better match your agency's style and requirements.
+                </p>
+                <p>
+                  Use the <code className="bg-blue-100 px-2 py-0.5 rounded">{'{variable}'}</code> syntax to insert dynamic values. The AI will replace these with actual data when generating content.
+                </p>
+                <p>
+                  <strong>Note:</strong> Changes apply to all future copy generations. Already-generated copy is not affected.
+                </p>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
+

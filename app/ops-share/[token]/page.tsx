@@ -13,9 +13,10 @@ import { ABTestTracker } from '@/components/ops/ab-test-tracker'
 import { ScopeTracker } from '@/components/ops/scope-tracker'
 import { RoleViewsCalendar } from '@/components/ops/role-views-calendar'
 import { CampaignDetailModal } from '@/components/ops/campaign-detail-modal'
-import { Loader2, Lock, Calendar, Columns, BarChart3, Zap, MousePointer, FolderOpen, FileText, TestTube, Eye, Target } from 'lucide-react'
+import { AIPromptsSettings } from '@/components/ops/ai-prompts-settings'
+import { Loader2, Lock, Calendar, Columns, BarChart3, Zap, MousePointer, FolderOpen, FileText, TestTube, Eye, Target, Settings } from 'lucide-react'
 
-type OpsTab = 'overview' | 'campaigns' | 'flows' | 'popups' | 'content' | 'forms' | 'abtests' | 'view' | 'scope'
+type OpsTab = 'overview' | 'campaigns' | 'flows' | 'popups' | 'content' | 'forms' | 'abtests' | 'view' | 'scope' | 'settings'
 
 export default function OpsSharePage() {
   const params = useParams()
@@ -165,7 +166,8 @@ export default function OpsSharePage() {
               { id: 'content', label: 'Content', icon: FolderOpen },
               { id: 'forms', label: 'Forms', icon: FileText },
               { id: 'view', label: 'View', icon: Eye },
-              { id: 'scope', label: 'Scope', icon: Target }
+              { id: 'scope', label: 'Scope', icon: Target },
+              { id: 'settings', label: 'Settings', icon: Settings }
             ].map(tab => {
               const Icon = tab.icon
               return (
@@ -249,6 +251,7 @@ export default function OpsSharePage() {
           />
         )}
         {activeTab === 'scope' && <ScopeTracker clients={clients} selectedClient={selectedClient} campaigns={campaigns} />}
+        {activeTab === 'settings' && <AIPromptsSettings agencyId={agency?.id || ''} />}
       </div>
 
       {/* Campaign Detail Modal */}

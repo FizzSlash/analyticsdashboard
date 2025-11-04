@@ -15,6 +15,7 @@ import { FlowManager } from '@/components/ops/flow-manager'
 import { RoleViewsCalendar } from '@/components/ops/role-views-calendar'
 import { PopupManager } from '@/components/ops/popup-manager'
 import { CampaignDetailModal } from '@/components/ops/campaign-detail-modal'
+import { AIPromptsSettings } from '@/components/ops/ai-prompts-settings'
 import { 
   Settings, 
   ArrowLeft, 
@@ -31,7 +32,7 @@ import {
   MousePointer
 } from 'lucide-react'
 
-type OpsTab = 'overview' | 'campaigns' | 'flows' | 'popups' | 'content' | 'forms' | 'abtests' | 'view' | 'scope'
+type OpsTab = 'overview' | 'campaigns' | 'flows' | 'popups' | 'content' | 'forms' | 'abtests' | 'view' | 'scope' | 'settings'
 type CampaignView = 'calendar' | 'pipeline'
 
 interface Campaign {
@@ -80,7 +81,8 @@ export default function OperationsPage({ params }: PageProps) {
     { id: 'content', label: 'Content Hub', icon: FolderOpen },
     { id: 'forms', label: 'Forms', icon: FileText },
     { id: 'view', label: 'View', icon: Eye },
-    { id: 'scope', label: 'Scope', icon: Target }
+    { id: 'scope', label: 'Scope', icon: Target },
+    { id: 'settings', label: 'Settings', icon: Settings }
   ]
 
   useEffect(() => {
@@ -460,6 +462,11 @@ export default function OperationsPage({ params }: PageProps) {
               selectedClient={selectedClient}
               campaigns={sharedCampaigns}
             />
+          )}
+
+          {/* Settings Tab */}
+          {activeTab === 'settings' && (
+            <AIPromptsSettings agencyId={agency?.id || ''} />
           )}
 
         </div>
