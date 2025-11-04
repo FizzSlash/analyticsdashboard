@@ -30,7 +30,7 @@ interface Campaign {
   send_date: Date
   status: 'strategy' | 'copy' | 'design' | 'ready_for_imp_qa' | 'qa' | 'client_approval' | 'approved' | 'scheduled' | 'sent' | 'revisions'
   priority: 'low' | 'normal' | 'high' | 'urgent'
-  campaign_type: 'email' | 'sms'
+  campaign_type: 'email' | 'plaintext' | 'sms'
   subject_line?: string
   preview_text?: string
   target_audience?: string
@@ -102,10 +102,11 @@ export function CampaignDetailModal({
   const activityLog: ActivityLog[] = []
 
   const handleSave = () => {
-    // Validate: Image required for QA, Client Approval, and beyond
-    const requiresImage = ['qa', 'client_approval', 'approved', 'scheduled', 'sent'].includes(campaign.status)
+    // Validate: Image required for DESIGNED campaigns (not plain-text) at QA and beyond
+    const requiresImage = ['qa', 'ready_for_imp_qa', 'client_approval', 'approved', 'scheduled', 'sent'].includes(campaign.status)
+    const isDesignedEmail = campaign.campaign_type === 'email' // Only designed emails need images
     
-    if (requiresImage && !uploadedImage) {
+    if (requiresImage && isDesignedEmail && !uploadedImage) {
       alert('⚠️ CAMPAIGN PREVIEW IMAGE REQUIRED\n\nYou cannot move to "' + campaign.status.toUpperCase().replace('_', ' ') + '" without uploading an image.\n\nThe QA team and clients need to see the design before approval.\n\nPlease upload an image below, then try again.')
       return
     }
@@ -331,10 +332,11 @@ export function CampaignDetailModal({
                   </label>
                   <select
                     value={campaign.campaign_type}
-                    onChange={(e) => setCampaign({ ...campaign, campaign_type: e.target.value as 'email' | 'sms' })}
+                    onChange={(e) => setCampaign({ ...campaign, campaign_type: e.target.value as 'email' | 'plaintext' | 'sms' })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   >
-                    <option value="email">Email Campaign</option>
+                    <option value="email">Designed Email Campaign</option>
+                    <option value="plaintext">Plain-Text Email Campaign</option>
                     <option value="sms">SMS Campaign</option>
                   </select>
                 </div>

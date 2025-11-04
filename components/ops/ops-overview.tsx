@@ -26,7 +26,7 @@ interface Campaign {
   send_date: Date
   status: 'strategy' | 'copy' | 'design' | 'ready_for_imp_qa' | 'qa' | 'client_approval' | 'approved' | 'scheduled' | 'sent' | 'revisions'
   priority: 'low' | 'normal' | 'high' | 'urgent'
-  campaign_type: 'email' | 'sms'
+  campaign_type: 'email' | 'plaintext' | 'sms'
 }
 
 interface OpsOverviewProps {
