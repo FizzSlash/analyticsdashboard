@@ -12,10 +12,10 @@ const nextConfig = {
       'supabase.co',
     ],
   },
-  // Increase API body size limit for image uploads
-  api: {
-    bodyParser: {
-      sizeLimit: '20mb', // Support high-quality campaign images
+  // Experimental features for larger payloads
+  experimental: {
+    serverActions: {
+      bodySizeLimit: '20mb',
     },
   },
 }

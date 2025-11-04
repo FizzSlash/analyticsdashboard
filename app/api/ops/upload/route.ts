@@ -5,18 +5,9 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
 const supabase = createClient(supabaseUrl, supabaseKey)
 
-// Configure route to accept larger files (20MB)
-export const config = {
-  api: {
-    bodyParser: {
-      sizeLimit: '20mb',
-    },
-  },
-}
-
-// Runtime config for edge/node
+// Route segment config (Next.js 14+)
 export const runtime = 'nodejs'
-export const maxDuration = 60 // 60 seconds timeout
+export const maxDuration = 60
 
 // POST - Upload file to Supabase Storage
 export async function POST(request: NextRequest) {
