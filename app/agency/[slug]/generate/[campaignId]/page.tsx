@@ -386,8 +386,8 @@ ${blocks.map(block => {
               {showProductInput && (
                 <div className="flex items-center gap-2">
                   <button
-                    onClick={handleGenerate}
-                    disabled={generating}
+                    onClick={handleGenerateBriefIdeas}
+                    disabled={generating || loadingIdeas}
                     className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 disabled:opacity-50 text-white px-6 py-2 rounded-lg font-semibold flex items-center gap-2"
                   >
                     {generating ? (
