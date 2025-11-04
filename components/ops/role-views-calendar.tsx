@@ -233,12 +233,14 @@ export function RoleViewsCalendar({ clients, campaigns, flows, selectedClient = 
               return (
                 <div
                   key={index}
-                  className={`min-h-[120px] p-2 ${
+                  className={`min-h-[140px] p-2 ${
                     day.isCurrentMonth 
                       ? 'bg-white/5 hover:bg-white/10' 
                       : 'bg-white/0'
                   } ${
                     isToday ? 'ring-2 ring-white/40' : ''
+                  } ${
+                    dayCampaigns.length > 5 ? 'min-h-[200px]' : ''
                   }`}
                 >
                   {day.date && (
@@ -251,16 +253,16 @@ export function RoleViewsCalendar({ clients, campaigns, flows, selectedClient = 
                         {day.date.getDate()}
                       </div>
 
-                      {/* Campaigns for this day */}
+                      {/* Campaigns for this day - Show ALL campaigns */}
                       <div className="space-y-1">
-                        {dayCampaigns.slice(0, 3).map(campaign => {
+                        {dayCampaigns.map(campaign => {
                           const clientData = clients.find(c => c.id === campaign.client_id)
                           const clientColor = clientData?.primary_color || '#3B82F6'
                           
                           return (
                             <div
                               key={campaign.id}
-                              className="text-xs p-2 rounded cursor-pointer hover:opacity-80 transition-opacity"
+                              className="text-xs p-2 rounded cursor-pointer hover:opacity-90 hover:shadow-lg transition-all"
                               style={{ 
                                 backgroundColor: `${clientColor}40`,
                                 borderLeft: `3px solid ${clientColor}`
@@ -279,12 +281,6 @@ export function RoleViewsCalendar({ clients, campaigns, flows, selectedClient = 
                             </div>
                           )
                         })}
-                        
-                        {dayCampaigns.length > 3 && (
-                          <div className="text-xs text-white/60 text-center py-1">
-                            +{dayCampaigns.length - 3} more
-                          </div>
-                        )}
                       </div>
                     </>
                   )}
