@@ -13,7 +13,8 @@ import {
   GripVertical,
   Eye,
   FileText,
-  Loader2
+  Loader2,
+  RotateCcw
 } from 'lucide-react'
 
 interface CopyBlock {
@@ -380,6 +381,25 @@ ${blocks.map(block => {
                   className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 disabled:opacity-50 text-white px-6 py-2 rounded-lg font-semibold flex items-center gap-2"
                 >
                   <Sparkles className="h-4 w-4" /> Generate Copy
+                </button>
+              )}
+              
+              {blocks.length > 0 && (
+                <button
+                  onClick={() => {
+                    if (confirm('Start over? This will clear all current copy and generate fresh ideas.')) {
+                      setBlocks([])
+                      setSubjectLines([])
+                      setPreviewText('')
+                      setBriefIdeas(null)
+                      setSelectedBriefIdea(null)
+                      setShowBriefIdeas(false)
+                      setShowProductInput(true)
+                    }
+                  }}
+                  className="border-2 border-red-300 text-red-700 hover:bg-red-50 px-6 py-2 rounded-lg font-semibold flex items-center gap-2 transition-colors"
+                >
+                  <RotateCcw className="h-4 w-4" /> Start Over
                 </button>
               )}
               
