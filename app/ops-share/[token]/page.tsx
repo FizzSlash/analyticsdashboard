@@ -27,10 +27,19 @@ export default function OpsSharePage() {
   const [activeTab, setActiveTab] = useState<OpsTab>('campaigns')
   const [campaignView, setCampaignView] = useState<'calendar' | 'pipeline'>('calendar')
   const [selectedClient, setSelectedClient] = useState<string>('all')
+  const [campaigns, setCampaigns] = useState<any[]>([])
+  const [flows, setFlows] = useState<any[]>([])
 
   useEffect(() => {
     fetchOpsData()
   }, [token])
+  
+  // Refetch campaigns/flows when client selection changes
+  useEffect(() => {
+    if (clients.length > 0) {
+      fetchCampaignsAndFlows()
+    }
+  }, [selectedClient, clients])
 
   const fetchOpsData = async () => {
     try {
@@ -44,10 +53,35 @@ export default function OpsSharePage() {
 
       setAgency(result.agency)
       setClients(result.clients)
+      
+      // Fetch campaigns and flows for all views
+      if (result.clients && result.clients.length > 0) {
+        await fetchCampaignsAndFlows()
+      }
     } catch (err) {
       setError('Failed to load Ops dashboard')
     } finally {
       setLoading(false)
+    }
+  }
+  
+  const fetchCampaignsAndFlows = async () => {
+    try {
+      // Fetch campaigns
+      const campaignsRes = await fetch(`/api/ops/campaigns?clientId=${selectedClient}`)
+      const campaignsData = await campaignsRes.json()
+      if (campaignsData.success) {
+        setCampaigns(campaignsData.campaigns || [])
+      }
+      
+      // Fetch flows
+      const flowsRes = await fetch(`/api/ops/flows?clientId=${selectedClient}`)
+      const flowsData = await flowsRes.json()
+      if (flowsData.success) {
+        setFlows(flowsData.flows || [])
+      }
+    } catch (error) {
+      console.error('Error fetching campaigns/flows:', error)
     }
   }
 
@@ -162,7 +196,7 @@ export default function OpsSharePage() {
 
       {/* Content */}
       <div className="max-w-7xl mx-auto px-6 py-8">
-        {activeTab === 'overview' && <OpsOverview clients={clients} selectedClient={selectedClient} campaigns={[]} onCampaignClick={() => {}} />}
+        {activeTab === 'overview' && <OpsOverview clients={clients} selectedClient={selectedClient} campaigns={campaigns} onCampaignClick={(campaign) => console.log('Campaign clicked:', campaign)} />}
         
         {activeTab === 'campaigns' && (
           <div className="space-y-4">
@@ -192,9 +226,9 @@ export default function OpsSharePage() {
         {activeTab === 'popups' && <PopupManager clients={clients} selectedClient={selectedClient} />}
         {activeTab === 'content' && <ContentHub clients={clients} selectedClient={selectedClient} />}
         {activeTab === 'forms' && <OpsForms clients={clients} selectedClient={selectedClient} />}
-        {activeTab === 'abtests' && <ABTestTracker clients={clients} selectedClient={selectedClient} campaigns={[]} />}
-        {activeTab === 'view' && <RoleViews clients={clients} campaigns={[]} flows={[]} />}
-        {activeTab === 'scope' && <ScopeTracker clients={clients} selectedClient={selectedClient} campaigns={[]} />}
+        {activeTab === 'abtests' && <ABTestTracker clients={clients} selectedClient={selectedClient} campaigns={campaigns} />}
+        {activeTab === 'view' && <RoleViews clients={clients} campaigns={campaigns} flows={flows} />}
+        {activeTab === 'scope' && <ScopeTracker clients={clients} selectedClient={selectedClient} campaigns={campaigns} />}
       </div>
     </div>
   )
