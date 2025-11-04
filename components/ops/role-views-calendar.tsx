@@ -36,8 +36,8 @@ export function RoleViewsCalendar({ clients, campaigns, flows, selectedClient = 
   const roleViews = [
     { id: 'copywriter', label: 'Copywriter', icon: FileText, statuses: ['strategy', 'copy'], color: 'blue' },
     { id: 'designer', label: 'Designer', icon: Palette, statuses: ['design'], color: 'purple' },
-    { id: 'implementor', label: 'Implementor', icon: Rocket, statuses: ['ready_for_imp_qa', 'scheduled'], color: 'green' },
-    { id: 'pm', label: 'Project Manager', icon: Briefcase, statuses: ['qa', 'client_approval', 'revisions', 'approved'], color: 'orange' }
+    { id: 'implementor', label: 'Implementor', icon: Rocket, statuses: ['approved', 'scheduled'], color: 'green' },
+    { id: 'pm', label: 'Project Manager', icon: Briefcase, statuses: ['qa', 'client_approval', 'revisions', 'ready_for_imp_qa'], color: 'orange' }
   ]
 
   const activeRoleConfig = roleViews.find(v => v.id === activeView)!
