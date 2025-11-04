@@ -23,7 +23,7 @@ import {
 } from '@dnd-kit/sortable'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { GripVertical, Clock, TestTube } from 'lucide-react'
+import { GripVertical, Clock, TestTube, Eye } from 'lucide-react'
 
 interface Campaign {
   id: string

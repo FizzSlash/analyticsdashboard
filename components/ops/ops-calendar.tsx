@@ -26,7 +26,8 @@ import {
   X,
   GripVertical,
   Plus,
-  TestTube
+  TestTube,
+  Eye
 } from 'lucide-react'
 
 interface Campaign {
