@@ -27,7 +27,17 @@ export async function uploadToSupabase(
   try {
     // Auto-detect if we're on a share link page
     const isShareLink = typeof window !== 'undefined' && window.location.pathname.includes('/ops-share/')
-    const detectedToken = isShareLink ? window.location.pathname.split('/ops-share/')[1] : shareToken
+    let detectedToken = shareToken
+    
+    if (isShareLink) {
+      // Extract token from URL: /ops-share/[token]
+      const pathParts = window.location.pathname.split('/ops-share/')
+      if (pathParts.length > 1) {
+        // Remove any trailing slashes or query params
+        detectedToken = pathParts[1].split('/')[0].split('?')[0]
+        console.log(`🔑 Detected share token from URL: ${detectedToken}`)
+      }
+    }
     
     // If on share link or token provided, use the share upload API (bypasses auth)
     if (detectedToken) {

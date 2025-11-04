@@ -19,22 +19,37 @@ export async function POST(request: NextRequest) {
     const shareToken = formData.get('shareToken') as string
 
     if (!file || !bucket || !shareToken) {
+      console.error('Missing required fields:', { file: !!file, bucket, shareToken })
       return NextResponse.json(
         { success: false, error: 'File, bucket, and shareToken required' },
         { status: 400 }
       )
     }
 
+    console.log(`🔑 Validating share token: ${shareToken} (length: ${shareToken.length})`)
+
     // Verify the share token is valid (stored in agencies table)
     const { data: shareData, error: shareError } = await supabase
       .from('agencies')
-      .select('*')
+      .select('id, agency_name, ops_share_token, ops_share_enabled')
       .eq('ops_share_token', shareToken)
       .eq('ops_share_enabled', true)
       .single()
 
     if (shareError || !shareData) {
-      console.error('Invalid share token:', shareToken)
+      console.error('❌ Share token validation failed:', { 
+        shareToken, 
+        error: shareError?.message,
+        hasData: !!shareData 
+      })
+      
+      // Debug: Check if any share tokens exist
+      const { data: allTokens } = await supabase
+        .from('agencies')
+        .select('ops_share_token, ops_share_enabled')
+        .limit(5)
+      console.log('Available share tokens:', allTokens)
+      
       return NextResponse.json(
         { success: false, error: 'Invalid or expired share token' },
         { status: 403 }
