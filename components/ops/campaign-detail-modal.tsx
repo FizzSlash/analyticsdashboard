@@ -672,6 +672,61 @@ Examples:
               />
             </div>
 
+            {/* Team Comments Thread */}
+            <div>
+              <button
+                onClick={() => setShowComments(!showComments)}
+                className="w-full text-sm font-semibold text-gray-700 mb-3 flex items-center justify-between gap-2 hover:text-blue-600 transition-colors"
+              >
+                <div className="flex items-center gap-2">
+                  <MessageSquare className="h-4 w-4" />
+                  Team Comments (0)
+                </div>
+                <ArrowRight className={`h-4 w-4 transition-transform ${showComments ? 'rotate-90' : ''}`} />
+              </button>
+              
+              {showComments && (
+                <div className="space-y-3">
+                  {/* Comment input */}
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={internalComment}
+                      onChange={(e) => setInternalComment(e.target.value)}
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter' && internalComment.trim()) {
+                          // TODO: Add comment to team_comments array
+                          console.log('Comment:', internalComment)
+                          setInternalComment('')
+                        }
+                      }}
+                      placeholder="Add a comment..."
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                    />
+                    <button
+                      onClick={() => {
+                        if (internalComment.trim()) {
+                          // TODO: Add comment
+                          console.log('Comment:', internalComment)
+                          setInternalComment('')
+                        }
+                      }}
+                      className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium"
+                    >
+                      Post
+                    </button>
+                  </div>
+                  
+                  {/* Comments list - will be populated from database */}
+                  <div className="space-y-2 max-h-[200px] overflow-y-auto">
+                    <div className="text-xs text-gray-500 text-center py-4">
+                      No comments yet. Be the first to comment!
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
             {/* Client Feedback - Read Only */}
             {campaign.client_feedback && (
               <div>
