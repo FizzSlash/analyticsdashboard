@@ -25,28 +25,23 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Verify the share token is valid
+    // Verify the share token is valid (stored in agencies table)
     const { data: shareData, error: shareError } = await supabase
-      .from('ops_share_links')
+      .from('agencies')
       .select('*')
-      .eq('token', shareToken)
-      .eq('is_active', true)
+      .eq('ops_share_token', shareToken)
+      .eq('ops_share_enabled', true)
       .single()
 
     if (shareError || !shareData) {
+      console.error('Invalid share token:', shareToken)
       return NextResponse.json(
         { success: false, error: 'Invalid or expired share token' },
         { status: 403 }
       )
     }
 
-    // Check expiration
-    if (shareData.expires_at && new Date(shareData.expires_at) < new Date()) {
-      return NextResponse.json(
-        { success: false, error: 'Share link has expired' },
-        { status: 403 }
-      )
-    }
+    console.log(`✅ Valid share token for agency: ${shareData.agency_name}`)
 
     console.log(`📤 Share upload: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)}MB)`)
 
