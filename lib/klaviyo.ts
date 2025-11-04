@@ -1241,19 +1241,23 @@ import { createCipheriv, createDecipheriv, randomBytes } from 'crypto'
 const ALGORITHM = 'aes-256-gcm'
 
 // CRITICAL: Encryption key must be set via environment variable
-const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || process.env.ENCRYPTION_SECRET
-
-if (!ENCRYPTION_KEY) {
-  throw new Error('FATAL: ENCRYPTION_KEY environment variable must be set. API keys cannot be encrypted/decrypted without it.')
-}
-
-if (ENCRYPTION_KEY.length !== 32) {
-  throw new Error('FATAL: ENCRYPTION_KEY must be exactly 32 characters long for AES-256 encryption.')
+const getEncryptionKey = (): string => {
+  const key = process.env.ENCRYPTION_KEY || process.env.ENCRYPTION_SECRET
+  
+  if (!key) {
+    throw new Error('FATAL: ENCRYPTION_KEY environment variable must be set. API keys cannot be encrypted/decrypted without it.')
+  }
+  
+  if (key.length !== 32) {
+    throw new Error('FATAL: ENCRYPTION_KEY must be exactly 32 characters long for AES-256 encryption.')
+  }
+  
+  return key
 }
 
 export function encryptApiKey(apiKey: string): string {
   const iv = randomBytes(16)
-  const cipher = createCipheriv(ALGORITHM, Buffer.from(ENCRYPTION_KEY), iv)
+  const cipher = createCipheriv(ALGORITHM, Buffer.from(getEncryptionKey()), iv)
   
   let encrypted = cipher.update(apiKey, 'utf8', 'hex')
   encrypted += cipher.final('hex')
@@ -1269,7 +1273,7 @@ export function decryptApiKey(encryptedData: string): string {
   const authTag = Buffer.from(parts[1], 'hex')
   const encrypted = parts[2]
   
-  const decipher = createDecipheriv(ALGORITHM, Buffer.from(ENCRYPTION_KEY), iv)
+  const decipher = createDecipheriv(ALGORITHM, Buffer.from(getEncryptionKey()), iv)
   decipher.setAuthTag(authTag)
   
   let decrypted = decipher.update(encrypted, 'hex', 'utf8')
