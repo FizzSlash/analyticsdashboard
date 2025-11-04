@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { BriefIdeasSelector } from '@/components/ops/brief-ideas-selector'
 import { 
   ArrowLeft, 
   Save, 
@@ -44,6 +45,10 @@ export default function CopyGenerationPage({ params }: PageProps) {
   const [editingBlock, setEditingBlock] = useState<string | null>(null)
   const [productUrls, setProductUrls] = useState<string[]>([''])
   const [showProductInput, setShowProductInput] = useState(false)
+  const [showBriefIdeas, setShowBriefIdeas] = useState(false)
+  const [briefIdeas, setBriefIdeas] = useState<any>(null)
+  const [loadingIdeas, setLoadingIdeas] = useState(false)
+  const [selectedBriefIdea, setSelectedBriefIdea] = useState<any>(null)
   const router = useRouter()
 
   useEffect(() => {
@@ -75,16 +80,73 @@ export default function CopyGenerationPage({ params }: PageProps) {
     }
   }
 
-  const handleGenerateClick = () => {
-    setShowProductInput(true)
+  // Step 1: Generate 3 brief ideas
+  const handleGenerateBriefIdeas = async () => {
+    setLoadingIdeas(true)
+    setShowProductInput(false)
+    try {
+      const validUrls = productUrls.filter(url => url.trim().length > 0)
+      
+      const response = await fetch('/api/ai/generate-brief-ideas', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          campaignId: params.campaignId,
+          initialIdea: campaign?.internal_notes || '',
+          productUrls: validUrls
+        })
+      })
+      
+      const data = await response.json()
+      if (data.success) {
+        setBriefIdeas(data.data)
+        setShowBriefIdeas(true)
+      } else {
+        alert(data.error || 'Failed to generate brief ideas')
+      }
+    } catch (error) {
+      console.error('Error generating brief ideas:', error)
+      alert('Failed to generate brief ideas')
+    } finally {
+      setLoadingIdeas(false)
+    }
   }
 
-  const handleGenerate = async () => {
+  // Step 2: Regenerate with context
+  const handleRegenerateBriefIdeas = async (context: string) => {
+    setLoadingIdeas(true)
+    try {
+      const validUrls = productUrls.filter(url => url.trim().length > 0)
+      
+      const response = await fetch('/api/ai/generate-brief-ideas', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          campaignId: params.campaignId,
+          initialIdea: campaign?.internal_notes || '',
+          regenerateContext: context,
+          productUrls: validUrls
+        })
+      })
+      
+      const data = await response.json()
+      if (data.success) {
+        setBriefIdeas(data.data)
+      }
+    } catch (error) {
+      console.error('Error regenerating brief ideas:', error)
+    } finally {
+      setLoadingIdeas(false)
+    }
+  }
+
+  // Step 3: Generate copy from selected idea
+  const handleSelectBriefIdea = async (ideaNumber: 1 | 2 | 3, idea: any) => {
+    setSelectedBriefIdea({ number: ideaNumber, ...idea })
+    setShowBriefIdeas(false)
     setGenerating(true)
-    setShowProductInput(false)
     
     try {
-      // Filter out empty URLs
       const validUrls = productUrls.filter(url => url.trim().length > 0)
 
       const response = await fetch('/api/ai/generate-copy', {
@@ -92,6 +154,7 @@ export default function CopyGenerationPage({ params }: PageProps) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           campaignId: params.campaignId,
+          brief: idea.brief, // Use the selected brief
           productUrls: validUrls
         })
       })
@@ -365,11 +428,14 @@ ${blocks.map(block => {
                 Click "Generate Copy" to create email copy using Claude AI
               </p>
               <button
-                onClick={handleGenerateClick}
-                disabled={generating}
+                onClick={() => {
+                  setShowProductInput(true)
+                  setShowBriefIdeas(false)
+                }}
+                disabled={generating || loadingIdeas}
                 className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 disabled:opacity-50 text-white px-8 py-3 rounded-lg font-bold text-lg flex items-center gap-2 mx-auto"
               >
-                <Sparkles className="h-5 w-5" /> Generate Email Copy
+                <Sparkles className="h-5 w-5" /> Start Copy Generation
               </button>
             </CardContent>
           </Card>
@@ -414,14 +480,14 @@ ${blocks.map(block => {
               </button>
               <div className="flex gap-3 pt-4">
                 <button
-                  onClick={handleGenerate}
-                  disabled={generating}
+                  onClick={handleGenerateBriefIdeas}
+                  disabled={generating || loadingIdeas}
                   className="flex-1 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 disabled:opacity-50 text-white px-6 py-3 rounded-lg font-bold flex items-center justify-center gap-2"
                 >
-                  {generating ? (
-                    <><Loader2 className="h-5 w-5 animate-spin" /> Generating...</>
+                  {loadingIdeas ? (
+                    <><Loader2 className="h-5 w-5 animate-spin" /> Generating Ideas...</>
                   ) : (
-                    <><Sparkles className="h-5 w-5" /> Generate Copy</>
+                    <><Sparkles className="h-5 w-5" /> Generate 3 Brief Ideas</>
                   )}
                 </button>
                 <button
@@ -433,6 +499,16 @@ ${blocks.map(block => {
               </div>
             </CardContent>
           </Card>
+        ) : showBriefIdeas ? (
+          // Step 2: Show 3 Brief Ideas for selection
+          <BriefIdeasSelector
+            campaignId={params.campaignId}
+            campaignName={campaign?.campaign_name || ''}
+            briefIdeas={briefIdeas}
+            onSelect={handleSelectBriefIdea}
+            onRegenerate={handleRegenerateBriefIdeas}
+            loading={loadingIdeas}
+          />
         ) : (
           <div className="space-y-6">
             {/* Subject Lines */}
