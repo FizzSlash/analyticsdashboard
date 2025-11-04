@@ -279,51 +279,66 @@ Generate 6-10 blocks based on the campaign objective. Make each block self-conta
     try {
       const { campaign_name, initial_idea, copy_notes, product_urls } = params
 
-      const prompt = `You are a strategic email campaign planner. Generate 3 DISTINCT strategic approaches for this email campaign.
+      const prompt = `You are a strategic email campaign expert. Analyze this campaign and generate the 3 BEST strategic approaches based on the brand, audience, and campaign objective.
 
 CAMPAIGN: ${campaign_name}
-INITIAL IDEA: ${initial_idea}
+CAMPAIGN OBJECTIVE: ${initial_idea}
 
 BRAND CONTEXT:
 - Voice & Tone: ${copy_notes.voice_tone || 'Professional'}
+- Brand Personality: ${copy_notes.brand_personality?.join(', ') || 'N/A'}
+- Writing Style: ${copy_notes.writing_style || 'Clear and concise'}
 - Target Audience: ${copy_notes.target_audience || 'General'}
 - Pain Points: ${copy_notes.pain_points?.join(', ') || 'N/A'}
-${product_urls && product_urls.length > 0 ? `\nPRODUCT URLs PROVIDED: ${product_urls.length} products` : ''}
+- Key Phrases: ${copy_notes.key_phrases?.join(', ') || 'N/A'}
+${product_urls && product_urls.length > 0 ? `\nPRODUCT URLs PROVIDED: ${product_urls.length} products to feature` : ''}
 
-Generate 3 DIFFERENT strategic approaches:
-1. One DIRECT approach (straightforward product focus)
-2. One STORY-DRIVEN approach (narrative/emotional)
-3. One VALUE/BENEFIT approach (problem-solving)
+TASK: Generate the 3 BEST strategic approaches for THIS specific campaign and brand.
 
-For EACH idea, provide:
-- Title: A catchy name for this approach (5-8 words)
-- Brief: Detailed campaign strategy (150-200 words)
-- Block Layout: Exact sequence of blocks (e.g., "HEADER → SUBHEADER → HERO IMAGE → CTA → BULLET LIST → PRODUCT BLOCKS → CTA")
-- Strategy: Why this approach will work (2-3 sentences)
+Consider:
+- What will resonate most with THIS audience?
+- What matches THIS brand's voice and personality?
+- What structure best serves THIS campaign objective?
+- What approach is most likely to convert?
+
+DO NOT force generic types (direct/story/value). Instead, create 3 genuinely different approaches that make sense for THIS specific campaign.
+
+For EACH of the 3 ideas, provide:
+- Title: Compelling name for this approach (5-8 words)
+- Brief: Complete campaign strategy (150-200 words) - include angle, hook, messaging hierarchy, and flow
+- Block Layout: Exact email structure using blocks (e.g., "HEADER → SUBHEADER → HERO IMAGE → CTA → BULLET LIST → PRODUCT BLOCKS → CTA")
+- Strategy: Why this specific approach will work for THIS brand and audience (2-3 sentences)
+
+IMPORTANT:
+- Make each idea MEANINGFULLY different (not just minor variations)
+- Base recommendations on the actual brand personality and voice
+- Consider what's most appropriate for the campaign objective
+- Use the brand's key phrases naturally
+- Address the audience's actual pain points
 
 Return as JSON:
 {
   "idea1": {
-    "title": "Direct Product Showcase",
-    "brief": "...",
-    "block_layout": "HEADER → SUBHEADER → ...",
-    "strategy": "..."
+    "title": "[Approach-specific title]",
+    "brief": "[Full strategic brief]",
+    "block_layout": "[Specific block sequence]",
+    "strategy": "[Why this works for THIS brand/campaign]"
   },
   "idea2": {
-    "title": "Story-Driven Journey",
-    "brief": "...",
-    "block_layout": "HEADER → BODY → ...",
-    "strategy": "..."
+    "title": "[Different approach title]",
+    "brief": "[Different strategic brief]",
+    "block_layout": "[Different block sequence]",
+    "strategy": "[Why this alternative works]"
   },
   "idea3": {
-    "title": "Problem-Solution Focus",
-    "brief": "...",
-    "block_layout": "HEADER → CHECKMARKS → ...",
-    "strategy": "..."
+    "title": "[Third unique approach]",
+    "brief": "[Third strategic brief]",
+    "block_layout": "[Third block sequence]",
+    "strategy": "[Why this third option works]"
   }
 }
 
-Make each approach DISTINCTLY different in tone and structure.`
+Generate ideas that are SPECIFICALLY tailored to this brand and campaign, not generic templates.`
 
       const message = await anthropic.messages.create({
         model: 'claude-sonnet-4-0',
