@@ -14,6 +14,7 @@ import { ABTestTracker } from '@/components/ops/ab-test-tracker'
 import { FlowManager } from '@/components/ops/flow-manager'
 import { RoleViewsCalendar } from '@/components/ops/role-views-calendar'
 import { PopupManager } from '@/components/ops/popup-manager'
+import { CampaignDetailModal } from '@/components/ops/campaign-detail-modal'
 import { 
   Settings, 
   ArrowLeft, 
@@ -445,7 +446,10 @@ export default function OperationsPage({ params }: PageProps) {
               campaigns={sharedCampaigns}
               flows={sharedFlows}
               selectedClient={selectedClient}
-              onCampaignClick={(campaign) => setSelectedCampaignForModal(campaign)}
+              onCampaignClick={(campaign) => {
+                console.log('🎯 Campaign clicked in View tab:', campaign)
+                setSelectedCampaignForModal(campaign)
+              }}
             />
           )}
 
@@ -460,6 +464,58 @@ export default function OperationsPage({ params }: PageProps) {
 
         </div>
       </div>
+
+      {/* Campaign Detail Modal (for clicking campaigns in View tab) */}
+      {selectedCampaignForModal && (
+        <CampaignDetailModal
+          campaign={selectedCampaignForModal}
+          clients={clients}
+          onClose={() => setSelectedCampaignForModal(null)}
+          onSave={async (updatedCampaign) => {
+            // Save campaign
+            try {
+              const response = await fetch('/api/ops/campaigns', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(updatedCampaign)
+              })
+              const data = await response.json()
+              if (data.success) {
+                // Refresh campaigns
+                const refreshRes = await fetch(`/api/ops/campaigns?clientId=${selectedClient}`)
+                const refreshData = await refreshRes.json()
+                if (refreshData.success) {
+                  setSharedCampaigns(refreshData.campaigns.map((c: any) => ({
+                    ...c,
+                    send_date: new Date(c.send_date),
+                    client_name: clients.find(cl => cl.id === c.client_id)?.brand_name || 'Unknown',
+                    client_color: clients.find(cl => cl.id === c.client_id)?.primary_color || '#3B82F6'
+                  })))
+                }
+                setSelectedCampaignForModal(null)
+              }
+            } catch (error) {
+              console.error('Error saving campaign:', error)
+              alert('Failed to save campaign')
+            }
+          }}
+          onDelete={async (campaignId) => {
+            if (confirm('Delete this campaign?')) {
+              try {
+                const response = await fetch(`/api/ops/campaigns?id=${campaignId}`, {
+                  method: 'DELETE'
+                })
+                if (response.ok) {
+                  setSharedCampaigns(sharedCampaigns.filter(c => c.id !== campaignId))
+                  setSelectedCampaignForModal(null)
+                }
+              } catch (error) {
+                console.error('Error deleting campaign:', error)
+              }
+            }
+          }}
+        />
+      )}
     </div>
   )
 }
