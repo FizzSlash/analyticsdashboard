@@ -18,7 +18,9 @@ import {
   Plus,
   Upload,
   TestTube,
-  Sparkles
+  Sparkles,
+  Undo,
+  Redo
 } from 'lucide-react'
 
 interface Campaign {
@@ -74,6 +76,12 @@ export function CampaignDetailModal({
   const [uploadedImage, setUploadedImage] = useState<string | null>(campaign.preview_url || null)
   const [isDragging, setIsDragging] = useState(false)
   const isNewCampaign = campaign.id.startsWith('new-')
+  
+  // Undo/Redo state
+  const [history, setHistory] = useState<Campaign[]>([initialCampaign])
+  const [historyIndex, setHistoryIndex] = useState(0)
+  const [internalComment, setInternalComment] = useState('')
+  const [showComments, setShowComments] = useState(false)
 
   // Listen for copy saved message from child window
   useEffect(() => {
@@ -100,6 +108,53 @@ export function CampaignDetailModal({
 
   // Activity log - will be implemented with real data from database
   const activityLog: ActivityLog[] = []
+  
+  // Update campaign with history tracking
+  const updateCampaign = (updates: Partial<Campaign>) => {
+    const newCampaign = { ...campaign, ...updates }
+    setCampaign(newCampaign)
+    
+    // Add to history (remove any future history if we're not at the end)
+    const newHistory = history.slice(0, historyIndex + 1)
+    newHistory.push(newCampaign)
+    setHistory(newHistory)
+    setHistoryIndex(newHistory.length - 1)
+  }
+  
+  // Undo
+  const handleUndo = () => {
+    if (historyIndex > 0) {
+      const newIndex = historyIndex - 1
+      setHistoryIndex(newIndex)
+      setCampaign(history[newIndex])
+    }
+  }
+  
+  // Redo
+  const handleRedo = () => {
+    if (historyIndex < history.length - 1) {
+      const newIndex = historyIndex + 1
+      setHistoryIndex(newIndex)
+      setCampaign(history[newIndex])
+    }
+  }
+  
+  // Keyboard shortcuts for undo/redo
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'z' && !e.shiftKey) {
+        e.preventDefault()
+        handleUndo()
+      }
+      if ((e.metaKey || e.ctrlKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
+        e.preventDefault()
+        handleRedo()
+      }
+    }
+    
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [historyIndex, history])
 
   const handleSave = () => {
     // Validate: Image required for DESIGNED campaigns (not plain-text) at QA and beyond
