@@ -56,13 +56,15 @@ interface ActivityLog {
 
 interface CampaignDetailModalProps {
   campaign: Campaign
+  clients: any[]
   onClose: () => void
   onSave: (campaign: Campaign) => void
   onDelete: (campaignId: string) => void
 }
 
 export function CampaignDetailModal({ 
-  campaign: initialCampaign, 
+  campaign: initialCampaign,
+  clients,
   onClose, 
   onSave,
   onDelete 
@@ -297,17 +299,29 @@ export function CampaignDetailModal({
                   />
                 </div>
 
-                {/* Client (Read-only) */}
+                {/* Client (Editable) */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Client
+                    Client *
                   </label>
-                  <input
-                    type="text"
-                    value={campaign.client_name}
-                    disabled
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-600"
-                  />
+                  <select
+                    value={campaign.client_id}
+                    onChange={(e) => {
+                      const newClientId = e.target.value
+                      const newClient = clients.find(c => c.id === newClientId)
+                      setCampaign({ 
+                        ...campaign, 
+                        client_id: newClientId,
+                        client_name: newClient?.brand_name || '',
+                        client_color: newClient?.primary_color || '#3B82F6'
+                      })
+                    }}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  >
+                    {clients.map(client => (
+                      <option key={client.id} value={client.id}>{client.brand_name}</option>
+                    ))}
+                  </select>
                 </div>
 
                 {/* Campaign Type */}

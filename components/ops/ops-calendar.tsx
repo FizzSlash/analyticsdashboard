@@ -718,6 +718,7 @@ export function OpsCalendar({ clients, selectedClient }: OpsCalendarProps) {
       {selectedCampaign && (
         <CampaignDetailModal
           campaign={selectedCampaign}
+          clients={clients}
           onClose={() => setSelectedCampaign(null)}
           onSave={handleSaveCampaign}
           onDelete={handleDeleteCampaign}

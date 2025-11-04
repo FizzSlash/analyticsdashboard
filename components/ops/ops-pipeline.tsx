@@ -468,6 +468,7 @@ export function OpsPipeline({ clients, selectedClient }: OpsPipelineProps) {
       {selectedCampaign && (
         <CampaignDetailModal
           campaign={selectedCampaign}
+          clients={clients}
           onClose={() => setSelectedCampaign(null)}
           onSave={handleSaveCampaign}
           onDelete={handleDeleteCampaign}
