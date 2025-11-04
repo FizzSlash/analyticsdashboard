@@ -344,7 +344,31 @@ export function FlowDetailModal({ flow, clients, onSave, onDelete, onClose }: Fl
                       className="w-full rounded-lg border border-gray-300 shadow-lg"
                     />
                     <button
-                      onClick={() => setUploadedImage(null)}
+                      onClick={async () => {
+                        // Delete from Supabase Storage if it's a Supabase URL
+                        if (uploadedImage && uploadedImage.includes('supabase.co/storage')) {
+                          try {
+                            const url = new URL(uploadedImage)
+                            const pathParts = url.pathname.split('/')
+                            const bucketIndex = pathParts.findIndex(part => part === 'campaign-previews')
+                            if (bucketIndex !== -1) {
+                              const filePath = pathParts.slice(bucketIndex + 1).join('/')
+                              
+                              const { createClient } = await import('@supabase/supabase-js')
+                              const supabase = createClient(
+                                process.env.NEXT_PUBLIC_SUPABASE_URL!,
+                                process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+                              )
+                              
+                              await supabase.storage.from('campaign-previews').remove([filePath])
+                              console.log('✅ Flow image deleted from storage')
+                            }
+                          } catch (error) {
+                            console.error('Error removing image:', error)
+                          }
+                        }
+                        setUploadedImage(null)
+                      }}
                       className="absolute top-2 right-2 p-2 bg-red-600 hover:bg-red-700 text-white rounded-lg shadow-lg transition-colors"
                     >
                       <X className="h-4 w-4" />

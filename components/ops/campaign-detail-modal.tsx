@@ -184,7 +184,42 @@ export function CampaignDetailModal({
     }
   }
 
-  const handleRemoveImage = () => {
+  const handleRemoveImage = async () => {
+    // If image is from Supabase Storage, delete it
+    if (uploadedImage && uploadedImage.includes('supabase.co/storage')) {
+      try {
+        // Extract filename from URL
+        const url = new URL(uploadedImage)
+        const pathParts = url.pathname.split('/')
+        const bucketIndex = pathParts.findIndex(part => part === 'campaign-previews')
+        if (bucketIndex !== -1) {
+          const filePath = pathParts.slice(bucketIndex + 1).join('/')
+          
+          console.log(`🗑️ Deleting image from Supabase: ${filePath}`)
+          
+          // Delete from Supabase Storage
+          const { createClient } = await import('@supabase/supabase-js')
+          const supabase = createClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL!,
+            process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+          )
+          
+          const { error } = await supabase.storage
+            .from('campaign-previews')
+            .remove([filePath])
+          
+          if (error) {
+            console.error('Error deleting image:', error)
+          } else {
+            console.log('✅ Image deleted from storage')
+          }
+        }
+      } catch (error) {
+        console.error('Error removing image:', error)
+      }
+    }
+    
+    // Clear from UI and state
     setUploadedImage(null)
     setCampaign({ ...campaign, preview_url: undefined })
   }
