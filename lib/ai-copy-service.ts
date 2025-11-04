@@ -304,7 +304,7 @@ Generate 6-10 blocks based on the campaign objective. Make each block self-conta
     try {
       const { campaign_name, initial_idea, copy_notes, product_urls } = params
 
-      const prompt = `You are a strategic email campaign expert. Analyze this campaign and generate the 3 BEST strategic approaches based on the brand, audience, and campaign objective.
+      const prompt = `You are a direct-response email strategist for e-commerce brands. Generate 3 PRACTICAL, conversion-focused approaches for this campaign.
 
 CAMPAIGN: ${campaign_name}
 CAMPAIGN OBJECTIVE: ${initial_idea}
@@ -318,15 +318,26 @@ BRAND CONTEXT:
 - Key Phrases: ${copy_notes.key_phrases?.join(', ') || 'N/A'}
 ${product_urls && product_urls.length > 0 ? `\nPRODUCT URLs PROVIDED: ${product_urls.length} products to feature` : ''}
 
-TASK: Generate the 3 BEST strategic approaches for THIS specific campaign and brand.
+CRITICAL REQUIREMENTS:
+- Keep it DIRECT and conversion-focused
+- NO overly creative or narrative approaches
+- NO storytelling unless explicitly requested
+- Focus on SELLING and CONVERTING
+- Use proven e-commerce email patterns
+- Be practical and straightforward
 
-Consider:
-- What will resonate most with THIS audience?
-- What matches THIS brand's voice and personality?
-- What structure best serves THIS campaign objective?
-- What approach is most likely to convert?
+TASK: Generate 3 different DIRECT approaches that focus on conversion.
 
-DO NOT force generic types (direct/story/value). Instead, create 3 genuinely different approaches that make sense for THIS specific campaign.
+Each approach should vary in:
+- Hook/angle (urgency vs value vs social proof)
+- Content structure (bullet-heavy vs visual-heavy vs product-focused)
+- CTA strategy (single strong CTA vs multiple touchpoints)
+
+But ALL should be:
+- Direct and to the point
+- Conversion-optimized
+- E-commerce focused
+- Practical, not creative
 
 For EACH of the 3 ideas, provide:
 - Title: Compelling name for this approach (5-8 words)
