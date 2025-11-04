@@ -10,13 +10,19 @@ const anthropic = new Anthropic({
 })
 
 interface CopyBlock {
-  type: 'header' | 'subheader' | 'body' | 'pic' | 'cta' | 'product' | 'collection' | 'checkmarks' | 'divider' | 'footer'
+  type: 'header' | 'subheader' | 'body' | 'pic' | 'cta' | 'product' | 'collection' | 
+        'checkmarks' | 'divider' | 'footer' | 'secondary_header' | 'hero_image' | 
+        'graphic' | 'bullet_list' | 'table' | 'reviews' | 'video'
   content: string
   description?: string
   cta?: string
   link?: string
   items?: string[]
-  products?: { name: string; link: string }[]
+  products?: { name: string; link: string; description?: string }[]
+  // For comparison/table blocks
+  comparison?: { feature: string; us: string; them: string }[]
+  // For review blocks
+  review?: { quote: string; author: string; rating?: number }
 }
 
 interface GeneratedCopy {
@@ -120,9 +126,17 @@ Return as JSON:
     try {
       const { campaign_name, brief, copy_notes, scraped_products, website_context } = params
 
-      const prompt = `You are an expert email copywriter. Generate email copy in a BLOCK-BASED format.
+      const prompt = `PURPOSE: Generate clean, conversion-ready e-commerce emails using a modular block system.
 
-## BRAND VOICE & GUIDELINES
+## 1. GLOBAL TONE RULES
+- No em dashes or hyphens
+- Short, confident sentences
+- Sound human, not corporate or forced
+- Prioritize clarity and flow over creativity
+- Each block should communicate one idea
+- All text should fit within a clean, grid-based design
+
+## 2. BRAND VOICE & GUIDELINES
 Voice & Tone: ${copy_notes.voice_tone || 'Professional'}
 Brand Personality: ${copy_notes.brand_personality?.join(', ') || 'N/A'}
 Writing Style: ${copy_notes.writing_style || 'Clear and concise'}
@@ -134,7 +148,7 @@ ${copy_notes.key_phrases?.map((p: string) => `- ${p}`).join('\n') || 'None speci
 WORDS TO AVOID:
 ${copy_notes.words_to_avoid?.map((w: string) => `- ${w}`).join('\n') || 'None specified'}
 
-## CAMPAIGN
+## 3. CAMPAIGN OBJECTIVE
 Campaign: ${campaign_name}
 Brief: ${brief}
 
@@ -148,82 +162,75 @@ ${i + 1}. ${p.name}
 `).join('\n')}
 ` : ''}
 
-## CRITICAL RULES
+## 4. BUILDING BLOCKS AVAILABLE
+Choose blocks based on the campaign objective:
+
+- HEADER – Clear and bold. Always first.
+- SUBHEADER – Reinforces the main offer, theme, or hook.
+- HERO IMAGE / VIDEO – Show the product, person, or scene.
+- CTA – Single button, strong verb.
+- SECONDARY HEADER – Used for supporting points or transitions.
+- BODY COPY – 1–3 sentences. Explain or add depth.
+- GRAPHIC / VISUAL ELEMENT – Charts, product visuals, feature highlights.
+- BULLET LIST – Condense benefits or steps into 3–5 bullets.
+- PRODUCT BLOCKS – 3–4 featured products, each with name and one short line.
+- TABLE / COMPARISON BLOCK – For tech or spec-driven brands.
+- REVIEWS BLOCK – Social proof or customer feedback.
+- CLOSING CTA – Final push.
+
+## 5. OBJECTIVE-DRIVEN LAYOUTS
+
+**Product Launch:**
+HEADER → SUBHEADER → HERO IMAGE → CTA → SECONDARY HEADER ("Highlights") → BULLET LIST (3–4 USPs) → CTA → PRODUCT BLOCKS → CLOSING CTA
+
+**Offer / Sale:**
+HEADER (offer/discount) → SUBHEADER (code/deadline) → HERO IMAGE → CTA → BODY COPY (1–2 sentences) → GRAPHIC or PRODUCT BLOCKS → CTA
+
+**Education / Blog:**
+HEADER (topic) → HERO IMAGE → CTA ("Read More") → SECONDARY HEADER (key takeaway) → BULLET LIST → CTA → PRODUCT BLOCKS (optional)
+
+**Winback / Re-engagement:**
+HEADER (conversational) → SUBHEADER (offer reminder) → HERO IMAGE → CTA → SECONDARY HEADER → BODY COPY → CTA → PRODUCT BLOCKS
+
+**When unsure, use:** HEADER → SUBHEADER → IMAGE → CTA → HEADER → BODY/BULLETS/GRAPHIC → CTA → PRODUCT BLOCKS
+
+## 6. CTA LANGUAGE BANK
+Use strong, literal calls to action:
+- Shop Now
+- See the Line
+- Watch the Launch
+- Learn More
+- Use My Code
+- Enter Now
+- Claim Offer
+- Explore More
+
+## 7. CRITICAL RULES
 1. ❌ DO NOT make up product names, prices, or links
 2. ❌ DO NOT fabricate features or specifications
 3. ✅ Use {INSERT PRODUCT} if product info not provided
 4. ✅ Use {INSERT LINK} for missing URLs
-5. ✅ Keep body blocks under 160 characters each
+5. ✅ Keep blocks self-contained and scrollable
 6. ✅ Follow the brand voice exactly
-7. ✅ Use provided key phrases where natural
+7. ✅ Each block should look self-contained
 
-## OUTPUT FORMAT
-Generate email copy as JSON with this EXACT structure:
-
+## 8. OUTPUT FORMAT (JSON)
 {
   "subject_lines": ["Subject 1 (max 50 chars)", "Subject 2", "Subject 3"],
   "preview_text": "Preview text (max 100 chars)",
   "email_blocks": [
-    {
-      "type": "header",
-      "content": "Main headline"
-    },
-    {
-      "type": "subheader",
-      "content": "Section headline"
-    },
-    {
-      "type": "body",
-      "content": "Paragraph text (max 160 chars)"
-    },
-    {
-      "type": "pic",
-      "content": "Image description/placeholder"
-    },
-    {
-      "type": "cta",
-      "content": "BUTTON TEXT",
-      "link": "URL or {INSERT LINK}"
-    },
-    {
-      "type": "product",
-      "content": "Product Name",
-      "description": "Product description (max 160 chars)",
-      "cta": "Shop Product",
-      "link": "URL or {INSERT LINK}"
-    },
-    {
-      "type": "checkmarks",
-      "items": ["Benefit 1", "Benefit 2", "Benefit 3"]
-    },
-    
-IMPORTANT FOR CHECKMARKS:
-- The "items" field is REQUIRED and must be an array of strings
-- Example: "items": ["Fast shipping", "Premium quality", "Expert support"]
-- Do NOT put items in "content" field - use "items" array only!
-    {
-      "type": "divider"
-    },
-    {
-      "type": "footer",
-      "content": "Closing line"
-    }
+    {"type": "header", "content": "Clear bold headline"},
+    {"type": "subheader", "content": "Reinforce offer/theme"},
+    {"type": "pic", "content": "Hero image description"},
+    {"type": "cta", "content": "Shop Now", "link": "{INSERT LINK}"},
+    {"type": "body", "content": "1-3 sentences max"},
+    {"type": "checkmarks", "items": ["Benefit 1", "Benefit 2", "Benefit 3"]},
+    {"type": "product", "content": "Product Name", "description": "One short line", "cta": "Shop Product", "link": "{INSERT LINK}"},
+    {"type": "cta", "content": "Explore More", "link": "{INSERT LINK}"}
   ]
 }
 
-BLOCK TYPES AVAILABLE:
-- header: Main headline
-- subheader: Section headline
-- body: Paragraph (max 160 chars)
-- pic: Image placeholder
-- cta: Call-to-action button
-- product: Product showcase
-- collection: Multiple products
-- checkmarks: Bullet points with ✔️
-- divider: Section break
-- footer: Closing line
-
-Generate 6-8 blocks for a complete email. Use the brand voice and follow best practices.`
+Generate 6-10 blocks based on the campaign objective. Make each block self-contained, scrollable, and conversion-focused.`
 
       const message = await anthropic.messages.create({
         model: 'claude-sonnet-4-0',
