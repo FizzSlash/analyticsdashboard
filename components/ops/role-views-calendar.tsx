@@ -267,7 +267,15 @@ export function RoleViewsCalendar({ clients, campaigns, flows, selectedClient = 
                                 backgroundColor: `${clientColor}40`,
                                 borderLeft: `3px solid ${clientColor}`
                               }}
-                              onClick={() => onCampaignClick?.(campaign)}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                console.log('🖱️ Campaign clicked in calendar:', campaign.campaign_name)
+                                if (onCampaignClick) {
+                                  onCampaignClick(campaign)
+                                } else {
+                                  console.warn('⚠️ onCampaignClick is not defined')
+                                }
+                              }}
                             >
                               <div className="font-medium text-white truncate">
                                 {campaign.campaign_name}
