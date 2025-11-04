@@ -80,6 +80,11 @@ export default function CopyGenerationPage({ params }: PageProps) {
     }
   }
 
+  const handleGenerateClick = () => {
+    setShowProductInput(true)
+    setShowBriefIdeas(false)
+  }
+
   // Step 1: Generate 3 brief ideas
   const handleGenerateBriefIdeas = async () => {
     setLoadingIdeas(true)
