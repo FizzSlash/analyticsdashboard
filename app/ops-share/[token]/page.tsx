@@ -12,6 +12,7 @@ import { OpsForms } from '@/components/ops/ops-forms'
 import { ABTestTracker } from '@/components/ops/ab-test-tracker'
 import { ScopeTracker } from '@/components/ops/scope-tracker'
 import { RoleViewsCalendar } from '@/components/ops/role-views-calendar'
+import { CampaignDetailModal } from '@/components/ops/campaign-detail-modal'
 import { Loader2, Lock, Calendar, Columns, BarChart3, Zap, MousePointer, FolderOpen, FileText, TestTube, Eye, Target } from 'lucide-react'
 
 type OpsTab = 'overview' | 'campaigns' | 'flows' | 'popups' | 'content' | 'forms' | 'abtests' | 'view' | 'scope'
@@ -29,6 +30,7 @@ export default function OpsSharePage() {
   const [selectedClient, setSelectedClient] = useState<string>('all')
   const [campaigns, setCampaigns] = useState<any[]>([])
   const [flows, setFlows] = useState<any[]>([])
+  const [selectedCampaign, setSelectedCampaign] = useState<any>(null)
 
   useEffect(() => {
     fetchOpsData()
@@ -227,9 +229,62 @@ export default function OpsSharePage() {
         {activeTab === 'content' && <ContentHub clients={clients} selectedClient={selectedClient} />}
         {activeTab === 'forms' && <OpsForms clients={clients} selectedClient={selectedClient} />}
         {activeTab === 'abtests' && <ABTestTracker clients={clients} selectedClient={selectedClient} campaigns={campaigns} />}
-        {activeTab === 'view' && <RoleViewsCalendar clients={clients} campaigns={campaigns} flows={flows} selectedClient={selectedClient} />}
+        {activeTab === 'view' && (
+          <RoleViewsCalendar 
+            clients={clients} 
+            campaigns={campaigns} 
+            flows={flows} 
+            selectedClient={selectedClient}
+            onCampaignClick={(campaign) => {
+              console.log('🎯 Opening campaign modal:', campaign)
+              setSelectedCampaign(campaign)
+            }}
+          />
+        )}
         {activeTab === 'scope' && <ScopeTracker clients={clients} selectedClient={selectedClient} campaigns={campaigns} />}
       </div>
+
+      {/* Campaign Detail Modal */}
+      {selectedCampaign && (
+        <CampaignDetailModal
+          campaign={selectedCampaign}
+          clients={clients}
+          onClose={() => setSelectedCampaign(null)}
+          onSave={async (updatedCampaign) => {
+            try {
+              const response = await fetch('/api/ops/campaigns', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(updatedCampaign)
+              })
+              const data = await response.json()
+              if (data.success) {
+                // Refresh campaigns
+                await fetchCampaignsAndFlows()
+                setSelectedCampaign(null)
+              }
+            } catch (error) {
+              console.error('Error saving campaign:', error)
+              alert('Failed to save campaign')
+            }
+          }}
+          onDelete={async (campaignId) => {
+            if (confirm('Delete this campaign?')) {
+              try {
+                const response = await fetch(`/api/ops/campaigns?id=${campaignId}`, {
+                  method: 'DELETE'
+                })
+                if (response.ok) {
+                  setCampaigns(campaigns.filter(c => c.id !== campaignId))
+                  setSelectedCampaign(null)
+                }
+              } catch (error) {
+                console.error('Error deleting campaign:', error)
+              }
+            }
+          }}
+        />
+      )}
     </div>
   )
 }
