@@ -424,7 +424,17 @@ ${blocks.map(block => {
 
       {/* Content */}
       <div className="max-w-6xl mx-auto px-6 py-8">
-        {blocks.length === 0 && !showProductInput ? (
+        {showBriefIdeas ? (
+          // Step 2: Show 3 Brief Ideas
+          <BriefIdeasSelector
+            campaignId={params.campaignId}
+            campaignName={campaign?.campaign_name || ''}
+            briefIdeas={briefIdeas}
+            onSelect={handleSelectBriefIdea}
+            onRegenerate={handleRegenerateBriefIdeas}
+            loading={loadingIdeas}
+          />
+        ) : blocks.length === 0 && !showProductInput ? (
           <Card>
             <CardContent className="p-12 text-center">
               <Sparkles className="h-16 w-16 mx-auto mb-4 text-purple-600" />
@@ -504,16 +514,6 @@ ${blocks.map(block => {
               </div>
             </CardContent>
           </Card>
-        ) : showBriefIdeas ? (
-          // Step 2: Show 3 Brief Ideas for selection
-          <BriefIdeasSelector
-            campaignId={params.campaignId}
-            campaignName={campaign?.campaign_name || ''}
-            briefIdeas={briefIdeas}
-            onSelect={handleSelectBriefIdea}
-            onRegenerate={handleRegenerateBriefIdeas}
-            loading={loadingIdeas}
-          />
         ) : (
           <div className="space-y-6">
             {/* Subject Lines */}
