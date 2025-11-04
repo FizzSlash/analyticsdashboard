@@ -12,7 +12,7 @@ import { OpsForms } from '@/components/ops/ops-forms'
 import { ScopeTracker } from '@/components/ops/scope-tracker'
 import { ABTestTracker } from '@/components/ops/ab-test-tracker'
 import { FlowManager } from '@/components/ops/flow-manager'
-import { RoleViews } from '@/components/ops/role-views'
+import { RoleViewsCalendar } from '@/components/ops/role-views-calendar'
 import { PopupManager } from '@/components/ops/popup-manager'
 import { 
   Settings, 
@@ -440,11 +440,11 @@ export default function OperationsPage({ params }: PageProps) {
 
           {/* View Tab (Role Dashboards) */}
           {activeTab === 'view' && (
-            <RoleViews
+            <RoleViewsCalendar
               clients={clients}
               campaigns={sharedCampaigns}
               flows={sharedFlows}
-              onCampaignClick={(campaign) => setSelectedCampaignForModal(campaign)}
+              selectedClient={selectedClient}
             />
           )}
 

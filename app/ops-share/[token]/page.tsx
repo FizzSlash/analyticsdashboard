@@ -11,7 +11,7 @@ import { ContentHub } from '@/components/ops/content-hub'
 import { OpsForms } from '@/components/ops/ops-forms'
 import { ABTestTracker } from '@/components/ops/ab-test-tracker'
 import { ScopeTracker } from '@/components/ops/scope-tracker'
-import { RoleViews } from '@/components/ops/role-views'
+import { RoleViewsCalendar } from '@/components/ops/role-views-calendar'
 import { Loader2, Lock, Calendar, Columns, BarChart3, Zap, MousePointer, FolderOpen, FileText, TestTube, Eye, Target } from 'lucide-react'
 
 type OpsTab = 'overview' | 'campaigns' | 'flows' | 'popups' | 'content' | 'forms' | 'abtests' | 'view' | 'scope'
@@ -227,7 +227,7 @@ export default function OpsSharePage() {
         {activeTab === 'content' && <ContentHub clients={clients} selectedClient={selectedClient} />}
         {activeTab === 'forms' && <OpsForms clients={clients} selectedClient={selectedClient} />}
         {activeTab === 'abtests' && <ABTestTracker clients={clients} selectedClient={selectedClient} campaigns={campaigns} />}
-        {activeTab === 'view' && <RoleViews clients={clients} campaigns={campaigns} flows={flows} />}
+        {activeTab === 'view' && <RoleViewsCalendar clients={clients} campaigns={campaigns} flows={flows} selectedClient={selectedClient} />}
         {activeTab === 'scope' && <ScopeTracker clients={clients} selectedClient={selectedClient} campaigns={campaigns} />}
       </div>
     </div>
