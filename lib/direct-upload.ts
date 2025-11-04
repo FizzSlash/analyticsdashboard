@@ -15,15 +15,49 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
  * @param file - File to upload
  * @param bucket - Supabase storage bucket name
  * @param folder - Optional folder path within bucket
+ * @param shareToken - Optional share token for unauthenticated uploads
  * @returns Promise with upload result containing public URL
  */
 export async function uploadToSupabase(
   file: File,
   bucket: string = 'campaign-previews',
-  folder?: string
+  folder?: string,
+  shareToken?: string
 ): Promise<{ success: boolean; url?: string; error?: string }> {
   try {
-    // Create Supabase client with anon key (client-side safe)
+    // Auto-detect if we're on a share link page
+    const isShareLink = typeof window !== 'undefined' && window.location.pathname.includes('/ops-share/')
+    const detectedToken = isShareLink ? window.location.pathname.split('/ops-share/')[1] : shareToken
+    
+    // If on share link or token provided, use the share upload API (bypasses auth)
+    if (detectedToken) {
+      console.log(`📤 Share link upload: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)}MB)`)
+      
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('bucket', bucket)
+      formData.append('shareToken', detectedToken)
+      if (folder) formData.append('folder', folder)
+      
+      const response = await fetch('/api/ops-share/upload', {
+        method: 'POST',
+        body: formData
+      })
+      
+      const result = await response.json()
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Upload failed')
+      }
+      
+      console.log(`✅ Share upload successful: ${result.url}`)
+      return {
+        success: true,
+        url: result.url
+      }
+    }
+    
+    // Otherwise, use direct Supabase upload (requires authentication)
     const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
     // Generate unique filename
