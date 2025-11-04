@@ -591,7 +591,7 @@ export function OpsCalendar({ clients, selectedClient }: OpsCalendarProps) {
                 <option value="design" className="bg-gray-800">Design</option>
                 <option value="ready_for_imp_qa" className="bg-gray-800">Ready for Imp QA</option>
                 <option value="qa" className="bg-gray-800">QA</option>
-                <parameter name="client_approval" className="bg-gray-800">Client Approval</option>
+                <option value="client_approval" className="bg-gray-800">Client Approval</option>
                 <option value="approved" className="bg-gray-800">Approved</option>
                 <option value="scheduled" className="bg-gray-800">Scheduled</option>
                 <option value="sent" className="bg-gray-800">Sent</option>
