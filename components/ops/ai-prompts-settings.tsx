@@ -143,6 +143,33 @@ export function AIPromptsSettings({ agencyId }: AIPromptsSettingsProps) {
   const [editingPrompt, setEditingPrompt] = useState<string | null>(null)
   const [editedText, setEditedText] = useState('')
   const [saving, setSaving] = useState(false)
+  const [loading, setLoading] = useState(true)
+
+  // Load custom prompts from database
+  useEffect(() => {
+    const loadCustomPrompts = async () => {
+      if (!agencyId) return
+      
+      try {
+        const response = await fetch(`/api/ops/ai-prompts?agencyId=${agencyId}`)
+        const data = await response.json()
+        
+        if (data.success && data.prompts) {
+          // Merge custom prompts with defaults
+          setPrompts(prompts.map(p => ({
+            ...p,
+            prompt: data.prompts[p.id] || p.prompt
+          })))
+        }
+      } catch (error) {
+        console.error('Error loading custom prompts:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    
+    loadCustomPrompts()
+  }, [agencyId])
 
   const handleEdit = (promptId: string) => {
     const prompt = prompts.find(p => p.id === promptId)
@@ -157,23 +184,30 @@ export function AIPromptsSettings({ agencyId }: AIPromptsSettingsProps) {
 
     setSaving(true)
     try {
-      // Update the prompt in state
-      setPrompts(prompts.map(p => 
-        p.id === editingPrompt ? { ...p, prompt: editedText } : p
-      ))
+      // Save to database
+      const response = await fetch('/api/ops/ai-prompts', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          agencyId,
+          promptId: editingPrompt,
+          promptText: editedText
+        })
+      })
 
-      // TODO: Save to database (ops_ai_prompts table)
-      // const response = await fetch('/api/ops/ai-prompts', {
-      //   method: 'PATCH',
-      //   body: JSON.stringify({
-      //     agencyId,
-      //     promptId: editingPrompt,
-      //     prompt: editedText
-      //   })
-      // })
-
-      setEditingPrompt(null)
-      alert('✅ Prompt updated successfully')
+      const data = await response.json()
+      
+      if (data.success) {
+        // Update the prompt in state
+        setPrompts(prompts.map(p => 
+          p.id === editingPrompt ? { ...p, prompt: editedText } : p
+        ))
+        
+        setEditingPrompt(null)
+        alert('✅ Prompt updated successfully')
+      } else {
+        throw new Error(data.error || 'Failed to save')
+      }
     } catch (error) {
       console.error('Error saving prompt:', error)
       alert('Failed to save prompt')
@@ -182,11 +216,27 @@ export function AIPromptsSettings({ agencyId }: AIPromptsSettingsProps) {
     }
   }
 
-  const handleReset = (promptId: string) => {
-    if (confirm('Reset this prompt to default?')) {
-      setPrompts(prompts.map(p => 
-        p.id === promptId ? { ...p, prompt: DEFAULT_PROMPTS[promptId as keyof typeof DEFAULT_PROMPTS] } : p
-      ))
+  const handleReset = async (promptId: string) => {
+    if (!confirm('Reset this prompt to default? This will delete your custom version.')) return
+    
+    try {
+      // Delete custom prompt from database
+      const response = await fetch(`/api/ops/ai-prompts?agencyId=${agencyId}&promptId=${promptId}`, {
+        method: 'DELETE'
+      })
+      
+      const data = await response.json()
+      
+      if (data.success) {
+        // Reset to default in state
+        setPrompts(prompts.map(p => 
+          p.id === promptId ? { ...p, prompt: DEFAULT_PROMPTS[promptId as keyof typeof DEFAULT_PROMPTS] } : p
+        ))
+        alert('✅ Prompt reset to default')
+      }
+    } catch (error) {
+      console.error('Error resetting prompt:', error)
+      alert('Failed to reset prompt')
     }
   }
 
