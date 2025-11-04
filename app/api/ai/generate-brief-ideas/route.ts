@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Generate 3 strategic brief ideas
-    const aiService = new AICopyService()
+    const aiService = new AICopyService(campaign.agency_id)
     const briefIdeas = await aiService.generateBriefIdeas({
       campaign_name: campaign.campaign_name,
       initial_idea: initialIdea || campaign.internal_notes || 'Create engaging campaign',

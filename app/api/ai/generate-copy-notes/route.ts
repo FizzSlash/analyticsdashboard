@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
     // Get client data
     const { data: client, error: clientError } = await supabase
       .from('clients')
-      .select('brand_name, brand_slug')
+      .select('brand_name, brand_slug, agency_id')
       .eq('id', clientId)
       .single()
 
@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
       .limit(5)
 
     // Generate copy notes using AI
-    const aiService = new AICopyService()
+    const aiService = new AICopyService(client.agency_id)
     const generatedNotes = await aiService.generateCopyNotes({
       brand_name: client.brand_name,
       website_url: undefined, // TODO: Add website scraping

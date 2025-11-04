@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
     const websiteContext = await webScraper.scrapeWebsiteContext(websiteUrl)
     
     // Scrape specific products if URLs provided
-    const aiService = new AICopyService()
+    const aiService = new AICopyService(campaign.agency_id)
     let scrapedProducts = []
     
     if (productUrls && productUrls.length > 0) {

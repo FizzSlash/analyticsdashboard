@@ -3,7 +3,7 @@ import { AICopyService } from '@/lib/ai-copy-service'
 
 export async function POST(request: NextRequest) {
   try {
-    const { currentCopy, revisionNotes, copyNotes } = await request.json()
+    const { currentCopy, revisionNotes, copyNotes, agencyId } = await request.json()
 
     if (!currentCopy || !revisionNotes) {
       return NextResponse.json({ error: 'Current copy and revision notes required' }, { status: 400 })
@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
 
     console.log('🔄 Revising copy with notes:', revisionNotes)
 
-    const aiService = new AICopyService()
+    const aiService = new AICopyService(agencyId || 'default')
     const revisedCopy = await aiService.reviseCopy({
       current_copy: currentCopy,
       revision_notes: revisionNotes,

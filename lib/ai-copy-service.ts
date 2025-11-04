@@ -32,6 +32,31 @@ interface GeneratedCopy {
 }
 
 export class AICopyService {
+  private agencyId: string
+
+  constructor(agencyId: string) {
+    this.agencyId = agencyId
+  }
+
+  /**
+   * Load custom prompt from database or use default
+   */
+  private async getPrompt(promptId: string, defaultPrompt: string): Promise<string> {
+    try {
+      const response = await fetch(`/api/ops/ai-prompts?agencyId=${this.agencyId}`)
+      const data = await response.json()
+      
+      if (data.success && data.prompts && data.prompts[promptId]) {
+        console.log(`✅ Using custom ${promptId} prompt`)
+        return data.prompts[promptId]
+      }
+    } catch (error) {
+      console.log(`ℹ️ Using default ${promptId} prompt`)
+    }
+    
+    return defaultPrompt
+  }
+
   /**
    * Generate comprehensive Copy Notes from brand scraping
    */
