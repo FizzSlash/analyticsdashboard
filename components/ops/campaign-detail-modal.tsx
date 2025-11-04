@@ -121,23 +121,41 @@ export function CampaignDetailModal({
     }
   }
 
-  const handleFileUpload = (file: File) => {
+  const handleFileUpload = async (file: File) => {
     // Validate file type
-    const validTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif']
+    const validTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/webp']
     if (!validTypes.includes(file.type)) {
-      alert('Please upload PNG, JPG, or GIF files only')
+      alert('Please upload PNG, JPG, GIF, or WebP files only')
       return
     }
 
-    // Create preview URL (in production, upload to Supabase Storage)
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      const imageUrl = e.target?.result as string
-      setUploadedImage(imageUrl)
-      setCampaign({ ...campaign, preview_url: imageUrl })
-      console.log('✅ Image uploaded:', file.name)
+    // Check file size (warn if over 20MB)
+    const fileSizeMB = file.size / 1024 / 1024
+    if (fileSizeMB > 20) {
+      alert(`File size is ${fileSizeMB.toFixed(1)}MB. Maximum recommended size is 20MB.`)
+      return
     }
-    reader.readAsDataURL(file)
+
+    try {
+      console.log(`📤 Uploading ${file.name} (${fileSizeMB.toFixed(2)}MB) directly to Supabase...`)
+      
+      // Import the direct upload utility
+      const { uploadToSupabase } = await import('@/lib/direct-upload')
+      
+      // Upload directly to Supabase Storage (bypasses Vercel 4.5MB limit)
+      const result = await uploadToSupabase(file, 'campaign-previews', campaign.client_id)
+      
+      if (result.success && result.url) {
+        setUploadedImage(result.url)
+        setCampaign({ ...campaign, preview_url: result.url })
+        console.log('✅ Image uploaded successfully:', result.url)
+      } else {
+        throw new Error(result.error || 'Upload failed')
+      }
+    } catch (error: any) {
+      console.error('❌ Upload error:', error)
+      alert(`Upload failed: ${error.message}\n\nPlease try again or contact support if the issue persists.`)
+    }
   }
 
   const handleDrop = (e: React.DragEvent) => {

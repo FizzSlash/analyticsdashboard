@@ -49,20 +49,37 @@ export function FlowDetailModal({ flow, clients, onSave, onDelete, onClose }: Fl
   const [isDragging, setIsDragging] = useState(false)
   const isNewFlow = !flow
 
-  const handleFileUpload = (file: File) => {
-    const validTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif']
+  const handleFileUpload = async (file: File) => {
+    const validTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/webp']
     if (!validTypes.includes(file.type)) {
-      alert('Please upload PNG, JPG, or GIF files only')
+      alert('Please upload PNG, JPG, GIF, or WebP files only')
       return
     }
 
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      const imageUrl = e.target?.result as string
-      setUploadedImage(imageUrl)
-      console.log('✅ Flow image uploaded')
+    // Check file size
+    const fileSizeMB = file.size / 1024 / 1024
+    if (fileSizeMB > 20) {
+      alert(`File size is ${fileSizeMB.toFixed(1)}MB. Maximum recommended size is 20MB.`)
+      return
     }
-    reader.readAsDataURL(file)
+
+    try {
+      console.log(`📤 Uploading ${file.name} (${fileSizeMB.toFixed(2)}MB) directly to Supabase...`)
+      
+      // Upload directly to Supabase Storage
+      const { uploadToSupabase } = await import('@/lib/direct-upload')
+      const result = await uploadToSupabase(file, 'campaign-previews', formData.client_id)
+      
+      if (result.success && result.url) {
+        setUploadedImage(result.url)
+        console.log('✅ Flow image uploaded successfully:', result.url)
+      } else {
+        throw new Error(result.error || 'Upload failed')
+      }
+    } catch (error: any) {
+      console.error('❌ Upload error:', error)
+      alert(`Upload failed: ${error.message}\n\nPlease try again or contact support if the issue persists.`)
+    }
   }
 
   const handleDrop = (e: React.DragEvent) => {
