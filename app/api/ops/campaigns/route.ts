@@ -128,8 +128,17 @@ export async function PATCH(request: NextRequest) {
       .single()
 
     if (error) {
-      console.error('Supabase error:', error)
-      throw error
+      console.error('❌ Supabase error updating campaign:', error)
+      console.error('❌ Error details:', JSON.stringify(error, null, 2))
+      console.error('❌ Updates attempted:', updates)
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: error.message || 'Failed to update campaign',
+          details: error.details || error.hint || 'No additional details'
+        },
+        { status: 500 }
+      )
     }
 
     // Auto-update scope usage if send_date changed
