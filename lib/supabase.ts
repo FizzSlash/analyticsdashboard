@@ -140,6 +140,7 @@ export interface CampaignMetric {
   revenue: number
   orders_count: number
   revenue_per_recipient?: number
+  email_html?: string  // Email template HTML for Creatives tab
   created_at: string
   updated_at: string
 }
