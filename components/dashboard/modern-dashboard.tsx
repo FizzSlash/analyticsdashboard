@@ -3014,8 +3014,8 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
       campaigns = campaigns.filter((c: any) => (c.channel || 'email') === channelFilter)
     }
     
-    // Only campaigns with email_html
-    const creativeCampaigns = campaigns.filter((c: any) => c.email_html)
+    // Show all campaigns (with or without email_html)
+    const creativeCampaigns = campaigns // Show all, we'll handle missing HTML in the UI
     
     // Extract first image from HTML
     const extractFirstImage = (html: string): string | null => {
