@@ -18,12 +18,8 @@ export async function POST(request: NextRequest) {
     if (!templateIds || !Array.isArray(templateIds)) {
       return NextResponse.json({ error: 'Template IDs array required' }, { status: 400 })
     }
-    
-    // Limit to prevent timeouts (max 50 templates per request)
-    const limitedTemplateIds = templateIds.slice(0, 50)
-    if (templateIds.length > 50) {
-      console.log(`⚠️ TEMPLATES: Limiting to first 50 of ${templateIds.length} templates to prevent timeout`)
-    }
+
+    console.log(`📧 TEMPLATES: Request for ${templateIds.length} templates`)
 
     // Get client and decrypt API key
     const client = await DatabaseService.getClientBySlug(clientSlug)
@@ -34,16 +30,42 @@ export async function POST(request: NextRequest) {
     const decryptedKey = decryptApiKey(client.klaviyo_api_key)
     const klaviyo = new KlaviyoAPI(decryptedKey)
 
-    console.log(`📧 TEMPLATES: Fetching ${limitedTemplateIds.length} templates...`)
-
-    // Get only templates used by campaigns (filtered by IDs)
-    const templates = await klaviyo.getTemplatesByIds(limitedTemplateIds)
+    // Fetch in batches to avoid timeout (50 per batch, with delays)
+    const batchSize = 50
+    const allTemplates: any[] = []
+    
+    for (let i = 0; i < templateIds.length; i += batchSize) {
+      const batch = templateIds.slice(i, i + batchSize)
+      const batchNum = Math.floor(i / batchSize) + 1
+      const totalBatches = Math.ceil(templateIds.length / batchSize)
+      
+      console.log(`📧 TEMPLATES: Fetching batch ${batchNum}/${totalBatches} (${batch.length} templates)`)
+      
+      try {
+        const batchResult = await klaviyo.getTemplatesByIds(batch)
+        if (batchResult.data) {
+          allTemplates.push(...batchResult.data)
+          console.log(`✅ TEMPLATES: Batch ${batchNum} complete - ${batchResult.data.length} templates fetched`)
+        }
+      } catch (error) {
+        console.error(`❌ TEMPLATES: Batch ${batchNum} failed:`, error)
+        // Continue with next batch even if one fails
+      }
+      
+      // Small delay between batches to be nice to Klaviyo API
+      if (i + batchSize < templateIds.length) {
+        await new Promise(resolve => setTimeout(resolve, 500))
+      }
+    }
+    
+    console.log(`✅ TEMPLATES: Total fetched: ${allTemplates.length}/${templateIds.length}`)
     
     return NextResponse.json({
       success: true,
-      data: templates,
+      data: { data: allTemplates },
       client: client.brand_name,
-      templatesRequested: templateIds.length
+      templatesRequested: templateIds.length,
+      templatesFetched: allTemplates.length
     })
 
   } catch (error: any) {
