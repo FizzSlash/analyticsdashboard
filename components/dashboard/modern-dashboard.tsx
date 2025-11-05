@@ -2228,7 +2228,7 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
                                 srcDoc={campaign.email_html}
                                 className="w-full h-full border-0"
                                 title={`Preview: ${campaign.campaign_name}`}
-                                sandbox="allow-same-origin"
+                                sandbox="allow-same-origin allow-scripts"
                               />
                             </div>
                             
@@ -3242,7 +3242,7 @@ export function ModernDashboard({ client, data: initialData, timeframe: external
                                 srcDoc={campaign.email_html}
                                 className="border-0 pointer-events-none"
                                 title={`Mobile: ${campaign.campaign_name}`}
-                                sandbox="allow-same-origin"
+                                sandbox="allow-same-origin allow-scripts"
                                 style={{ 
                                   width: '100%',
                                   height: '100%',
