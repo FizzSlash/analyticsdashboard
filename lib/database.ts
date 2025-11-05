@@ -248,9 +248,25 @@ export class DatabaseService {
     console.log(`💾 DATABASE: Attempting to save campaign metric for campaign: ${metric.campaign_id}`)
     console.log(`💾 DATABASE: Campaign data:`, JSON.stringify(metric, null, 2))
     
+    // Preserve existing email_html if not provided in metric
+    let metricWithHtml = metric
+    if (!metric.email_html) {
+      const { data: existing } = await supabaseAdmin
+        .from('campaign_metrics')
+        .select('email_html')
+        .eq('client_id', metric.client_id)
+        .eq('campaign_id', metric.campaign_id)
+        .single()
+      
+      if (existing?.email_html) {
+        console.log(`📧 DATABASE: Preserving existing email_html for campaign ${metric.campaign_id}`)
+        metricWithHtml = { ...metric, email_html: existing.email_html }
+      }
+    }
+    
     const { data, error } = await supabaseAdmin
       .from('campaign_metrics')
-      .upsert(metric, {
+      .upsert(metricWithHtml, {
         onConflict: 'client_id,campaign_id',
         ignoreDuplicates: false
       })
