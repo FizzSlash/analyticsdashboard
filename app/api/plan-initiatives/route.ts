@@ -57,7 +57,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { plan_id, phase, title, description, phase_focus, target_metric, order_index } = body
+    const { plan_id, phase, title, description, phase_focus, target_metric, order_index, status } = body
 
     if (!plan_id || !phase || !title) {
       return NextResponse.json(
@@ -76,7 +76,7 @@ export async function POST(request: NextRequest) {
         phase_focus,
         target_metric,
         order_index: order_index || 0,
-        status: 'not_started'
+        status: status || 'not_started'
       })
       .select()
       .single()

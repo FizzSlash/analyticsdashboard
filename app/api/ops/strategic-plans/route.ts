@@ -135,7 +135,7 @@ export async function POST(request: NextRequest) {
         phase_focus: init.phase_focus,
         target_metric: init.target_metric,
         order_index: init.order_index !== undefined ? init.order_index : index,
-        status: 'not_started'
+        status: init.status || 'not_started'
       }))
 
       const { error: initiativesError } = await supabaseAdmin
