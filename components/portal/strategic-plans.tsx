@@ -45,32 +45,17 @@ export function StrategicPlans({ client, userRole }: StrategicPlansProps) {
     if (status === 'completed') {
       return <CheckCircle className="h-4 w-4 text-green-400" />
     }
-    if (status === 'awaiting_approval') {
-      return <Circle className="h-4 w-4 text-orange-400" />
-    }
     if (status === 'in_progress') {
       return <Loader2 className="h-4 w-4 text-blue-400 animate-spin" />
     }
-    if (status === 'strategy') {
-      return <Target className="h-4 w-4 text-purple-400" />
-    }
-    return <Circle className="h-4 w-4 text-gray-400" />
+    return <Circle className="h-4 w-4 text-white/40" />
   }
 
   const getStatusBadge = (status: string) => {
     if (status === 'completed') {
       return 'bg-green-500/20 text-green-300 border-green-400/30'
     }
-    if (status === 'awaiting_approval') {
-      return 'bg-orange-500/20 text-orange-300 border-orange-400/30'
-    }
-    if (status === 'in_progress') {
-      return 'bg-blue-500/20 text-blue-300 border-blue-400/30'
-    }
-    if (status === 'strategy') {
-      return 'bg-purple-500/20 text-purple-300 border-purple-400/30'
-    }
-    return 'bg-gray-500/20 text-gray-300 border-gray-400/30'
+    return 'bg-white/10 text-white/70 border-white/20'
   }
 
   const getStatusText = (status: string) => {
@@ -124,13 +109,7 @@ export function StrategicPlans({ client, userRole }: StrategicPlansProps) {
             {phaseData.initiatives.map((initiative: any) => (
               <div
                 key={initiative.id}
-                className={`p-4 rounded-lg border transition-all ${
-                  initiative.status === 'completed'
-                    ? 'bg-green-500/10 border-green-400/30'
-                    : initiative.status === 'in_progress'
-                    ? 'bg-blue-500/10 border-blue-400/30'
-                    : 'bg-white/5 border-white/10'
-                }`}
+                className="p-4 rounded-lg border bg-white/5 border-white/10 hover:bg-white/10 transition-all"
               >
                 <div className="flex items-start gap-3">
                   {getStatusIcon(initiative.status)}
@@ -262,20 +241,6 @@ export function StrategicPlans({ client, userRole }: StrategicPlansProps) {
                 </div>
               ))
             })()}
-
-            {plan.overallProgress < 100 && plan.phase30 && plan.phase60 && plan.phase90 && (
-              <div className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-400/30 rounded-lg p-4 mt-6">
-                <div className="flex items-start gap-3">
-                  <TrendingUp className="h-5 w-5 text-blue-300 flex-shrink-0 mt-0.5" />
-                  <div>
-                    <h4 className="text-white/90 font-semibold text-sm mb-1">Next Milestone</h4>
-                    <p className="text-white/70 text-sm">
-                      Keep progressing through your strategic initiatives to achieve your goals
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
 
             {plan.overallProgress === 100 && (
               <div className="bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-400/30 rounded-lg p-6 mt-6 text-center">

@@ -310,37 +310,20 @@ export function StrategicPlansManager({ clients, selectedClient, agencyId }: Str
   }
 
   const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return <CheckCircle className="h-4 w-4 text-green-400" />
-      case 'awaiting_approval':
-        return <Clock className="h-4 w-4 text-orange-400" />
-      case 'in_progress':
-        return <Loader2 className="h-4 w-4 text-blue-400" />
-      case 'strategy':
-        return <Target className="h-4 w-4 text-purple-400" />
-      case 'not_started':
-        return <Circle className="h-4 w-4 text-gray-400" />
-      default:
-        return <Circle className="h-4 w-4 text-gray-400" />
+    if (status === 'completed') {
+      return <CheckCircle className="h-4 w-4 text-green-400" />
     }
+    if (status === 'in_progress') {
+      return <Loader2 className="h-4 w-4 text-blue-400" />
+    }
+    return <Circle className="h-4 w-4 text-white/40" />
   }
 
   const getStatusClass = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return 'bg-green-500/20 text-green-300 border-green-400/30'
-      case 'awaiting_approval':
-        return 'bg-orange-500/20 text-orange-300 border-orange-400/30'
-      case 'in_progress':
-        return 'bg-blue-500/20 text-blue-300 border-blue-400/30'
-      case 'strategy':
-        return 'bg-purple-500/20 text-purple-300 border-purple-400/30'
-      case 'not_started':
-        return 'bg-gray-500/20 text-gray-300 border-gray-400/30'
-      default:
-        return 'bg-gray-500/20 text-gray-300 border-gray-400/30'
+    if (status === 'completed') {
+      return 'bg-green-500/20 text-green-300 border-green-400/30'
     }
+    return 'bg-white/10 text-white/70 border-white/20'
   }
 
   const renderInitiativeForm = (phase: '30' | '60' | '90', initiatives: Initiative[], setInitiatives: (inits: Initiative[]) => void, focus: string, setFocus: (f: string) => void, phaseLabel: string) => (
@@ -544,13 +527,7 @@ export function StrategicPlansManager({ clients, selectedClient, agencyId }: Str
                             {phaseInitiatives.map((init) => (
                               <div
                                 key={init.id}
-                                className={`p-3 rounded-lg border ${
-                                  init.status === 'completed'
-                                    ? 'bg-green-500/10 border-green-400/30'
-                                    : init.status === 'in_progress'
-                                    ? 'bg-blue-500/10 border-blue-400/30'
-                                    : 'bg-white/5 border-white/10'
-                                }`}
+                                className="p-3 rounded-lg border bg-white/5 border-white/10 hover:bg-white/10 transition-all"
                               >
                                 <div className="flex items-start gap-3">
                                   {getStatusIcon(init.status)}
