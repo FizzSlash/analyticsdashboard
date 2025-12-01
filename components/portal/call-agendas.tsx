@@ -16,21 +16,6 @@ import {
   Send
 } from 'lucide-react'
 
-interface Call {
-  id: string
-  call_date: string
-  call_time: string
-  call_title: string
-  attendees: string
-  agenda_link: string
-  recording_link: string
-  call_summary: string
-  internal_notes: string
-  questions: Question[]
-  actionItems: ActionItem[]
-  approvals: Approval[]
-}
-
 interface Question {
   id: string
   question_text: string
@@ -54,6 +39,21 @@ interface Approval {
   approval_type: string
   approved: boolean
   approved_at: string
+}
+
+interface Call {
+  id: string
+  call_date: string
+  call_time: string
+  call_title: string
+  attendees: string
+  agenda_link: string
+  recording_link: string
+  call_summary: string
+  internal_notes: string
+  questions: Question[]
+  actionItems: ActionItem[]
+  approvals: Approval[]
 }
 
 interface CallAgendasProps {
@@ -168,6 +168,12 @@ export function CallAgendas({ client, userRole }: CallAgendasProps) {
     return `${diffDays}d ago`
   }
 
+  const getDueDateClass = (completed: boolean, dueDate: string) => {
+    if (completed) return 'text-white/40'
+    if (new Date(dueDate) < new Date()) return 'text-red-400'
+    return 'text-white/60'
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -178,7 +184,6 @@ export function CallAgendas({ client, userRole }: CallAgendasProps) {
 
   return (
     <div className="space-y-6">
-      {/* Upcoming Calls */}
       {upcomingCalls.length > 0 && (
         <div className="space-y-4">
           <h2 className="text-white text-2xl font-bold flex items-center gap-2">
@@ -219,7 +224,6 @@ export function CallAgendas({ client, userRole }: CallAgendasProps) {
                 </div>
               </CardHeader>
               <CardContent className="p-6 space-y-4">
-                {/* Client Questions */}
                 <div>
                   <h3 className="text-white/90 font-semibold mb-3 flex items-center gap-2">
                     <span className="text-lg">Your Questions/Topics</span>
@@ -293,7 +297,6 @@ export function CallAgendas({ client, userRole }: CallAgendasProps) {
         </div>
       )}
 
-      {/* Past Calls */}
       <div className="space-y-4">
         <h2 className="text-white text-2xl font-bold flex items-center gap-2">
           <FileText className="h-6 w-6" />
@@ -309,164 +312,156 @@ export function CallAgendas({ client, userRole }: CallAgendasProps) {
             </CardContent>
           </Card>
         ) : (
-          pastCalls.map((call) => (
-            <Card key={call.id} className="bg-white/10 backdrop-blur-md border-white/20 shadow-xl">
-              <CardHeader className="border-b border-white/10">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <CardTitle className="text-white text-lg flex items-center gap-2">
-                      {call.call_title || 'Strategy Call'}
-                    </CardTitle>
-                    <p className="text-white/60 text-sm mt-1">
-                      {new Date(call.call_date).toLocaleDateString('en-US', { 
-                        month: 'short', 
-                        day: 'numeric', 
-                        year: 'numeric' 
-                      })}
-                    </p>
-                  </div>
-                  <div className="flex gap-2">
-                    {call.recording_link && (
-                      <a
-                        href={call.recording_link}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-2 px-3 py-2 bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 rounded-lg transition-colors border border-purple-400/30 text-sm"
-                      >
-                        <Play className="h-3 w-3" />
-                        Watch Recording
-                      </a>
-                    )}
-                    {call.agenda_link && (
-                      <a
-                        href={call.agenda_link}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-2 px-3 py-2 bg-white/10 hover:bg-white/20 text-white/70 rounded-lg transition-colors border border-white/20 text-sm"
-                      >
-                        <FileText className="h-3 w-3" />
-                        View Agenda
-                      </a>
-                    )}
-                  </div>
-                </div>
-              </CardHeader>
-              
-              <CardContent className="p-6 space-y-6">
-                {/* Approvals Section */}
-                {call.approvals.length > 0 && (
-                  <div>
-                    <h4 className="text-white/90 font-semibold mb-3 flex items-center gap-2">
-                      <CheckCircle className="h-4 w-4 text-green-400" />
-                      Approvals Needed
-                      <span className="px-2 py-0.5 bg-orange-500/20 text-orange-300 text-xs rounded-full border border-orange-400/30">
-                        {call.approvals.filter(a => !a.approved).length} pending
-                      </span>
-                    </h4>
-                    <div className="space-y-2">
-                      {call.approvals.map((approval) => (
-                        <label
-                          key={approval.id}
-                          className="flex items-start gap-3 p-3 bg-white/5 hover:bg-white/10 rounded-lg border border-white/10 cursor-pointer transition-colors"
+          <div className="space-y-3">
+            {pastCalls.map((call) => (
+              <Card key={call.id} className="bg-white/10 backdrop-blur-md border-white/20 shadow-xl">
+                <CardHeader className="border-b border-white/10">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <CardTitle className="text-white text-lg flex items-center gap-2">
+                        {call.call_title || 'Strategy Call'}
+                      </CardTitle>
+                      <p className="text-white/60 text-sm mt-1">
+                        {new Date(call.call_date).toLocaleDateString('en-US', { 
+                          month: 'short', 
+                          day: 'numeric', 
+                          year: 'numeric' 
+                        })}
+                      </p>
+                    </div>
+                    <div className="flex gap-2">
+                      {call.recording_link && (
+                        <a
+                          href={call.recording_link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-2 px-3 py-2 bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 rounded-lg transition-colors border border-purple-400/30 text-sm"
                         >
-                          <input
-                            type="checkbox"
-                            checked={approval.approved}
-                            onChange={() => handleToggleApproval(approval.id, approval.approved)}
-                            className="mt-1 rounded border-white/30 text-green-500 focus:ring-2 focus:ring-green-400/50 bg-white/10"
-                          />
-                          <div className="flex-1">
-                            <p className={`text-sm ${approval.approved ? 'text-white/60 line-through' : 'text-white/90'}`}>
-                              {approval.description}
-                            </p>
-                            {approval.approved && approval.approved_at && (
-                              <p className="text-green-400 text-xs mt-1">
-                                Approved {new Date(approval.approved_at).toLocaleDateString()}
-                              </p>
-                            )}
-                          </div>
-                          {approval.approved && (
-                            <CheckCircle className="h-5 w-5 text-green-400 flex-shrink-0" />
-                          )}
-                        </label>
-                      ))}
+                          <Play className="h-3 w-3" />
+                          Watch Recording
+                        </a>
+                      )}
+                      {call.agenda_link && (
+                        <a
+                          href={call.agenda_link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-2 px-3 py-2 bg-white/10 hover:bg-white/20 text-white/70 rounded-lg transition-colors border border-white/20 text-sm"
+                        >
+                          <FileText className="h-3 w-3" />
+                          View Agenda
+                        </a>
+                      )}
                     </div>
                   </div>
-                )}
-
-                {/* Action Items Section */}
-                {call.actionItems.length > 0 && (
-                  <div>
-                    <h4 className="text-white/90 font-semibold mb-3 flex items-center gap-2">
-                      <Circle className="h-4 w-4 text-blue-400" />
-                      Your Action Items
-                      <span className="px-2 py-0.5 bg-blue-500/20 text-blue-300 text-xs rounded-full border border-blue-400/30">
-                        {call.actionItems.filter(a => !a.completed).length} to do
-                      </span>
-                    </h4>
-                    <div className="space-y-2">
-                      {call.actionItems.map((item) => (
-                        <label
-                          key={item.id}
-                          className="flex items-start gap-3 p-3 bg-white/5 hover:bg-white/10 rounded-lg border border-white/10 cursor-pointer transition-colors"
-                        >
-                          <input
-                            type="checkbox"
-                            checked={item.completed}
-                            onChange={() => handleToggleActionItem(item.id, item.completed)}
-                            className="mt-1 rounded border-white/30 text-green-500 focus:ring-2 focus:ring-green-400/50 bg-white/10"
-                          />
-                          <div className="flex-1">
-                            <p className={`text-sm ${item.completed ? 'text-white/60 line-through' : 'text-white/90'}`}>
-                              {item.item_text}
-                            </p>
-                            <div className="flex items-center gap-3 mt-1">
-                              {item.due_date && (
-                                <p className={`text-xs flex items-center gap-1 ${
-                                  item.completed 
-                                    ? 'text-white/40' 
-                                    : new Date(item.due_date) < new Date() 
-                                    ? 'text-red-400' 
-                                    : 'text-white/60'
-                                }`}>
-                                  <Clock className="h-3 w-3" />
-                                  Due: {new Date(item.due_date).toLocaleDateString()}
-                                </p>
-                              )}
-                              {item.completed && item.completed_at && (
-                                <p className="text-green-400 text-xs">
-                                  Completed {new Date(item.completed_at).toLocaleDateString()}
+                </CardHeader>
+                
+                <CardContent className="p-6 space-y-6">
+                  {call.approvals.length > 0 && (
+                    <div>
+                      <h4 className="text-white/90 font-semibold mb-3 flex items-center gap-2">
+                        <CheckCircle className="h-4 w-4 text-green-400" />
+                        Approvals Needed
+                        <span className="px-2 py-0.5 bg-orange-500/20 text-orange-300 text-xs rounded-full border border-orange-400/30">
+                          {call.approvals.filter(a => !a.approved).length} pending
+                        </span>
+                      </h4>
+                      <div className="space-y-2">
+                        {call.approvals.map((approval) => (
+                          <label
+                            key={approval.id}
+                            className="flex items-start gap-3 p-3 bg-white/5 hover:bg-white/10 rounded-lg border border-white/10 cursor-pointer transition-colors"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={approval.approved}
+                              onChange={() => handleToggleApproval(approval.id, approval.approved)}
+                              className="mt-1 rounded border-white/30 text-green-500 focus:ring-2 focus:ring-green-400/50 bg-white/10"
+                            />
+                            <div className="flex-1">
+                              <p className={approval.approved ? 'text-white/60 line-through text-sm' : 'text-white/90 text-sm'}>
+                                {approval.description}
+                              </p>
+                              {approval.approved && approval.approved_at && (
+                                <p className="text-green-400 text-xs mt-1">
+                                  Approved {new Date(approval.approved_at).toLocaleDateString()}
                                 </p>
                               )}
                             </div>
-                          </div>
-                          {item.completed && (
-                            <CheckCircle className="h-5 w-5 text-green-400 flex-shrink-0" />
-                          )}
-                        </label>
-                      ))}
+                            {approval.approved && (
+                              <CheckCircle className="h-5 w-5 text-green-400 flex-shrink-0" />
+                            )}
+                          </label>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {/* Call Summary */}
-                {call.call_summary && (
-                  <div>
-                    <h4 className="text-white/90 font-semibold mb-3">Call Summary</h4>
-                    <div className="p-4 bg-white/5 rounded-lg border border-white/10">
-                      <p className="text-white/80 text-sm leading-relaxed whitespace-pre-wrap">
-                        {call.call_summary}
-                      </p>
+                  {call.actionItems.length > 0 && (
+                    <div>
+                      <h4 className="text-white/90 font-semibold mb-3 flex items-center gap-2">
+                        <Circle className="h-4 w-4 text-blue-400" />
+                        Your Action Items
+                        <span className="px-2 py-0.5 bg-blue-500/20 text-blue-300 text-xs rounded-full border border-blue-400/30">
+                          {call.actionItems.filter(a => !a.completed).length} to do
+                        </span>
+                      </h4>
+                      <div className="space-y-2">
+                        {call.actionItems.map((item) => (
+                          <label
+                            key={item.id}
+                            className="flex items-start gap-3 p-3 bg-white/5 hover:bg-white/10 rounded-lg border border-white/10 cursor-pointer transition-colors"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={item.completed}
+                              onChange={() => handleToggleActionItem(item.id, item.completed)}
+                              className="mt-1 rounded border-white/30 text-green-500 focus:ring-2 focus:ring-green-400/50 bg-white/10"
+                            />
+                            <div className="flex-1">
+                              <p className={item.completed ? 'text-white/60 line-through text-sm' : 'text-white/90 text-sm'}>
+                                {item.item_text}
+                              </p>
+                              <div className="flex items-center gap-3 mt-1">
+                                {item.due_date && (
+                                  <p className={`text-xs flex items-center gap-1 ${getDueDateClass(item.completed, item.due_date)}`}>
+                                    <Clock className="h-3 w-3" />
+                                    Due: {new Date(item.due_date).toLocaleDateString()}
+                                  </p>
+                                )}
+                                {item.completed && item.completed_at && (
+                                  <p className="text-green-400 text-xs">
+                                    Completed {new Date(item.completed_at).toLocaleDateString()}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                            {item.completed && (
+                              <CheckCircle className="h-5 w-5 text-green-400 flex-shrink-0" />
+                            )}
+                          </label>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          ))}
+                  )}
+
+                  {call.call_summary && (
+                    <div>
+                      <h4 className="text-white/90 font-semibold mb-3">Call Summary</h4>
+                      <div className="p-4 bg-white/5 rounded-lg border border-white/10">
+                        <p className="text-white/80 text-sm leading-relaxed whitespace-pre-wrap">
+                          {call.call_summary}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         </div>
       )}
 
-      {/* No upcoming calls message */}
       {upcomingCalls.length === 0 && (
         <Card className="bg-white/10 backdrop-blur-md border-white/20 shadow-xl">
           <CardContent className="p-8 text-center">
@@ -481,4 +476,3 @@ export function CallAgendas({ client, userRole }: CallAgendasProps) {
     </div>
   )
 }
-
