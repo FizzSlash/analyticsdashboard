@@ -28,32 +28,44 @@ export function CallAgendas({ client, userRole }: CallAgendasProps) {
   const [newQuestion, setNewQuestion] = useState('')
   const [addingQuestion, setAddingQuestion] = useState<string | null>(null)
 
-  const loadCalls = async () => {
+  useEffect(() => {
+    const loadCalls = async () => {
+      if (!client?.id) return
+      
+      try {
+        setLoading(true)
+        const response = await fetch(`/api/call-agendas?clientId=${client.id}`)
+        const data = await response.json()
+
+        if (data.success) {
+          setUpcomingCalls(data.upcomingCalls || [])
+          setPastCalls(data.pastCalls || [])
+        }
+      } catch (error) {
+        console.error('Error loading calls:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    
+    loadCalls()
+  }, [client?.id])
+
+  const reloadCalls = async () => {
     if (!client?.id) return
     
     try {
-      setLoading(true)
-      console.log('Loading calls for client:', client.id)
       const response = await fetch(`/api/call-agendas?clientId=${client.id}`)
       const data = await response.json()
-      console.log('Call agendas response:', data)
 
       if (data.success) {
         setUpcomingCalls(data.upcomingCalls || [])
         setPastCalls(data.pastCalls || [])
-        console.log('Upcoming calls:', data.upcomingCalls?.length || 0)
-        console.log('Past calls:', data.pastCalls?.length || 0)
       }
     } catch (error) {
       console.error('Error loading calls:', error)
-    } finally {
-      setLoading(false)
     }
   }
-
-  useEffect(() => {
-    loadCalls()
-  }, [client?.id])
 
   const handleAddQuestion = async (callId: string) => {
     if (!newQuestion.trim()) return
@@ -72,7 +84,7 @@ export function CallAgendas({ client, userRole }: CallAgendasProps) {
       })
       setNewQuestion('')
       setAddingQuestion(null)
-      loadCalls()
+      reloadCalls()
     } catch (error) {
       console.error('Error adding question:', error)
     }
@@ -88,7 +100,7 @@ export function CallAgendas({ client, userRole }: CallAgendasProps) {
           completed: !currentStatus
         })
       })
-      loadCalls()
+      reloadCalls()
     } catch (error) {
       console.error('Error updating action item:', error)
     }
@@ -104,7 +116,7 @@ export function CallAgendas({ client, userRole }: CallAgendasProps) {
           approved: !currentStatus
         })
       })
-      loadCalls()
+      reloadCalls()
     } catch (error) {
       console.error('Error updating approval:', error)
     }
