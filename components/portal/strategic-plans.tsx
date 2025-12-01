@@ -45,8 +45,14 @@ export function StrategicPlans({ client, userRole }: StrategicPlansProps) {
     if (status === 'completed') {
       return <CheckCircle className="h-4 w-4 text-green-400" />
     }
+    if (status === 'awaiting_approval') {
+      return <Circle className="h-4 w-4 text-orange-400" />
+    }
     if (status === 'in_progress') {
       return <Loader2 className="h-4 w-4 text-blue-400 animate-spin" />
+    }
+    if (status === 'strategy') {
+      return <Target className="h-4 w-4 text-purple-400" />
     }
     return <Circle className="h-4 w-4 text-gray-400" />
   }
@@ -55,20 +61,33 @@ export function StrategicPlans({ client, userRole }: StrategicPlansProps) {
     if (status === 'completed') {
       return 'bg-green-500/20 text-green-300 border-green-400/30'
     }
+    if (status === 'awaiting_approval') {
+      return 'bg-orange-500/20 text-orange-300 border-orange-400/30'
+    }
     if (status === 'in_progress') {
       return 'bg-blue-500/20 text-blue-300 border-blue-400/30'
+    }
+    if (status === 'strategy') {
+      return 'bg-purple-500/20 text-purple-300 border-purple-400/30'
     }
     return 'bg-gray-500/20 text-gray-300 border-gray-400/30'
   }
 
   const getStatusText = (status: string) => {
     if (status === 'completed') return 'Completed'
+    if (status === 'awaiting_approval') return 'Awaiting Approval'
     if (status === 'in_progress') return 'In Progress'
+    if (status === 'strategy') return 'Strategy'
     return 'Not Started'
   }
 
-  const renderPhase = (phaseNumber: string, phaseData: any) => {
-    const phaseTitle = phaseNumber === '30' ? 'FIRST 30 DAYS' : phaseNumber === '60' ? 'NEXT 60 DAYS' : 'FINAL 90 DAYS'
+  const renderPhase = (phaseNumber: string, phaseData: any, phaseLabel?: string) => {
+    // Don't render if no initiatives
+    if (!phaseData || !phaseData.initiatives || phaseData.initiatives.length === 0) {
+      return null
+    }
+
+    const phaseTitle = phaseLabel || (phaseNumber === '30' ? 'FIRST 30 DAYS' : phaseNumber === '60' ? 'NEXT 60 DAYS' : 'FINAL 90 DAYS')
 
     return (
       <div className="space-y-3">
@@ -227,15 +246,22 @@ export function StrategicPlans({ client, userRole }: StrategicPlansProps) {
           </CardHeader>
 
           <CardContent className="p-6 space-y-8">
-            {plan.phase30 && renderPhase('30', plan.phase30)}
-
-            <div className="border-t border-white/10" />
-
-            {plan.phase60 && renderPhase('60', plan.phase60)}
-
-            <div className="border-t border-white/10" />
-
-            {plan.phase90 && renderPhase('90', plan.phase90)}
+            {(() => {
+              const phases = [
+                { number: '30', data: plan.phase30, label: plan.phase30Label },
+                { number: '60', data: plan.phase60, label: plan.phase60Label },
+                { number: '90', data: plan.phase90, label: plan.phase90Label }
+              ]
+              
+              const nonEmptyPhases = phases.filter(p => p.data && p.data.initiatives && p.data.initiatives.length > 0)
+              
+              return nonEmptyPhases.map((phase, index) => (
+                <div key={phase.number}>
+                  {index > 0 && <div className="border-t border-white/10 mb-8" />}
+                  {renderPhase(phase.number, phase.data, phase.label)}
+                </div>
+              ))
+            })()}
 
             {plan.overallProgress < 100 && plan.phase30 && plan.phase60 && plan.phase90 && (
               <div className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-400/30 rounded-lg p-4 mt-6">

@@ -71,6 +71,9 @@ export async function GET(request: NextRequest) {
 
         return {
           ...plan,
+          phase30_label: plan.phase30_label || 'FIRST 30 DAYS',
+          phase60_label: plan.phase60_label || 'NEXT 60 DAYS',
+          phase90_label: plan.phase90_label || 'FINAL 90 DAYS',
           phase30: {
             initiatives: phase30,
             progress: progress30,
@@ -128,6 +131,9 @@ export async function POST(request: NextRequest) {
         description,
         start_date,
         end_date,
+        phase30_label: 'FIRST 30 DAYS',
+        phase60_label: 'NEXT 60 DAYS',
+        phase90_label: 'FINAL 90 DAYS',
         created_by,
         status: 'active'
       })

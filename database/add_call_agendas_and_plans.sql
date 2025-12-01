@@ -122,6 +122,9 @@ CREATE TABLE IF NOT EXISTS strategic_plans (
   start_date DATE NOT NULL,
   end_date DATE NOT NULL,
   status TEXT DEFAULT 'active' CHECK (status IN ('active', 'archived', 'draft')),
+  phase30_label TEXT DEFAULT 'FIRST 30 DAYS',
+  phase60_label TEXT DEFAULT 'NEXT 60 DAYS',
+  phase90_label TEXT DEFAULT 'FINAL 90 DAYS',
   created_by UUID REFERENCES user_profiles(id),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
@@ -145,7 +148,7 @@ CREATE TABLE IF NOT EXISTS plan_initiatives (
   phase_focus TEXT, -- e.g., "List Growth & Engagement"
   title TEXT NOT NULL,
   description TEXT,
-  status TEXT DEFAULT 'not_started' CHECK (status IN ('not_started', 'in_progress', 'completed')),
+  status TEXT DEFAULT 'not_started' CHECK (status IN ('not_started', 'strategy', 'in_progress', 'awaiting_approval', 'completed')),
   target_metric TEXT,
   current_progress TEXT,
   order_index INTEGER DEFAULT 0,

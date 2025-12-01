@@ -88,6 +88,9 @@ export async function POST(request: NextRequest) {
       start_date,
       end_date,
       created_by,
+      phase30_label,
+      phase60_label,
+      phase90_label,
       initiatives // Array of initiatives grouped by phase
     } = body
 
@@ -109,6 +112,9 @@ export async function POST(request: NextRequest) {
         start_date,
         end_date,
         status: 'active',
+        phase30_label: phase30_label || 'FIRST 30 DAYS',
+        phase60_label: phase60_label || 'NEXT 60 DAYS',
+        phase90_label: phase90_label || 'FINAL 90 DAYS',
         created_by
       })
       .select()
@@ -156,7 +162,7 @@ export async function POST(request: NextRequest) {
 export async function PATCH(request: NextRequest) {
   try {
     const body = await request.json()
-    const { id, plan_name, description, start_date, end_date, status } = body
+    const { id, plan_name, description, start_date, end_date, status, phase30_label, phase60_label, phase90_label } = body
 
     if (!id) {
       return NextResponse.json(
@@ -171,6 +177,9 @@ export async function PATCH(request: NextRequest) {
     if (start_date !== undefined) updateData.start_date = start_date
     if (end_date !== undefined) updateData.end_date = end_date
     if (status !== undefined) updateData.status = status
+    if (phase30_label !== undefined) updateData.phase30_label = phase30_label
+    if (phase60_label !== undefined) updateData.phase60_label = phase60_label
+    if (phase90_label !== undefined) updateData.phase90_label = phase90_label
 
     const { data, error } = await supabaseAdmin
       .from('strategic_plans')

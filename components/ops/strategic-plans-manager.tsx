@@ -14,7 +14,8 @@ import {
   TrendingUp,
   X,
   Save,
-  Calendar
+  Calendar,
+  Clock
 } from 'lucide-react'
 
 interface Initiative {
@@ -24,7 +25,7 @@ interface Initiative {
   description: string
   phase_focus: string
   target_metric: string
-  status: 'not_started' | 'in_progress' | 'completed'
+  status: 'not_started' | 'strategy' | 'in_progress' | 'awaiting_approval' | 'completed'
   current_progress: string
   order_index: number
 }
@@ -70,6 +71,9 @@ export function StrategicPlansManager({ clients, selectedClient, agencyId }: Str
   const [phase30Focus, setPhase30Focus] = useState('')
   const [phase60Focus, setPhase60Focus] = useState('')
   const [phase90Focus, setPhase90Focus] = useState('')
+  const [phase30Label, setPhase30Label] = useState('FIRST 30 DAYS')
+  const [phase60Label, setPhase60Label] = useState('NEXT 60 DAYS')
+  const [phase90Label, setPhase90Label] = useState('FINAL 90 DAYS')
 
   useEffect(() => {
     if (agencyId) {
@@ -107,6 +111,9 @@ export function StrategicPlansManager({ clients, selectedClient, agencyId }: Str
     setPhase30Focus('')
     setPhase60Focus('')
     setPhase90Focus('')
+    setPhase30Label('FIRST 30 DAYS')
+    setPhase60Label('NEXT 60 DAYS')
+    setPhase90Label('FINAL 90 DAYS')
     setEditingPlan(null)
   }
 
@@ -134,6 +141,11 @@ export function StrategicPlansManager({ clients, selectedClient, agencyId }: Str
     setPhase30Focus(phase30Inits[0]?.phase_focus || '')
     setPhase60Focus(phase60Inits[0]?.phase_focus || '')
     setPhase90Focus(phase90Inits[0]?.phase_focus || '')
+    
+    // Load phase labels from plan
+    setPhase30Label((plan as any).phase30_label || 'FIRST 30 DAYS')
+    setPhase60Label((plan as any).phase60_label || 'NEXT 60 DAYS')
+    setPhase90Label((plan as any).phase90_label || 'FINAL 90 DAYS')
 
     setEditingPlan(plan)
     setShowModal(true)
@@ -157,7 +169,10 @@ export function StrategicPlansManager({ clients, selectedClient, agencyId }: Str
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             id: editingPlan.id,
-            ...formData
+            ...formData,
+            phase30_label: phase30Label,
+            phase60_label: phase60Label,
+            phase90_label: phase90Label
           })
         })
 
@@ -185,6 +200,9 @@ export function StrategicPlansManager({ clients, selectedClient, agencyId }: Str
           body: JSON.stringify({
             ...formData,
             agency_id: agencyId,
+            phase30_label: phase30Label,
+            phase60_label: phase60Label,
+            phase90_label: phase90Label,
             initiatives: allInitiatives
           })
         })
@@ -295,8 +313,12 @@ export function StrategicPlansManager({ clients, selectedClient, agencyId }: Str
     switch (status) {
       case 'completed':
         return <CheckCircle className="h-4 w-4 text-green-400" />
+      case 'awaiting_approval':
+        return <Clock className="h-4 w-4 text-orange-400" />
       case 'in_progress':
         return <Loader2 className="h-4 w-4 text-blue-400" />
+      case 'strategy':
+        return <Target className="h-4 w-4 text-purple-400" />
       case 'not_started':
         return <Circle className="h-4 w-4 text-gray-400" />
       default:
@@ -308,8 +330,12 @@ export function StrategicPlansManager({ clients, selectedClient, agencyId }: Str
     switch (status) {
       case 'completed':
         return 'bg-green-500/20 text-green-300 border-green-400/30'
+      case 'awaiting_approval':
+        return 'bg-orange-500/20 text-orange-300 border-orange-400/30'
       case 'in_progress':
         return 'bg-blue-500/20 text-blue-300 border-blue-400/30'
+      case 'strategy':
+        return 'bg-purple-500/20 text-purple-300 border-purple-400/30'
       case 'not_started':
         return 'bg-gray-500/20 text-gray-300 border-gray-400/30'
       default:
@@ -317,27 +343,23 @@ export function StrategicPlansManager({ clients, selectedClient, agencyId }: Str
     }
   }
 
-  const renderInitiativeForm = (phase: '30' | '60' | '90', initiatives: Initiative[], setInitiatives: (inits: Initiative[]) => void, focus: string, setFocus: (f: string) => void) => (
+  const renderInitiativeForm = (phase: '30' | '60' | '90', initiatives: Initiative[], setInitiatives: (inits: Initiative[]) => void, focus: string, setFocus: (f: string) => void, phaseLabel: string) => (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <div>
-          <h4 className="text-sm font-semibold text-gray-900">
-            {phase === '30' && 'FIRST 30 DAYS'}
-            {phase === '60' && 'NEXT 60 DAYS'}
-            {phase === '90' && 'FINAL 90 DAYS'}
-          </h4>
+        <div className="flex-1">
+          <h4 className="text-sm font-semibold text-gray-900 mb-1">{phaseLabel}</h4>
           <input
             type="text"
             value={focus}
             onChange={(e) => setFocus(e.target.value)}
             placeholder="Phase focus (e.g., List Growth & Engagement)"
-            className="mt-1 px-2 py-1 text-sm border border-gray-300 rounded w-full"
+            className="px-2 py-1 text-sm border border-gray-300 rounded w-full text-gray-900"
           />
         </div>
         <button
           type="button"
           onClick={() => addInitiative(phase)}
-          className="text-sm px-3 py-1 bg-blue-100 text-blue-600 rounded hover:bg-blue-200"
+          className="text-sm px-3 py-1 bg-blue-100 text-blue-600 rounded hover:bg-blue-200 ml-2"
         >
           + Add Initiative
         </button>
@@ -351,8 +373,19 @@ export function StrategicPlansManager({ clients, selectedClient, agencyId }: Str
               value={init.title}
               onChange={(e) => updateInitiative(phase, index, 'title', e.target.value)}
               placeholder="Initiative title"
-              className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded"
+              className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded text-gray-900"
             />
+            <select
+              value={init.status}
+              onChange={(e) => updateInitiative(phase, index, 'status', e.target.value)}
+              className="px-2 py-1 text-sm border border-gray-300 rounded text-gray-900"
+            >
+              <option value="not_started">Not Started</option>
+              <option value="strategy">Strategy</option>
+              <option value="in_progress">In Progress</option>
+              <option value="awaiting_approval">Awaiting Approval</option>
+              <option value="completed">Completed</option>
+            </select>
             <button
               type="button"
               onClick={() => removeInitiative(phase, index)}
@@ -366,14 +399,14 @@ export function StrategicPlansManager({ clients, selectedClient, agencyId }: Str
             value={init.description}
             onChange={(e) => updateInitiative(phase, index, 'description', e.target.value)}
             placeholder="Description (optional)"
-            className="w-full px-2 py-1 text-sm border border-gray-300 rounded"
+            className="w-full px-2 py-1 text-sm border border-gray-300 rounded text-gray-900"
           />
           <input
             type="text"
             value={init.target_metric}
             onChange={(e) => updateInitiative(phase, index, 'target_metric', e.target.value)}
             placeholder="Target metric (e.g., 500 new subscribers)"
-            className="w-full px-2 py-1 text-sm border border-gray-300 rounded"
+            className="w-full px-2 py-1 text-sm border border-gray-300 rounded text-gray-900"
           />
         </div>
       ))}
@@ -651,11 +684,38 @@ export function StrategicPlansManager({ clients, selectedClient, agencyId }: Str
                 </div>
 
                 <div className="border-t pt-6 space-y-6">
-                  {renderInitiativeForm('30', initiatives30, setInitiatives30, phase30Focus, setPhase30Focus)}
+                  <div>
+                    <input
+                      type="text"
+                      value={phase30Label}
+                      onChange={(e) => setPhase30Label(e.target.value)}
+                      placeholder="Phase 1 Label"
+                      className="w-full px-3 py-2 border-2 border-blue-300 rounded-md font-semibold text-gray-900 mb-3 bg-blue-50"
+                    />
+                    {renderInitiativeForm('30', initiatives30, setInitiatives30, phase30Focus, setPhase30Focus, phase30Label)}
+                  </div>
                   <div className="border-t" />
-                  {renderInitiativeForm('60', initiatives60, setInitiatives60, phase60Focus, setPhase60Focus)}
+                  <div>
+                    <input
+                      type="text"
+                      value={phase60Label}
+                      onChange={(e) => setPhase60Label(e.target.value)}
+                      placeholder="Phase 2 Label"
+                      className="w-full px-3 py-2 border-2 border-purple-300 rounded-md font-semibold text-gray-900 mb-3 bg-purple-50"
+                    />
+                    {renderInitiativeForm('60', initiatives60, setInitiatives60, phase60Focus, setPhase60Focus, phase60Label)}
+                  </div>
                   <div className="border-t" />
-                  {renderInitiativeForm('90', initiatives90, setInitiatives90, phase90Focus, setPhase90Focus)}
+                  <div>
+                    <input
+                      type="text"
+                      value={phase90Label}
+                      onChange={(e) => setPhase90Label(e.target.value)}
+                      placeholder="Phase 3 Label"
+                      className="w-full px-3 py-2 border-2 border-pink-300 rounded-md font-semibold text-gray-900 mb-3 bg-pink-50"
+                    />
+                    {renderInitiativeForm('90', initiatives90, setInitiatives90, phase90Focus, setPhase90Focus, phase90Label)}
+                  </div>
                 </div>
               </CardContent>
 
