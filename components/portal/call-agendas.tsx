@@ -68,12 +68,6 @@ export function CallAgendas({ client, userRole }: CallAgendasProps) {
   const [newQuestion, setNewQuestion] = useState('')
   const [addingQuestion, setAddingQuestion] = useState<string | null>(null)
 
-  useEffect(() => {
-    if (client?.id) {
-      loadCalls()
-    }
-  }, [client?.id])
-
   const loadCalls = async () => {
     try {
       setLoading(true)
@@ -90,6 +84,13 @@ export function CallAgendas({ client, userRole }: CallAgendasProps) {
       setLoading(false)
     }
   }
+
+  useEffect(() => {
+    if (client?.id) {
+      loadCalls()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [client?.id])
 
   const handleAddQuestion = async (callId: string) => {
     if (!newQuestion.trim()) return
