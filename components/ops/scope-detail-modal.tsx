@@ -345,7 +345,7 @@ Example:
 
           {/* Plans Tab */}
           {activeTab === 'plans' && (
-            <div>
+            <div className="bg-gradient-to-br from-gray-900 via-slate-800 to-gray-900 rounded-lg p-6 -m-6">
               {agencyId && clients ? (
                 <StrategicPlansManager
                   clients={clients}
@@ -355,7 +355,7 @@ Example:
               ) : (
                 <div className="text-center py-8">
                   <Target className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                  <p className="text-gray-600">Strategic Plans feature requires additional setup</p>
+                  <p className="text-white/60">Strategic Plans feature requires additional setup</p>
                 </div>
               )}
             </div>
