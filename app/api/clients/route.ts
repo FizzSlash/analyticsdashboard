@@ -51,6 +51,17 @@ export async function POST(request: NextRequest) {
       brand_slug: brand_slug.toLowerCase().replace(/[^a-z0-9-]/g, ''),
       klaviyo_api_key: encryptedApiKey,
       logo_url: body.logo_url || undefined,
+      portal_title: body.portal_title || undefined,
+      enable_analytics: body.enable_analytics !== undefined ? body.enable_analytics : true,
+      enable_portal: body.enable_portal !== undefined ? body.enable_portal : true,
+      // Portal tab visibility settings (default to true)
+      enable_portal_overview: body.enable_portal_overview !== undefined ? body.enable_portal_overview : true,
+      enable_portal_campaigns: body.enable_portal_campaigns !== undefined ? body.enable_portal_campaigns : true,
+      enable_portal_flows: body.enable_portal_flows !== undefined ? body.enable_portal_flows : true,
+      enable_portal_popups: body.enable_portal_popups !== undefined ? body.enable_portal_popups : true,
+      enable_portal_abtests: body.enable_portal_abtests !== undefined ? body.enable_portal_abtests : true,
+      enable_portal_requests: body.enable_portal_requests !== undefined ? body.enable_portal_requests : true,
+      enable_portal_forms: body.enable_portal_forms !== undefined ? body.enable_portal_forms : true,
       last_sync: null,
       is_active: true
     }

@@ -31,6 +31,15 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     if (body.conversion_metric_integration !== undefined) updateData.conversion_metric_integration = body.conversion_metric_integration
     if (body.preferred_currency !== undefined) updateData.preferred_currency = body.preferred_currency
     if (body.timezone !== undefined) updateData.timezone = body.timezone
+    
+    // Portal tab visibility settings
+    if (body.enable_portal_overview !== undefined) updateData.enable_portal_overview = body.enable_portal_overview
+    if (body.enable_portal_campaigns !== undefined) updateData.enable_portal_campaigns = body.enable_portal_campaigns
+    if (body.enable_portal_flows !== undefined) updateData.enable_portal_flows = body.enable_portal_flows
+    if (body.enable_portal_popups !== undefined) updateData.enable_portal_popups = body.enable_portal_popups
+    if (body.enable_portal_abtests !== undefined) updateData.enable_portal_abtests = body.enable_portal_abtests
+    if (body.enable_portal_requests !== undefined) updateData.enable_portal_requests = body.enable_portal_requests
+    if (body.enable_portal_forms !== undefined) updateData.enable_portal_forms = body.enable_portal_forms
 
     // Only update API key if provided
     if (body.klaviyo_api_key) {

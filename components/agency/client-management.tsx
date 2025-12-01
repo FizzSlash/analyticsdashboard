@@ -42,6 +42,14 @@ interface ClientFormData {
   portal_title: string
   enable_analytics: boolean
   enable_portal: boolean
+  // Portal tab visibility settings
+  enable_portal_overview: boolean
+  enable_portal_campaigns: boolean
+  enable_portal_flows: boolean
+  enable_portal_popups: boolean
+  enable_portal_abtests: boolean
+  enable_portal_requests: boolean
+  enable_portal_forms: boolean
 }
 
 export function ClientManagement({ agency, clients: initialClients }: ClientManagementProps) {
@@ -67,7 +75,15 @@ export function ClientManagement({ agency, clients: initialClients }: ClientMana
     klaviyo_api_key: '',
     portal_title: '',
     enable_analytics: true,
-    enable_portal: true
+    enable_portal: true,
+    // Default all portal tabs to enabled
+    enable_portal_overview: true,
+    enable_portal_campaigns: true,
+    enable_portal_flows: true,
+    enable_portal_popups: true,
+    enable_portal_abtests: true,
+    enable_portal_requests: true,
+    enable_portal_forms: true
   })
 
   const resetForm = () => {
@@ -77,7 +93,15 @@ export function ClientManagement({ agency, clients: initialClients }: ClientMana
       klaviyo_api_key: '',
       portal_title: '',
       enable_analytics: true,
-      enable_portal: true
+      enable_portal: true,
+      // Reset all portal tabs to enabled
+      enable_portal_overview: true,
+      enable_portal_campaigns: true,
+      enable_portal_flows: true,
+      enable_portal_popups: true,
+      enable_portal_abtests: true,
+      enable_portal_requests: true,
+      enable_portal_forms: true
     })
     setEditingClient(null)
     setShowForm(false)
@@ -99,7 +123,15 @@ export function ClientManagement({ agency, clients: initialClients }: ClientMana
       klaviyo_api_key: '', // Don't pre-fill encrypted API key
       portal_title: (client as any).portal_title || '',
       enable_analytics: (client as any).enable_analytics !== false, // Default true
-      enable_portal: (client as any).enable_portal !== false // Default true
+      enable_portal: (client as any).enable_portal !== false, // Default true
+      // Load portal tab settings (default to true if not set)
+      enable_portal_overview: (client as any).enable_portal_overview !== false,
+      enable_portal_campaigns: (client as any).enable_portal_campaigns !== false,
+      enable_portal_flows: (client as any).enable_portal_flows !== false,
+      enable_portal_popups: (client as any).enable_portal_popups !== false,
+      enable_portal_abtests: (client as any).enable_portal_abtests !== false,
+      enable_portal_requests: (client as any).enable_portal_requests !== false,
+      enable_portal_forms: (client as any).enable_portal_forms !== false
     })
     setEditingClient(client)
     setShowForm(true)
@@ -235,6 +267,14 @@ export function ClientManagement({ agency, clients: initialClients }: ClientMana
         portal_title: formData.portal_title || undefined,
         enable_analytics: formData.enable_analytics,
         enable_portal: formData.enable_portal,
+        // Portal tab visibility settings
+        enable_portal_overview: formData.enable_portal_overview,
+        enable_portal_campaigns: formData.enable_portal_campaigns,
+        enable_portal_flows: formData.enable_portal_flows,
+        enable_portal_popups: formData.enable_portal_popups,
+        enable_portal_abtests: formData.enable_portal_abtests,
+        enable_portal_requests: formData.enable_portal_requests,
+        enable_portal_forms: formData.enable_portal_forms,
         is_active: true
       }
       
@@ -250,7 +290,15 @@ export function ClientManagement({ agency, clients: initialClients }: ClientMana
           agency_id: agency.id,
           portal_title: formData.portal_title || undefined,
           enable_analytics: formData.enable_analytics,
-          enable_portal: formData.enable_portal
+          enable_portal: formData.enable_portal,
+          // Portal tab visibility settings
+          enable_portal_overview: formData.enable_portal_overview,
+          enable_portal_campaigns: formData.enable_portal_campaigns,
+          enable_portal_flows: formData.enable_portal_flows,
+          enable_portal_popups: formData.enable_portal_popups,
+          enable_portal_abtests: formData.enable_portal_abtests,
+          enable_portal_requests: formData.enable_portal_requests,
+          enable_portal_forms: formData.enable_portal_forms
         }
         
         // Only include API key if provided
@@ -1376,6 +1424,85 @@ ${flowDetails.slice(0, 3).map((f: any, i: number) =>
                     Controls what the client can access. Portal clients automatically appear in Ops dashboard.
                   </p>
                 </div>
+
+                {/* Portal Tab Visibility - Only show if portal is enabled */}
+                {formData.enable_portal && (
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-900 mb-3">
+                      Portal Tab Visibility
+                    </label>
+                    <div className="bg-gray-50 border border-gray-300 rounded-lg p-4">
+                      <p className="text-xs text-gray-600 mb-3">
+                        Select which tabs this client can see in their portal. At least one tab must be enabled.
+                      </p>
+                      <div className="grid grid-cols-2 gap-3">
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={formData.enable_portal_overview}
+                            onChange={(e) => setFormData({ ...formData, enable_portal_overview: e.target.checked })}
+                            className="rounded border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-500"
+                          />
+                          <span className="text-sm text-gray-700">Overview</span>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={formData.enable_portal_campaigns}
+                            onChange={(e) => setFormData({ ...formData, enable_portal_campaigns: e.target.checked })}
+                            className="rounded border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-500"
+                          />
+                          <span className="text-sm text-gray-700">Campaigns</span>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={formData.enable_portal_flows}
+                            onChange={(e) => setFormData({ ...formData, enable_portal_flows: e.target.checked })}
+                            className="rounded border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-500"
+                          />
+                          <span className="text-sm text-gray-700">Flows</span>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={formData.enable_portal_popups}
+                            onChange={(e) => setFormData({ ...formData, enable_portal_popups: e.target.checked })}
+                            className="rounded border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-500"
+                          />
+                          <span className="text-sm text-gray-700">Popups</span>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={formData.enable_portal_abtests}
+                            onChange={(e) => setFormData({ ...formData, enable_portal_abtests: e.target.checked })}
+                            className="rounded border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-500"
+                          />
+                          <span className="text-sm text-gray-700">A/B Tests</span>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={formData.enable_portal_requests}
+                            onChange={(e) => setFormData({ ...formData, enable_portal_requests: e.target.checked })}
+                            className="rounded border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-500"
+                          />
+                          <span className="text-sm text-gray-700">Requests</span>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={formData.enable_portal_forms}
+                            onChange={(e) => setFormData({ ...formData, enable_portal_forms: e.target.checked })}
+                            className="rounded border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-500"
+                          />
+                          <span className="text-sm text-gray-700">Forms</span>
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {/* Revenue Metric Display */}
                 {editingClient && editingClient.conversion_metric_id && (

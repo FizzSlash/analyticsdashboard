@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { DashboardOverview } from './dashboard-overview'
 import { CampaignApprovalCalendar } from './campaign-approval-calendar-v3'
@@ -63,43 +63,68 @@ export function CleanPortalDashboard({ user, client, userRole, allClients }: Cle
     ? { logo_url: user?.agency?.logo_url }
     : { logo_url: user?.agency?.logo_url || client?.agency?.logo_url }
 
-  const portalTabs = [
+  // Define all available tabs
+  const allPortalTabs = [
     { 
       id: 'overview', 
       label: userRole === 'agency_admin' ? 'Dashboard' : 'Overview', 
-      icon: BarChart3 
+      icon: BarChart3,
+      enabledKey: 'enable_portal_overview'
     },
     { 
       id: 'campaigns', 
       label: userRole === 'agency_admin' ? 'Campaign Calendar' : 'Campaigns', 
-      icon: Calendar 
+      icon: Calendar,
+      enabledKey: 'enable_portal_campaigns'
     },
     { 
       id: 'flows', 
       label: userRole === 'agency_admin' ? 'Flow Progress' : 'Flows', 
-      icon: Zap 
+      icon: Zap,
+      enabledKey: 'enable_portal_flows'
     },
     { 
       id: 'popups', 
       label: 'Popups', 
-      icon: MousePointer 
+      icon: MousePointer,
+      enabledKey: 'enable_portal_popups'
     },
     { 
       id: 'abtests', 
       label: userRole === 'agency_admin' ? 'A/B Test Manager' : 'A/B Tests', 
-      icon: TestTube 
+      icon: TestTube,
+      enabledKey: 'enable_portal_abtests'
     },
     { 
       id: 'requests', 
       label: userRole === 'agency_admin' ? 'Request Management' : 'Requests', 
-      icon: FileText 
+      icon: FileText,
+      enabledKey: 'enable_portal_requests'
     },
     { 
       id: 'forms', 
       label: userRole === 'agency_admin' ? 'Form Templates' : 'Forms', 
-      icon: ClipboardList 
+      icon: ClipboardList,
+      enabledKey: 'enable_portal_forms'
     }
   ]
+
+  // Filter tabs based on client settings (agency admins see all tabs)
+  const portalTabs = userRole === 'agency_admin' 
+    ? allPortalTabs 
+    : allPortalTabs.filter(tab => {
+        // Check if this tab is enabled for this client (default to true if not set)
+        const isEnabled = (clientInfo as any)[tab.enabledKey]
+        return isEnabled !== false
+      })
+
+  // Ensure active tab is valid - if current tab is not in available tabs, switch to first available
+  useEffect(() => {
+    const isActiveTabAvailable = portalTabs.some(tab => tab.id === activeTab)
+    if (!isActiveTabAvailable && portalTabs.length > 0) {
+      setActiveTab(portalTabs[0].id as PortalTab)
+    }
+  }, [portalTabs, activeTab])
 
   return (
     <div className="space-y-6">
