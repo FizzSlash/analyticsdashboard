@@ -9,6 +9,8 @@ import { PopupApproval } from './popup-approval'
 import { ABTestManager } from './ab-test-manager-v2'
 import { EnhancedRequests } from './enhanced-requests'
 import { DynamicForms } from './dynamic-forms'
+import { CallAgendas } from './call-agendas'
+import { StrategicPlans } from './strategic-plans'
 import { 
   BarChart3,
   Calendar, 
@@ -308,17 +310,17 @@ export function CleanPortalDashboard({ user, client, userRole, allClients }: Cle
         )}
         
         {activeTab === 'callagendas' && (
-          <div className="bg-white/10 backdrop-blur-md border-white/20 shadow-xl rounded-lg p-6">
-            <h3 className="text-white text-xl font-bold">Call Agendas</h3>
-            <p className="text-white/60 mt-2">Coming soon - View upcoming calls and past call summaries</p>
-          </div>
+          <CallAgendas 
+            client={clientInfo}
+            userRole={userRole}
+          />
         )}
         
         {activeTab === 'plans' && (
-          <div className="bg-white/10 backdrop-blur-md border-white/20 shadow-xl rounded-lg p-6">
-            <h3 className="text-white text-xl font-bold">30/60/90 Day Plans</h3>
-            <p className="text-white/60 mt-2">Coming soon - View your strategic roadmap</p>
-          </div>
+          <StrategicPlans 
+            client={clientInfo}
+            userRole={userRole}
+          />
         )}
       </div>
 

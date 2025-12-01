@@ -7,14 +7,39 @@
 -- ============================================================================
 
 -- ============================================================================
--- PART 1: ENHANCE EXISTING CALLS SYSTEM
+-- PART 1: CREATE OR ENHANCE CALLS SYSTEM
 -- ============================================================================
 
--- Add portal visibility control to existing ops_calls table
+-- Create ops_calls table if it doesn't exist
+CREATE TABLE IF NOT EXISTS ops_calls (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  client_id UUID NOT NULL REFERENCES clients(id) ON DELETE CASCADE,
+  agency_id UUID NOT NULL REFERENCES agencies(id) ON DELETE CASCADE,
+  call_date DATE NOT NULL,
+  call_time TEXT,
+  call_title TEXT NOT NULL,
+  attendees TEXT,
+  agenda_link TEXT,
+  recording_link TEXT,
+  call_summary TEXT,
+  internal_notes TEXT,
+  show_in_portal BOOLEAN DEFAULT true,
+  created_by UUID REFERENCES user_profiles(id),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Add columns if table already exists
 ALTER TABLE ops_calls 
 ADD COLUMN IF NOT EXISTS show_in_portal BOOLEAN DEFAULT true,
 ADD COLUMN IF NOT EXISTS agenda_link TEXT;
 
+CREATE INDEX IF NOT EXISTS idx_ops_calls_client ON ops_calls(client_id);
+CREATE INDEX IF NOT EXISTS idx_ops_calls_agency ON ops_calls(agency_id);
+CREATE INDEX IF NOT EXISTS idx_ops_calls_date ON ops_calls(call_date);
+CREATE INDEX IF NOT EXISTS idx_ops_calls_portal ON ops_calls(show_in_portal);
+
+COMMENT ON TABLE ops_calls IS 'Client call recordings and agendas';
 COMMENT ON COLUMN ops_calls.show_in_portal IS 'Whether this call should appear in client portal';
 COMMENT ON COLUMN ops_calls.agenda_link IS 'Link to Google Doc or agenda for the call';
 
@@ -152,11 +177,40 @@ COMMENT ON COLUMN clients.enable_portal_plans IS 'Show 30/60/90 Day Plans tab in
 -- ============================================================================
 
 -- Enable RLS
+ALTER TABLE ops_calls ENABLE ROW LEVEL SECURITY;
 ALTER TABLE call_questions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE call_action_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE call_approvals ENABLE ROW LEVEL SECURITY;
 ALTER TABLE strategic_plans ENABLE ROW LEVEL SECURITY;
 ALTER TABLE plan_initiatives ENABLE ROW LEVEL SECURITY;
+
+-- Ops Calls: Clients can view their own (if show_in_portal=true), agency can manage all
+CREATE POLICY "Clients can view their portal calls"
+ON ops_calls FOR SELECT
+USING (
+  (
+    client_id IN (
+      SELECT client_id FROM user_profiles WHERE id = auth.uid()
+    )
+    AND show_in_portal = true
+  )
+  OR
+  EXISTS (
+    SELECT 1 FROM user_profiles 
+    WHERE id = auth.uid() 
+    AND role IN ('agency_admin', 'copywriter', 'designer', 'implementor', 'strategist')
+  )
+);
+
+CREATE POLICY "Agency can manage calls"
+ON ops_calls FOR ALL
+USING (
+  EXISTS (
+    SELECT 1 FROM user_profiles 
+    WHERE id = auth.uid() 
+    AND role IN ('agency_admin', 'copywriter', 'designer', 'implementor', 'strategist')
+  )
+);
 
 -- Call Questions: Clients can read/insert their own, agency can manage all
 CREATE POLICY "Clients can view their call questions"

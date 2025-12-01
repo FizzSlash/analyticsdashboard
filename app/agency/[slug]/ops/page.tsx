@@ -16,6 +16,7 @@ import { RoleViewsCalendar } from '@/components/ops/role-views-calendar'
 import { PopupManager } from '@/components/ops/popup-manager'
 import { CampaignDetailModal } from '@/components/ops/campaign-detail-modal'
 import { AIPromptsSettings } from '@/components/ops/ai-prompts-settings'
+import { CallAgendasManager } from '@/components/ops/call-agendas-manager'
 import { 
   Settings, 
   ArrowLeft, 
@@ -29,10 +30,11 @@ import {
   FileText,
   TestTube,
   Eye,
-  MousePointer
+  MousePointer,
+  Phone
 } from 'lucide-react'
 
-type OpsTab = 'overview' | 'campaigns' | 'flows' | 'popups' | 'content' | 'forms' | 'abtests' | 'view' | 'scope' | 'settings'
+type OpsTab = 'overview' | 'campaigns' | 'flows' | 'popups' | 'content' | 'forms' | 'abtests' | 'view' | 'scope' | 'settings' | 'calls'
 type CampaignView = 'calendar' | 'pipeline'
 
 interface Campaign {
@@ -79,6 +81,7 @@ export default function OperationsPage({ params }: PageProps) {
   // Secondary tabs - admin/resources
   const secondaryTabs = [
     { id: 'content', label: 'Content Hub', icon: FolderOpen },
+    { id: 'calls', label: 'Call Agendas', icon: Phone },
     { id: 'forms', label: 'Forms', icon: FileText },
     { id: 'view', label: 'View', icon: Eye },
     { id: 'scope', label: 'Scope', icon: Target },
@@ -461,6 +464,16 @@ export default function OperationsPage({ params }: PageProps) {
               clients={clients}
               selectedClient={selectedClient}
               campaigns={sharedCampaigns}
+              agencyId={agency?.id}
+            />
+          )}
+
+          {/* Call Agendas Tab */}
+          {activeTab === 'calls' && (
+            <CallAgendasManager
+              clients={clients}
+              selectedClient={selectedClient}
+              agencyId={agency?.id || ''}
             />
           )}
 

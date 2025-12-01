@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { StrategicPlansManager } from './strategic-plans-manager'
 import { 
   X,
   Save,
@@ -9,7 +10,8 @@ import {
   Calendar,
   TrendingUp,
   FileText,
-  DollarSign
+  DollarSign,
+  Target
 } from 'lucide-react'
 
 interface ScopeConfig {
@@ -37,10 +39,12 @@ interface ScopeDetailModalProps {
   usage: any
   onSave: (config: ScopeConfig, monthlyDoc: MonthlyDoc) => void
   onClose: () => void
+  agencyId?: string
+  clients?: any[]
 }
 
-export function ScopeDetailModal({ client, config, usage, onSave, onClose }: ScopeDetailModalProps) {
-  const [activeTab, setActiveTab] = useState<'config' | 'monthly' | 'history'>('monthly')
+export function ScopeDetailModal({ client, config, usage, onSave, onClose, agencyId, clients }: ScopeDetailModalProps) {
+  const [activeTab, setActiveTab] = useState<'config' | 'monthly' | 'history' | 'plans'>('monthly')
   const [scopeConfig, setScopeConfig] = useState<ScopeConfig>(config)
   const [monthlyDoc, setMonthlyDoc] = useState<MonthlyDoc>({
     month_year: new Date().toISOString().slice(0, 7),
@@ -89,6 +93,7 @@ export function ScopeDetailModal({ client, config, usage, onSave, onClose }: Sco
             {[
               { id: 'monthly', label: 'Monthly Doc', icon: FileText },
               { id: 'config', label: 'Configuration', icon: Settings },
+              { id: 'plans', label: '30/60/90 Plans', icon: Target },
               { id: 'history', label: 'History', icon: TrendingUp }
             ].map(tab => {
               const Icon = tab.icon
@@ -335,6 +340,24 @@ Example:
                   </div>
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* Plans Tab */}
+          {activeTab === 'plans' && (
+            <div>
+              {agencyId && clients ? (
+                <StrategicPlansManager
+                  clients={clients}
+                  selectedClient={client.id}
+                  agencyId={agencyId}
+                />
+              ) : (
+                <div className="text-center py-8">
+                  <Target className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+                  <p className="text-gray-600">Strategic Plans feature requires additional setup</p>
+                </div>
+              )}
             </div>
           )}
 

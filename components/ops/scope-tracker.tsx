@@ -40,9 +40,10 @@ interface ScopeTrackerProps {
   clients: any[]
   selectedClient: string
   campaigns: any[] // To auto-count usage
+  agencyId?: string
 }
 
-export function ScopeTracker({ clients, selectedClient, campaigns }: ScopeTrackerProps) {
+export function ScopeTracker({ clients, selectedClient, campaigns, agencyId }: ScopeTrackerProps) {
   const [selectedClientDetail, setSelectedClientDetail] = useState<string | null>(null)
   const [scopeConfigs, setScopeConfigs] = useState<ScopeConfig[]>([])
   const [scopeUsage, setScopeUsage] = useState<Record<string, ScopeUsage>>({})
@@ -294,6 +295,8 @@ export function ScopeTracker({ clients, selectedClient, campaigns }: ScopeTracke
           client={clients.find(c => c.id === selectedClientDetail)}
           config={scopeConfigs.find(c => c.client_id === selectedClientDetail)!}
           usage={scopeUsage[selectedClientDetail]}
+          agencyId={agencyId}
+          clients={clients}
           onSave={async (config, monthlyDoc) => {
             try {
               // Save scope config
