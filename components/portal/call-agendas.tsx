@@ -462,7 +462,7 @@ export function CallAgendas({ client, userRole }: CallAgendasProps) {
                 )}
               </CardContent>
             </Card>
-          )))}
+          ))}
         </div>
       )}
 
