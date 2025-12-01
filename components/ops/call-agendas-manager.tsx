@@ -50,6 +50,7 @@ export function CallAgendasManager({ clients, selectedClient, agencyId }: CallAg
   const [showModal, setShowModal] = useState(false)
   const [editingCall, setEditingCall] = useState<Call | null>(null)
   const [expandedCall, setExpandedCall] = useState<string | null>(null)
+  const [clientQuestions, setClientQuestions] = useState<any[]>([])
   
   const [formData, setFormData] = useState({
     client_id: '',
@@ -100,6 +101,7 @@ export function CallAgendasManager({ clients, selectedClient, agencyId }: CallAg
       show_in_portal: true
     })
     setEditingCall(null)
+    setClientQuestions([])
   }
 
   const handleCreate = () => {
@@ -107,7 +109,7 @@ export function CallAgendasManager({ clients, selectedClient, agencyId }: CallAg
     setShowModal(true)
   }
 
-  const handleEdit = (call: Call) => {
+  const handleEdit = async (call: Call) => {
     setFormData({
       client_id: call.client_id,
       call_date: call.call_date,
@@ -121,7 +123,31 @@ export function CallAgendasManager({ clients, selectedClient, agencyId }: CallAg
       show_in_portal: call.show_in_portal
     })
     setEditingCall(call)
+    
+    // Load client questions for this call
+    try {
+      const response = await fetch(`/api/call-questions?callId=${call.id}`)
+      const data = await response.json()
+      if (data.success) {
+        setClientQuestions(data.questions || [])
+      }
+    } catch (error) {
+      console.error('Error loading questions:', error)
+      setClientQuestions([])
+    }
+    
     setShowModal(true)
+  }
+
+  const handleDeleteQuestion = async (questionId: string) => {
+    if (!confirm('Delete this question?')) return
+    
+    try {
+      await fetch(`/api/call-questions?id=${questionId}`, { method: 'DELETE' })
+      setClientQuestions(clientQuestions.filter(q => q.id !== questionId))
+    } catch (error) {
+      console.error('Error deleting question:', error)
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -643,6 +669,42 @@ export function CallAgendasManager({ clients, selectedClient, agencyId }: CallAg
                     These notes are never shown to the client
                   </p>
                 </div>
+
+                {/* Client Questions/Topics - Only show when editing existing call */}
+                {editingCall && clientQuestions.length > 0 && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-900 mb-2 flex items-center gap-2">
+                      <MessageSquare className="h-4 w-4" />
+                      Client Questions/Topics
+                      <span className="px-2 py-0.5 bg-blue-100 text-blue-600 text-xs rounded-full">
+                        {clientQuestions.length}
+                      </span>
+                    </label>
+                    <div className="space-y-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                      {clientQuestions.map((q: any) => (
+                        <div key={q.id} className="flex items-start justify-between p-3 bg-white border border-blue-200 rounded-lg">
+                          <div className="flex-1">
+                            <p className="text-gray-900 text-sm font-medium">{q.question_text}</p>
+                            <p className="text-gray-500 text-xs mt-1">
+                              {q.added_by_name} • {new Date(q.created_at).toLocaleDateString()}
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteQuestion(q.id)}
+                            className="p-1 text-red-600 hover:bg-red-100 rounded"
+                            title="Delete question"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Questions submitted by client before the call
+                    </p>
+                  </div>
+                )}
 
                 {/* Show in Portal */}
                 <div className="flex items-center gap-3 p-4 bg-blue-50 border border-blue-200 rounded-lg">
