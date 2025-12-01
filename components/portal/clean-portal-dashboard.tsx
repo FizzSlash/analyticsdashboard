@@ -20,7 +20,9 @@ import {
   Figma,
   ExternalLink,
   CheckCircle,
-  MousePointer
+  MousePointer,
+  Phone,
+  Target
 } from 'lucide-react'
 
 interface CleanPortalDashboardProps {
@@ -30,7 +32,7 @@ interface CleanPortalDashboardProps {
   allClients?: any[] // For agency admins to see all clients
 }
 
-type PortalTab = 'overview' | 'campaigns' | 'flows' | 'popups' | 'abtests' | 'requests' | 'forms'
+type PortalTab = 'overview' | 'campaigns' | 'flows' | 'popups' | 'abtests' | 'requests' | 'forms' | 'callagendas' | 'plans'
 
 export function CleanPortalDashboard({ user, client, userRole, allClients }: CleanPortalDashboardProps) {
   const [activeTab, setActiveTab] = useState<PortalTab>('overview')
@@ -106,6 +108,18 @@ export function CleanPortalDashboard({ user, client, userRole, allClients }: Cle
       label: userRole === 'agency_admin' ? 'Form Templates' : 'Forms', 
       icon: ClipboardList,
       enabledKey: 'enable_portal_forms'
+    },
+    { 
+      id: 'callagendas', 
+      label: 'Call Agendas', 
+      icon: Phone,
+      enabledKey: 'enable_portal_call_agendas'
+    },
+    { 
+      id: 'plans', 
+      label: '30/60/90 Plans', 
+      icon: Target,
+      enabledKey: 'enable_portal_plans'
     }
   ]
 
@@ -291,6 +305,20 @@ export function CleanPortalDashboard({ user, client, userRole, allClients }: Cle
             client={clientInfo}
             userRole={userRole}
           />
+        )}
+        
+        {activeTab === 'callagendas' && (
+          <div className="bg-white/10 backdrop-blur-md border-white/20 shadow-xl rounded-lg p-6">
+            <h3 className="text-white text-xl font-bold">Call Agendas</h3>
+            <p className="text-white/60 mt-2">Coming soon - View upcoming calls and past call summaries</p>
+          </div>
+        )}
+        
+        {activeTab === 'plans' && (
+          <div className="bg-white/10 backdrop-blur-md border-white/20 shadow-xl rounded-lg p-6">
+            <h3 className="text-white text-xl font-bold">30/60/90 Day Plans</h3>
+            <p className="text-white/60 mt-2">Coming soon - View your strategic roadmap</p>
+          </div>
         )}
       </div>
 

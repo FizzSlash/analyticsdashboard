@@ -62,6 +62,8 @@ export async function POST(request: NextRequest) {
       enable_portal_abtests: body.enable_portal_abtests !== undefined ? body.enable_portal_abtests : true,
       enable_portal_requests: body.enable_portal_requests !== undefined ? body.enable_portal_requests : true,
       enable_portal_forms: body.enable_portal_forms !== undefined ? body.enable_portal_forms : true,
+      enable_portal_call_agendas: body.enable_portal_call_agendas !== undefined ? body.enable_portal_call_agendas : true,
+      enable_portal_plans: body.enable_portal_plans !== undefined ? body.enable_portal_plans : true,
       last_sync: null,
       is_active: true
     }

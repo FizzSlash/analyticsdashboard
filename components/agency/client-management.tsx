@@ -50,6 +50,8 @@ interface ClientFormData {
   enable_portal_abtests: boolean
   enable_portal_requests: boolean
   enable_portal_forms: boolean
+  enable_portal_call_agendas: boolean
+  enable_portal_plans: boolean
 }
 
 export function ClientManagement({ agency, clients: initialClients }: ClientManagementProps) {
@@ -83,7 +85,9 @@ export function ClientManagement({ agency, clients: initialClients }: ClientMana
     enable_portal_popups: true,
     enable_portal_abtests: true,
     enable_portal_requests: true,
-    enable_portal_forms: true
+    enable_portal_forms: true,
+    enable_portal_call_agendas: true,
+    enable_portal_plans: true
   })
 
   const resetForm = () => {
@@ -101,7 +105,9 @@ export function ClientManagement({ agency, clients: initialClients }: ClientMana
       enable_portal_popups: true,
       enable_portal_abtests: true,
       enable_portal_requests: true,
-      enable_portal_forms: true
+      enable_portal_forms: true,
+      enable_portal_call_agendas: true,
+      enable_portal_plans: true
     })
     setEditingClient(null)
     setShowForm(false)
@@ -131,7 +137,9 @@ export function ClientManagement({ agency, clients: initialClients }: ClientMana
       enable_portal_popups: (client as any).enable_portal_popups !== false,
       enable_portal_abtests: (client as any).enable_portal_abtests !== false,
       enable_portal_requests: (client as any).enable_portal_requests !== false,
-      enable_portal_forms: (client as any).enable_portal_forms !== false
+      enable_portal_forms: (client as any).enable_portal_forms !== false,
+      enable_portal_call_agendas: (client as any).enable_portal_call_agendas !== false,
+      enable_portal_plans: (client as any).enable_portal_plans !== false
     })
     setEditingClient(client)
     setShowForm(true)
@@ -275,6 +283,8 @@ export function ClientManagement({ agency, clients: initialClients }: ClientMana
         enable_portal_abtests: formData.enable_portal_abtests,
         enable_portal_requests: formData.enable_portal_requests,
         enable_portal_forms: formData.enable_portal_forms,
+        enable_portal_call_agendas: formData.enable_portal_call_agendas,
+        enable_portal_plans: formData.enable_portal_plans,
         is_active: true
       }
       
@@ -298,7 +308,9 @@ export function ClientManagement({ agency, clients: initialClients }: ClientMana
           enable_portal_popups: formData.enable_portal_popups,
           enable_portal_abtests: formData.enable_portal_abtests,
           enable_portal_requests: formData.enable_portal_requests,
-          enable_portal_forms: formData.enable_portal_forms
+          enable_portal_forms: formData.enable_portal_forms,
+          enable_portal_call_agendas: formData.enable_portal_call_agendas,
+          enable_portal_plans: formData.enable_portal_plans
         }
         
         // Only include API key if provided
@@ -1498,6 +1510,24 @@ ${flowDetails.slice(0, 3).map((f: any, i: number) =>
                             className="rounded border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-500"
                           />
                           <span className="text-sm text-gray-700">Forms</span>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={formData.enable_portal_call_agendas}
+                            onChange={(e) => setFormData({ ...formData, enable_portal_call_agendas: e.target.checked })}
+                            className="rounded border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-500"
+                          />
+                          <span className="text-sm text-gray-700">Call Agendas</span>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={formData.enable_portal_plans}
+                            onChange={(e) => setFormData({ ...formData, enable_portal_plans: e.target.checked })}
+                            className="rounded border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-500"
+                          />
+                          <span className="text-sm text-gray-700">30/60/90 Plans</span>
                         </label>
                       </div>
                     </div>

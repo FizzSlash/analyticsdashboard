@@ -40,6 +40,8 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     if (body.enable_portal_abtests !== undefined) updateData.enable_portal_abtests = body.enable_portal_abtests
     if (body.enable_portal_requests !== undefined) updateData.enable_portal_requests = body.enable_portal_requests
     if (body.enable_portal_forms !== undefined) updateData.enable_portal_forms = body.enable_portal_forms
+    if (body.enable_portal_call_agendas !== undefined) updateData.enable_portal_call_agendas = body.enable_portal_call_agendas
+    if (body.enable_portal_plans !== undefined) updateData.enable_portal_plans = body.enable_portal_plans
 
     // Only update API key if provided
     if (body.klaviyo_api_key) {
