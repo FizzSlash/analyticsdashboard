@@ -43,14 +43,11 @@ export function CleanPortalDashboard({ user, client, userRole, allClients }: Cle
   // Determine client info based on user role
   const clientInfo = userRole === 'agency_admin' 
     ? selectedClient 
-    : { 
-        id: user.client?.id || client?.id, // CRITICAL: Ensure client.id is always included
-        brand_name: user.client?.brand_name || client?.brand_name || 'Your Brand',
-        brand_slug: user.client?.brand_slug || client?.brand_slug || 'unknown',
-        figma_url: user.client?.figma_url || client?.figma_url,
-        ...client,
-        ...user.client // Override with user.client if it exists
-      }
+    : (client || user.client || { 
+        id: user.client?.id,
+        brand_name: user.client?.brand_name || 'Your Brand',
+        brand_slug: user.client?.brand_slug || 'unknown'
+      })
   
   // Debug logging to verify client ID is passed
   if (typeof window !== 'undefined') {

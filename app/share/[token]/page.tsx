@@ -144,7 +144,20 @@ export default function SharedDashboardPage() {
         ) : client.enable_portal !== false ? (
           <div className="max-w-7xl mx-auto px-6 py-8">
             <CleanPortalDashboard 
-              user={{ client: client }}
+              user={{ 
+                client: {
+                  ...client,
+                  enable_portal_overview: client.enable_portal_overview,
+                  enable_portal_campaigns: client.enable_portal_campaigns,
+                  enable_portal_flows: client.enable_portal_flows,
+                  enable_portal_popups: client.enable_portal_popups,
+                  enable_portal_abtests: client.enable_portal_abtests,
+                  enable_portal_requests: client.enable_portal_requests,
+                  enable_portal_forms: client.enable_portal_forms,
+                  enable_portal_call_agendas: client.enable_portal_call_agendas,
+                  enable_portal_plans: client.enable_portal_plans
+                }
+              }}
               client={client}
               userRole="client_user"
             />
