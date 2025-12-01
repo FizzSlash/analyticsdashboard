@@ -192,6 +192,13 @@ export function CallAgendasManager({ clients, selectedClient, agencyId }: CallAg
     return clients.find(c => c.id === clientId)?.brand_name || 'Unknown Client'
   }
 
+  const formatCallDate = (dateString: string) => {
+    // Parse date as local time to avoid timezone shifts
+    const [year, month, day] = dateString.split('-').map(Number)
+    const date = new Date(year, month - 1, day)
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+  }
+
   const filteredCalls = selectedClient === 'all' 
     ? calls 
     : calls.filter(c => c.client_id === selectedClient)
@@ -299,7 +306,7 @@ export function CallAgendasManager({ clients, selectedClient, agencyId }: CallAg
                       <div className="flex items-center gap-4 text-sm text-white/60">
                         <span className="flex items-center gap-1">
                           <Calendar className="h-3 w-3" />
-                          {new Date(call.call_date).toLocaleDateString()}
+                          {formatCallDate(call.call_date)}
                         </span>
                         {call.call_time && (
                           <span className="flex items-center gap-1">
@@ -389,7 +396,7 @@ export function CallAgendasManager({ clients, selectedClient, agencyId }: CallAg
                       <div className="flex items-center gap-4 text-sm text-white/60">
                         <span className="flex items-center gap-1">
                           <Calendar className="h-3 w-3" />
-                          {new Date(call.call_date).toLocaleDateString()}
+                          {formatCallDate(call.call_date)}
                         </span>
                         <span className="flex items-center gap-1">
                           <Users className="h-3 w-3" />

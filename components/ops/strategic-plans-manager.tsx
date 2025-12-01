@@ -554,10 +554,10 @@ export function StrategicPlansManager({ clients, selectedClient, agencyId }: Str
       {/* Create/Edit Modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <Card className="w-full max-w-4xl mx-4 max-h-[90vh] overflow-y-auto">
+          <Card className="w-full max-w-4xl mx-4 max-h-[90vh] overflow-y-auto bg-white">
             <CardHeader className="border-b bg-gradient-to-r from-blue-50 to-purple-50">
               <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2 text-gray-900">
                   <Target className="h-5 w-5" />
                   {editingPlan ? 'Edit Strategic Plan' : 'Create 30/60/90 Day Plan'}
                 </CardTitle>
@@ -566,7 +566,7 @@ export function StrategicPlansManager({ clients, selectedClient, agencyId }: Str
                     setShowModal(false)
                     resetForm()
                   }}
-                  className="p-1 hover:bg-gray-200 rounded"
+                  className="p-1 hover:bg-gray-200 rounded text-gray-600"
                 >
                   <X className="h-5 w-5" />
                 </button>

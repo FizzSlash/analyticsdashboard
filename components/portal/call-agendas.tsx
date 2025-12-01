@@ -33,12 +33,16 @@ export function CallAgendas({ client, userRole }: CallAgendasProps) {
     
     try {
       setLoading(true)
+      console.log('Loading calls for client:', client.id)
       const response = await fetch(`/api/call-agendas?clientId=${client.id}`)
       const data = await response.json()
+      console.log('Call agendas response:', data)
 
       if (data.success) {
         setUpcomingCalls(data.upcomingCalls || [])
         setPastCalls(data.pastCalls || [])
+        console.log('Upcoming calls:', data.upcomingCalls?.length || 0)
+        console.log('Past calls:', data.pastCalls?.length || 0)
       }
     } catch (error) {
       console.error('Error loading calls:', error)
@@ -119,6 +123,29 @@ export function CallAgendas({ client, userRole }: CallAgendasProps) {
     return `${diffDays}d ago`
   }
 
+  const formatCallDate = (dateString: string) => {
+    // Parse date as local time to avoid timezone shifts
+    const [year, month, day] = dateString.split('-').map(Number)
+    const date = new Date(year, month - 1, day)
+    return date.toLocaleDateString('en-US', {
+      weekday: 'long',
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric'
+    })
+  }
+
+  const formatShortDate = (dateString: string) => {
+    // Parse date as local time to avoid timezone shifts
+    const [year, month, day] = dateString.split('-').map(Number)
+    const date = new Date(year, month - 1, day)
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    })
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -146,12 +173,7 @@ export function CallAgendas({ client, userRole }: CallAgendasProps) {
                       {call.call_title || 'Weekly Strategy Call'}
                     </CardTitle>
                     <p className="text-white/70 text-sm mt-1">
-                      {new Date(call.call_date).toLocaleDateString('en-US', { 
-                        weekday: 'long', 
-                        month: 'long', 
-                        day: 'numeric', 
-                        year: 'numeric' 
-                      })} at {call.call_time || 'TBD'}
+                      {formatCallDate(call.call_date)} at {call.call_time || 'TBD'}
                     </p>
                   </div>
                   {call.agenda_link && (
@@ -273,11 +295,7 @@ export function CallAgendas({ client, userRole }: CallAgendasProps) {
                         {call.call_title || 'Strategy Call'}
                       </CardTitle>
                       <p className="text-white/60 text-sm mt-1">
-                        {new Date(call.call_date).toLocaleDateString('en-US', { 
-                          month: 'short', 
-                          day: 'numeric', 
-                          year: 'numeric' 
-                        })}
+                        {formatShortDate(call.call_date)}
                       </p>
                     </div>
                     <div className="flex gap-2">
