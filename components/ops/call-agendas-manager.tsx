@@ -290,7 +290,7 @@ export function CallAgendasManager({ clients, selectedClient, agencyId }: CallAg
                             Internal Only
                           </span>
                         )}
-                        {call.questionCount > 0 && (
+                        {(call.questionCount || 0) > 0 && (
                           <span className="px-2 py-0.5 bg-blue-500/20 text-blue-300 text-xs rounded-full border border-blue-400/30">
                             {call.questionCount} questions
                           </span>
@@ -396,7 +396,7 @@ export function CallAgendasManager({ clients, selectedClient, agencyId }: CallAg
                           {getClientName(call.client_id)}
                         </span>
                       </div>
-                      {call.actionItemCount > 0 && (
+                      {(call.actionItemCount || 0) > 0 && (
                         <p className="text-white/50 text-xs mt-2">
                           {call.actionItemCount} action items • {call.approvalCount || 0} approvals
                         </p>
